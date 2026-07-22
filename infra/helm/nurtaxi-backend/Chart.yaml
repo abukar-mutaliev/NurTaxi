@@ -1,0 +1,6 @@
+apiVersion: v2
+name: nurtaxi-backend
+description: Helm chart для backend Nur Taxi (модульный монолит NestJS)
+type: application
+version: 0.1.0
+appVersion: '0.1.0'

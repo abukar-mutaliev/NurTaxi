@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: server
+
+jobs:
+  lint-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: nurtaxi
+          POSTGRES_PASSWORD: nurtaxi
+          POSTGRES_DB: nurtaxi
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U nurtaxi" --health-interval 10s
+          --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test -- --ci
+      - name: Run migrations (smoke)
+        run: npm run migration:run
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: nurtaxi
+          DB_PASSWORD: nurtaxi
+          DB_DATABASE: nurtaxi
+      - name: Build
+        run: npm run build
+
+  docker-build-scan:
+    name: Build image & Security scan
+    runs-on: ubuntu-latest
+    needs: lint-test
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t nurtaxi-backend:${{ github.sha }} .
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: nurtaxi-backend:${{ github.sha }}
+          format: table
+          exit-code: '0' # не блокируем на старте; ужесточить до '1' перед релизом
+          severity: CRITICAL,HIGH
+
+  deploy-staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    needs: docker-build-scan
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy (placeholder)
+        run: echo "TODO (Фаза 0.4): push образа в реестр и helm upgrade в staging"

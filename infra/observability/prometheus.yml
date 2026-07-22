@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'nurtaxi-backend'
+    metrics_path: /metrics
+    static_configs:
+      # host.docker.internal — server, запущенный на хосте (npm run start:dev).
+      # При запуске server в compose замените на имя сервиса.
+      - targets: ['host.docker.internal:3000']
+
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

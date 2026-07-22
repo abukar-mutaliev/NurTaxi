@@ -1,0 +1,61 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/nurtaxi/nurtaxi-backend
+  tag: '0.1.0'
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.staging.nurtaxi.example
+  tls: true
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Автомасштабирование по CPU (Des §12).
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# Несекретная конфигурация → ConfigMap.
+config:
+  NODE_ENV: staging
+  PORT: '3000'
+  API_PREFIX: api/v1
+  LOG_LEVEL: info
+  LOG_PRETTY: 'false'
+  OTEL_ENABLED: 'true'
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+  OTEL_SERVICE_NAME: nurtaxi-backend
+  DB_RUN_MIGRATIONS: 'false'
+
+# Секреты в кластере берутся из внешнего хранилища (Vault) через существующий Secret.
+# Имя Secret'а с ключами БД/Redis/JWT/провайдеров (Des §14).
+existingSecret: nurtaxi-backend-secrets
+
+# Метрики для Prometheus Operator.
+serviceMonitor:
+  enabled: false
+  path: /metrics
+  interval: 15s
+
+# Пробы Kubernetes (Des §11).
+probes:
+  liveness:
+    path: /api/v1/health/live
+  readiness:
+    path: /api/v1/health/ready

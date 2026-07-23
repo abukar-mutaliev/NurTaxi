@@ -11,12 +11,15 @@ export class StubSmsProvider implements SmsProvider {
   private readonly logger = new Logger('SmsProvider(stub)');
 
   async sendCode(phone: string, code: string): Promise<void> {
+    await this.sendMessage(phone, `Nur Taxi: код подтверждения ${code}`);
+  }
+
+  async sendMessage(phone: string, message: string): Promise<void> {
     if (process.env.NODE_ENV === 'production') {
-      // В проде заглушка не должна использоваться — сигнализируем об ошибке конфигурации.
       this.logger.error(`Попытка отправить SMS через заглушку в production на ${this.mask(phone)}`);
       return;
     }
-    this.logger.debug(`[DEV] Код для ${this.mask(phone)}: ${code}`);
+    this.logger.debug(`[DEV] SMS для ${this.mask(phone)}: ${message}`);
   }
 
   private mask(phone: string): string {

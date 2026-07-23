@@ -55,6 +55,33 @@ jobs:
           DB_USERNAME: nurtaxi
           DB_PASSWORD: nurtaxi
           DB_DATABASE: nurtaxi
+      - name: Seed database
+        run: npm run seed
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: nurtaxi
+          DB_PASSWORD: nurtaxi
+          DB_DATABASE: nurtaxi
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NATS_URL: nats://localhost:4222
+          NODE_ENV: test
+      - name: Contract & E2E tests
+        run: npm run test:e2e -- --ci
+        env:
+          CI: 'true'
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USERNAME: nurtaxi
+          DB_PASSWORD: nurtaxi
+          DB_DATABASE: nurtaxi
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          NATS_URL: nats://localhost:4222
+          NODE_ENV: test
+          JWT_ACCESS_SECRET: test-access-secret
+          JWT_REFRESH_SECRET: test-refresh-secret
       - name: Build
         run: npm run build
 

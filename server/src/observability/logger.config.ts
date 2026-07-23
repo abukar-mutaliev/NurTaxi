@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { trace } from '@opentelemetry/api';
 import type { Params } from 'nestjs-pino';
 
 /**
@@ -42,7 +43,14 @@ export function buildLoggerConfig(): Params {
         ],
         censor: '[REDACTED]',
       },
-      customProps: () => ({ service: process.env.OTEL_SERVICE_NAME ?? 'nurtaxi-backend' }),
+      customProps: (req: IncomingMessage) => {
+        const span = trace.getActiveSpan();
+        const traceId = span?.spanContext().traceId;
+        return {
+          service: process.env.OTEL_SERVICE_NAME ?? 'nurtaxi-backend',
+          trace_id: traceId ?? (req.headers['x-request-id'] as string | undefined),
+        };
+      },
       autoLogging: {
         ignore: (req: IncomingMessage) => {
           const url = req.url ?? '';

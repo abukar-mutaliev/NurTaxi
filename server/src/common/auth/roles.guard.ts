@@ -7,6 +7,7 @@ import type { AuthenticatedUser } from './jwt-payload.interface';
 
 /**
  * Проверяет, что роль аутентифицированного пользователя входит в список @Roles(...).
+ * SuperAdmin имеет доступ ко всем защищённым эндпоинтам.
  * Должен использоваться после JwtAuthGuard.
  */
 @Injectable()
@@ -26,7 +27,18 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>();
     const user = request.user;
 
-    if (!user || !requiredRoles.includes(user.role)) {
+    if (!user) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Недостаточно прав для выполнения операции',
+      });
+    }
+
+    if (user.role === Role.SuperAdmin) {
+      return true;
+    }
+
+    if (!requiredRoles.includes(user.role)) {
       throw new ForbiddenException({
         code: 'FORBIDDEN',
         message: 'Недостаточно прав для выполнения операции',

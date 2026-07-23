@@ -1,0 +1,55 @@
+groups:
+  - name: nurtaxi-kpi
+    rules:
+      - alert: HighApiLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)
+          ) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'API p95 latency > 300ms (KPI §10.1)'
+          description: 'Route {{ $labels.route }} p95 exceeds 300ms target.'
+
+      - alert: SlowDriverAssignment
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(order_driver_assignment_duration_seconds_bucket[15m])) by (le, region_id)
+          ) > 30
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Driver assignment p95 > 30s (KPI §10.1)'
+          description: 'Region {{ $labels.region_id }} assignment p95 exceeds 30s.'
+
+      - alert: PaymentFailureRateHigh
+        expr: |
+          sum(rate(payments_total{status="failed"}[10m])) /
+          clamp_min(sum(rate(payments_total[10m])), 1) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Payment failure rate > 5%'
+          description: 'More than 5% of payments are failing in the last 10 minutes.'
+
+      - alert: ServiceNotReady
+        expr: service_ready == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Backend readiness probe failing'
+          description: 'service_ready gauge is 0 for more than 2 minutes.'
+
+      - alert: ExternalProviderFailures
+        expr: sum(rate(external_call_failures_total[5m])) by (provider) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'External provider {{ $labels.provider }} failures elevated'
+          description: 'Circuit breaker or timeout failures detected.'

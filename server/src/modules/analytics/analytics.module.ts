@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
+import { MessagingModule } from '../../messaging/messaging.module';
+import { KpiMetricsListener } from './kpi-metrics.listener';
 
 /**
- * Analytics (Des §2.3, §13): метрики KPI, отчёты, дашборды по регионам,
- * водителям и финансам. Потребляет доменные события из брокера.
- * Реализация — Фаза 9 (Req §10.1, §18–21).
+ * Analytics (Des §2.3, §13): KPI-метрики из доменных событий.
+ * Некритичный модуль — сбой не блокирует заказ (Des §11, Req §18).
  */
-@Module({})
+@Module({
+  imports: [MessagingModule],
+  providers: [KpiMetricsListener],
+})
 export class AnalyticsModule {}

@@ -6,4 +6,6 @@ export const SMS_PROVIDER = Symbol('SMS_PROVIDER');
  */
 export interface SmsProvider {
   sendCode(phone: string, code: string): Promise<void>;
+  /** Произвольное SMS (SOS, уведомления). */
+  sendMessage(phone: string, message: string): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { UsersModule } from '../users/users.module';
@@ -16,7 +16,7 @@ import { StubSmsProvider } from './sms/stub-sms.provider';
  * поэтому JwtModule регистрируется без глобального секрета.
  */
 @Module({
-  imports: [UsersModule, PassportModule, JwtModule.register({})],
+  imports: [forwardRef(() => UsersModule), PassportModule, JwtModule.register({})],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -25,6 +25,6 @@ import { StubSmsProvider } from './sms/stub-sms.provider';
     JwtStrategy,
     { provide: SMS_PROVIDER, useClass: StubSmsProvider },
   ],
-  exports: [TokenService],
+  exports: [TokenService, SMS_PROVIDER],
 })
 export class AuthModule {}

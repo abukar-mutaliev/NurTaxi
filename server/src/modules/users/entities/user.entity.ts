@@ -3,11 +3,14 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Role } from '../../../common/enums/role.enum';
 import { UserStatus } from '../../../common/enums/user-status.enum';
+import { Region } from '../../regions/entities/region.entity';
 
 export interface NotificationSettings {
   push: boolean;
@@ -71,6 +74,14 @@ export class User {
 
   @Column({ name: 'pdn_consent_version', type: 'varchar', length: 20, nullable: true })
   pdnConsentVersion!: string | null;
+
+  /** Регион для operator / regional_admin (Фаза 7, Req §7.3–7.4). */
+  @Column({ name: 'assigned_region_id', type: 'uuid', nullable: true })
+  assignedRegionId!: string | null;
+
+  @ManyToOne(() => Region, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'assigned_region_id' })
+  assignedRegion?: Region | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

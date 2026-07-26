@@ -9,13 +9,7 @@ export interface TextProps extends RNTextProps {
   align?: 'left' | 'center' | 'right';
 }
 
-export function Text({
-  variant = 'body',
-  tone = 'default',
-  align,
-  style,
-  ...rest
-}: TextProps) {
+export function Text({ variant = 'body', tone = 'default', align, style, ...rest }: TextProps) {
   const theme = useTheme();
 
   const color = {
@@ -28,9 +22,6 @@ export function Text({
   }[tone];
 
   return (
-    <RNText
-      {...rest}
-      style={[theme.typography[variant], { color, textAlign: align }, style]}
-    />
+    <RNText {...rest} style={[theme.typography[variant], { color, textAlign: align }, style]} />
   );
 }

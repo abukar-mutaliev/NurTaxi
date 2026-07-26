@@ -8,7 +8,15 @@ import * as Sentry from '@sentry/react-native';
 
 import { appConfig, isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 
-const PII_KEYS = ['phone', 'pendingPhone', 'address', 'pickupAddress', 'dropoffAddress', 'lat', 'lng'];
+const PII_KEYS = [
+  'phone',
+  'pendingPhone',
+  'address',
+  'pickupAddress',
+  'dropoffAddress',
+  'lat',
+  'lng',
+];
 
 function scrub(value: unknown): unknown {
   if (Array.isArray(value)) {

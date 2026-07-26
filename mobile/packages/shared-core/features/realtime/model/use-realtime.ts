@@ -12,7 +12,10 @@ import { useSelector } from 'react-redux';
 
 import { useSharedDispatch } from '@nurtaxi/shared-core/shared/lib';
 import { orderApi } from '@nurtaxi/shared-core/entities/order';
-import { selectIsAuthenticated, type WithSessionState } from '@nurtaxi/shared-core/entities/session';
+import {
+  selectIsAuthenticated,
+  type WithSessionState,
+} from '@nurtaxi/shared-core/entities/session';
 
 import { realtimeClient } from './realtime-client';
 import { RealtimeEvent } from './realtime-events';
@@ -59,7 +62,10 @@ export interface OrderRealtimeHandlers {
  * Подписка на события конкретного заказа. Статус заказа применяется прямо в кэш
  * `getOrder`, поэтому дополнительный запрос после каждого события не нужен.
  */
-export function useOrderRealtime(orderId: string | null, handlers: OrderRealtimeHandlers = {}): void {
+export function useOrderRealtime(
+  orderId: string | null,
+  handlers: OrderRealtimeHandlers = {},
+): void {
   const dispatch = useSharedDispatch();
   const { onStatusChange, onSos } = handlers;
 

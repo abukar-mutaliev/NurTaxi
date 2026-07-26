@@ -10,7 +10,10 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button, Card, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
-import { useCurrentPosition, useLocationPermission } from '@nurtaxi/shared-core/features/geolocation';
+import {
+  useCurrentPosition,
+  useLocationPermission,
+} from '@nurtaxi/shared-core/features/geolocation';
 import { orderStatusLabelKey, useGetOrderQuery } from '@nurtaxi/shared-core/entities/order';
 
 import { useAppSelector } from '@/app/store/hooks';
@@ -51,9 +54,7 @@ export function HomeScreen() {
             <Button
               onPress={permission.canAskAgain ? permission.request : permission.openSettings}
               size="md"
-              title={
-                permission.canAskAgain ? t('common.retry') : t('permissions.openSettings')
-              }
+              title={permission.canAskAgain ? t('common.retry') : t('permissions.openSettings')}
               variant="secondary"
             />
           </Card>
@@ -83,10 +84,7 @@ export function HomeScreen() {
 
         <Card>
           {/* TODO(M3.4): поиск адреса с debounce и подсказками GET /geo/search. */}
-          <Button
-            onPress={() => router.push('/address/search')}
-            title={t('order.where')}
-          />
+          <Button onPress={() => router.push('/address/search')} title={t('order.where')} />
         </Card>
       </View>
     </View>

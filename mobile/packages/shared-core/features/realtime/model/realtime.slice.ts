@@ -5,11 +5,7 @@
  */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import type {
-  DriverLocationEvent,
-  RealtimeStatus,
-  SosActivatedEvent,
-} from './realtime-events';
+import type { DriverLocationEvent, RealtimeStatus, SosActivatedEvent } from './realtime-events';
 
 export interface DriverPosition {
   lat: number;

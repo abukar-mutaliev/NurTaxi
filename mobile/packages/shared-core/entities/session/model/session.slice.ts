@@ -98,7 +98,8 @@ export const selectIsAuthenticated = (state: WithSessionState): boolean =>
   state.session.status === 'authenticated';
 export const selectIsSessionResolved = (state: WithSessionState): boolean =>
   state.session.status !== 'unknown';
-export const selectCurrentUser = (state: WithSessionState): UserProfile | null => state.session.user;
+export const selectCurrentUser = (state: WithSessionState): UserProfile | null =>
+  state.session.user;
 export const selectUserRole = (state: WithSessionState): Role | null =>
   state.session.user?.role ?? null;
 export const selectRequiresOnboarding = (state: WithSessionState): boolean =>

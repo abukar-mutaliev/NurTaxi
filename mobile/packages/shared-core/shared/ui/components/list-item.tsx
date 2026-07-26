@@ -61,7 +61,9 @@ export function ListItem({
 
 export function Divider() {
   const theme = useTheme();
-  return <View style={{ backgroundColor: theme.colors.border, height: StyleSheet.hairlineWidth }} />;
+  return (
+    <View style={{ backgroundColor: theme.colors.border, height: StyleSheet.hairlineWidth }} />
+  );
 }
 
 const styles = StyleSheet.create({

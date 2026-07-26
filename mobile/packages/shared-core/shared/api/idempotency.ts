@@ -18,9 +18,7 @@ export function createIdempotencyKey(): string {
 }
 
 /** Добавляет ключ в тело мутации, если вызывающий код его не задал. */
-export function withIdempotencyKey<T extends object>(
-  body: T,
-): T & { idempotencyKey: string } {
+export function withIdempotencyKey<T extends object>(body: T): T & { idempotencyKey: string } {
   const existing = (body as { idempotencyKey?: string }).idempotencyKey;
   return { ...body, idempotencyKey: existing ?? createIdempotencyKey() };
 }

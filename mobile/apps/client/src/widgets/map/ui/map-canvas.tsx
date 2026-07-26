@@ -74,10 +74,15 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(function Ma
   return (
     <MapView
       initialRegion={initialPoint ? toMapRegion(initialPoint, 0.02) : DEFAULT_REGION}
-      onPress={onPress ? (event) => onPress({
-        lat: event.nativeEvent.coordinate.latitude,
-        lng: event.nativeEvent.coordinate.longitude,
-      }) : undefined}
+      onPress={
+        onPress
+          ? (event) =>
+              onPress({
+                lat: event.nativeEvent.coordinate.latitude,
+                lng: event.nativeEvent.coordinate.longitude,
+              })
+          : undefined
+      }
       provider={getMapProvider()}
       ref={mapRef}
       showsMyLocationButton={false}

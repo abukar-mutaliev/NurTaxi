@@ -154,9 +154,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   owner: process.env.EAS_OWNER ?? 'abuingush',
   updates: {
-    url:
-      process.env.EAS_UPDATE_URL ??
-      'https://u.expo.dev/23171864-56c6-4858-9b1c-16b8a3740906',
+    url: process.env.EAS_UPDATE_URL ?? 'https://u.expo.dev/23171864-56c6-4858-9b1c-16b8a3740906',
   },
   runtimeVersion: { policy: 'appVersion' },
 });

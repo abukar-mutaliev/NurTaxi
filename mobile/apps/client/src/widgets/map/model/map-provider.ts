@@ -9,7 +9,13 @@ import { Platform } from 'react-native';
 import { PROVIDER_DEFAULT, PROVIDER_GOOGLE } from 'react-native-maps';
 import type { LatLng, Region as MapRegion } from 'react-native-maps';
 
+import { appConfig } from '@nurtaxi/shared-core/shared/config';
 import type { GeoPoint } from '@nurtaxi/shared-core/shared/model';
+
+/** Без ключа Google Maps на Android native MapView падает при инициализации. */
+export function isNativeMapAvailable(): boolean {
+  return Platform.OS !== 'android' || appConfig.googleMapsApiKeyConfigured;
+}
 
 export function getMapProvider(): typeof PROVIDER_GOOGLE | typeof PROVIDER_DEFAULT {
   // На iOS Apple Maps не требует API-ключа и лучше работает офлайн.

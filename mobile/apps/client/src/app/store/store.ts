@@ -5,7 +5,6 @@
  * Токены живут в SecureStore, профиль и заказы приходят из RTK Query, поэтому их
  * сохранение только создало бы риск показать устаревшие данные (`§20`).
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import {
@@ -20,6 +19,7 @@ import {
 } from 'redux-persist';
 
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
+import { persistStorage } from '@nurtaxi/shared-core/shared/lib';
 import { sessionReducer } from '@nurtaxi/shared-core/entities/session';
 import { realtimeReducer } from '@nurtaxi/shared-core/features/realtime';
 
@@ -36,7 +36,7 @@ const persistedReducer = persistReducer(
   {
     key: 'nurtaxi.client',
     version: 1,
-    storage: AsyncStorage,
+    storage: persistStorage,
     whitelist: ['orderDraft'],
   },
   rootReducer,

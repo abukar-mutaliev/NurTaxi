@@ -9,8 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "@react-native-async-storage/async-storage": "*",
     "expo-secure-store": "*",
     "react": "*",
-    "react-native": "*"
+    "react-native": "*",
+    "redux-persist": "*"
   }
 }

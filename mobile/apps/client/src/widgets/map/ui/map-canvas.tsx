@@ -3,14 +3,15 @@
  * Единственное место в приложении, которое импортирует `react-native-maps`.
  */
 import { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
 import { boundsOf, decodePolyline } from '@nurtaxi/shared-core/shared/lib';
 import type { GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { Card, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 
-import { DEFAULT_REGION, getMapProvider, toLatLng, toMapRegion } from '../model/map-provider';
+import { DEFAULT_REGION, getMapProvider, isNativeMapAvailable, toLatLng, toMapRegion } from '../model/map-provider';
 
 export interface MapMarker {
   id: string;
@@ -38,32 +39,57 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(function Ma
   ref,
 ) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const mapRef = useRef<MapView>(null);
+  const mapAvailable = isNativeMapAvailable();
 
   const routePoints = useMemo(
     () => (routePolyline ? decodePolyline(routePolyline) : []),
     [routePolyline],
   );
 
-  useImperativeHandle(ref, () => ({
-    centerOn(point, zoomDelta) {
-      mapRef.current?.animateToRegion(toMapRegion(point, zoomDelta), 400);
-    },
-    fitToRoute() {
-      const bounds = boundsOf([...routePoints, ...markers.map((marker) => marker.point)]);
-      if (bounds) {
-        mapRef.current?.animateToRegion(
-          {
-            latitude: bounds.center.lat,
-            longitude: bounds.center.lng,
-            latitudeDelta: bounds.latitudeDelta,
-            longitudeDelta: bounds.longitudeDelta,
-          },
-          400,
-        );
-      }
-    },
-  }));
+  useImperativeHandle(
+    ref,
+    () => ({
+      centerOn(point, zoomDelta) {
+        if (!mapAvailable) {
+          return;
+        }
+        mapRef.current?.animateToRegion(toMapRegion(point, zoomDelta), 400);
+      },
+      fitToRoute() {
+        if (!mapAvailable) {
+          return;
+        }
+        const bounds = boundsOf([...routePoints, ...markers.map((marker) => marker.point)]);
+        if (bounds) {
+          mapRef.current?.animateToRegion(
+            {
+              latitude: bounds.center.lat,
+              longitude: bounds.center.lng,
+              latitudeDelta: bounds.latitudeDelta,
+              longitudeDelta: bounds.longitudeDelta,
+            },
+            400,
+          );
+        }
+      },
+    }),
+    [mapAvailable, markers, routePoints],
+  );
+
+  if (!mapAvailable) {
+    return (
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: theme.colors.surfaceMuted }]}>
+        <View style={styles.placeholder}>
+          <Card>
+            <Text variant="label">{t('map.unavailableTitle')}</Text>
+            <Text variant="caption">{t('map.unavailableHint')}</Text>
+          </Card>
+        </View>
+      </View>
+    );
+  }
 
   const markerColor = {
     pickup: theme.colors.primary,
@@ -108,4 +134,12 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(function Ma
       ) : null}
     </MapView>
   );
+});
+
+const styles = StyleSheet.create({
+  placeholder: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 24,
+  },
 });

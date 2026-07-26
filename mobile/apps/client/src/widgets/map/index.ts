@@ -2,6 +2,7 @@ export {
   DEFAULT_REGION,
   fromLatLng,
   getMapProvider,
+  isNativeMapAvailable,
   toLatLng,
   toMapRegion,
 } from './model/map-provider';

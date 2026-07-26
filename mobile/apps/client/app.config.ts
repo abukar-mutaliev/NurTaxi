@@ -52,6 +52,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: variant.identifier,
     supportsTablet: false,
     infoPlist: {
+      // Dev API по HTTP — разрешаем незащищённый трафик к локальной сети.
+      ...(environment === 'development'
+        ? { NSAppTransportSecurity: { NSAllowsArbitraryLoads: true } }
+        : {}),
       // Разрешения запрашиваются только при реальной необходимости (`§8.8`, App Store review).
       NSLocationWhenInUseUsageDescription:
         'Nur Taxi показывает вашу точку подачи на карте и находит ближайших водителей.',
@@ -64,6 +68,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
   android: {
     package: variant.identifier,
+    // Dev API на http://192.168.x.x — без этого Android (EAS build) блокирует cleartext HTTP.
+    usesCleartextTraffic: environment === 'development',
     adaptiveIcon: {
       backgroundColor: '#DCEDE8',
       foregroundImage: './assets/images/android-icon-foreground.png',
@@ -147,6 +153,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
     requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
     debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
+    googleMapsApiKeyConfigured: Boolean(googleMapsApiKey),
     eas: {
       projectId: process.env.EAS_PROJECT_ID ?? '23171864-56c6-4858-9b1c-16b8a3740906',
     },

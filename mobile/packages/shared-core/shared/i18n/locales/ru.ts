@@ -105,6 +105,11 @@ export const ru = {
     pickOnMap: 'Указать на карте',
     myLocation: 'Моё местоположение',
   },
+  map: {
+    unavailableTitle: 'Карта недоступна',
+    unavailableHint:
+      'Укажите EXPO_PUBLIC_GOOGLE_MAPS_API_KEY в .env и пересоберите dev-сборку (eas build или expo run:android).',
+  },
   order: {
     where: 'Куда едем?',
     from: 'Откуда',

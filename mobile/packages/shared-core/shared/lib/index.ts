@@ -1,4 +1,4 @@
-export { tokenStorage } from './storage';
+export { noopPersistStorage, persistStorage, tokenStorage } from './storage';
 export type { StoredTokens } from './storage';
 
 export {

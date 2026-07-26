@@ -156,6 +156,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
     requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
     debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
+    googleMapsApiKeyConfigured: Boolean(googleMapsApiKey),
     eas: { projectId: process.env.EAS_PROJECT_ID },
   },
 

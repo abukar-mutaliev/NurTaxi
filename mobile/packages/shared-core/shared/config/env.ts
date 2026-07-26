@@ -21,6 +21,8 @@ export interface AppConfigExtra {
   requestTimeoutMs: number;
   /** Включает подробное логирование сети и Redux. Никогда не включать в production. */
   debugNetwork: boolean;
+  /** На Android ключ Google Maps вшивается в native-сборку при `eas build` / `expo prebuild`. */
+  googleMapsApiKeyConfigured: boolean;
 }
 
 const DEFAULTS: AppConfigExtra = {
@@ -28,6 +30,7 @@ const DEFAULTS: AppConfigExtra = {
   apiUrl: 'http://localhost:3000/api/v1',
   requestTimeoutMs: 15_000,
   debugNetwork: false,
+  googleMapsApiKeyConfigured: false,
 };
 
 function readExtra(): Partial<AppConfigExtra> {

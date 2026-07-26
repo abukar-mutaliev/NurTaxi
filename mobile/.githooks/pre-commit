@@ -1,0 +1,20 @@
+#!/bin/sh
+# Pre-commit для мобильного трека (M0.2): линт и проверка типов только если изменён mobile/.
+set -e
+
+CHANGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^mobile/.*\.(ts|tsx)$' || true)
+
+if [ -z "$CHANGED" ]; then
+  exit 0
+fi
+
+echo "[pre-commit] mobile: prettier + eslint + tsc"
+cd mobile
+
+npx prettier --check $(echo "$CHANGED" | sed 's|^mobile/||' | tr '\n' ' ') || {
+  echo "[pre-commit] Форматирование не соответствует Prettier. Запустите: npm run format"
+  exit 1
+}
+
+npm run lint --silent
+npm run typecheck --silent

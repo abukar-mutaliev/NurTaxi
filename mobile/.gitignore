@@ -1,0 +1,27 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Нативные проекты генерируются через `expo prebuild` (CNG)
+/apps/*/android/
+/apps/*/ios/
+
+# Окружение и секреты
+.env
+.env.local
+.env.*.local
+*.keystore
+*.jks
+google-services.json
+GoogleService-Info.plist
+
+# Тесты и логи
+coverage/
+*.log
+.maestro/
+
+# Служебное
+.DS_Store
+*.tsbuildinfo

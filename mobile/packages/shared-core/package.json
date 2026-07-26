@@ -1,0 +1,16 @@
+{
+  "name": "@nurtaxi/shared-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Общий код клиентского и водительского приложений Nur Taxi (FSD-lite: shared/entities/features)",
+  "main": "index.ts",
+  "types": "index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "expo-secure-store": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}

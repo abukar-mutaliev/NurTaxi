@@ -167,4 +167,3 @@ export class StubMapProvider implements MapProvider {
     return this.routing.eta(from, to);
   }
 }
-

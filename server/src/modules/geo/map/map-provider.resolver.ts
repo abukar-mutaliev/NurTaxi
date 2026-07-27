@@ -16,10 +16,7 @@ export class MapProviderResolver {
   resolve(): MapProvider {
     const maps = this.config.get<MapsConfig>('maps')!;
 
-    if (
-      maps.provider === 'yandex' &&
-      (maps.yandexGeosuggestApiKey || maps.yandexGeocoderApiKey)
-    ) {
+    if (maps.provider === 'yandex' && (maps.yandexGeosuggestApiKey || maps.yandexGeocoderApiKey)) {
       return this.yandexProvider;
     }
 

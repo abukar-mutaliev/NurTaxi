@@ -20,12 +20,7 @@ export class PushTokensController {
   @Post()
   @ApiOperation({ summary: 'Регистрация push-токена устройства (Req §23)' })
   async register(@CurrentUser() user: AuthenticatedUser, @Body() dto: RegisterPushTokenDto) {
-    const record = await this.pushTokens.register(
-      user.id,
-      dto.token,
-      dto.platform,
-      dto.deviceId,
-    );
+    const record = await this.pushTokens.register(user.id, dto.token, dto.platform, dto.deviceId);
     return { success: true, id: record.id };
   }
 

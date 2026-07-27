@@ -163,12 +163,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
     debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
     yandexMapKitApiKeyConfigured: Boolean(yandexMapKitApiKey),
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    eas: {
+      projectId: process.env.EAS_PROJECT_ID ?? 'cec4ade8-f19d-4bf6-ac74-611942753ffd',
+    },
   },
 
-  owner: process.env.EAS_OWNER,
+  owner: process.env.EAS_OWNER ?? 'abuingush',
   updates: {
-    url: process.env.EAS_UPDATE_URL,
+    url: process.env.EAS_UPDATE_URL ?? 'https://u.expo.dev/cec4ade8-f19d-4bf6-ac74-611942753ffd',
   },
   runtimeVersion: { policy: 'appVersion' },
 });

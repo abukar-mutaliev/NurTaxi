@@ -170,8 +170,7 @@ export default (): Configuration => ({
     provider: (process.env.MAP_PROVIDER as MapsConfig['provider']) ?? 'stub',
     yandexGeosuggestApiKey: process.env.YANDEX_GEOSUGGEST_API_KEY ?? '',
     yandexGeocoderApiKey: process.env.YANDEX_GEOCODER_API_KEY ?? '',
-    geosuggestUrl:
-      process.env.YANDEX_GEOSUGGEST_URL ?? 'https://suggest-maps.yandex.ru/v1/suggest',
+    geosuggestUrl: process.env.YANDEX_GEOSUGGEST_URL ?? 'https://suggest-maps.yandex.ru/v1/suggest',
     geocoderUrl: process.env.YANDEX_GEOCODER_URL ?? 'https://geocode-maps.yandex.ru/v1/',
     locale: process.env.YANDEX_MAPS_LOCALE ?? 'ru_RU',
     searchBbox: process.env.YANDEX_SEARCH_BBOX || undefined,

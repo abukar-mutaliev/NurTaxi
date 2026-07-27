@@ -81,10 +81,15 @@ jest.mock('expo-device', () => ({
 }));
 
 jest.mock('expo-yandex-mapkit', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { View } = require('react-native');
 
-  const YandexMapView = React.forwardRef(function MockYandexMapView(props, ref) {
+  const YandexMapView = React.forwardRef(function MockYandexMapView(
+    props: Record<string, unknown>,
+    ref: unknown,
+  ) {
     React.useImperativeHandle(ref, () => ({
       setCenter: jest.fn(async () => undefined),
       fitMarkers: jest.fn(async () => undefined),
@@ -92,7 +97,8 @@ jest.mock('expo-yandex-mapkit', () => {
     return React.createElement(View, props);
   });
 
-  const Marker = ({ children }) => React.createElement(View, null, children);
+  const Marker = ({ children }: { children?: unknown }) =>
+    React.createElement(View, null, children);
   const Polyline = () => React.createElement(View);
 
   return {

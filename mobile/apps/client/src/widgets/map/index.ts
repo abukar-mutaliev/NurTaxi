@@ -1,10 +1,19 @@
 export {
-  DEFAULT_REGION,
-  fromLatLng,
-  getMapProvider,
+  DEFAULT_CAMERA,
+  deltaToZoom,
+  fromMapPoint,
   isNativeMapAvailable,
-  toLatLng,
-  toMapRegion,
-} from './model/map-provider';
-export { MapCanvas } from './ui/map-canvas';
-export type { MapCanvasHandle, MapCanvasProps, MapMarker } from './ui/map-canvas';
+  isValidGeoPoint,
+  normalizeGeoPoint,
+  resolveOrderMapMarkers,
+  toCameraPosition,
+  toMapPoint,
+  MapCanvas,
+} from '@nurtaxi/shared-core/widgets/map';
+export type {
+  CameraPosition,
+  MapCanvasHandle,
+  MapCanvasProps,
+  MapMarker,
+  MapPoint,
+} from '@nurtaxi/shared-core/widgets/map';

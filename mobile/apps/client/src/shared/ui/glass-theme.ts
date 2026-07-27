@@ -1,0 +1,28 @@
+export const GLASS_COLORS = {
+  background: '#F8F4EF',
+  brand: '#3A1D3F',
+  title: '#2E2331',
+  subtitle: '#7A6E78',
+  hint: '#A99FA6',
+  cardBg: 'rgba(255,255,255,0.82)',
+  cardBorder: 'rgba(255,255,255,0.9)',
+  cardBorderSelected: 'rgba(201,154,84,0.55)',
+  shadow: 'rgba(89,71,31,0.06)',
+  inputBg: 'rgba(255,255,255,0.72)',
+  inputBorder: 'rgba(255,255,255,0.9)',
+  inputText: '#2E2331',
+  inputPlaceholder: '#A99FA6',
+  dot: '#E8C882',
+  buttonStart: '#5A2E60',
+  buttonEnd: '#3A1D3F',
+  buttonText: '#F7F3EE',
+  buttonShadow: 'rgba(89,71,31,0.1)',
+  error: '#B42318',
+  success: '#3A1D3F',
+  warningBg: 'rgba(255,248,230,0.85)',
+  warningBorder: 'rgba(201,154,84,0.35)',
+  chevron: '#A99FA6',
+  switchActive: '#C99A54',
+} as const;
+
+export const GLASS_DESIGN_WIDTH = 390;

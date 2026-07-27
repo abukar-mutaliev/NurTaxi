@@ -6,6 +6,7 @@
  * потому что читает и пишет состояние сессии.
  */
 import type { ReactNode } from 'react';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { I18nextProvider } from 'react-i18next';
@@ -15,6 +16,8 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { i18n, initI18n } from '@nurtaxi/shared-core/shared/i18n';
 import { Loader, ThemeProvider } from '@nurtaxi/shared-core/shared/ui';
 import { useSessionBootstrap } from '@nurtaxi/shared-core/features/auth';
+import { NetworkBanner, useNetworkMonitor } from '@nurtaxi/shared-core/features/network';
+import { usePushRegistration } from '@nurtaxi/shared-core/features/notifications';
 import { useRealtimeConnection } from '@nurtaxi/shared-core/features/realtime';
 
 import { persistor, store } from '../store/store';
@@ -25,7 +28,9 @@ initI18n();
 /** Запускает фоновые процессы, которым нужен доступ к store. */
 function SessionGate({ children }: { children: ReactNode }) {
   useSessionBootstrap();
+  useNetworkMonitor();
   useRealtimeConnection();
+  usePushRegistration();
   return <>{children}</>;
 }
 
@@ -38,7 +43,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
             <ThemeProvider>
               <I18nextProvider i18n={i18n}>
                 <AppErrorBoundary>
-                  <SessionGate>{children}</SessionGate>
+                  <View style={{ flex: 1 }}>
+                    <NetworkBanner />
+                    <SessionGate>{children}</SessionGate>
+                  </View>
                 </AppErrorBoundary>
               </I18nextProvider>
             </ThemeProvider>

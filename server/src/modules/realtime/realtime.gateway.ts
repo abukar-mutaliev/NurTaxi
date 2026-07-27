@@ -44,8 +44,8 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   afterInit(server: Server): void {
     const pub = this.redis.duplicate();
     const sub = this.redis.duplicate();
-    // При namespace: '/ws' Nest передаёт Namespace, а adapter задаётся на корневом Server.
-    const io = server instanceof Namespace ? server.server : server;
+    // Nest с namespace передаёт Namespace; instanceof ненадёжен между копиями socket.io.
+    const io = (server as unknown as Namespace).server ?? server;
     io.adapter(createAdapter(pub, sub));
 
     this.broadcast.setHandler((envelope) => {
@@ -80,9 +80,17 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   async subscribeOrder(
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { orderId: string },
-  ): Promise<{ success: boolean; room: string }> {
+  ): Promise<{ success: boolean; room?: string }> {
     const user = client.data.user;
-    await this.orderTracking.assertSubscribe(user, body.orderId);
+    if (!user) {
+      return { success: false };
+    }
+
+    try {
+      await this.orderTracking.assertSubscribe(user, body.orderId);
+    } catch {
+      return { success: false };
+    }
 
     const room = orderRoom(body.orderId);
     await client.join(room);

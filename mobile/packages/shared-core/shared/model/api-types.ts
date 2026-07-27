@@ -159,6 +159,13 @@ export interface CreateSavedAddressPayload {
   lng: number;
 }
 
+export interface UpdateSavedAddressPayload {
+  label?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+}
+
 export interface EmergencyContact {
   id: string;
   name: string;
@@ -237,6 +244,18 @@ export interface AppNotification {
 
 export interface UnreadCountResponse {
   count: number;
+}
+
+export type PushPlatform = 'ios' | 'android';
+
+export interface RegisterPushTokenPayload {
+  token: string;
+  platform: PushPlatform;
+  deviceId?: string;
+}
+
+export interface UnregisterPushTokenPayload {
+  token: string;
 }
 
 // ---------------------------------------------------------------------------

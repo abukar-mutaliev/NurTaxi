@@ -1,27 +1,34 @@
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { GlassTabBar } from '@/widgets/tab-bar';
 
 export default function TabsLayout() {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarShowLabel: false,
+        sceneStyle: {
+          backgroundColor: 'transparent',
+          flex: 1,
+        },
         tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          position: 'absolute',
+          shadowOpacity: 0,
         },
       }}
+      tabBar={(props) => <GlassTabBar {...props} />}
     >
-      <Tabs.Screen name="index" options={{ title: t('order.where') }} />
-      <Tabs.Screen name="history" options={{ title: t('profile.tripHistory') }} />
-      <Tabs.Screen name="profile" options={{ title: t('profile.title') }} />
+      <Tabs.Screen name="index" options={{ title: t('tabs.home') }} />
+      <Tabs.Screen name="history" options={{ title: t('tabs.trips') }} />
+      <Tabs.Screen name="favorites" options={{ title: t('tabs.favorites') }} />
+      <Tabs.Screen name="profile" options={{ title: t('tabs.profile') }} />
     </Tabs>
   );
 }

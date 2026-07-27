@@ -1,21 +1,20 @@
 /**
  * Технологическая заглушка для ещё не реализованных экранов.
- *
- * Каждый маршрут из `docs/mob.tasks.md` уже существует и открывается — это позволяет
- * проверять навигацию и deep links до того, как экран написан. Заменяя заглушку,
- * удалите её импорт: остаток заглушек показывает реальный прогресс по фазам.
  */
 import { View } from 'react-native';
 
-import { Badge, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { Badge, Text } from '@nurtaxi/shared-core/shared/ui';
+
+import { GLASS_COLORS } from './glass-theme';
+import { GlassCard } from './glass-card';
+import { GlassCaption, GlassScreenShell } from './glass-screen-shell';
 
 export interface PlaceholderScreenProps {
-  /** Идентификатор задачи из `docs/mob.tasks.md`, например `M4.5`. */
   task: string;
   title: string;
   description?: string;
-  /** Эндпоинты API, которые понадобятся этому экрану. */
   endpoints?: string[];
+  showBack?: boolean;
 }
 
 export function PlaceholderScreen({
@@ -23,27 +22,28 @@ export function PlaceholderScreen({
   title,
   description,
   endpoints = [],
+  showBack = false,
 }: PlaceholderScreenProps) {
-  const theme = useTheme();
-
   return (
-    <Screen scroll>
-      <View style={{ gap: theme.spacing.md, paddingTop: theme.spacing.xxl }}>
+    <GlassScreenShell showBack={showBack} title={showBack ? title : undefined}>
+      <GlassCard>
         <Badge label={task} tone="warning" />
-        <Text variant="title">{title}</Text>
-        {description ? <Text tone="muted">{description}</Text> : null}
+        {!showBack ? (
+          <Text style={{ color: GLASS_COLORS.title, fontSize: 20, fontWeight: '600' }}>
+            {title}
+          </Text>
+        ) : null}
+        {description ? <GlassCaption>{description}</GlassCaption> : null}
 
         {endpoints.length > 0 ? (
-          <View style={{ gap: theme.spacing.xs, paddingTop: theme.spacing.md }}>
-            <Text variant="label">API</Text>
+          <View style={{ gap: 6, paddingTop: 8 }}>
+            <Text style={{ color: GLASS_COLORS.title, fontSize: 13, fontWeight: '600' }}>API</Text>
             {endpoints.map((endpoint) => (
-              <Text key={endpoint} tone="muted" variant="caption">
-                {endpoint}
-              </Text>
+              <GlassCaption key={endpoint}>{endpoint}</GlassCaption>
             ))}
           </View>
         ) : null}
-      </View>
-    </Screen>
+      </GlassCard>
+    </GlassScreenShell>
   );
 }

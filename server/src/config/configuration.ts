@@ -74,6 +74,32 @@ export interface ObservabilityConfig {
   sentryTracesSampleRate: number;
 }
 
+export type MapProviderKind = 'stub' | 'yandex';
+
+export type RoutingProviderKind = 'stub' | 'osrm';
+
+export interface MapsConfig {
+  provider: MapProviderKind;
+  /** Ключ API Геосаджеста (автодополнение адресов). */
+  yandexGeosuggestApiKey: string;
+  /** Ключ API Геокодера (координаты по uri/адресу). */
+  yandexGeocoderApiKey: string;
+  geosuggestUrl: string;
+  geocoderUrl: string;
+  locale: string;
+  searchBbox?: string;
+  requestTimeoutMs: number;
+}
+
+export interface RoutingConfig {
+  provider: RoutingProviderKind;
+  /** Базовый URL OSRM, например http://localhost:5000 */
+  osrmBaseUrl: string;
+  requestTimeoutMs: number;
+  /** При ошибке OSRM вернуться к прямой линии (stub). */
+  fallbackToStub: boolean;
+}
+
 export interface Configuration {
   app: AppConfig;
   database: DatabaseConfig;
@@ -83,6 +109,8 @@ export interface Configuration {
   jwt: JwtConfig;
   secrets: SecretsConfig;
   observability: ObservabilityConfig;
+  maps: MapsConfig;
+  routing: RoutingConfig;
 }
 
 export default (): Configuration => ({
@@ -137,5 +165,22 @@ export default (): Configuration => ({
     otelServiceName: process.env.OTEL_SERVICE_NAME ?? 'nurtaxi-backend',
     sentryDsn: process.env.SENTRY_DSN || undefined,
     sentryTracesSampleRate: Number.parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE ?? '0.1'),
+  },
+  maps: {
+    provider: (process.env.MAP_PROVIDER as MapsConfig['provider']) ?? 'stub',
+    yandexGeosuggestApiKey: process.env.YANDEX_GEOSUGGEST_API_KEY ?? '',
+    yandexGeocoderApiKey: process.env.YANDEX_GEOCODER_API_KEY ?? '',
+    geosuggestUrl:
+      process.env.YANDEX_GEOSUGGEST_URL ?? 'https://suggest-maps.yandex.ru/v1/suggest',
+    geocoderUrl: process.env.YANDEX_GEOCODER_URL ?? 'https://geocode-maps.yandex.ru/v1/',
+    locale: process.env.YANDEX_MAPS_LOCALE ?? 'ru_RU',
+    searchBbox: process.env.YANDEX_SEARCH_BBOX || undefined,
+    requestTimeoutMs: toInt(process.env.YANDEX_MAPS_TIMEOUT_MS, 8000),
+  },
+  routing: {
+    provider: (process.env.MAP_ROUTING_PROVIDER as RoutingConfig['provider']) ?? 'osrm',
+    osrmBaseUrl: process.env.OSRM_BASE_URL ?? 'http://localhost:5001',
+    requestTimeoutMs: toInt(process.env.OSRM_TIMEOUT_MS, 8000),
+    fallbackToStub: toBool(process.env.OSRM_FALLBACK_TO_STUB, true),
   },
 });

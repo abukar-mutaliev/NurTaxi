@@ -37,7 +37,7 @@ const VARIANTS: Record<
 };
 
 const variant = VARIANTS[environment];
-const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+const yandexMapKitApiKey = process.env.EXPO_PUBLIC_YANDEX_MAPKIT_API_KEY;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -63,13 +63,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSPhotoLibraryUsageDescription: 'Нужна для выбора фото профиля из галереи.',
       ITSAppUsesNonExemptEncryption: false,
     },
-    config: googleMapsApiKey ? { googleMapsApiKey } : undefined,
   },
 
   android: {
     package: variant.identifier,
-    // Dev API на http://192.168.x.x — без этого Android (EAS build) блокирует cleartext HTTP.
-    usesCleartextTraffic: environment === 'development',
     adaptiveIcon: {
       backgroundColor: '#DCEDE8',
       foregroundImage: './assets/images/android-icon-foreground.png',
@@ -83,7 +80,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'POST_NOTIFICATIONS',
       'VIBRATE',
     ],
-    config: googleMapsApiKey ? { googleMaps: { apiKey: googleMapsApiKey } } : undefined,
   },
 
   web: {
@@ -128,7 +124,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-build-properties',
       {
-        android: { compileSdkVersion: 36, targetSdkVersion: 36, minSdkVersion: 24 },
+        android: {
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
+          minSdkVersion: 26,
+          // Dev API на http://192.168.x.x — без этого Android (EAS build) блокирует cleartext HTTP.
+          usesCleartextTraffic: environment === 'development',
+        },
         ios: { deploymentTarget: '16.4' },
       },
     ],
@@ -137,6 +139,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         organization: process.env.SENTRY_ORG ?? 'nurtaxi',
         project: process.env.SENTRY_PROJECT ?? 'nurtaxi-client',
+      },
+    ],
+    [
+      'expo-yandex-mapkit',
+      {
+        apiKey: yandexMapKitApiKey,
+        locale: 'ru_RU',
+        flavor: 'lite',
       },
     ],
   ],
@@ -153,7 +163,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
     requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
     debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
-    googleMapsApiKeyConfigured: Boolean(googleMapsApiKey),
+    yandexMapKitApiKey,
+    yandexMapKitApiKeyConfigured: Boolean(yandexMapKitApiKey),
     eas: {
       projectId: process.env.EAS_PROJECT_ID ?? '23171864-56c6-4858-9b1c-16b8a3740906',
     },

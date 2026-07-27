@@ -116,6 +116,32 @@ services:
       - '4317:4317' # OTLP gRPC
       - '4318:4318' # OTLP HTTP
 
+  # OSRM — маршрутизация по дорогам (СКФО, включая Ингушетию).
+  # Подготовка данных (один раз): infra/osrm/prepare-data.ps1 или prepare-data.sh
+  # Запуск: docker compose --profile osrm up -d osrm
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend
+    container_name: nurtaxi-osrm
+    profiles: ['osrm']
+    ports:
+      - '5001:5000'
+    volumes:
+      - ./osrm/data:/data
+    command: osrm-routed --algorithm mld /data/north-caucasus-fed-district-latest.osm.pbf
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--spider',
+          '-q',
+          'http://localhost:5000/route/v1/driving/44.7667,43.2167;44.8133,43.1687?overview=false',
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
 volumes:
   pg-data:
   redis-data:

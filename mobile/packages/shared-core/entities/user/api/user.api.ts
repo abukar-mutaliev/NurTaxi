@@ -6,6 +6,24 @@ import type {
   UserProfile,
 } from '@nurtaxi/shared-core/shared/model';
 
+function applyProfilePatch(draft: UserProfile, patch: UpdateProfilePayload): void {
+  if (patch.notificationSettings) {
+    draft.notificationSettings = {
+      ...draft.notificationSettings,
+      ...patch.notificationSettings,
+    };
+  }
+  if (patch.privacySettings) {
+    draft.privacySettings = {
+      ...draft.privacySettings,
+      ...patch.privacySettings,
+    };
+  }
+  if (patch.name !== undefined) draft.name = patch.name;
+  if (patch.photoUrl !== undefined) draft.photoUrl = patch.photoUrl;
+  if (patch.language !== undefined) draft.language = patch.language;
+}
+
 export const userApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getMe: build.query<UserProfile, void>({
@@ -15,12 +33,11 @@ export const userApi = baseApi.injectEndpoints({
 
     updateMe: build.mutation<UserProfile, UpdateProfilePayload>({
       query: (body) => ({ url: '/me', method: 'PATCH', body }),
-      invalidatesTags: ['Profile'],
       // Профиль небольшой — оптимистично обновляем кэш, чтобы UI не «прыгал».
       async onQueryStarted(patch, { dispatch, queryFulfilled }) {
         const undo = dispatch(
           userApi.util.updateQueryData('getMe', undefined, (draft) => {
-            Object.assign(draft, patch);
+            applyProfilePatch(draft, patch);
           }),
         );
         try {

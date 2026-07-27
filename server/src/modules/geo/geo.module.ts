@@ -1,22 +1,44 @@
-import { Module } from '@nestjs/common';
-import { GeoCacheService } from './geo-cache.service';
-import { GeoService } from './geo.service';
-import { GeoController } from './geo.controller';
-import { MAP_PROVIDER } from './map/map-provider.interface';
-import { StubMapProvider } from './map/stub-map.provider';
-
-/**
- * Geo & Routing (Des §2.3, §7): поиск адресов, MapProvider-адаптер, кэш Redis.
- * Фаза 3 (Req §8.9, §8.10, §22).
- */
-@Module({
-  controllers: [GeoController],
-  providers: [
-    GeoCacheService,
-    GeoService,
-    StubMapProvider,
-    { provide: MAP_PROVIDER, useExisting: StubMapProvider },
-  ],
-  exports: [GeoService, MAP_PROVIDER, StubMapProvider],
-})
-export class GeoModule {}
+import { Module } from '@nestjs/common';
+import { GeoCacheService } from './geo-cache.service';
+import { GeoService } from './geo.service';
+import { GeoController } from './geo.controller';
+import { MAP_PROVIDER } from './map/map-provider.interface';
+import { mapProviderFactory, MapProviderResolver } from './map/map-provider.resolver';
+import { OsrmRoutingProvider } from './map/osrm-routing.provider';
+import { ROUTING_PROVIDER } from './map/routing-provider.interface';
+import {
+  routingProviderFactory,
+  RoutingProviderResolver,
+} from './map/routing-provider.resolver';
+import { StubMapProvider } from './map/stub-map.provider';
+import { StubRoutingProvider } from './map/stub-routing.provider';
+import { YandexMapProvider } from './map/yandex-map.provider';
+
+/**
+ * Geo & Routing (Des §2.3, §7): поиск адресов, MapProvider-адаптер, кэш Redis.
+ * Фаза 3 (Req §8.9, §8.10, §22).
+ */
+@Module({
+  controllers: [GeoController],
+  providers: [
+    GeoCacheService,
+    GeoService,
+    StubRoutingProvider,
+    OsrmRoutingProvider,
+    RoutingProviderResolver,
+    routingProviderFactory,
+    StubMapProvider,
+    YandexMapProvider,
+    MapProviderResolver,
+    mapProviderFactory,
+  ],
+  exports: [
+    GeoService,
+    MAP_PROVIDER,
+    ROUTING_PROVIDER,
+    StubMapProvider,
+    StubRoutingProvider,
+    YandexMapProvider,
+  ],
+})
+export class GeoModule {}

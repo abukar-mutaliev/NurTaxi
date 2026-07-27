@@ -3,9 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { Notification } from './entities/notification.entity';
+import { PushDeviceToken } from './entities/push-device-token.entity';
 import { NotificationsService } from './notifications.service';
 import { NotificationEventListener } from './notification-event.listener';
 import { NotificationsController } from './notifications.controller';
+import { PushTokensController } from './push-tokens.controller';
+import { PushTokensService } from './push-tokens.service';
 import { StubPushProvider } from './push/stub-push.provider';
 import { PUSH_PROVIDER } from './push/push-provider.interface';
 
@@ -15,17 +18,18 @@ import { PUSH_PROVIDER } from './push/push-provider.interface';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification]),
+    TypeOrmModule.forFeature([Notification, PushDeviceToken]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
   ],
-  controllers: [NotificationsController],
+  controllers: [NotificationsController, PushTokensController],
   providers: [
     NotificationsService,
+    PushTokensService,
     NotificationEventListener,
     StubPushProvider,
     { provide: PUSH_PROVIDER, useExisting: StubPushProvider },
   ],
-  exports: [NotificationsService],
+  exports: [NotificationsService, PushTokensService],
 })
 export class NotificationsModule {}

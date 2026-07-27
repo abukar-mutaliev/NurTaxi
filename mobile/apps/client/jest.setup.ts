@@ -38,7 +38,68 @@ jest.mock('expo-constants', () => ({
         apiUrl: 'http://localhost:3000/api/v1',
         requestTimeoutMs: 15000,
         debugNetwork: false,
+        yandexMapKitApiKeyConfigured: true,
       },
     },
   },
 }));
+
+jest.mock('expo-modules-core', () => {
+  const actual = jest.requireActual<typeof import('expo-modules-core')>('expo-modules-core');
+  return {
+    ...actual,
+    requireOptionalNativeModule: (name: string) =>
+      name === 'ExpoYandexMapKit' ? {} : actual.requireOptionalNativeModule(name),
+  };
+});
+
+jest.mock('@react-native-community/netinfo', () => ({
+  __esModule: true,
+  default: {
+    fetch: jest.fn(async () => ({ isConnected: true, isInternetReachable: true })),
+    addEventListener: jest.fn(() => jest.fn()),
+  },
+}));
+
+jest.mock('expo-notifications', () => ({
+  __esModule: true,
+  PermissionStatus: { GRANTED: 'granted', DENIED: 'denied', UNDETERMINED: 'undetermined' },
+  AndroidImportance: { MAX: 5, DEFAULT: 3 },
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(async () => undefined),
+  getPermissionsAsync: jest.fn(async () => ({ status: 'granted', canAskAgain: true })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'granted', canAskAgain: true })),
+  getExpoPushTokenAsync: jest.fn(async () => ({ data: 'ExponentPushToken[test]' })),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getLastNotificationResponseAsync: jest.fn(async () => null),
+}));
+
+jest.mock('expo-device', () => ({
+  __esModule: true,
+  isDevice: true,
+}));
+
+jest.mock('expo-yandex-mapkit', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+
+  const YandexMapView = React.forwardRef(function MockYandexMapView(props, ref) {
+    React.useImperativeHandle(ref, () => ({
+      setCenter: jest.fn(async () => undefined),
+      fitMarkers: jest.fn(async () => undefined),
+    }));
+    return React.createElement(View, props);
+  });
+
+  const Marker = ({ children }) => React.createElement(View, null, children);
+  const Polyline = () => React.createElement(View);
+
+  return {
+    __esModule: true,
+    YandexMapView,
+    Marker,
+    Polyline,
+    initialize: jest.fn(async () => undefined),
+  };
+});

@@ -3,8 +3,10 @@ import { baseApi } from '@nurtaxi/shared-core/shared/api';
 import type {
   AppNotification,
   LimitQuery,
+  RegisterPushTokenPayload,
   SuccessResponse,
   UnreadCountResponse,
+  UnregisterPushTokenPayload,
 } from '@nurtaxi/shared-core/shared/model';
 
 export const notificationApi = baseApi.injectEndpoints({
@@ -28,6 +30,14 @@ export const notificationApi = baseApi.injectEndpoints({
       query: () => ({ url: '/me/notifications/read-all', method: 'PATCH' }),
       invalidatesTags: ['Notification'],
     }),
+
+    registerPushToken: build.mutation<SuccessResponse, RegisterPushTokenPayload>({
+      query: (body) => ({ url: '/me/push-tokens', method: 'POST', body }),
+    }),
+
+    unregisterPushToken: build.mutation<SuccessResponse, UnregisterPushTokenPayload>({
+      query: (body) => ({ url: '/me/push-tokens', method: 'DELETE', body }),
+    }),
   }),
 });
 
@@ -36,4 +46,6 @@ export const {
   useGetUnreadCountQuery,
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
+  useRegisterPushTokenMutation,
+  useUnregisterPushTokenMutation,
 } = notificationApi;

@@ -5,7 +5,9 @@ import { TariffsService } from '../tariffs/tariffs.service';
 import { PricingService } from '../tariffs/pricing.service';
 import { DriversService } from '../drivers/drivers.service';
 import { MAP_PROVIDER } from '../geo/map/map-provider.interface';
+import { ROUTING_PROVIDER } from '../geo/map/routing-provider.interface';
 import { StubMapProvider } from '../geo/map/stub-map.provider';
+import { StubRoutingProvider } from '../geo/map/stub-routing.provider';
 import { EventBusService } from '../../messaging/event-bus.service';
 import { Order } from './entities/order.entity';
 import { OrderRoute } from './entities/order-route.entity';
@@ -66,6 +68,8 @@ describe('OrdersService', () => {
       providers: [
         OrdersService,
         PricingService,
+        StubRoutingProvider,
+        { provide: ROUTING_PROVIDER, useExisting: StubRoutingProvider },
         StubMapProvider,
         { provide: MAP_PROVIDER, useExisting: StubMapProvider },
         { provide: getRepositoryToken(Order), useValue: repoMock },

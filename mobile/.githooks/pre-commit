@@ -11,7 +11,8 @@ fi
 echo "[pre-commit] mobile: prettier + eslint + tsc"
 cd mobile
 
-npx prettier --check $(echo "$CHANGED" | sed 's|^mobile/||' | tr '\n' ' ') || {
+# Пакетами — иначе на Windows «Слишком длинная командная строка» при большом коммите.
+echo "$CHANGED" | sed 's|^mobile/||' | xargs -n 30 npx prettier --check || {
   echo "[pre-commit] Форматирование не соответствует Prettier. Запустите: npm run format"
   exit 1
 }

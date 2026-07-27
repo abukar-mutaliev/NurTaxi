@@ -17,8 +17,14 @@ export {
   formatMoney,
   formatRating,
 } from './format/units';
+export {
+  extractLocalityFromAddress,
+  formatShortDisplayAddress,
+  isAdminOnlyAddress,
+} from './format/short-address';
 
 export { boundsOf, decodePolyline, haversineDistance } from './geo/polyline';
+export { toApiGeoLocation } from './geo/location';
 
 export { useSharedDispatch } from './redux';
 export type { SharedDispatch } from './redux';

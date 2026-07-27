@@ -31,3 +31,8 @@ export enum BonusTransactionType {
   Credit = 'credit',
   Debit = 'debit',
 }
+
+export enum PushPlatform {
+  Ios = 'ios',
+  Android = 'android',
+}

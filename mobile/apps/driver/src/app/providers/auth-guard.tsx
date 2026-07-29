@@ -41,7 +41,7 @@ export function useAuthGuard(): { isResolving: boolean } {
 
     if (!isAuthenticated) {
       if (group !== AUTH_GROUP) {
-        router.replace('/(auth)/phone');
+        router.replace('/(auth)/welcome');
       }
       return;
     }

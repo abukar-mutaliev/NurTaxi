@@ -35,7 +35,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <PersistGate loading={<Loader />} persistor={persistor}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaProvider>
-            <ThemeProvider>
+            <ThemeProvider scheme="light">
               <I18nextProvider i18n={i18n}>
                 <AppErrorBoundary>
                   <SessionGate>{children}</SessionGate>

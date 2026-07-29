@@ -19,16 +19,42 @@ import type {
   Review,
   SosResponse,
 } from '@nurtaxi/shared-core/shared/model';
+import { toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
+
+function sanitizeOrderEstimatePayload(body: OrderEstimatePayload): OrderEstimatePayload {
+  return {
+    ...body,
+    pickup: toApiGeoLocation(body.pickup),
+    dropoff: toApiGeoLocation(body.dropoff),
+  };
+}
+
+function sanitizeCreateOrderPayload(body: CreateOrderPayload): CreateOrderPayload {
+  return {
+    ...sanitizeOrderEstimatePayload(body),
+    paymentMethod: body.paymentMethod,
+    comment: body.comment,
+    familyMemberId: body.familyMemberId,
+  };
+}
 
 export const orderApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     /** Цена и маршрут до создания заказа (`§8.10`). */
     estimateOrder: build.mutation<OrderEstimate, OrderEstimatePayload>({
-      query: (body) => ({ url: '/orders/estimate', method: 'POST', body }),
+      query: (body) => ({
+        url: '/orders/estimate',
+        method: 'POST',
+        body: sanitizeOrderEstimatePayload(body),
+      }),
     }),
 
     createOrder: build.mutation<Order, CreateOrderPayload>({
-      query: (body) => ({ url: '/orders', method: 'POST', body }),
+      query: (body) => ({
+        url: '/orders',
+        method: 'POST',
+        body: sanitizeCreateOrderPayload(body),
+      }),
       invalidatesTags: ['Order', 'OrderHistory'],
     }),
 

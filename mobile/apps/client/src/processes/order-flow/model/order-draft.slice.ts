@@ -7,8 +7,17 @@
  */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+import { toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import type { GeoLocation, OrderEstimate } from '@nurtaxi/shared-core/shared/model';
+
+function normalizeGeoLocation(location: GeoLocation | null): GeoLocation | null {
+  if (!location) {
+    return null;
+  }
+
+  return toApiGeoLocation(location);
+}
 
 export interface OrderDraftState {
   regionId: string | null;
@@ -45,11 +54,11 @@ export const orderDraftSlice = createSlice({
       state.regionId = action.payload;
     },
     pickupSelected(state, action: PayloadAction<GeoLocation | null>) {
-      state.pickup = action.payload;
+      state.pickup = normalizeGeoLocation(action.payload);
       state.estimate = null;
     },
     dropoffSelected(state, action: PayloadAction<GeoLocation | null>) {
-      state.dropoff = action.payload;
+      state.dropoff = normalizeGeoLocation(action.payload);
       state.estimate = null;
     },
     routeReversed(state) {

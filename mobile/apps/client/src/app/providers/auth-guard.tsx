@@ -33,7 +33,12 @@ export function useAuthGuard(): { isResolving: boolean } {
     const onOnboarding = segments[1] === ONBOARDING_ROUTE;
 
     if (status === 'anonymous' && !inAuthGroup) {
-      router.replace('/(auth)/phone');
+      router.replace('/(auth)/welcome');
+      return;
+    }
+
+    if (status === 'anonymous' && inAuthGroup && segments[1] === undefined) {
+      router.replace('/(auth)/welcome');
       return;
     }
 

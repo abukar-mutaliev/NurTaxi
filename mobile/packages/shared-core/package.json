@@ -9,8 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "@react-native-async-storage/async-storage": "*",
+    "@react-native-community/netinfo": "*",
+    "expo-modules-core": "*",
     "expo-secure-store": "*",
+    "expo-yandex-mapkit": "*",
     "react": "*",
-    "react-native": "*"
+    "react-i18next": "*",
+    "react-native": "*",
+    "redux-persist": "*"
   }
 }

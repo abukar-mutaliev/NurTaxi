@@ -107,7 +107,9 @@ export const realtimeClient = {
   /** Подписка на комнату конкретного заказа. Возвращает функцию отписки. */
   subscribeToOrder(orderId: string): () => void {
     subscribedOrders.add(orderId);
-    socket?.emit(RealtimeEvent.SubscribeOrder, { orderId });
+    if (socket?.connected) {
+      socket.emit(RealtimeEvent.SubscribeOrder, { orderId });
+    }
     return () => {
       subscribedOrders.delete(orderId);
     };

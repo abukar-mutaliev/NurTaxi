@@ -1,3 +1,4 @@
+export { FAMILY_FEATURE_FLAG } from './model/family.constants';
 export {
   familyApi,
   useAddFamilyMemberMutation,

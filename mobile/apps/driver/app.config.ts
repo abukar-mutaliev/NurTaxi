@@ -36,7 +36,7 @@ const VARIANTS: Record<
 };
 
 const variant = VARIANTS[environment];
-const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
+const yandexMapKitApiKey = process.env.EXPO_PUBLIC_YANDEX_MAPKIT_API_KEY;
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -60,7 +60,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       UIBackgroundModes: ['location', 'fetch', 'remote-notification'],
       ITSAppUsesNonExemptEncryption: false,
     },
-    config: googleMapsApiKey ? { googleMapsApiKey } : undefined,
   },
 
   android: {
@@ -82,7 +81,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'VIBRATE',
       'WAKE_LOCK',
     ],
-    config: googleMapsApiKey ? { googleMaps: { apiKey: googleMapsApiKey } } : undefined,
   },
 
   web: {
@@ -131,7 +129,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-build-properties',
       {
-        android: { compileSdkVersion: 36, targetSdkVersion: 36, minSdkVersion: 24 },
+        android: { compileSdkVersion: 36, targetSdkVersion: 36, minSdkVersion: 26 },
         ios: { deploymentTarget: '16.4' },
       },
     ],
@@ -140,6 +138,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         organization: process.env.SENTRY_ORG ?? 'nurtaxi',
         project: process.env.SENTRY_PROJECT ?? 'nurtaxi-driver',
+      },
+    ],
+    [
+      'expo-yandex-mapkit',
+      {
+        apiKey: yandexMapKitApiKey,
+        locale: 'ru_RU',
+        flavor: 'lite',
       },
     ],
   ],
@@ -156,12 +162,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
     requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
     debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    yandexMapKitApiKeyConfigured: Boolean(yandexMapKitApiKey),
+    eas: {
+      projectId: process.env.EAS_PROJECT_ID ?? 'cec4ade8-f19d-4bf6-ac74-611942753ffd',
+    },
   },
 
-  owner: process.env.EAS_OWNER,
+  owner: process.env.EAS_OWNER ?? 'abuingush',
   updates: {
-    url: process.env.EAS_UPDATE_URL,
+    url: process.env.EAS_UPDATE_URL ?? 'https://u.expo.dev/cec4ade8-f19d-4bf6-ac74-611942753ffd',
   },
   runtimeVersion: { policy: 'appVersion' },
 });

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SavedAddress } from './entities/saved-address.entity';
-import { CreateSavedAddressDto } from './dto/saved-address.dto';
+import { CreateSavedAddressDto, UpdateSavedAddressDto } from './dto/saved-address.dto';
 
 @Injectable()
 export class SavedAddressesService {
@@ -27,6 +27,32 @@ export class SavedAddressesService {
       lng: dto.lng,
     });
     return this.addresses.save(entity);
+  }
+
+  async update(
+    userId: string,
+    addressId: string,
+    dto: UpdateSavedAddressDto,
+  ): Promise<SavedAddress> {
+    const existing = await this.addresses.findOne({ where: { id: addressId, userId } });
+    if (!existing) {
+      throw new NotFoundException({ code: 'ADDRESS_NOT_FOUND', message: 'Адрес не найден' });
+    }
+
+    if (dto.label !== undefined) {
+      existing.label = dto.label;
+    }
+    if (dto.address !== undefined) {
+      existing.address = dto.address;
+    }
+    if (dto.lat !== undefined) {
+      existing.lat = dto.lat;
+    }
+    if (dto.lng !== undefined) {
+      existing.lng = dto.lng;
+    }
+
+    return this.addresses.save(existing);
   }
 
   async delete(userId: string, addressId: string): Promise<void> {

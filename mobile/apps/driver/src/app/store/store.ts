@@ -5,7 +5,6 @@
  * водитель не должен заново разбираться, был ли он на линии. Токены — в SecureStore,
  * профиль и заказы — в кэше RTK Query.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import {
@@ -20,6 +19,7 @@ import {
 } from 'redux-persist';
 
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
+import { persistStorage } from '@nurtaxi/shared-core/shared/lib';
 import { sessionReducer } from '@nurtaxi/shared-core/entities/session';
 import { realtimeReducer } from '@nurtaxi/shared-core/features/realtime';
 
@@ -36,7 +36,7 @@ const persistedReducer = persistReducer(
   {
     key: 'nurtaxi.driver',
     version: 1,
-    storage: AsyncStorage,
+    storage: persistStorage,
     whitelist: ['shift'],
   },
   rootReducer,

@@ -4,6 +4,7 @@ import type {
   CreateSavedAddressPayload,
   SavedAddress,
   SuccessResponse,
+  UpdateSavedAddressPayload,
 } from '@nurtaxi/shared-core/shared/model';
 
 export const savedAddressApi = baseApi.injectEndpoints({
@@ -18,6 +19,14 @@ export const savedAddressApi = baseApi.injectEndpoints({
       invalidatesTags: ['SavedAddress'],
     }),
 
+    updateSavedAddress: build.mutation<
+      SavedAddress,
+      { id: string; body: UpdateSavedAddressPayload }
+    >({
+      query: ({ id, body }) => ({ url: `/me/addresses/${id}`, method: 'PATCH', body }),
+      invalidatesTags: ['SavedAddress'],
+    }),
+
     deleteSavedAddress: build.mutation<SuccessResponse, string>({
       query: (id) => ({ url: `/me/addresses/${id}`, method: 'DELETE' }),
       invalidatesTags: ['SavedAddress'],
@@ -28,5 +37,6 @@ export const savedAddressApi = baseApi.injectEndpoints({
 export const {
   useGetSavedAddressesQuery,
   useCreateSavedAddressMutation,
+  useUpdateSavedAddressMutation,
   useDeleteSavedAddressMutation,
 } = savedAddressApi;

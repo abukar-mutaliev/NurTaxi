@@ -5,9 +5,7 @@
  * Токены живут в SecureStore, профиль и заказы приходят из RTK Query, поэтому их
  * сохранение только создало бы риск показать устаревшие данные (`§20`).
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
-import { setupListeners } from '@reduxjs/toolkit/query';
 import {
   FLUSH,
   PAUSE,
@@ -15,29 +13,63 @@ import {
   PURGE,
   REGISTER,
   REHYDRATE,
+  createMigrate,
   persistReducer,
   persistStore,
+  type PersistedState,
 } from 'redux-persist';
 
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
+import { persistStorage, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
+import type { GeoLocation } from '@nurtaxi/shared-core/shared/model';
 import { sessionReducer } from '@nurtaxi/shared-core/entities/session';
+import { networkReducer, setupNetworkListeners } from '@nurtaxi/shared-core/features/network';
 import { realtimeReducer } from '@nurtaxi/shared-core/features/realtime';
 
-import { orderDraftReducer } from '@/processes/order-flow';
+import { orderDraftReducer, recentAddressesReducer } from '@/processes/order-flow';
 
 const rootReducer = combineReducers({
   [baseApi.reducerPath]: baseApi.reducer,
   session: sessionReducer,
+  network: networkReducer,
   realtime: realtimeReducer,
   orderDraft: orderDraftReducer,
+  recentAddresses: recentAddressesReducer,
 });
+
+type PersistedRootState = ReturnType<typeof rootReducer>;
+
+const persistMigrations = createMigrate(
+  {
+    2: (state) => {
+      const persisted = state as (PersistedRootState & PersistedState) | undefined;
+      if (!persisted?.orderDraft) {
+        return state;
+      }
+
+      const normalizeStoredLocation = (location: (GeoLocation & { label?: string }) | null) =>
+        location ? toApiGeoLocation(location) : null;
+
+      return {
+        ...persisted,
+        orderDraft: {
+          ...persisted.orderDraft,
+          pickup: normalizeStoredLocation(persisted.orderDraft.pickup),
+          dropoff: normalizeStoredLocation(persisted.orderDraft.dropoff),
+        },
+      } as PersistedState;
+    },
+  },
+  { debug: false },
+);
 
 const persistedReducer = persistReducer(
   {
     key: 'nurtaxi.client',
-    version: 1,
-    storage: AsyncStorage,
-    whitelist: ['orderDraft'],
+    version: 2,
+    storage: persistStorage,
+    whitelist: ['orderDraft', 'recentAddresses'],
+    migrate: persistMigrations,
   },
   rootReducer,
 );
@@ -55,8 +87,8 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
-// Включает refetchOnReconnect / refetchOnFocus в RTK Query.
-setupListeners(store.dispatch);
+// NetInfo + refetchOnReconnect / refetchOnFocus для RTK Query (M5.5).
+setupNetworkListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof rootReducer>;
 export type AppDispatch = typeof store.dispatch;

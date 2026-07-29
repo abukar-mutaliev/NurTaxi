@@ -20,7 +20,7 @@ const LAYERS = [
 ];
 
 /** Слои переиспользуемого пакета shared-core (FSD-lite). */
-const CORE_LAYERS = ['core-features', 'core-entities', 'core-shared'];
+const CORE_LAYERS = ['core-widgets', 'core-features', 'core-entities', 'core-shared'];
 
 /**
  * Слои, доступные откуда угодно: `store` — типизированные хуки Redux (инфраструктура, а не
@@ -45,6 +45,7 @@ const elementTypesRules = [
 ];
 
 const coreElementTypesRules = [
+  { from: ['core-widgets'], allow: ['core-widgets', 'core-shared'] },
   { from: ['core-features'], allow: ['core-features', 'core-entities', 'core-shared'] },
   { from: ['core-entities'], allow: ['core-entities', 'core-shared'] },
   { from: ['core-shared'], allow: ['core-shared'] },
@@ -90,6 +91,7 @@ export default [
         { type: 'shared', pattern: 'apps/*/src/shared/**/*', mode: 'file' },
         { type: 'core-features', pattern: 'packages/shared-core/features/**/*', mode: 'file' },
         { type: 'core-entities', pattern: 'packages/shared-core/entities/**/*', mode: 'file' },
+        { type: 'core-widgets', pattern: 'packages/shared-core/widgets/**/*', mode: 'file' },
         { type: 'core-shared', pattern: 'packages/shared-core/shared/**/*', mode: 'file' },
       ],
     },

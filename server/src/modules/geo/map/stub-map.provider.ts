@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { normalizeAddressQuery, scoreMatch, tokenizeQuery } from '../address/address-normalizer';
 import type {
   AddressSuggestion,
@@ -8,6 +8,7 @@ import type {
   MapSearchOptions,
   RouteResult,
 } from './map-provider.interface';
+import { ROUTING_PROVIDER, type RoutingProvider } from './routing-provider.interface';
 
 interface LocalPoi {
   id: string;
@@ -20,17 +21,14 @@ interface LocalPoi {
   searchText: string;
 }
 
-/** Средняя скорость в городе (м/с) для расчёта ETA в stub-провайдере. */
-const AVG_SPEED_MS = 9.7; // ~35 km/h
-/** Коэффициент «извилистости» дорог относительно прямой. */
-const ROAD_FACTOR = 1.35;
-
 /**
  * Stub MapProvider с локальной базой адресов Ингушетии (Des §4.3).
- * Заменяется реальным провайдером (Yandex/2GIS) через конфигурацию региона.
+ * Поиск адресов — локальный; маршрут делегируется RoutingProvider (OSRM или stub).
  */
 @Injectable()
 export class StubMapProvider implements MapProvider {
+  constructor(@Inject(ROUTING_PROVIDER) private readonly routing: RoutingProvider) {}
+
   private readonly pois: LocalPoi[] = [
     {
       id: 'poi-nazran-center',
@@ -161,42 +159,11 @@ export class StubMapProvider implements MapProvider {
     }));
   }
 
-  async route(options: MapRouteOptions): Promise<RouteResult> {
-    const straightM = haversineM(options.origin, options.destination);
-    const distanceM = Math.round(straightM * ROAD_FACTOR);
-    const durationS = Math.max(60, Math.round(distanceM / AVG_SPEED_MS));
-
-    return {
-      polyline: encodePolyline([options.origin, options.destination]),
-      distanceM,
-      durationS,
-    };
+  route(options: MapRouteOptions): Promise<RouteResult> {
+    return this.routing.route(options);
   }
 
-  async eta(from: GeoPoint, to: GeoPoint): Promise<number> {
-    const route = await this.route({ origin: from, destination: to });
-    return route.durationS;
+  eta(from: GeoPoint, to: GeoPoint): Promise<number> {
+    return this.routing.eta(from, to);
   }
-}
-
-/** Haversine-расстояние в метрах. */
-export function haversineM(a: GeoPoint, b: GeoPoint): number {
-  const R = 6_371_000;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-
-  return 2 * R * Math.asin(Math.sqrt(h));
-}
-
-function toRad(deg: number): number {
-  return (deg * Math.PI) / 180;
-}
-
-/** Упрощённая polyline (origin → destination) для MVP. */
-function encodePolyline(points: GeoPoint[]): string {
-  return points.map((p) => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).join(';');
 }

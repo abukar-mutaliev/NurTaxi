@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateSavedAddressDto {
   @ApiProperty({ example: 'Дом', description: 'Дом / Работа / произвольная метка' })
@@ -27,4 +27,35 @@ export class CreateSavedAddressDto {
   @Min(-180)
   @Max(180)
   lng!: number;
+}
+
+export class UpdateSavedAddressDto {
+  @ApiPropertyOptional({ example: 'Дом' })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(60)
+  label?: string;
+
+  @ApiPropertyOptional({ example: 'г. Назрань, ул. Московская, 10' })
+  @IsOptional()
+  @IsString()
+  @MinLength(5)
+  address?: string;
+
+  @ApiPropertyOptional({ example: 43.2189 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat?: number;
+
+  @ApiPropertyOptional({ example: 44.771 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng?: number;
 }

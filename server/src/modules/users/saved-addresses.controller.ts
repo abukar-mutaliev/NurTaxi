@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -12,7 +13,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
-import { CreateSavedAddressDto } from './dto/saved-address.dto';
+import { CreateSavedAddressDto, UpdateSavedAddressDto } from './dto/saved-address.dto';
 import { SavedAddressResponse } from './dto/saved-address.presenter';
 import { SavedAddressesService } from './saved-addresses.service';
 
@@ -38,6 +39,17 @@ export class SavedAddressesController {
   ): Promise<SavedAddressResponse> {
     const created = await this.savedAddressesService.create(user.id, dto);
     return SavedAddressResponse.from(created);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Обновить любимый адрес' })
+  async update(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateSavedAddressDto,
+  ): Promise<SavedAddressResponse> {
+    const updated = await this.savedAddressesService.update(user.id, id, dto);
+    return SavedAddressResponse.from(updated);
   }
 
   @Delete(':id')

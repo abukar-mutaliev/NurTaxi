@@ -3,9 +3,10 @@
  * Точность `Balanced` — компромисс между расходом батареи и качеством точки подачи.
  */
 import { useCallback, useEffect, useState } from 'react';
-import * as Location from 'expo-location';
 
 import type { GeoPoint } from '@nurtaxi/shared-core/shared/model';
+
+import { getCachedCurrentPosition, resolveCurrentPosition } from './resolve-current-position';
 
 export interface CurrentPosition {
   position: GeoPoint | null;
@@ -15,7 +16,9 @@ export interface CurrentPosition {
 }
 
 export function useCurrentPosition(enabled: boolean): CurrentPosition {
-  const [position, setPosition] = useState<GeoPoint | null>(null);
+  const [position, setPosition] = useState<GeoPoint | null>(
+    () => getCachedCurrentPosition(Number.POSITIVE_INFINITY) ?? null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,17 +26,13 @@ export function useCurrentPosition(enabled: boolean): CurrentPosition {
     setIsLoading(true);
     setError(null);
     try {
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const next: GeoPoint = {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      };
-      setPosition(next);
-      return next;
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Не удалось определить местоположение');
+      const next = await resolveCurrentPosition({ forceRefresh: true });
+      if (next) {
+        setPosition(next);
+        return next;
+      }
+
+      setError('Не удалось определить местоположение');
       return null;
     } finally {
       setIsLoading(false);
@@ -41,10 +40,36 @@ export function useCurrentPosition(enabled: boolean): CurrentPosition {
   }, []);
 
   useEffect(() => {
-    if (enabled) {
-      void refresh();
+    if (!enabled) {
+      return;
     }
-  }, [enabled, refresh]);
+
+    let cancelled = false;
+
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const next = await resolveCurrentPosition();
+      if (cancelled) {
+        return;
+      }
+
+      if (next) {
+        setPosition(next);
+      } else {
+        setError('Не удалось определить местоположение');
+      }
+
+      setIsLoading(false);
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
 
   return { position, isLoading, error, refresh };
 }

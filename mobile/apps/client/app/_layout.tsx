@@ -5,6 +5,7 @@
 import { Stack } from 'expo-router';
 
 import { Loader } from '@nurtaxi/shared-core/shared/ui';
+import { useNotificationHandlers } from '@nurtaxi/shared-core/features/notifications';
 
 import { AppProviders, initSentry, useAuthGuard } from '@/app';
 
@@ -12,6 +13,7 @@ initSentry();
 
 function RootNavigator() {
   const { isResolving } = useAuthGuard();
+  useNotificationHandlers();
 
   // Пока не прочитан SecureStore, показываем загрузку — иначе мигнёт экран входа.
   if (isResolving) {

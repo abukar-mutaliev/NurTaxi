@@ -4,4 +4,6 @@ export {
   useGetUnreadCountQuery,
   useMarkAllNotificationsReadMutation,
   useMarkNotificationReadMutation,
+  useRegisterPushTokenMutation,
+  useUnregisterPushTokenMutation,
 } from './api/notification.api';

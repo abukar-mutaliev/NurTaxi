@@ -1,9 +1,9 @@
 /**
  * Статус верификации водителя (M7.3).
  *
- * Показывает текущий статус проверки (`pending / in_review / approved / rejected`),
- * причину отклонения и даёт повторно подать документы. Пока статус не `approved`,
- * guard-навигация не выпускает водителя из группы `(verification)` (M7.4).
+ * Важно: у нового пользователя профиля водителя ещё нет — бэкенд отвечает 403/404 на
+ * `GET /driver/profile`, пока роль не Driver. Это нормальное состояние («анкета не подана»),
+ * поэтому экран ведёт на анкету, а не показывает бесконечную загрузку.
  */
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -58,10 +58,34 @@ export function VerificationStatusScreen() {
   const router = useRouter();
   const { data: profile, isLoading, isFetching, refetch } = useGetDriverProfileQuery();
 
-  if (isLoading || !profile) {
+  // Первая загрузка — показываем лоадер только пока запрос действительно идёт.
+  if (isLoading) {
     return (
       <Screen>
         <Loader />
+      </Screen>
+    );
+  }
+
+  // Профиля нет (403/404): пользователь вошёл, но водителем ещё не стал. Ведём на анкету.
+  if (!profile) {
+    return (
+      <Screen
+        footer={
+          <Button
+            onPress={() => router.replace('/(verification)/registration')}
+            title="Заполнить анкету"
+          />
+        }
+      >
+        <View style={{ gap: theme.spacing.sm, paddingTop: theme.spacing.xxl }}>
+          <Text align="center" variant="title">
+            Станьте водителем Нур
+          </Text>
+          <Text align="center" tone="muted">
+            Заполните анкету и загрузите документы — после проверки сможете принимать заказы.
+          </Text>
+        </View>
       </Screen>
     );
   }

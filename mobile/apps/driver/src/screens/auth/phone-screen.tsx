@@ -1,24 +1,49 @@
-/** Экран ввода телефона водителя → `POST /auth/otp/request` (M1.2, Figma node 39:1104). */
-import { Image } from 'expo-image';
-import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+/**
+ * Экран входа водителя → `POST /auth/otp/request` (M1.2).
+ *
+ * Вёрстка повторяет макет: золотая точка и логотип-надпись «Нур», приветствие,
+ * поле телефона в виде белой «пилюли» с золотой точкой и градиентная кнопка.
+ */
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
-import { Button, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { Text } from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
-const logoAsset = require('@/assets/images/welcome/logo.png');
+import { PillButton } from '@/shared/ui/pill-button';
+import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 
-const DOT_COLOR = '#E8C882';
-const INPUT_BG = '#FFFFFF';
-const INPUT_BORDER = '#EDE4D6';
-const INPUT_TEXT = '#2E2331';
-const INPUT_PLACEHOLDER = '#A99FA6';
+const DESIGN_WIDTH = 390;
+const DESIGN_HEIGHT = 844;
 
+const c = {
+  brand: '#3A1D3F',
+  title: '#2E2331',
+  subtitle: '#9A8F98',
+  dot: '#DFAE5C',
+  inputBg: '#FFFFFF',
+  inputBorder: '#F0E7DC',
+  inputText: '#2E2331',
+  placeholder: '#B9AFB6',
+  shadow: 'rgba(89,71,31,0.10)',
+  danger: '#B42318',
+} as const;
+
+/** Пустая маска не должна оставлять в поле висящий префикс «+7 ». */
 const normalizePhoneInput = (value: string) => {
   const masked = applyPhoneMask(value);
   return masked === '+7 ' ? '' : masked;
@@ -26,12 +51,17 @@ const normalizePhoneInput = (value: string) => {
 
 export function PhoneScreen() {
   const { t } = useTranslation();
-  const theme = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const { requestOtp, isRequestingOtp } = useAuth();
 
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  const scale = width / DESIGN_WIDTH;
+  const sx = (value: number) => value * scale;
+  const sy = (value: number) => (value / DESIGN_HEIGHT) * height;
 
   const canSubmit = isValidPhone(phone) && !isRequestingOtp;
 
@@ -49,109 +79,141 @@ export function PhoneScreen() {
   };
 
   return (
-    <Screen
-      footer={
-        <Button
-          disabled={!canSubmit}
-          loading={isRequestingOtp}
-          onPress={submit}
-          title={t('auth.getCode')}
-        />
-      }
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.root}
     >
       <StatusBar style="dark" />
+      <ScreenGradientBackground tone="gold" />
 
-      {/* Шапка: логотип + приветствие по центру */}
-      <View style={styles.header}>
-        <Image contentFit="contain" source={logoAsset} style={styles.logo} />
-        <Text align="center" variant="title" style={{ marginTop: theme.spacing.md }}>
-          {t('auth.phoneTitle')}
-        </Text>
-        <Text
-          align="center"
-          tone="muted"
-          variant="caption"
-          style={{ marginTop: theme.spacing.xxs }}
-        >
-          {t('auth.phoneSubtitle')}
-        </Text>
-      </View>
-
-      {/* Плашка ввода телефона с золотой точкой слева */}
-      <View style={styles.formArea}>
-        <View style={styles.inputShell}>
-          <View style={styles.dot} />
-          <TextInput
-            autoFocus
-            keyboardType="phone-pad"
-            onChangeText={(value) => {
-              setPhone(normalizePhoneInput(value));
-              setError(null);
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingBottom: insets.bottom + sy(24),
+          paddingHorizontal: sx(40),
+          paddingTop: Math.max(insets.top, sy(20)) + sy(52),
+        }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View
+            style={{
+              backgroundColor: c.dot,
+              borderRadius: sx(7),
+              height: sx(14),
+              marginBottom: sy(10),
+              width: sx(14),
             }}
-            onSubmitEditing={canSubmit ? submit : undefined}
-            placeholder={t('auth.phonePlaceholder')}
-            placeholderTextColor={INPUT_PLACEHOLDER}
-            returnKeyType="done"
-            style={styles.input}
-            textContentType="telephoneNumber"
-            value={phone}
           />
+          <Text style={[styles.brand, { fontSize: sx(34), lineHeight: sx(40) }]}>
+            {t('auth.brandName')}
+          </Text>
+          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(16) }]}>
+            {t('auth.phoneTitle')}
+          </Text>
+          <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(4) }]}>
+            {t('auth.phoneSubtitle')}
+          </Text>
         </View>
 
-        {error ? (
-          <Text
-            align="center"
-            tone="danger"
-            variant="caption"
-            style={{ marginTop: theme.spacing.sm }}
+        <View style={{ marginTop: sy(104) }}>
+          <View
+            style={[
+              styles.inputShell,
+              {
+                borderRadius: sx(18),
+                gap: sx(12),
+                height: sx(58),
+                paddingHorizontal: sx(20),
+              },
+            ]}
           >
-            {error}
-          </Text>
-        ) : null}
-      </View>
-    </Screen>
+            <View
+              style={{
+                backgroundColor: c.dot,
+                borderRadius: sx(8),
+                height: sx(16),
+                width: sx(16),
+              }}
+            />
+            <TextInput
+              autoFocus
+              keyboardType="phone-pad"
+              onChangeText={(value) => {
+                setPhone(normalizePhoneInput(value));
+                setError(null);
+              }}
+              onSubmitEditing={canSubmit ? submit : undefined}
+              placeholder={t('auth.phonePlaceholder')}
+              placeholderTextColor={c.placeholder}
+              returnKeyType="done"
+              style={[styles.input, { fontSize: sx(16) }]}
+              textContentType="telephoneNumber"
+              value={phone}
+            />
+          </View>
+
+          {error ? (
+            <Text style={[styles.error, { fontSize: sx(13), marginTop: sy(10) }]}>{error}</Text>
+          ) : null}
+        </View>
+
+        <PillButton
+          disabled={!canSubmit}
+          height={sx(58)}
+          loading={isRequestingOtp}
+          onPress={submit}
+          style={{ marginTop: sy(56) }}
+          title={t('auth.getCode')}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  brand: {
+    color: c.brand,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  error: {
+    color: c.danger,
+    textAlign: 'center',
+  },
   header: {
     alignItems: 'center',
-    paddingTop: 48,
   },
-  logo: {
-    height: 96,
-    width: 96,
-  },
-  formArea: {
-    paddingTop: 56,
+  input: {
+    color: c.inputText,
+    flex: 1,
+    fontWeight: '500',
+    padding: 0,
   },
   inputShell: {
     alignItems: 'center',
-    backgroundColor: INPUT_BG,
-    borderColor: INPUT_BORDER,
-    borderRadius: 18,
+    backgroundColor: c.inputBg,
+    borderColor: c.inputBorder,
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
-    gap: 14,
-    height: 58,
-    paddingHorizontal: 21,
-    shadowColor: 'rgba(89,71,31,0.10)',
+    shadowColor: c.shadow,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 12,
   },
-  dot: {
-    backgroundColor: DOT_COLOR,
-    borderRadius: 999,
-    height: 18,
-    width: 18,
-  },
-  input: {
-    color: INPUT_TEXT,
+  root: {
+    backgroundColor: '#F8F4EF',
     flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    padding: 0,
+  },
+  subtitle: {
+    color: c.subtitle,
+    textAlign: 'center',
+  },
+  title: {
+    color: c.title,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

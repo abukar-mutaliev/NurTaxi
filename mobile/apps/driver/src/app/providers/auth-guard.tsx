@@ -17,6 +17,23 @@ import { useAppSelector } from '../store/hooks';
 const AUTH_GROUP = '(auth)';
 const VERIFICATION_GROUP = '(verification)';
 
+/**
+ * Локальный переключатель для вёрстки: `true` отключает перенаправления, и тогда любой
+ * экран открывается напрямую (через `/_sitemap` или deep link), без входа и верификации.
+ *
+ * Верните `false` перед коммитом, иначе перестанете замечать поломки самих переходов.
+ */
+const SKIP_GUARD_LOCAL = false;
+
+/**
+ * Обход guard включается локальным переключателем выше либо переменной
+ * `EXPO_PUBLIC_DEV_SKIP_GUARD=1` в `.env`.
+ *
+ * Оба варианта обёрнуты в `__DEV__`: в production-сборке он всегда `false`, поэтому
+ * случайно оставленный `true` не ослабит проверку верификации у реальных водителей (`§8.2`).
+ */
+const SKIP_GUARD = __DEV__ && (SKIP_GUARD_LOCAL || process.env.EXPO_PUBLIC_DEV_SKIP_GUARD === '1');
+
 export function useAuthGuard(): { isResolving: boolean } {
   const router = useRouter();
   // useSegments типизирован кортежем известных маршрутов; для сравнения групп нужен обычный массив.
@@ -33,7 +50,7 @@ export function useAuthGuard(): { isResolving: boolean } {
   const isResolving = status === 'unknown' || (isAuthenticated && isProfileLoading);
 
   useEffect(() => {
-    if (isResolving) {
+    if (isResolving || SKIP_GUARD) {
       return;
     }
 
@@ -58,5 +75,6 @@ export function useAuthGuard(): { isResolving: boolean } {
     }
   }, [router, segments, isAuthenticated, isApproved, isResolving]);
 
-  return { isResolving };
+  // При отключённом guard экран-заглушка «резолвинга» тоже не нужен.
+  return { isResolving: SKIP_GUARD ? false : isResolving };
 }

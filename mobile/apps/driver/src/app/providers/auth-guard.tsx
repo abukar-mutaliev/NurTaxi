@@ -6,7 +6,7 @@
  * `(verification)` — это требование `§8.2` и `§12.3`, а не только UX.
  */
 import { useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter, useSegments, type Href } from 'expo-router';
 
 import { VerificationStatus } from '@nurtaxi/shared-core/shared/model';
 import { selectSessionStatus } from '@nurtaxi/shared-core/entities/session';
@@ -16,6 +16,24 @@ import { useAppSelector } from '../store/hooks';
 
 const AUTH_GROUP = '(auth)';
 const VERIFICATION_GROUP = '(verification)';
+const AUTH_WELCOME_ROUTE = '/(auth)/welcome' as Href;
+
+/**
+ * Локальный переключатель для вёрстки: `true` отключает перенаправления, и тогда любой
+ * экран открывается напрямую (через `/_sitemap` или deep link), без входа и верификации.
+ *
+ * Верните `false` перед коммитом, иначе перестанете замечать поломки самих переходов.
+ */
+const SKIP_GUARD_LOCAL = false;
+
+/**
+ * Обход guard включается локальным переключателем выше либо переменной
+ * `EXPO_PUBLIC_DEV_SKIP_GUARD=1` в `.env`.
+ *
+ * Оба варианта обёрнуты в `__DEV__`: в production-сборке он всегда `false`, поэтому
+ * случайно оставленный `true` не ослабит проверку верификации у реальных водителей (`§8.2`).
+ */
+const SKIP_GUARD = __DEV__ && (SKIP_GUARD_LOCAL || process.env.EXPO_PUBLIC_DEV_SKIP_GUARD === '1');
 
 export function useAuthGuard(): { isResolving: boolean } {
   const router = useRouter();
@@ -40,7 +58,7 @@ export function useAuthGuard(): { isResolving: boolean } {
   const isResolving = status === 'unknown' || (isAuthenticated && isProfileLoading);
 
   useEffect(() => {
-    if (isResolving) {
+    if (isResolving || SKIP_GUARD) {
       return;
     }
 
@@ -49,7 +67,7 @@ export function useAuthGuard(): { isResolving: boolean } {
 
     if (!isAuthenticated) {
       if (group !== AUTH_GROUP) {
-        router.replace('/(auth)/phone');
+        router.replace(AUTH_WELCOME_ROUTE);
       }
       return;
     }
@@ -73,5 +91,6 @@ export function useAuthGuard(): { isResolving: boolean } {
     }
   }, [router, segments, isAuthenticated, hasNoProfile, isApproved, isResolving]);
 
-  return { isResolving };
+  // При отключённом guard экран-заглушка «резолвинга» тоже не нужен.
+  return { isResolving: SKIP_GUARD ? false : isResolving };
 }

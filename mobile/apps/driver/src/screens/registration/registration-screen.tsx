@@ -3,9 +3,12 @@
  *
  * Личные данные + автомобиль. Валидация — готовой схемой `driverRegistrationFormSchema`
  * (18+ лет, формат даты, год авто и т.д.). Регион берётся из `GET /driver/regions`.
- * После успешной регистрации ведёт к загрузке документов (M7.2).
+ *
+ * Ввод адреса подсказывает `GET /geo/search` (сервер учитывает адресацию Северного Кавказа),
+ * а марка, модель и цвет — локальный справочник: он не меняется от запроса к запросу,
+ * поэтому подсказка появляется мгновенно, без сети.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
@@ -14,13 +17,28 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
   driverRegistrationFormSchema,
+  useDebouncedValue,
   type DriverRegistrationForm,
 } from '@nurtaxi/shared-core/shared/lib';
 import { Button, Card, Input, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useRegisterDriverMutation } from '@nurtaxi/shared-core/entities/driver';
+import { MIN_GEO_QUERY_LENGTH, useSearchAddressesQuery } from '@nurtaxi/shared-core/entities/geo';
 import { useGetRegionsQuery } from '@nurtaxi/shared-core/entities/region';
 
+import {
+  VEHICLE_COLORS,
+  VEHICLE_MAKES,
+  filterCatalog,
+  modelsForMake,
+} from '@/shared/lib/vehicle-catalog';
+import { StepHeader } from '@/shared/ui/step-header';
+import { SuggestInput, type SuggestOption } from '@/shared/ui/suggest-input';
+
 const CURRENT_YEAR = new Date().getFullYear();
+
+/** Строки справочника → опции для SuggestInput. */
+const toOptions = (values: string[], prefix: string): SuggestOption[] =>
+  values.map((value) => ({ id: `${prefix}:${value}`, title: value }));
 
 export function RegistrationScreen() {
   const theme = useTheme();
@@ -50,6 +68,47 @@ export function RegistrationScreen() {
   });
 
   const selectedRegionId = watch('regionId');
+  const addressValue = watch('residenceAddress');
+  const makeValue = watch('vehicle.make');
+  const modelValue = watch('vehicle.model');
+  const colorValue = watch('vehicle.color');
+
+  // --- Подсказки адреса (серверный поиск с задержкой, чтобы не дёргать API на каждый символ) ---
+  const debouncedAddress = useDebouncedValue(addressValue?.trim() ?? '', 400);
+  const canSearchAddress = debouncedAddress.length >= MIN_GEO_QUERY_LENGTH;
+
+  const { data: addressSuggestions = [], isFetching: addressLoading } = useSearchAddressesQuery(
+    {
+      q: debouncedAddress,
+      limit: 6,
+      regionId: selectedRegionId || undefined,
+    },
+    { skip: !canSearchAddress },
+  );
+
+  const addressOptions = useMemo<SuggestOption[]>(
+    () =>
+      addressSuggestions.map((suggestion) => ({
+        id: suggestion.id,
+        title: suggestion.title,
+        subtitle: suggestion.subtitle,
+      })),
+    [addressSuggestions],
+  );
+
+  // --- Подсказки по автомобилю (локальный справочник) ---
+  const makeOptions = useMemo(
+    () => toOptions(filterCatalog(VEHICLE_MAKES, makeValue ?? ''), 'make'),
+    [makeValue],
+  );
+  const modelOptions = useMemo(
+    () => toOptions(filterCatalog(modelsForMake(makeValue ?? ''), modelValue ?? ''), 'model'),
+    [makeValue, modelValue],
+  );
+  const colorOptions = useMemo(
+    () => toOptions(filterCatalog(VEHICLE_COLORS, colorValue ?? ''), 'color'),
+    [colorValue],
+  );
 
   const onSubmit = async (form: DriverRegistrationForm) => {
     setApiError(null);
@@ -73,14 +132,16 @@ export function RegistrationScreen() {
       }
     >
       <ScrollView
+        contentContainerStyle={{ gap: theme.spacing.md, paddingBottom: theme.spacing.xl }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: theme.spacing.md, paddingBottom: theme.spacing.xl }}
       >
-        <View style={{ gap: theme.spacing.xs, paddingTop: theme.spacing.lg }}>
-          <Text variant="title">Анкета водителя</Text>
-          <Text tone="muted">Личные данные и автомобиль. Шаг 1 из 2.</Text>
-        </View>
+        <StepHeader
+          caption="Личные данные и автомобиль"
+          step={1}
+          title="Анкета водителя"
+          totalSteps={2}
+        />
 
         {/* --- Личные данные --- */}
         <Controller
@@ -98,53 +159,68 @@ export function RegistrationScreen() {
           )}
         />
 
-        <Controller
-          control={control}
-          name="birthDate"
-          render={({ field }) => (
-            <Input
-              error={errors.birthDate?.message}
-              keyboardType="numbers-and-punctuation"
-              label="Дата рождения (ГГГГ-ММ-ДД)"
-              onChangeText={field.onChange}
-              placeholder="1990-05-15"
-              value={field.value}
+        <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+          <View style={{ flex: 1.2 }}>
+            <Controller
+              control={control}
+              name="birthDate"
+              render={({ field }) => (
+                <Input
+                  error={errors.birthDate?.message}
+                  keyboardType="numbers-and-punctuation"
+                  label="Дата рождения"
+                  onChangeText={field.onChange}
+                  placeholder="1990-05-15"
+                  value={field.value}
+                />
+              )}
             />
-          )}
-        />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Controller
+              control={control}
+              name="drivingExperienceYears"
+              render={({ field }) => (
+                <Input
+                  error={errors.drivingExperienceYears?.message}
+                  keyboardType="number-pad"
+                  label="Стаж, лет"
+                  onChangeText={(v) => field.onChange(v)}
+                  placeholder="5"
+                  value={String(field.value ?? '')}
+                />
+              )}
+            />
+          </View>
+        </View>
 
         <Controller
           control={control}
           name="residenceAddress"
           render={({ field }) => (
-            <Input
+            <SuggestInput
+              emptyHint={
+                canSearchAddress && !addressLoading
+                  ? 'Ничего не нашлось — введите вручную'
+                  : undefined
+              }
               error={errors.residenceAddress?.message}
               label="Адрес проживания"
+              loading={addressLoading}
               onChangeText={field.onChange}
+              onSelect={(option) =>
+                setValue('residenceAddress', option.title, { shouldValidate: true })
+              }
+              options={addressOptions}
               placeholder="г. Назрань, ул. Московская, 1"
               value={field.value}
             />
           )}
         />
 
-        <Controller
-          control={control}
-          name="drivingExperienceYears"
-          render={({ field }) => (
-            <Input
-              error={errors.drivingExperienceYears?.message}
-              keyboardType="number-pad"
-              label="Стаж вождения, лет"
-              onChangeText={(v) => field.onChange(v)}
-              placeholder="5"
-              value={String(field.value ?? '')}
-            />
-          )}
-        />
-
         {/* --- Регион (простой выбор карточками; в MVP активен один) --- */}
         <View style={{ gap: theme.spacing.xs }}>
-          <Text tone="muted" variant="caption">
+          <Text tone="muted" variant="label">
             Регион работы
           </Text>
           {regionsLoading ? (
@@ -158,8 +234,8 @@ export function RegistrationScreen() {
                     key={region.id}
                     onPress={() => setValue('regionId', region.id, { shouldValidate: true })}
                   >
-                    <Card tone="surface">
-                      <Text variant="bodyStrong" tone={active ? 'primary' : 'default'}>
+                    <Card tone={active ? 'muted' : 'surface'}>
+                      <Text tone={active ? 'primary' : 'default'} variant="bodyStrong">
                         {active ? '\u2713 ' : ''}
                         {region.name}
                       </Text>
@@ -177,7 +253,7 @@ export function RegistrationScreen() {
         </View>
 
         {/* --- Автомобиль --- */}
-        <Text variant="title" style={{ paddingTop: theme.spacing.sm }}>
+        <Text style={{ paddingTop: theme.spacing.sm }} variant="title">
           Автомобиль
         </Text>
 
@@ -187,10 +263,22 @@ export function RegistrationScreen() {
               control={control}
               name="vehicle.make"
               render={({ field }) => (
-                <Input
+                <SuggestInput
+                  autoCapitalize="words"
                   error={errors.vehicle?.make?.message}
                   label="Марка"
-                  onChangeText={field.onChange}
+                  onChangeText={(value) => {
+                    field.onChange(value);
+                    // Модель привязана к марке — при смене марки старая модель уже не подходит.
+                    if (modelValue) {
+                      setValue('vehicle.model', '', { shouldValidate: true });
+                    }
+                  }}
+                  onSelect={(option) => {
+                    setValue('vehicle.make', option.title, { shouldValidate: true });
+                    setValue('vehicle.model', '', { shouldValidate: true });
+                  }}
+                  options={makeOptions}
                   placeholder="Hyundai"
                   value={field.value}
                 />
@@ -202,10 +290,15 @@ export function RegistrationScreen() {
               control={control}
               name="vehicle.model"
               render={({ field }) => (
-                <Input
+                <SuggestInput
+                  autoCapitalize="words"
                   error={errors.vehicle?.model?.message}
                   label="Модель"
                   onChangeText={field.onChange}
+                  onSelect={(option) =>
+                    setValue('vehicle.model', option.title, { shouldValidate: true })
+                  }
+                  options={modelOptions}
                   placeholder="Solaris"
                   value={field.value}
                 />
@@ -253,10 +346,14 @@ export function RegistrationScreen() {
           control={control}
           name="vehicle.color"
           render={({ field }) => (
-            <Input
+            <SuggestInput
               error={errors.vehicle?.color?.message}
               label="Цвет"
               onChangeText={field.onChange}
+              onSelect={(option) =>
+                setValue('vehicle.color', option.title, { shouldValidate: true })
+              }
+              options={colorOptions}
               placeholder="белый"
               value={field.value}
             />

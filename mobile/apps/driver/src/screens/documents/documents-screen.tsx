@@ -21,6 +21,8 @@ import {
   useSubmitDriverDocumentsMutation,
 } from '@nurtaxi/shared-core/entities/driver';
 
+import { StepHeader } from '@/shared/ui/step-header';
+
 const DOC_LABELS: Record<string, string> = {
   passport: 'Паспорт',
   license: 'Водительское удостоверение',
@@ -116,12 +118,12 @@ export function DocumentsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ gap: theme.spacing.sm, paddingBottom: theme.spacing.xl }}
       >
-        <View style={{ gap: theme.spacing.xs, paddingTop: theme.spacing.lg }}>
-          <Text variant="title">Документы</Text>
-          <Text tone="muted">
-            Шаг 2 из 2 · Загружено {doneCount} из {REQUIRED_DOCUMENT_TYPES.length}
-          </Text>
-        </View>
+        <StepHeader
+          caption={`Загрузите ${REQUIRED_DOCUMENT_TYPES.length} документов (${doneCount}/${REQUIRED_DOCUMENT_TYPES.length})`}
+          step={2}
+          title="Документы"
+          totalSteps={2}
+        />
 
         {REQUIRED_DOCUMENT_TYPES.map((type) => {
           const done = !!uploaded[type];
@@ -137,11 +139,28 @@ export function DocumentsScreen() {
                     gap: theme.spacing.sm,
                   }}
                 >
-                  <View style={{ flex: 1 }}>
-                    <Text variant="bodyStrong">{DOC_LABELS[type] ?? type}</Text>
-                    <Text tone="muted" variant="caption">
-                      {busy ? 'Загрузка…' : done ? 'Загружено' : 'Нажмите, чтобы загрузить'}
-                    </Text>
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      flexDirection: 'row',
+                      flex: 1,
+                      gap: theme.spacing.sm,
+                    }}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: done ? theme.colors.success : theme.colors.primary,
+                        borderRadius: theme.radius.pill,
+                        height: 10,
+                        width: 10,
+                      }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text variant="bodyStrong">{DOC_LABELS[type] ?? type}</Text>
+                      <Text tone="muted" variant="caption">
+                        {busy ? 'Загрузка…' : done ? 'Загружено' : 'Нажмите, чтобы загрузить'}
+                      </Text>
+                    </View>
                   </View>
                   {done ? <Badge label="✓" tone="success" /> : <Text tone="primary">＋</Text>}
                 </View>

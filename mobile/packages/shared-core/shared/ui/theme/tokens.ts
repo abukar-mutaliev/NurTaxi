@@ -8,15 +8,18 @@
  */
 
 export const palette = {
-  emerald900: '#0B3B32',
-  emerald700: '#14574A',
-  emerald500: '#1B6B5A',
-  emerald300: '#5FA192',
-  emerald100: '#DCEDE8',
+  // Бренд «Нур» — глубокий фиолетовый (свет = نور). Заменил прежний изумруд
+  // после переработки дизайна в Figma (M11): кнопки/акценты стали фиолетовыми,
+  // фон — тёплый кремовый, акцент — мягкое золото.
+  brand900: '#2A1330',
+  brand700: '#3A1D3F',
+  brand500: '#6A3E6F',
+  brand300: '#9B6FA0',
+  brand100: '#EDE0EF',
 
   gold600: '#B8871F',
-  gold500: '#D4A24C',
-  gold100: '#FBF1DC',
+  gold500: '#D9B57C',
+  gold100: '#F3E6CE',
 
   rose500: '#C25B7C',
   rose100: '#FBE7EE',
@@ -32,13 +35,14 @@ export const palette = {
   amber100: '#FCF1D6',
 
   neutral0: '#FFFFFF',
-  neutral50: '#F7F8F8',
-  neutral100: '#EEF0F0',
-  neutral200: '#DDE1E1',
-  neutral300: '#C2C8C8',
-  neutral500: '#8A9291',
-  neutral700: '#4A5251',
-  neutral900: '#1A1F1E',
+  // Тёплая кремовая нейтраль вместо холодной серой — под фон макета #F7F3EE.
+  cream50: '#F7F3EE',
+  cream100: '#EFE7DC',
+  neutral200: '#E4DACE',
+  neutral300: '#CFC4B6',
+  neutral500: '#8A8079',
+  neutral700: '#5A524B',
+  neutral900: '#333333',
   black: '#000000',
 } as const;
 
@@ -103,15 +107,15 @@ export interface ThemeColors {
 }
 
 export const lightColors: ThemeColors = {
-  background: palette.neutral50,
+  background: palette.cream50,
   surface: palette.neutral0,
-  surfaceMuted: palette.neutral100,
+  surfaceMuted: palette.cream100,
   border: palette.neutral200,
-  primary: palette.emerald500,
-  primaryPressed: palette.emerald700,
+  primary: palette.brand700,
+  primaryPressed: palette.brand900,
   onPrimary: palette.neutral0,
   accent: palette.gold500,
-  onAccent: palette.emerald900,
+  onAccent: palette.brand900,
   text: palette.neutral900,
   textMuted: palette.neutral500,
   textInverse: palette.neutral0,
@@ -121,21 +125,21 @@ export const lightColors: ThemeColors = {
   successSurface: palette.green100,
   warning: palette.amber500,
   warningSurface: palette.amber100,
-  overlay: 'rgba(10, 20, 18, 0.45)',
+  overlay: 'rgba(42, 19, 48, 0.45)',
 };
 
 export const darkColors: ThemeColors = {
-  background: '#0D1413',
-  surface: '#141C1A',
-  surfaceMuted: '#1D2725',
-  border: '#2A3634',
-  primary: palette.emerald300,
-  primaryPressed: palette.emerald500,
-  onPrimary: palette.emerald900,
+  background: '#15101A',
+  surface: '#1D1626',
+  surfaceMuted: '#271E32',
+  border: '#372B43',
+  primary: palette.brand300,
+  primaryPressed: palette.brand500,
+  onPrimary: palette.brand900,
   accent: palette.gold500,
-  onAccent: palette.emerald900,
-  text: '#ECF1EF',
-  textMuted: '#94A19E',
+  onAccent: palette.brand900,
+  text: '#F1ECEF',
+  textMuted: '#A99FB0',
   textInverse: palette.neutral900,
   danger: '#FF7A6B',
   dangerSurface: '#3A1F1C',

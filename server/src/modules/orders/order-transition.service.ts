@@ -103,6 +103,7 @@ export class OrderTransitionService {
       saved.id,
       saved.clientId,
       order.driver?.userId ?? null,
+      saved.regionId,
       {
         orderId: saved.id,
         fromStatus,

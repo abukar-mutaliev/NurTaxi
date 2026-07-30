@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Role } from '../../common/enums/role.enum';
+import { S3StorageService } from '../storage/s3-storage.service';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -28,7 +29,18 @@ describe('UsersService', () => {
     store.clear();
     jest.clearAllMocks();
     const moduleRef = await Test.createTestingModule({
-      providers: [UsersService, { provide: getRepositoryToken(User), useValue: repoMock }],
+      providers: [
+        UsersService,
+        { provide: getRepositoryToken(User), useValue: repoMock },
+        {
+          provide: S3StorageService,
+          useValue: {
+            buildUserPhotoKey: jest.fn(),
+            createUploadUrl: jest.fn(),
+            createDownloadUrl: jest.fn(),
+          },
+        },
+      ],
     }).compile();
     service = moduleRef.get(UsersService);
   });

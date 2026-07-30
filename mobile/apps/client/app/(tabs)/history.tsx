@@ -1,3 +1,5 @@
 import { HistoryScreen } from '@/screens/history';
 
-export default HistoryScreen;
+export default function HistoryRoute() {
+  return <HistoryScreen variant="tab" />;
+}

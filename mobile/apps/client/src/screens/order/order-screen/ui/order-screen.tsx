@@ -30,7 +30,18 @@ import {
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { ReviewSheet } from '@/features/review';
-import { activeOrderChanged, orderDraftCleared, selectOrderDraft } from '@/processes/order-flow';
+import {
+  activeOrderChanged,
+  commentChanged,
+  dropoffSelected,
+  familyMemberSelected,
+  orderDraftCleared,
+  paymentMethodSelected,
+  pickupSelected,
+  regionSelected,
+  selectOrderDraft,
+  tariffSelected,
+} from '@/processes/order-flow';
 import {
   GLASS_COLORS,
   GlassCaption,
@@ -211,6 +222,32 @@ export function OrderScreen() {
     router.replace('/(tabs)');
   };
 
+  const retryOrder = () => {
+    dispatch(regionSelected(order.regionId));
+    dispatch(
+      pickupSelected({
+        lat: order.pickupLat,
+        lng: order.pickupLng,
+        address: order.pickupAddress,
+      }),
+    );
+    dispatch(
+      dropoffSelected({
+        lat: order.dropoffLat,
+        lng: order.dropoffLng,
+        address: order.dropoffAddress,
+      }),
+    );
+    dispatch(paymentMethodSelected(order.paymentMethod));
+    dispatch(commentChanged(order.comment ?? ''));
+    dispatch(familyMemberSelected(order.familyMemberId));
+    if (order.tariff?.id) {
+      dispatch(tariffSelected(order.tariff.id));
+    }
+    dispatch(activeOrderChanged(null));
+    router.replace('/(tabs)');
+  };
+
   const shareTrip = async () => {
     try {
       await Share.share({
@@ -295,21 +332,25 @@ export function OrderScreen() {
 
               <View style={[styles.panel, { gap: 12, padding: 16 }]}>
                 <GlassCard>
-                  <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'space-between' }}>
+                  <View style={styles.statusRow}>
                     <Badge
                       label={t(orderStatusLabelKey(order.status))}
                       tone={orderStatusTone(order.status)}
                     />
-                    {!isOnline ? <GlassCaption>{t('common.reconnecting')}</GlassCaption> : null}
+                    {!isOnline ? (
+                      <View style={styles.reconnectingWrap}>
+                        <GlassCaption style={styles.reconnectingCaption}>
+                          {t('common.reconnecting')}
+                        </GlassCaption>
+                      </View>
+                    ) : null}
                   </View>
 
                   {noDrivers ? (
-                    <View style={{ gap: 12, paddingTop: 8 }}>
-                      <Text style={{ color: GLASS_COLORS.error, fontSize: 15 }}>
-                        {t('order.noDrivers')}
-                      </Text>
+                    <View style={styles.noDriversBlock}>
+                      <Text style={styles.noDriversText}>{t('order.noDrivers')}</Text>
                       <GlassPrimaryButton
-                        onPress={goHome}
+                        onPress={retryOrder}
                         title={t('order.tryAgain')}
                         variant="secondary"
                       />
@@ -441,13 +482,34 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
+  noDriversBlock: {
+    gap: 12,
+    paddingTop: 8,
+  },
+  noDriversText: {
+    color: GLASS_COLORS.error,
+    fontSize: 15,
+    textAlign: 'center',
+  },
   panel: {
     bottom: 0,
     left: 0,
     position: 'absolute',
     right: 0,
   },
+  reconnectingCaption: {
+    textAlign: 'right',
+  },
+  reconnectingWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
   root: {
     flex: 1,
+  },
+  statusRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
 });

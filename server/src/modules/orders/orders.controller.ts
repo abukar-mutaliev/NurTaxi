@@ -16,8 +16,14 @@ import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
 import { Role } from '../../common/enums/role.enum';
 import { CancelOrderDto, CreateOrderDto, GeoLocationDto, OrderEstimateDto } from './dto/orders.dto';
+import {
+  ConfirmTripRecordingDto,
+  PresignTripRecordingDto,
+  TripRecordingResponse,
+} from './dto/trip-recording.dto';
 import { OrderEstimateResponse, OrderHistoryResponse, OrderResponse } from './dto/orders.presenter';
 import { OrdersService } from './orders.service';
+import { TripRecordingService } from './trip-recording.service';
 import { SosService } from '../sos/sos.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { CreateReviewDto, ReviewResponse } from '../reviews/dto/reviews.dto';
@@ -31,6 +37,7 @@ export class OrdersController {
     private readonly ordersService: OrdersService,
     private readonly sosService: SosService,
     private readonly reviewsService: ReviewsService,
+    private readonly tripRecordingService: TripRecordingService,
   ) {}
 
   @Post('estimate')
@@ -103,6 +110,40 @@ export class OrdersController {
       contactsNotified: event.contactsNotified,
       activatedAt: event.createdAt.toISOString(),
     };
+  }
+
+  @Get(':id/recordings')
+  @Roles(Role.Client)
+  @ApiOperation({ summary: 'Список аудиозаписей поездки' })
+  async listRecordings(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TripRecordingResponse[]> {
+    const items = await this.tripRecordingService.listForOrder(user.id, id);
+    return items.map((item) => TripRecordingResponse.from(item));
+  }
+
+  @Post(':id/recordings/presign')
+  @Roles(Role.Client)
+  @ApiOperation({ summary: 'Presigned URL для загрузки аудиозаписи поездки' })
+  async presignRecording(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: PresignTripRecordingDto,
+  ) {
+    return this.tripRecordingService.createUploadUrl(user.id, id, dto);
+  }
+
+  @Post(':id/recordings/confirm')
+  @Roles(Role.Client)
+  @ApiOperation({ summary: 'Подтверждение загрузки аудиозаписи поездки' })
+  async confirmRecording(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ConfirmTripRecordingDto,
+  ): Promise<TripRecordingResponse> {
+    const record = await this.tripRecordingService.confirmUpload(user.id, id, dto);
+    return TripRecordingResponse.from(record);
   }
 
   @Post(':id/review')

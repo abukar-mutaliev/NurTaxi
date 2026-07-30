@@ -8,6 +8,7 @@ import { RealtimeBroadcastService } from './realtime-broadcast.service';
 import { WsSubscriptionService } from './ws-subscription.service';
 import { WsAuthService } from './ws-auth.service';
 import { RealtimeLocationBridge } from './realtime-location.bridge';
+import { RealtimeStaffBridge } from './realtime-staff.bridge';
 
 /**
  * WebSocket real-time (Des §10, Фаза 5).
@@ -26,6 +27,7 @@ import { RealtimeLocationBridge } from './realtime-location.bridge';
     WsSubscriptionService,
     WsAuthService,
     RealtimeLocationBridge,
+    RealtimeStaffBridge,
   ],
   exports: [RealtimeBroadcastService, RealtimeLocationBridge],
 })

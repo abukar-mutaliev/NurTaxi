@@ -45,6 +45,15 @@ describeE2e('Security RBAC (e2e)', () => {
       .expect(403);
   });
 
+  it('клиент без анкеты водителя получает 404 на GET /driver/profile', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/driver/profile')
+      .set(authHeader(clientToken))
+      .expect(404);
+
+    expect(res.body.error.code).toBe('DRIVER_PROFILE_NOT_FOUND');
+  });
+
   it('запрос без токена возвращает 401', async () => {
     await request(app.getHttpServer())
       .get(`/api/v1/admin/tariffs?regionId=${INGUSHETIA_REGION_ID}`)

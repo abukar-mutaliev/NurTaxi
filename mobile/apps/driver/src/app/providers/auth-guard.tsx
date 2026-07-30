@@ -24,9 +24,16 @@ export function useAuthGuard(): { isResolving: boolean } {
   const status = useAppSelector(selectSessionStatus);
 
   const isAuthenticated = status === 'authenticated';
-  const { data: profile, isLoading: isProfileLoading } = useGetDriverProfileQuery(undefined, {
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    isError,
+    error,
+  } = useGetDriverProfileQuery(undefined, {
     skip: !isAuthenticated,
   });
+
+  const hasNoProfile = isError && error !== undefined && 'status' in error && error.status === 404;
 
   // Отсутствие профиля означает, что анкета ещё не подана, — это нормальное состояние.
   const isApproved = profile?.verificationStatus === VerificationStatus.Approved;
@@ -38,10 +45,18 @@ export function useAuthGuard(): { isResolving: boolean } {
     }
 
     const group = segments[0];
+    const verificationScreen = segments[1];
 
     if (!isAuthenticated) {
       if (group !== AUTH_GROUP) {
         router.replace('/(auth)/phone');
+      }
+      return;
+    }
+
+    if (hasNoProfile) {
+      if (group !== VERIFICATION_GROUP || verificationScreen !== 'registration') {
+        router.replace('/(verification)/registration');
       }
       return;
     }
@@ -56,7 +71,7 @@ export function useAuthGuard(): { isResolving: boolean } {
     if (group === AUTH_GROUP || group === VERIFICATION_GROUP) {
       router.replace('/(tabs)');
     }
-  }, [router, segments, isAuthenticated, isApproved, isResolving]);
+  }, [router, segments, isAuthenticated, hasNoProfile, isApproved, isResolving]);
 
   return { isResolving };
 }

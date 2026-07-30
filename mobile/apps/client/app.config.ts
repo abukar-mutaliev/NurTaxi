@@ -59,8 +59,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       // Разрешения запрашиваются только при реальной необходимости (`§8.8`, App Store review).
       NSLocationWhenInUseUsageDescription:
         'Nur Taxi показывает вашу точку подачи на карте и находит ближайших водителей.',
-      NSCameraUsageDescription: 'Нужна для съёмки фото профиля.',
-      NSPhotoLibraryUsageDescription: 'Нужна для выбора фото профиля из галереи.',
+      NSCameraUsageDescription: 'Nur Taxi использует камеру для съёмки фото профиля.',
+      NSPhotoLibraryUsageDescription: 'Nur Taxi использует галерею для выбора фото профиля.',
+      NSMicrophoneUsageDescription:
+        'Nur Taxi использует микрофон для аудиозаписи поездки в целях безопасности.',
       ITSAppUsesNonExemptEncryption: false,
     },
   },
@@ -77,6 +79,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'ACCESS_COARSE_LOCATION',
       'ACCESS_FINE_LOCATION',
       'CAMERA',
+      'READ_MEDIA_IMAGES',
+      'RECORD_AUDIO',
       'POST_NOTIFICATIONS',
       'VIBRATE',
     ],
@@ -110,8 +114,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-image-picker',
       {
-        photosPermission: 'Nur Taxi использует галерею для загрузки фото профиля.',
+        photosPermission: 'Nur Taxi использует галерею для выбора фото профиля.',
         cameraPermission: 'Nur Taxi использует камеру для съёмки фото профиля.',
+        microphonePermission: false,
+      },
+    ],
+    [
+      'expo-audio',
+      {
+        microphonePermission:
+          'Nur Taxi использует микрофон для аудиозаписи поездки в целях безопасности.',
       },
     ],
     [

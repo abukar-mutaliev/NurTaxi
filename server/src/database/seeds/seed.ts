@@ -51,7 +51,10 @@ async function upsertUser(manager: EntityManager, def: (typeof SEED_USERS)[numbe
     notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
     pdnConsentAt: new Date('2026-01-01T00:00:00Z'),
     pdnConsentVersion: PDN_CONSENT_VERSION,
-    assignedRegionId: def.role === Role.RegionalAdmin ? INGUSHETIA_REGION_ID : null,
+    assignedRegionId:
+      def.role === Role.RegionalAdmin || def.role === Role.Operator
+        ? INGUSHETIA_REGION_ID
+        : null,
   };
 
   if (existing) {

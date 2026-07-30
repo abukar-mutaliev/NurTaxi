@@ -18,6 +18,10 @@ import type {
   Receipt,
   Review,
   SosResponse,
+  TripRecording,
+  ConfirmTripRecordingPayload,
+  PresignTripRecordingPayload,
+  PresignTripRecordingResponse,
 } from '@nurtaxi/shared-core/shared/model';
 import { toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 
@@ -85,6 +89,36 @@ export const orderApi = baseApi.injectEndpoints({
       query: ({ orderId, ...body }) => ({ url: `/orders/${orderId}/sos`, method: 'POST', body }),
     }),
 
+    getTripRecordings: build.query<TripRecording[], string>({
+      query: (orderId) => `/orders/${orderId}/recordings`,
+      providesTags: (_result, _error, orderId) => [{ type: 'Order', id: `${orderId}-recordings` }],
+    }),
+
+    presignTripRecording: build.mutation<
+      PresignTripRecordingResponse,
+      { orderId: string } & PresignTripRecordingPayload
+    >({
+      query: ({ orderId, ...body }) => ({
+        url: `/orders/${orderId}/recordings/presign`,
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    confirmTripRecording: build.mutation<
+      TripRecording,
+      { orderId: string } & ConfirmTripRecordingPayload
+    >({
+      query: ({ orderId, ...body }) => ({
+        url: `/orders/${orderId}/recordings/confirm`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { orderId }) => [
+        { type: 'Order', id: `${orderId}-recordings` },
+      ],
+    }),
+
     reviewOrder: build.mutation<Review, { orderId: string } & CreateReviewPayload>({
       query: ({ orderId, ...body }) => ({
         url: `/orders/${orderId}/review`,
@@ -109,6 +143,9 @@ export const {
   useGetOrderHistoryQuery,
   useCancelOrderMutation,
   useActivateSosMutation,
+  useGetTripRecordingsQuery,
+  usePresignTripRecordingMutation,
+  useConfirmTripRecordingMutation,
   useReviewOrderMutation,
   useGetReceiptQuery,
 } = orderApi;

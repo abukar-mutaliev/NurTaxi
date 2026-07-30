@@ -2,6 +2,8 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import medium from 'expo-symbols/androidWeights/medium';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -34,7 +36,8 @@ const phoneColors = {
   inputPlaceholder: '#A99FA6',
   inputBg: 'rgba(255,255,255,0.72)',
   inputBorder: 'rgba(255,255,255,0.9)',
-  dot: '#E8C882',
+  iconOuter: 'rgba(252,244,228,0.95)',
+  iconAccent: '#E8C882',
   buttonStart: '#5A2E60',
   buttonEnd: '#3A1D3F',
   buttonText: '#F7F3EE',
@@ -206,14 +209,22 @@ export function PhoneScreen() {
         >
           <View
             style={[
-              styles.inputDot,
+              styles.inputIconOuter,
               {
-                backgroundColor: phoneColors.dot,
-                height: sx(18),
-                width: sx(18),
+                height: sx(36),
+                width: sx(36),
               },
             ]}
-          />
+          >
+            <SymbolView
+              name={{ ios: 'phone.fill', android: 'phone', web: 'phone' }}
+              resizeMode="scaleAspectFit"
+              size={sx(18)}
+              tintColor={phoneColors.iconAccent}
+              type="monochrome"
+              weight={{ ios: 'medium', android: medium }}
+            />
+          </View>
           <View style={styles.inputField}>
             <TextInput
               autoFocus
@@ -322,8 +333,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     padding: 0,
   },
-  inputDot: {
+  inputIconOuter: {
+    alignItems: 'center',
+    backgroundColor: phoneColors.iconOuter,
     borderRadius: 999,
+    justifyContent: 'center',
   },
   inputField: {
     flex: 1,

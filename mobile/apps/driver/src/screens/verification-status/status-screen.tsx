@@ -5,6 +5,7 @@
  * причину отклонения и даёт повторно подать документы. Пока статус не `approved`,
  * guard-навигация не выпускает водителя из группы `(verification)` (M7.4).
  */
+import { useEffect } from 'react';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -56,9 +57,24 @@ const STATUS_VIEW: Record<string, StatusView> = {
 export function VerificationStatusScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { data: profile, isLoading, isFetching, refetch } = useGetDriverProfileQuery();
+  const {
+    data: profile,
+    isLoading,
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useGetDriverProfileQuery();
 
-  if (isLoading || !profile) {
+  const hasNoProfile = isError && error !== undefined && 'status' in error && error.status === 404;
+
+  useEffect(() => {
+    if (hasNoProfile) {
+      router.replace('/(verification)/registration');
+    }
+  }, [hasNoProfile, router]);
+
+  if (hasNoProfile || isLoading || !profile) {
     return (
       <Screen>
         <Loader />

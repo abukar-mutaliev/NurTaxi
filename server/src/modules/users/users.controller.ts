@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
 import { UsersService, CURRENT_CONSENT_VERSION } from './users.service';
+import { ConfirmProfilePhotoDto, PresignProfilePhotoDto } from './dto/profile-photo.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ConsentDto } from './dto/consent.dto';
 import { UserResponse } from './dto/user.presenter';
@@ -18,7 +19,8 @@ export class UsersController {
   @Get()
   @ApiOperation({ summary: 'Профиль текущего пользователя' })
   async getMe(@CurrentUser() user: AuthenticatedUser): Promise<UserResponse> {
-    return UserResponse.from(await this.usersService.getByIdOrThrow(user.id));
+    const profile = await this.usersService.getByIdOrThrow(user.id);
+    return UserResponse.from(await this.usersService.withResolvedPhotoUrl(profile));
   }
 
   @Patch()
@@ -27,7 +29,24 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateProfileDto,
   ): Promise<UserResponse> {
-    return UserResponse.from(await this.usersService.updateProfile(user.id, dto));
+    const profile = await this.usersService.updateProfile(user.id, dto);
+    return UserResponse.from(await this.usersService.withResolvedPhotoUrl(profile));
+  }
+
+  @Post('photo/presign')
+  @ApiOperation({ summary: 'Presigned URL для загрузки фото профиля в S3' })
+  presignPhoto(@CurrentUser() user: AuthenticatedUser, @Body() dto: PresignProfilePhotoDto) {
+    return this.usersService.createPhotoUploadUrl(user.id, dto);
+  }
+
+  @Post('photo/confirm')
+  @ApiOperation({ summary: 'Подтверждение загруженного фото профиля' })
+  async confirmPhoto(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ConfirmProfilePhotoDto,
+  ): Promise<UserResponse> {
+    const profile = await this.usersService.confirmPhotoUpload(user.id, dto);
+    return UserResponse.from(profile);
   }
 
   @Post('consent')

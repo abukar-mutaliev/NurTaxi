@@ -12,6 +12,8 @@ export class UserResponse {
   @ApiProperty({ enum: Role }) role!: Role;
   @ApiProperty() language!: string;
   @ApiProperty({ enum: UserStatus }) status!: UserStatus;
+  @ApiProperty({ nullable: true, description: 'Регион для operator / regional_admin' })
+  assignedRegionId!: string | null;
   @ApiProperty() notificationSettings!: NotificationSettings;
   @ApiProperty() privacySettings!: PrivacySettings;
   @ApiProperty() pdnConsentGiven!: boolean;
@@ -26,6 +28,7 @@ export class UserResponse {
       role: user.role,
       language: user.language,
       status: user.status,
+      assignedRegionId: user.assignedRegionId,
       notificationSettings: user.notificationSettings,
       privacySettings: user.privacySettings,
       pdnConsentGiven: user.pdnConsentAt !== null,

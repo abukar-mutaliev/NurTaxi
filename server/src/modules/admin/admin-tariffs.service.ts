@@ -51,11 +51,16 @@ export class AdminTariffsService {
   async update(id: string, dto: UpdateTariffDto): Promise<Tariff> {
     const tariff = await this.getTariff(id);
     if (dto.name !== undefined) tariff.name = dto.name;
+    if (dto.baseFare !== undefined) tariff.baseFare = String(dto.baseFare);
+    if (dto.pricePerKm !== undefined) tariff.pricePerKm = String(dto.pricePerKm);
+    if (dto.pricePerMin !== undefined) tariff.pricePerMin = String(dto.pricePerMin);
+    if (dto.minPrice !== undefined) tariff.minPrice = String(dto.minPrice);
     if (dto.commissionPercent !== undefined) {
       tariff.commissionPercent = String(dto.commissionPercent);
     }
     if (dto.surgeRules !== undefined) tariff.surgeRules = dto.surgeRules;
     if (dto.cancellationPolicy !== undefined) tariff.cancellationPolicy = dto.cancellationPolicy;
+    if (dto.effectiveFrom !== undefined) tariff.effectiveFrom = new Date(dto.effectiveFrom);
     if (dto.isActive !== undefined) tariff.isActive = dto.isActive;
     const saved = await this.tariffs.save(tariff);
     await this.tariffCache.invalidateRegion(tariff.regionId);

@@ -42,7 +42,10 @@ export interface PaymentMethodCardProps {
   title: string;
   subtitle?: string;
   isPrimary?: boolean;
-  onPress: () => void;
+  editMode?: boolean;
+  deleteDisabled?: boolean;
+  onPress?: () => void;
+  onDelete?: () => void;
 }
 
 export function PaymentMethodCard({
@@ -50,7 +53,10 @@ export function PaymentMethodCard({
   title,
   subtitle,
   isPrimary = false,
+  editMode = false,
+  deleteDisabled = false,
   onPress,
+  onDelete,
 }: PaymentMethodCardProps) {
   const brandStyle = brandStyles[brand];
 
@@ -58,11 +64,12 @@ export function PaymentMethodCard({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: isPrimary }}
+      disabled={editMode}
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        isPrimary ? styles.cardPrimary : null,
-        pressed && styles.pressed,
+        isPrimary && !editMode ? styles.cardPrimary : null,
+        pressed && !editMode && styles.pressed,
       ]}
     >
       <View style={[styles.badge, { backgroundColor: brandStyle.badgeBg }]}>
@@ -90,11 +97,26 @@ export function PaymentMethodCard({
         ) : null}
       </View>
 
-      {isPrimary ? (
-        <View style={styles.radioOuter}>
-          <View style={styles.radioInner} />
+      {editMode ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: deleteDisabled }}
+          disabled={deleteDisabled}
+          hitSlop={8}
+          onPress={onDelete}
+          style={({ pressed }) => [
+            styles.deleteButton,
+            deleteDisabled && styles.deleteButtonDisabled,
+            pressed && !deleteDisabled && styles.pressed,
+          ]}
+        >
+          <Text style={styles.deleteIcon}>−</Text>
+        </Pressable>
+      ) : (
+        <View style={[styles.radioOuter, !isPrimary && styles.radioOuterEmpty]}>
+          {isPrimary ? <View style={styles.radioInner} /> : null}
         </View>
-      ) : null}
+      )}
     </Pressable>
   );
 }
@@ -132,6 +154,24 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorderPrimary,
     borderWidth: 1.5,
   },
+  deleteButton: {
+    alignItems: 'center',
+    backgroundColor: '#E85D4A',
+    borderRadius: 999,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  deleteButtonDisabled: {
+    backgroundColor: 'rgba(232,93,74,0.35)',
+  },
+  deleteIcon: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
+    lineHeight: 20,
+    marginTop: -1,
+  },
   pressed: {
     opacity: 0.92,
   },
@@ -148,6 +188,11 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: 'center',
     width: 24,
+  },
+  radioOuterEmpty: {
+    backgroundColor: 'transparent',
+    borderColor: 'rgba(169,159,166,0.55)',
+    borderWidth: 1.5,
   },
   subtitle: {
     color: colors.subtitle,

@@ -3,11 +3,11 @@
  * Показывает пользователю понятный экран вместо белого поля и отправляет отчёт в Sentry.
  */
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { View } from 'react-native';
 
-import { Button, Screen, Text } from '@nurtaxi/shared-core/shared/ui';
+import { appConfig } from '@nurtaxi/shared-core/shared/config';
 
 import { Sentry } from '../sentry';
+import { ErrorBoundaryFallback } from './error-boundary-fallback';
 
 interface Props {
   children: ReactNode;
@@ -25,7 +25,20 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
+    if (__DEV__) {
+      console.error('[AppErrorBoundary]', error, info.componentStack);
+    }
+
+    if (!appConfig.sentryDsn) {
+      return;
+    }
+
+    Sentry.withScope((scope) => {
+      scope.setTag('source', 'error-boundary');
+      scope.setLevel('fatal');
+      scope.setExtra('componentStack', info.componentStack);
+      Sentry.captureException(error);
+    });
   }
 
   private readonly reset = () => {
@@ -38,16 +51,6 @@ export class AppErrorBoundary extends Component<Props, State> {
       return this.props.children;
     }
 
-    return (
-      <Screen>
-        <View style={{ flex: 1, gap: 16, justifyContent: 'center' }}>
-          <Text variant="title">Что-то пошло не так</Text>
-          <Text tone="muted">
-            Мы уже получили отчёт об ошибке. Попробуйте вернуться на предыдущий экран.
-          </Text>
-          <Button onPress={this.reset} title="Попробовать снова" />
-        </View>
-      </Screen>
-    );
+    return <ErrorBoundaryFallback error={error} onRetry={this.reset} />;
   }
 }

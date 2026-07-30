@@ -69,6 +69,7 @@ export class DriversController {
   }
 
   @Get('profile')
+  @Roles(Role.Client, Role.Driver)
   @ApiOperation({ summary: 'Профиль водителя (Req §8.4)' })
   async getProfile(@CurrentUser() user: AuthenticatedUser): Promise<DriverProfileResponse> {
     const profile = await this.driversService.getProfileByUserId(user.id);

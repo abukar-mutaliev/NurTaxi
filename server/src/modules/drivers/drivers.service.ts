@@ -27,9 +27,10 @@ import {
   DOCUMENT_AUTO_VERIFIER,
   type DocumentAutoVerifier,
 } from './verification/document-auto-verifier.interface';
-import type { RegisterDriverDto, RegisterDocumentDto, PresignDocumentDto } from './dto/drivers.dto';
+import type { RegisterDriverDto, RegisterDocumentDto, PresignDocumentDto, AdminUpdateDriverDto } from './dto/drivers.dto';
 import type { WorkSchedule } from './entities/work-schedule.types';
 import { LedgerService } from '../payments/ledger.service';
+import { Payout } from '../payments/entities/payout.entity';
 
 const CONTENT_TYPE_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -282,7 +283,11 @@ export class DriversService {
     if (allApproved) {
       profile.verificationStatus = VerificationStatus.Approved;
       profile.rejectionReason = null;
-      this.eventBus.publish('document.verified', { driverId, userId: profile.userId });
+      this.eventBus.publish('document.verified', {
+        driverId,
+        userId: profile.userId,
+        regionId: profile.regionId,
+      });
     } else if (anyRejected) {
       profile.verificationStatus = VerificationStatus.Rejected;
     } else {
@@ -488,6 +493,116 @@ export class DriversService {
     }
 
     return saved;
+  }
+
+  /** Блокировка/разблокировка аккаунта водителя (Req §7.4, §12.3). */
+  async setDriverAccountStatus(
+    driverId: string,
+    status: 'active' | 'blocked',
+    reason?: string,
+  ): Promise<DriverProfile> {
+    const profile = await this.getDriverForModeration(driverId);
+    const user = profile.user;
+    if (!user) {
+      throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'Пользователь не найден' });
+    }
+
+    user.status = status === 'blocked' ? UserStatus.Blocked : UserStatus.Active;
+    await this.usersService.setStatus(user.id, user.status);
+
+    if (status === 'blocked') {
+      profile.onlineStatus = DriverOnlineStatus.Offline;
+      profile.rejectionReason = reason?.trim() ?? profile.rejectionReason;
+      await this.drivers.save(profile);
+    }
+
+    return this.getDriverForModeration(driverId);
+  }
+
+  async updateDriverForAdmin(driverId: string, dto: AdminUpdateDriverDto): Promise<DriverProfile> {
+    const profile = await this.getDriverForModeration(driverId);
+
+    if (dto.regionId !== undefined) {
+      await this.regionsService.getRegionOrThrow(dto.regionId);
+      profile.regionId = dto.regionId;
+    }
+    if (dto.fullName !== undefined) profile.fullName = dto.fullName;
+    if (dto.birthDate !== undefined) profile.birthDate = dto.birthDate;
+    if (dto.residenceAddress !== undefined) profile.residenceAddress = dto.residenceAddress;
+    if (dto.drivingExperienceYears !== undefined) {
+      profile.drivingExperienceYears = dto.drivingExperienceYears;
+    }
+
+    await this.drivers.save(profile);
+
+    if (dto.vehicle) {
+      const vehicle = await this.vehicles.findOne({ where: { driverId, isPrimary: true } });
+      if (vehicle) {
+        if (dto.vehicle.make !== undefined) vehicle.make = dto.vehicle.make;
+        if (dto.vehicle.model !== undefined) vehicle.model = dto.vehicle.model;
+        if (dto.vehicle.plateNumber !== undefined) vehicle.plateNumber = dto.vehicle.plateNumber;
+        if (dto.vehicle.color !== undefined) vehicle.color = dto.vehicle.color;
+        if (dto.vehicle.year !== undefined) vehicle.year = dto.vehicle.year;
+        await this.vehicles.save(vehicle);
+      }
+    }
+
+    return this.getDriverForModeration(driverId);
+  }
+
+  async approveDriverVerification(moderatorId: string, driverId: string): Promise<DriverProfile> {
+    const pending = await this.documents.find({
+      where: { driverId, status: DocumentStatus.Pending },
+    });
+
+    if (pending.length === 0) {
+      throw new BadRequestException({
+        code: 'NO_PENDING_DOCUMENTS',
+        message: 'Нет документов, ожидающих проверки',
+      });
+    }
+
+    const now = new Date();
+    for (const document of pending) {
+      document.status = DocumentStatus.Approved;
+      document.moderatorId = moderatorId;
+      document.rejectionReason = null;
+      document.verifiedAt = now;
+    }
+    await this.documents.save(pending);
+    await this.syncVerificationStatus(driverId);
+
+    return this.getDriverForModeration(driverId);
+  }
+
+  async deleteDriverForAdmin(driverId: string): Promise<void> {
+    const profile = await this.getDriverForModeration(driverId);
+
+    if (profile.onlineStatus === DriverOnlineStatus.Busy) {
+      throw new ConflictException({
+        code: 'DRIVER_BUSY',
+        message: 'Нельзя удалить водителя во время активной поездки',
+      });
+    }
+
+    const payoutCount = await this.drivers.manager.getRepository(Payout).count({
+      where: { driverId },
+    });
+    if (payoutCount > 0) {
+      throw new BadRequestException({
+        code: 'DRIVER_HAS_PAYOUTS',
+        message: 'Нельзя удалить водителя с историей выплат. Заблокируйте аккаунт.',
+      });
+    }
+
+    const userId = profile.userId;
+    await this.drivers.remove(profile);
+
+    const user = await this.usersService.getByIdOrThrow(userId);
+    if (user.role === Role.Driver) {
+      user.role = Role.Client;
+      await this.drivers.manager.getRepository(User).save(user);
+    }
   }
 
   async getDocumentDownloadUrl(driverId: string, documentId: string) {

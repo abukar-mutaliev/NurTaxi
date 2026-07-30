@@ -188,8 +188,8 @@ export function HomeScreen() {
       </View>
 
       <HomeMapHeader
-        onMenuPress={() => router.push('/(tabs)/profile')}
-        onProfilePress={() => router.push('/(tabs)/profile')}
+        onMenuPress={() => router.push('/notifications')}
+        onProfilePress={() => router.navigate('/(tabs)/profile')}
         onSearchPress={() => openSearch('dropoff')}
         searchLabel={hasActiveOrder ? t('order.goToActive') : t('order.where')}
       />

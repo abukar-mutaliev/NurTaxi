@@ -15,6 +15,7 @@ import { EmptyState, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared
 import { useGetOrderHistoryQuery } from '@nurtaxi/shared-core/entities/order';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
+import { GlassScreenHeader } from '@/shared/ui';
 import { WelcomeGradientBackground } from '@/shared/ui/welcome-gradient-background';
 
 import { formatRatingStars, formatTripHistoryDate } from './format-trip-date';
@@ -31,7 +32,12 @@ const colors = {
 const logoAsset = require('@/assets/images/welcome/logo.png');
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
-export function HistoryScreen() {
+export interface HistoryScreenProps {
+  /** На вкладке таббара — без кнопки «назад». */
+  variant?: 'stack' | 'tab';
+}
+
+export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
   const { t } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -125,23 +131,29 @@ export function HistoryScreen() {
           </View>
         }
         ListHeaderComponent={
-          <View style={{ paddingTop: insets.top + scale * 8 }}>
-            <View style={styles.brandRow}>
-              <View style={[styles.logoClip, { height: logoHeight, width: logoWidth }]}>
-                <Image
-                  contentFit="fill"
-                  source={logoAsset}
-                  style={{
-                    height: logoHeight * 1.0017,
-                    marginLeft: -logoCropOffsetX,
-                    width: logoRenderWidth,
-                  }}
-                />
-              </View>
-            </View>
-            <Text style={[styles.title, { fontSize: scale * 17, marginTop: scale * 12 }]}>
-              {t('profile.tripHistory')}
-            </Text>
+          <View style={{ paddingTop: insets.top + (variant === 'stack' ? scale * 10 : scale * 8) }}>
+            {variant === 'stack' ? (
+              <GlassScreenHeader showBack title={t('profile.tripHistory')} />
+            ) : (
+              <>
+                <View style={styles.brandRow}>
+                  <View style={[styles.logoClip, { height: logoHeight, width: logoWidth }]}>
+                    <Image
+                      contentFit="fill"
+                      source={logoAsset}
+                      style={{
+                        height: logoHeight * 1.0017,
+                        marginLeft: -logoCropOffsetX,
+                        width: logoRenderWidth,
+                      }}
+                    />
+                  </View>
+                </View>
+                <Text style={[styles.title, { fontSize: scale * 17, marginTop: scale * 12 }]}>
+                  {t('profile.tripHistory')}
+                </Text>
+              </>
+            )}
           </View>
         }
         contentContainerStyle={{

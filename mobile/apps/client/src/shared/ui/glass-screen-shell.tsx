@@ -7,6 +7,7 @@ import {
   View,
   useWindowDimensions,
   type StyleProp,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -152,8 +153,14 @@ export function GlassScreenShell({
   );
 }
 
-export function GlassCaption({ children }: { children: ReactNode }) {
-  return <Text style={styles.caption}>{children}</Text>;
+export function GlassCaption({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: StyleProp<TextStyle>;
+}) {
+  return <Text style={[styles.caption, style]}>{children}</Text>;
 }
 
 export function GlassSectionLabel({ children }: { children: ReactNode }) {

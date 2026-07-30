@@ -2,11 +2,16 @@
  * Экстренные контакты (M2.4): список, добавление, удаление (лимит 5).
  */
 import { useState } from 'react';
-import { Alert, View, useWindowDimensions } from 'react-native';
+import { Linking, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { applyPhoneMask, formatPhone, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
+import {
+  applyPhoneMask,
+  formatPhone,
+  isValidPhone,
+  normalizePhone,
+} from '@nurtaxi/shared-core/shared/lib';
 import { Button, Input, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   EMERGENCY_CONTACTS_LIMIT,
@@ -19,6 +24,7 @@ import {
   GLASS_COLORS,
   GLASS_DESIGN_WIDTH,
   GlassCaption,
+  GlassConfirmDialog,
   GlassListRow,
   GlassPrimaryButton,
   GlassScreenShell,
@@ -36,9 +42,10 @@ export function EmergencyContactsScreen() {
     refetch,
   } = useGetEmergencyContactsQuery();
   const [createContact, createState] = useCreateEmergencyContactMutation();
-  const [deleteContact] = useDeleteEmergencyContactMutation();
+  const [deleteContact, { isLoading: isDeleting }] = useDeleteEmergencyContactMutation();
 
   const [sheetVisible, setSheetVisible] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+7 ');
   const [formError, setFormError] = useState<string | null>(null);
@@ -68,16 +75,22 @@ export function EmergencyContactsScreen() {
   };
 
   const confirmDelete = (id: string, contactName: string) => {
-    Alert.alert(t('common.delete'), t('emergency.deleteConfirm', { name: contactName }), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('common.delete'),
-        style: 'destructive',
-        onPress: () => {
-          void deleteContact(id);
-        },
-      },
-    ]);
+    setDeleteTarget({ id, name: contactName });
+  };
+
+  const callContact = (phone: string) => {
+    void Linking.openURL(`tel:${normalizePhone(phone)}`);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    void deleteContact(deleteTarget.id)
+      .unwrap()
+      .then(() => setDeleteTarget(null))
+      .catch(() => setDeleteTarget(null));
   };
 
   if (isLoading) {
@@ -120,7 +133,8 @@ export function EmergencyContactsScreen() {
             {contacts.map((contact) => (
               <GlassListRow
                 key={contact.id}
-                onPress={() => confirmDelete(contact.id, contact.name)}
+                onLongPress={() => confirmDelete(contact.id, contact.name)}
+                onPress={() => callContact(contact.phone)}
                 subtitle={formatPhone(contact.phone)}
                 title={contact.name}
               />
@@ -161,6 +175,19 @@ export function EmergencyContactsScreen() {
           />
         </View>
       </Sheet>
+
+      <GlassConfirmDialog
+        confirmTitle={t('common.delete')}
+        destructive
+        loading={isDeleting}
+        message={
+          deleteTarget ? t('emergency.deleteConfirm', { name: deleteTarget.name }) : undefined
+        }
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+        title={t('common.delete')}
+        visible={deleteTarget !== null}
+      />
     </>
   );
 }

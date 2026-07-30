@@ -1,7 +1,10 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
+  IsNotEmpty,
   IsNumber,
   IsObject,
   IsOptional,
@@ -10,9 +13,11 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { Role } from '../../../common/enums/role.enum';
 import { UserStatus } from '../../../common/enums/user-status.enum';
+import { normalizePhone } from '../../auth/phone.util';
 import { ProviderType } from '../enums/provider-type.enum';
 import type { CancellationPolicy } from '../../tariffs/entities/tariff.entity';
 import type { SurgeRules } from '../../tariffs/entities/tariff.entity';
@@ -135,6 +140,30 @@ export class UpdateTariffDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  baseFare?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  pricePerKm?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  pricePerMin?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  minPrice?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   commissionPercent?: number;
 
   @ApiPropertyOptional()
@@ -146,6 +175,11 @@ export class UpdateTariffDto {
   @IsOptional()
   @IsObject()
   cancellationPolicy?: CancellationPolicy;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  effectiveFrom?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -201,12 +235,27 @@ export class UpdateProviderDto {
 }
 
 export class AssignStaffDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @ValidateIf((dto: AssignStaffDto) => !dto.phone)
   @IsUUID()
-  userId!: string;
+  @IsNotEmpty()
+  userId?: string;
+
+  @ApiPropertyOptional({ description: 'Телефон пользователя в формате +7XXXXXXXXXX' })
+  @ValidateIf((dto: AssignStaffDto) => !dto.userId)
+  @IsString()
+  @IsNotEmpty()
+  @Transform(({ value }) => (typeof value === 'string' ? normalizePhone(value) : value))
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  name?: string;
 
   @ApiProperty({ enum: [Role.Operator, Role.RegionalAdmin] })
-  @IsEnum(Role)
+  @IsIn([Role.Operator, Role.RegionalAdmin])
   role!: Role;
 
   @ApiProperty()

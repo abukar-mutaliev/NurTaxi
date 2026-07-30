@@ -1,7 +1,10 @@
 /** Профиль пользователя — `GET/PATCH /me`, `POST /me/consent` (M2.1, `§8.3`). */
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
 import type {
+  ConfirmProfilePhotoPayload,
   ConsentPayload,
+  PresignProfilePhotoPayload,
+  PresignProfilePhotoResponse,
   UpdateProfilePayload,
   UserProfile,
 } from '@nurtaxi/shared-core/shared/model';
@@ -53,8 +56,23 @@ export const userApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/me/consent', method: 'POST', body }),
       invalidatesTags: ['Profile'],
     }),
+
+    presignProfilePhoto: build.mutation<PresignProfilePhotoResponse, PresignProfilePhotoPayload>({
+      query: (body) => ({ url: '/me/photo/presign', method: 'POST', body }),
+    }),
+
+    confirmProfilePhoto: build.mutation<UserProfile, ConfirmProfilePhotoPayload>({
+      query: (body) => ({ url: '/me/photo/confirm', method: 'POST', body }),
+      invalidatesTags: ['Profile'],
+    }),
   }),
 });
 
-export const { useGetMeQuery, useLazyGetMeQuery, useUpdateMeMutation, useGiveConsentMutation } =
-  userApi;
+export const {
+  useGetMeQuery,
+  useLazyGetMeQuery,
+  useUpdateMeMutation,
+  useGiveConsentMutation,
+  usePresignProfilePhotoMutation,
+  useConfirmProfilePhotoMutation,
+} = userApi;

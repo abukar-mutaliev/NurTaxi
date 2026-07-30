@@ -14,12 +14,13 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../redis/redis.constants';
 import { Role } from '../../common/enums/role.enum';
-import { clientRoom, driverRoom, orderRoom } from './realtime.constants';
+import { clientRoom, driverRoom, operatorsAllRoom, orderRoom, regionRoom, staffRoom, STAFF_WS_ROLES } from './realtime.constants';
 import { RealtimeBroadcastService } from './realtime-broadcast.service';
 import { WsSubscriptionService } from './ws-subscription.service';
 import { WsAuthService } from './ws-auth.service';
 import { OrderTrackingService } from '../orders/order-tracking.service';
 import { RealtimeLocationBridge } from './realtime-location.bridge';
+import { UsersService } from '../users/users.service';
 
 @WebSocketGateway({
   namespace: '/ws',
@@ -34,6 +35,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly wsAuth: WsAuthService,
+    private readonly usersService: UsersService,
     private readonly subscriptions: WsSubscriptionService,
     private readonly broadcast: RealtimeBroadcastService,
     @Inject(forwardRef(() => OrderTrackingService))
@@ -62,11 +64,32 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       const user = await this.wsAuth.authenticate(token);
       client.data.user = user;
 
-      const room = user.role === Role.Driver ? driverRoom(user.id) : clientRoom(user.id);
-      await client.join(room);
-      await this.subscriptions.add(client.id, room);
+      if (user.role === Role.Driver) {
+        await client.join(driverRoom(user.id));
+        await this.subscriptions.add(client.id, driverRoom(user.id));
+      } else if (STAFF_WS_ROLES.includes(user.role as (typeof STAFF_WS_ROLES)[number])) {
+        await client.join(staffRoom(user.id));
+        await this.subscriptions.add(client.id, staffRoom(user.id));
 
-      this.logger.debug(`WS подключение: user=${user.id} room=${room}`);
+        const dbUser = await this.usersService.findById(user.id);
+        if (dbUser?.assignedRegionId) {
+          const room = regionRoom(dbUser.assignedRegionId);
+          await client.join(room);
+          await this.subscriptions.add(client.id, room);
+        }
+        if (user.role === Role.SuperAdmin) {
+          await client.join(operatorsAllRoom());
+          await this.subscriptions.add(client.id, operatorsAllRoom());
+        }
+
+        this.logger.debug(`WS staff: user=${user.id} role=${user.role}`);
+      } else {
+        const room = clientRoom(user.id);
+        await client.join(room);
+        await this.subscriptions.add(client.id, room);
+      }
+
+      this.logger.debug(`WS подключение: user=${user.id} role=${user.role}`);
     } catch {
       client.disconnect(true);
     }

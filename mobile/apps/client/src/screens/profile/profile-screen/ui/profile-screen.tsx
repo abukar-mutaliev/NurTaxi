@@ -114,7 +114,14 @@ export function ProfileScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={[styles.profileHeader, { paddingHorizontal: scale * 10 }]}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/profile/edit')}
+          style={({ pressed }) => [
+            styles.profileHeader,
+            { opacity: pressed ? 0.92 : 1, paddingHorizontal: scale * 10 },
+          ]}
+        >
           {profile.photoUrl ? (
             <Image
               contentFit="cover"
@@ -135,28 +142,37 @@ export function ProfileScreen() {
               {formatPhone(profile.phone)}
             </Text>
           </View>
-        </View>
+        </Pressable>
 
         <View style={{ gap: scale * 10, marginTop: scale * 20 }}>
           <ProfileMenuRow
-            onPress={() => router.push('/(tabs)/history')}
+            icon={{ ios: 'clock.fill', android: 'schedule', web: 'schedule' }}
+            onPress={() => router.push('/profile/history')}
             title={t('profile.tripHistory')}
           />
           <ProfileMenuRow
+            icon={{ ios: 'creditcard.fill', android: 'credit_card', web: 'credit_card' }}
             onPress={() => router.push('/profile/payment-methods')}
             title={t('profile.paymentMethods')}
           />
           <ProfileMenuRow
-            onPress={() => router.push('/(tabs)/favorites')}
+            icon={{ ios: 'mappin.circle.fill', android: 'location_on', web: 'location_on' }}
+            onPress={() => router.push('/profile/addresses')}
             title={t('profile.favoriteAddresses')}
           />
           <ProfileMenuRow
+            icon={{ ios: 'shield.fill', android: 'shield', web: 'shield' }}
             iconTone="safety"
             onPress={() => router.push('/profile/safety')}
             title={t('profile.safety')}
           />
-          <ProfileMenuRow onPress={openSupport} title={t('profile.support')} />
           <ProfileMenuRow
+            icon={{ ios: 'questionmark.circle.fill', android: 'help', web: 'help' }}
+            onPress={openSupport}
+            title={t('profile.support')}
+          />
+          <ProfileMenuRow
+            icon={{ ios: 'gearshape.fill', android: 'settings', web: 'settings' }}
             iconTone="settings"
             onPress={() => router.push('/profile/settings')}
             title={t('profile.settingsTitle')}

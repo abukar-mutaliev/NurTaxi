@@ -1,6 +1,10 @@
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import medium from 'expo-symbols/androidWeights/medium';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
+
+type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const colors = {
   cardBg: 'rgba(255,255,255,0.82)',
@@ -26,11 +30,17 @@ const iconToneColors: Record<ProfileMenuIconTone, { outer: string; inner: string
 
 export interface ProfileMenuRowProps {
   title: string;
+  icon: SymbolName;
   iconTone?: ProfileMenuIconTone;
   onPress: () => void;
 }
 
-export function ProfileMenuRow({ title, iconTone = 'default', onPress }: ProfileMenuRowProps) {
+export function ProfileMenuRow({
+  title,
+  icon,
+  iconTone = 'default',
+  onPress,
+}: ProfileMenuRowProps) {
   const iconColors = iconToneColors[iconTone];
 
   return (
@@ -40,7 +50,14 @@ export function ProfileMenuRow({ title, iconTone = 'default', onPress }: Profile
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       <View style={[styles.iconOuter, { backgroundColor: iconColors.outer }]}>
-        <View style={[styles.iconInner, { backgroundColor: iconColors.inner }]} />
+        <SymbolView
+          name={icon}
+          resizeMode="scaleAspectFit"
+          size={18}
+          tintColor={iconColors.inner}
+          type="monochrome"
+          weight={{ ios: 'medium', android: medium }}
+        />
       </View>
       <Text numberOfLines={1} style={styles.title}>
         {title}
@@ -55,11 +72,6 @@ const styles = StyleSheet.create({
     color: colors.chevron,
     fontSize: 17,
     lineHeight: 22,
-  },
-  iconInner: {
-    borderRadius: 999,
-    height: 15,
-    width: 15,
   },
   iconOuter: {
     alignItems: 'center',

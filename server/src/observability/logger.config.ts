@@ -2,6 +2,9 @@ import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { trace } from '@opentelemetry/api';
 import type { Params } from 'nestjs-pino';
+import type { ReqId } from 'pino-http';
+
+type HttpRequest = IncomingMessage & { id?: ReqId };
 
 /**
  * Конфигурация структурированного (JSON) логирования через pino.
@@ -25,7 +28,24 @@ export function buildLoggerConfig(): Params {
         res.setHeader('x-request-id', id);
         return id;
       },
-      // Маскирование чувствительных полей (ПДн, секреты, токены).
+      // Компактные сериализаторы: без headers/query/params — они раздувают каждую строку лога.
+      wrapSerializers: false,
+      serializers: {
+        req: (req: HttpRequest) => ({
+          id: req.id,
+          method: req.method,
+          url: req.url,
+          remoteAddress: req.socket?.remoteAddress,
+        }),
+        res: (res: ServerResponse) => ({
+          statusCode: res.statusCode,
+        }),
+      },
+      customSuccessMessage: (req: HttpRequest, res: ServerResponse) => {
+        const url = req.url ?? '';
+        return `${req.method} ${url} ${res.statusCode}`;
+      },
+      // Маскирование чувствительных полей (ПДн, секреты, токены) в прикладных логах.
       redact: {
         paths: [
           'req.headers.authorization',

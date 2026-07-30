@@ -120,8 +120,7 @@ export class SosService {
       }),
     );
 
-    await this.broadcast.publishSos(order.id, payload);
-    await this.broadcast.publish(`client:${clientId}`, 'sos.activated', payload);
+    await this.broadcast.publishSos(order.id, order.regionId, clientId, payload);
 
     this.eventBus.publish('sos.activated', {
       orderId: order.id,

@@ -1,10 +1,14 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -17,9 +21,11 @@ import type { AuthenticatedUser } from '../../../common/auth/jwt-payload.interfa
 import { Role } from '../../../common/enums/role.enum';
 import { VerificationStatus } from '../../../common/enums/verification-status.enum';
 import { DriversService } from '../../drivers/drivers.service';
-import { ModerateDocumentDto } from '../../drivers/dto/drivers.dto';
+import { ModerateDocumentDto, AdminUpdateDriverDto } from '../../drivers/dto/drivers.dto';
 import { DriverDocumentResponse, DriverProfileResponse } from '../../drivers/dto/driver.presenter';
+import { BlockUserDto } from '../dto/admin.dto';
 import { AdminScopeService } from '../admin-scope.service';
+import { UserStatus } from '../../../common/enums/user-status.enum';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -33,7 +39,7 @@ export class AdminDriversController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Список водителей для верификации (Req §7.3, §8.2)' })
+  @ApiOperation({ summary: 'Список водителей (фильтр по статусу верификации, регион-скоуп)' })
   async listDrivers(
     @CurrentUser() actor: AuthenticatedUser,
     @Query('verificationStatus') verificationStatus?: VerificationStatus,
@@ -97,5 +103,80 @@ export class AdminDriversController {
     );
     const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(driverId, doc.id);
     return DriverDocumentResponse.from(doc, downloadUrl);
+  }
+
+  @Patch(':id/block')
+  @ApiOperation({ summary: 'Блокировка/разблокировка водителя (Req §7.4, §12.3)' })
+  async setBlocked(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: BlockUserDto,
+  ): Promise<DriverProfileResponse> {
+    const driver = await this.driversService.getDriverForModeration(id);
+    await this.scope.assertRegionAccess(actor, driver.regionId);
+
+    const status = dto.status === UserStatus.Blocked ? 'blocked' : 'active';
+    const updated = await this.driversService.setDriverAccountStatus(id, status);
+    const docs = await Promise.all(
+      (updated.documents ?? []).map(async (doc) => {
+        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(updated.id, doc.id);
+        return DriverDocumentResponse.from(doc, downloadUrl);
+      }),
+    );
+    return DriverProfileResponse.from(updated, docs);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Редактирование профиля водителя' })
+  async updateDriver(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AdminUpdateDriverDto,
+  ): Promise<DriverProfileResponse> {
+    const existing = await this.driversService.getDriverForModeration(id);
+    await this.scope.assertRegionAccess(actor, existing.regionId);
+
+    const updated = await this.driversService.updateDriverForAdmin(id, dto);
+    const docs = await Promise.all(
+      (updated.documents ?? []).map(async (doc) => {
+        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(updated.id, doc.id);
+        return DriverDocumentResponse.from(doc, downloadUrl);
+      }),
+    );
+    return DriverProfileResponse.from(updated, docs);
+  }
+
+  @Post(':id/approve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Одобрить все документы водителя на проверке' })
+  async approveDriver(
+    @CurrentUser() moderator: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<DriverProfileResponse> {
+    const existing = await this.driversService.getDriverForModeration(id);
+    await this.scope.assertRegionAccess(moderator, existing.regionId);
+
+    const updated = await this.driversService.approveDriverVerification(moderator.id, id);
+    const docs = await Promise.all(
+      (updated.documents ?? []).map(async (doc) => {
+        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(updated.id, doc.id);
+        return DriverDocumentResponse.from(doc, downloadUrl);
+      }),
+    );
+    return DriverProfileResponse.from(updated, docs);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Удаление водителя (если нет истории выплат)' })
+  async deleteDriver(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ success: true }> {
+    const existing = await this.driversService.getDriverForModeration(id);
+    await this.scope.assertRegionAccess(actor, existing.regionId);
+
+    await this.driversService.deleteDriverForAdmin(id);
+    return { success: true };
   }
 }

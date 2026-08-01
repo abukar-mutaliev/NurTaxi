@@ -4,7 +4,6 @@
  * Суммы приходят из `GET /driver/earnings` уже посчитанными на сервере
  * (комиссия удерживается по тарифу региона) — на клиенте ничего не пересчитываем.
  */
-import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -12,17 +11,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDate, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
-import { useGetDriverEarningsQuery } from '@nurtaxi/shared-core/entities/driver';
-import { useGetOrderHistoryQuery } from '@nurtaxi/shared-core/entities/order';
+import {
+  useGetDriverEarningsQuery,
+  useGetDriverOrderHistoryQuery,
+} from '@nurtaxi/shared-core/entities/driver';
 
-import { RoundButton } from '@/shared/ui/round-button';
+import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 import { StatTiles } from '@/shared/ui/stat-tiles';
 
 export function EarningsScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const {
@@ -30,7 +30,9 @@ export function EarningsScreen() {
     isFetching: earningsFetching,
     refetch: refetchEarnings,
   } = useGetDriverEarningsQuery();
-  const { data: history = [], refetch: refetchHistory } = useGetOrderHistoryQuery({ limit: 20 });
+  const { data: history = [], refetch: refetchHistory } = useGetDriverOrderHistoryQuery({
+    limit: 5,
+  });
 
   const refresh = () => {
     void refetchEarnings();
@@ -45,24 +47,16 @@ export function EarningsScreen() {
       <ScrollView
         contentContainerStyle={{
           gap: theme.spacing.md,
-          paddingBottom: insets.bottom + theme.spacing.xl,
+          paddingBottom: getGlassTabBarBottomInset(insets.bottom) + theme.spacing.lg,
           paddingHorizontal: theme.spacing.lg,
           paddingTop: Math.max(insets.top, theme.spacing.xxl) + theme.spacing.md,
         }}
         refreshControl={<RefreshControl onRefresh={refresh} refreshing={earningsFetching} />}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <RoundButton
-            accessibilityLabel={t('common.back')}
-            icon="back"
-            onPress={() => router.back()}
-          />
-          <Text style={styles.headerTitle} variant="subtitle">
-            {t('driver.earnings')}
-          </Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <Text style={styles.headerTitle} variant="subtitle">
+          {t('driver.earnings')}
+        </Text>
 
         {/* Баланс */}
         <View
@@ -155,15 +149,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 10,
   },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  headerSpacer: {
-    width: 44,
-  },
   headerTitle: {
-    flex: 1,
     textAlign: 'center',
   },
   root: {

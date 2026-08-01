@@ -1,9 +1,10 @@
 /**
  * Экран входа водителя → `POST /auth/otp/request` (M1.2).
  *
- * Вёрстка повторяет макет: золотая точка и логотип-надпись «Нур», приветствие,
- * поле телефона в виде белой «пилюли» с золотой точкой и градиентная кнопка.
+ * Вёрстка повторяет макет: логотип «Нур», приветствие, поле телефона в виде белой
+ * «пилюли» с золотой точкой и градиентная кнопка.
  */
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -30,8 +31,9 @@ import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background
 const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
+const logoAsset = require('@/assets/images/welcome/logo.png');
+
 const c = {
-  brand: '#3A1D3F',
   title: '#2E2331',
   subtitle: '#9A8F98',
   dot: '#DFAE5C',
@@ -91,25 +93,19 @@ export function PhoneScreen() {
           flexGrow: 1,
           paddingBottom: insets.bottom + sy(24),
           paddingHorizontal: sx(40),
-          paddingTop: Math.max(insets.top, sy(20)) + sy(52),
+          paddingTop: Math.max(insets.top, sy(20)) + sy(24),
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View
-            style={{
-              backgroundColor: c.dot,
-              borderRadius: sx(7),
-              height: sx(14),
-              marginBottom: sy(10),
-              width: sx(14),
-            }}
+          <Image
+            accessibilityLabel={t('auth.brandName')}
+            contentFit="contain"
+            source={logoAsset}
+            style={{ height: sy(150), width: '100%' }}
           />
-          <Text style={[styles.brand, { fontSize: sx(34), lineHeight: sx(40) }]}>
-            {t('auth.brandName')}
-          </Text>
-          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(16) }]}>
+          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(20) }]}>
             {t('auth.phoneTitle')}
           </Text>
           <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(4) }]}>
@@ -117,7 +113,7 @@ export function PhoneScreen() {
           </Text>
         </View>
 
-        <View style={{ marginTop: sy(104) }}>
+        <View style={{ marginTop: sy(64) }}>
           <View
             style={[
               styles.inputShell,
@@ -173,11 +169,6 @@ export function PhoneScreen() {
 }
 
 const styles = StyleSheet.create({
-  brand: {
-    color: c.brand,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
   error: {
     color: c.danger,
     textAlign: 'center',

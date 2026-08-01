@@ -113,6 +113,8 @@ export const ru = {
     trips: 'Поездки',
     favorites: 'Избранное',
     profile: 'Профиль',
+    orders: 'Заказы',
+    earnings: 'Доходы',
   },
   safety: {
     panicTitle: 'Тревожная кнопка',

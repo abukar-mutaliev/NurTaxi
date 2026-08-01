@@ -12,9 +12,15 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useTranslation } from 'react-i18next';
 
+import { useDebouncedValue } from '@nurtaxi/shared-core/shared/lib';
+
+import type { AddressSuggestion } from '@nurtaxi/shared-core/shared/model';
+
+import { MIN_GEO_QUERY_LENGTH, useSearchAddressesQuery } from '@nurtaxi/shared-core/entities/geo';
+
 import { useGetSavedAddressesQuery } from '@nurtaxi/shared-core/entities/saved-address';
 
-import { useSavedAddressUpdate } from '@/features/address';
+import { useOrderRegion, useSavedAddressUpdate } from '@/features/address';
 
 import {
   GLASS_DESIGN_WIDTH,
@@ -23,6 +29,10 @@ import {
   GlassPrimaryButton,
   GlassScreenShell,
 } from '@/shared/ui';
+
+import { AddressSuggestionsList } from '../../saved-addresses-screen/ui/address-suggestions-list';
+
+import { suggestionToGeoLocationForSave } from '../../saved-addresses-screen/ui/format-suggestion-address';
 
 import { SavedAddressFormFields } from '../../saved-addresses-screen/ui/saved-address-form-fields';
 
@@ -57,6 +67,22 @@ export function SavedAddressDetailScreen() {
 
   const [deleteVisible, setDeleteVisible] = useState(false);
 
+  // Подсказки нужны только после правки поля: иначе они всплывут сразу при открытии
+  // экрана, где адрес уже подставлен из избранного.
+  const [addressEdited, setAddressEdited] = useState(false);
+
+  const { regionId } = useOrderRegion();
+
+  const debouncedAddress = useDebouncedValue(addressText.trim(), 400);
+
+  const canSearch = addressEdited && debouncedAddress.length >= MIN_GEO_QUERY_LENGTH;
+
+  const { data: suggestions = [], isFetching: isSearching } = useSearchAddressesQuery(
+    { q: debouncedAddress, regionId: regionId ?? undefined, limit: 8 },
+
+    { skip: !canSearch || !regionId },
+  );
+
   useEffect(() => {
     if (!address) {
       return;
@@ -69,7 +95,32 @@ export function SavedAddressDetailScreen() {
     setLat(address.lat);
 
     setLng(address.lng);
+
+    setAddressEdited(false);
   }, [address]);
+
+  /**
+   * Ручная правка только включает подсказки. Координаты не сбрасываем: провайдер карт
+   * знает не каждый дом, и адрес должно быть можно уточнить текстом, оставив точку прежней.
+   * Точные координаты дают выбор подсказки или карта.
+   */
+  const handleAddressChange = (value: string) => {
+    setAddressText(value);
+
+    setAddressEdited(true);
+  };
+
+  const handleSuggestionSelect = (item: AddressSuggestion) => {
+    const location = suggestionToGeoLocationForSave(item, addressText);
+
+    setAddressText(location.address ?? '');
+
+    setLat(location.lat);
+
+    setLng(location.lng);
+
+    setAddressEdited(false);
+  };
 
   const canSubmit =
     label.trim().length >= 1 &&
@@ -215,12 +266,21 @@ export function SavedAddressDetailScreen() {
 
               label={label}
 
-              onAddressChange={setAddressText}
+              onAddressChange={handleAddressChange}
 
               onLabelChange={setLabel}
 
               scale={scale}
             />
+
+            {canSearch ? (
+              <AddressSuggestionsList
+                isFetching={isSearching}
+                onSelect={handleSuggestionSelect}
+                scale={scale}
+                suggestions={suggestions}
+              />
+            ) : null}
 
             <GlassListRow
               onPress={openMapPick}

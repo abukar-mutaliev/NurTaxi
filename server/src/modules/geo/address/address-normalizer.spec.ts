@@ -5,6 +5,17 @@ describe('address-normalizer', () => {
     expect(normalizeAddressQuery('Nazran ul. Moskovskaya')).toContain('назрань');
   });
 
+  it('не портит уже каноническое название города', () => {
+    expect(normalizeAddressQuery('Назрань')).toBe('назрань');
+    expect(normalizeAddressQuery('Город Назрань, улица Богатырева 32')).toBe(
+      'город назрань улица богатырева 32',
+    );
+  });
+
+  it('дополняет сокращённое написание до канонического', () => {
+    expect(normalizeAddressQuery('назран московская')).toBe('назрань московская');
+  });
+
   it('приводит ё к е', () => {
     expect(normalizeAddressQuery('ул. Овсянникова')).toBe('ул овсянникова');
   });

@@ -3,6 +3,7 @@ export { RealtimeEvent } from './model/realtime-events';
 export type {
   ClientToServerEvents,
   DriverLocationEvent,
+  OrderOfferEvent,
   OrderStatusEvent,
   RealtimeStatus,
   ServerToClientEvents,

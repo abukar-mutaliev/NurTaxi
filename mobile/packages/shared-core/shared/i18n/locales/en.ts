@@ -91,6 +91,8 @@ export const en: DeepPartial<TranslationResources> = {
     trips: 'Trips',
     favorites: 'Favorites',
     profile: 'Profile',
+    orders: 'Orders',
+    earnings: 'Earnings',
   },
   orderStatus: {
     created: 'Created',

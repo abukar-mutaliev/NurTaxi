@@ -21,6 +21,12 @@ export interface SuggestInputProps extends Omit<InputProps, 'onChangeText' | 'va
   loading?: boolean;
   /** Подпись, когда подсказок нет, но запрос уже осмысленный. */
   emptyHint?: string;
+  /**
+   * Причина, по которой подсказки не загрузились. Показывается вместо `emptyHint`:
+   * «ничего не нашлось» и «запрос не прошёл» — разные ситуации, и путать их нельзя,
+   * иначе поломка сети выглядит как пустая выдача.
+   */
+  errorHint?: string | null;
   maxVisible?: number;
 }
 
@@ -37,6 +43,7 @@ export function SuggestInput({
   onSelect,
   loading = false,
   emptyHint,
+  errorHint,
   maxVisible = 6,
   onFocus,
   onBlur,
@@ -46,7 +53,8 @@ export function SuggestInput({
   const [focused, setFocused] = useState(false);
 
   const visible = options.slice(0, maxVisible);
-  const showList = focused && (visible.length > 0 || loading || Boolean(emptyHint));
+  const showList =
+    focused && (visible.length > 0 || loading || Boolean(emptyHint) || Boolean(errorHint));
 
   return (
     <View style={{ gap: theme.spacing.xs, zIndex: focused ? 20 : 0 }}>
@@ -85,6 +93,12 @@ export function SuggestInput({
             <View style={{ padding: theme.spacing.md }}>
               <Text tone="muted" variant="caption">
                 Поиск…
+              </Text>
+            </View>
+          ) : errorHint && visible.length === 0 ? (
+            <View style={{ padding: theme.spacing.md }}>
+              <Text tone="danger" variant="caption">
+                {errorHint}
               </Text>
             </View>
           ) : visible.length === 0 ? (

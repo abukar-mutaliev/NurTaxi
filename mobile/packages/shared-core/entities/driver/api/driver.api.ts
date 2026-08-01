@@ -13,7 +13,9 @@ import type {
   DriverEarnings,
   DriverOrderActionPayload,
   DriverProfile,
+  LimitQuery,
   Order,
+  OrderHistoryItem,
   PresignDocumentPayload,
   PresignDocumentResponse,
   RegisterDocumentPayload,
@@ -73,6 +75,15 @@ export const driverApi = baseApi.injectEndpoints({
     }),
 
     // --- Заказы водителя (M8) -------------------------------------------------------------
+    /**
+     * История поездок водителя (`§8.13`). Отдельная от `/orders/history`: та закрыта ролью
+     * Client и вернула бы водителю 403.
+     */
+    getDriverOrderHistory: build.query<OrderHistoryItem[], LimitQuery | void>({
+      query: (params) => ({ url: '/driver/orders/history', params: params ?? undefined }),
+      providesTags: ['OrderHistory'],
+    }),
+
     acceptDriverOrder: build.mutation<Order, string>({
       query: (orderId) => ({ url: `/driver/orders/${orderId}/accept`, method: 'POST' }),
       invalidatesTags: (_result, _error, orderId) => [{ type: 'Order', id: orderId }],
@@ -124,6 +135,7 @@ export const {
   useUpdateDriverStatusMutation,
   useUpdateWorkScheduleMutation,
   useUpdateDriverLocationMutation,
+  useGetDriverOrderHistoryQuery,
   useAcceptDriverOrderMutation,
   useUpdateDriverOrderStatusMutation,
   useCancelDriverOrderMutation,

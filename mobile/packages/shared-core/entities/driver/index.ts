@@ -3,6 +3,7 @@ export {
   useAcceptDriverOrderMutation,
   useCancelDriverOrderMutation,
   useGetDriverEarningsQuery,
+  useGetDriverOrderHistoryQuery,
   useGetDriverProfileQuery,
   useLazyGetDriverProfileQuery,
   usePresignDriverDocumentMutation,

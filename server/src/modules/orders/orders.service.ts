@@ -3,7 +3,9 @@ import {
   ForbiddenException,
   Injectable,
   Inject,
+  Logger,
   NotFoundException,
+  Optional,
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -24,7 +26,8 @@ import { Order } from './entities/order.entity';
 import { OrderRoute } from './entities/order-route.entity';
 import { OrderStatusLog } from './entities/order-status-log.entity';
 import { OrderTransitionService } from './order-transition.service';
-import { MatchingService } from './matching/matching.service';
+import { MatchingService, type MatchOffer } from './matching/matching.service';
+import { RealtimeBroadcastService } from '../realtime/realtime-broadcast.service';
 import { PaymentsService } from '../payments/payments.service';
 import { FamilyService } from '../users/family.service';
 import { ReviewsService } from '../reviews/reviews.service';
@@ -76,7 +79,10 @@ export class OrdersService {
     private readonly reviewsService: ReviewsService,
     @InjectRepository(Receipt)
     private readonly receipts: Repository<Receipt>,
+    @Optional() private readonly realtime?: RealtimeBroadcastService,
   ) {}
+
+  private readonly logger = new Logger(OrdersService.name);
 
   async estimate(dto: OrderEstimateDto): Promise<OrderEstimateResponse> {
     const region = await this.regionsService.getRegionOrThrow(dto.regionId);
@@ -195,6 +201,53 @@ export class OrdersService {
       offeredDriverId: offer?.driverId,
       candidatesCount: candidates.length,
     });
+
+    if (offer) {
+      await this.sendOfferToDriver(order, offer);
+    }
+  }
+
+  /**
+   * Доставка предложения водителю по WebSocket (`order.offer`, Des §10).
+   *
+   * Без этого подбор оставался «немым»: кандидат вычислялся и клался в Redis, но
+   * приложение водителя о заказе не узнавало и принять его было неоткуда.
+   * Сбой рассылки не отменяет заказ — предложение всё равно живёт в Redis (TTL 30 c).
+   */
+  private async sendOfferToDriver(order: Order, offer: MatchOffer): Promise<void> {
+    if (!this.realtime) {
+      return;
+    }
+
+    try {
+      const driver = await this.driversService.getProfileByDriverId(offer.driverId);
+      const route = await this.routes.findOne({ where: { orderId: order.id } });
+
+      await this.realtime.publishOrderOffer(driver.userId, {
+        orderId: order.id,
+        expiresAt: offer.expiresAt,
+        pickup: {
+          lat: order.pickupLat,
+          lng: order.pickupLng,
+          address: order.pickupAddress,
+        },
+        dropoff: {
+          lat: order.dropoffLat,
+          lng: order.dropoffLng,
+          address: order.dropoffAddress,
+        },
+        price: Number(order.priceEstimated),
+        paymentMethod: order.paymentMethod,
+        comment: order.comment ?? null,
+        distanceM: route?.distanceM ?? null,
+        durationS: route?.durationS ?? null,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Не удалось отправить предложение заказа ${order.id} водителю ${offer.driverId}: ` +
+          `${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   async acceptOrder(driverUserId: string, orderId: string): Promise<Order> {
@@ -405,6 +458,31 @@ export class OrdersService {
     const orders = await this.orders.find({
       where: { clientId },
       relations: ['route', 'tariff', 'driver', 'driver.vehicles', 'driver.user'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+    });
+
+    return Promise.all(
+      orders.map(async (order) => {
+        const [receipt, reviews] = await Promise.all([
+          this.receipts.findOne({ where: { orderId: order.id } }),
+          this.reviewsService.listForOrder(order.id),
+        ]);
+        return { order, receipt, reviews };
+      }),
+    );
+  }
+
+  /**
+   * История поездок водителя (Req §8.13) — зеркало `getClientHistory` для роли Driver.
+   * На вход приходит `users.id`, поэтому сначала находим профиль водителя.
+   */
+  async getDriverHistory(userId: string, limit = 20) {
+    const driver = await this.driversService.getProfileByUserId(userId);
+
+    const orders = await this.orders.find({
+      where: { driverId: driver.id },
+      relations: ['route', 'tariff', 'client'],
       order: { createdAt: 'DESC' },
       take: limit,
     });

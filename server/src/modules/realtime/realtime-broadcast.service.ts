@@ -61,6 +61,14 @@ export class RealtimeBroadcastService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Предложение заказа конкретному водителю (Req §15.3, Des §6).
+   * Уходит в личную комнату водителя — заказ видит только тот, чья сейчас очередь.
+   */
+  async publishOrderOffer(driverUserId: string, data: Record<string, unknown>): Promise<void> {
+    await this.publish(`driver:${driverUserId}`, 'order.offer', data);
+  }
+
   async publishDriverLocation(
     orderId: string,
     clientId: string,

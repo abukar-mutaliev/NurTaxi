@@ -133,5 +133,29 @@ export default [
     files: ['**/*.test.ts', '**/*.test.tsx', '**/__tests__/**/*'],
     rules: { 'boundaries/element-types': 'off' },
   },
+  {
+    /**
+     * React Compiler ESLint-правила (`react-hooks/*`) не знают о `react-native-reanimated`
+     * без явного флага: без него `useSharedValue().value = ...` считается запрещённой
+     * мутацией «неизменяемого» значения — хотя это штатный, документированный API
+     * Reanimated. У бабель-плагина компилятора Reanimated определяется автоматически,
+     * у ESLint-плагина — нет, флаг нужно включать вручную (`environment` в опциях правила).
+     */
+    files: ['**/*.ts', '**/*.tsx'],
+    rules: {
+      'react-hooks/immutability': [
+        'error',
+        { environment: { enableCustomTypeDefinitionForReanimated: true } },
+      ],
+      'react-hooks/refs': [
+        'error',
+        { environment: { enableCustomTypeDefinitionForReanimated: true } },
+      ],
+      'react-hooks/set-state-in-effect': [
+        'error',
+        { environment: { enableCustomTypeDefinitionForReanimated: true } },
+      ],
+    },
+  },
   prettierConfig,
 ];

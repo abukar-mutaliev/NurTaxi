@@ -1,3 +1,17 @@
+/**
+ * `react-hooks/immutability` отключено для всего файла.
+ *
+ * Экран мутирует Reanimated shared values (`.value = ...`) — штатный, документированный API
+ * Reanimated, не React state. У ESLint-плагина React Compiler для этого есть флаг
+ * `enableCustomTypeDefinitionForReanimated` (включён в `mobile/eslint.config.mjs`), но его
+ * поддержка мутаций внутри `useEffect`/вложенных обработчиков (`onPanResponderMove`)
+ * оказалась нестабильной именно в этом файле: при точечных `eslint-disable-next-line` та же
+ * по смыслу мутация то принималась, то нет, причём непредсказуемо «переезжала» на другие
+ * строки при малейшей перестановке кода — проверено вручную несколькими прогонами. Похоже на
+ * недоработку самого плагина (`eslint-plugin-react-hooks@7.1.1`) в связке
+ * useEffect/useMemo + Reanimated, а не на проблему в этом коде.
+ */
+/* eslint-disable react-hooks/immutability */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Keyboard,
@@ -97,6 +111,10 @@ export function SaveAddressSheet({
     onClose();
   }, [onClose]);
 
+  // backdropOpacity/keyboardOffset/translateY — Reanimated shared values: их идентичность
+  // стабильна на весь жизненный цикл компонента, поэтому ниже они нигде не указаны
+  // в массивах зависимостей (аналогично ref'ам; так же рекомендует
+  // `eslint-plugin-react-native-reanimated`).
   const animateClose = useCallback(() => {
     Keyboard.dismiss();
     keyboardOffset.value = withTiming(0, { duration: 180 });
@@ -106,12 +124,12 @@ export function SaveAddressSheet({
         runOnJS(finishClose)();
       }
     });
-  }, [backdropOpacity, finishClose, height, keyboardOffset, translateY]);
+  }, [finishClose, height]);
 
   const resetSheetPosition = useCallback(() => {
     translateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
     backdropOpacity.value = withTiming(1, { duration: 220 });
-  }, [backdropOpacity, translateY]);
+  }, []);
 
   const handleSuggestionSelect = useCallback(
     (item: AddressSuggestion) => {
@@ -147,7 +165,7 @@ export function SaveAddressSheet({
       showSubscription.remove();
       hideSubscription.remove();
     };
-  }, [keyboardOffset, visible]);
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -163,7 +181,7 @@ export function SaveAddressSheet({
       duration: 320,
       easing: Easing.out(Easing.cubic),
     });
-  }, [backdropOpacity, translateY, visible]);
+  }, [visible]);
 
   const panResponder = useMemo(
     () =>
@@ -190,7 +208,7 @@ export function SaveAddressSheet({
           resetSheetPosition();
         },
       }),
-    [animateClose, backdropOpacity, height, resetSheetPosition, translateY],
+    [animateClose, height, resetSheetPosition],
   );
 
   const backdropStyle = useAnimatedStyle(() => ({

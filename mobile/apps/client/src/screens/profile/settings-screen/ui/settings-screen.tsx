@@ -1,7 +1,7 @@
 /**
  * Настройки уведомлений и приватности (M2.3, M10.1).
  */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -27,14 +27,15 @@ export function SettingsScreen() {
   );
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings | null>(null);
 
-  useEffect(() => {
-    if (!profile) {
-      return;
-    }
-
-    setNotificationSettings((current) => current ?? profile.notificationSettings);
-    setPrivacySettings((current) => current ?? profile.privacySettings);
-  }, [profile]);
+  // Локальное состояние заполняется из профиля один раз — дальше им владеет экран,
+  // фоновый рефетч профиля не должен затирать несохранённые переключения. Обновляем
+  // прямо при рендере, без лишнего эффекта.
+  if (profile && notificationSettings === null) {
+    setNotificationSettings(profile.notificationSettings);
+  }
+  if (profile && privacySettings === null) {
+    setPrivacySettings(profile.privacySettings);
+  }
 
   const toggleNotification = async (key: keyof NotificationSettings, value: boolean) => {
     if (!notificationSettings) {

@@ -1,7 +1,7 @@
 /**
  * Редактирование профиля (M2.2, M2.6): имя и язык интерфейса.
  */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -32,13 +32,15 @@ export function EditProfileScreen() {
   const [language, setLanguage] = useState<AppLanguage>(AppLanguage.Ru);
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    if (profile) {
-      setName(profile.name ?? '');
-      const lang = profile.language as AppLanguage;
-      setLanguage(SUPPORTED_LANGUAGES.includes(lang) ? lang : AppLanguage.Ru);
-    }
-  }, [profile]);
+  // Форма заполняется из загруженного профиля. Обновляем прямо при рендере — как только
+  // `profile` меняется, значения подставляются в этом же проходе, без лишнего эффекта.
+  const [syncedProfile, setSyncedProfile] = useState(profile);
+  if (profile && profile !== syncedProfile) {
+    setSyncedProfile(profile);
+    setName(profile.name ?? '');
+    const lang = profile.language as AppLanguage;
+    setLanguage(SUPPORTED_LANGUAGES.includes(lang) ? lang : AppLanguage.Ru);
+  }
 
   const canSubmit = name.trim().length >= 2 && !isUpdating;
 

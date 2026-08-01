@@ -92,18 +92,26 @@ export function AddressSearchScreen() {
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebouncedValue(query.trim(), 400);
 
-  useEffect(() => {
-    setActiveField(parseAddressFieldParam(params.field));
-    setQuery('');
-    setPendingOrderSelection(null);
-  }, [params.field]);
-
   const [saveSheetVisible, setSaveSheetVisible] = useState(false);
   const [pendingSave, setPendingSave] = useState<GeoLocation | null>(null);
   const [pendingOrderSelection, setPendingOrderSelection] = useState<SelectedAddress | null>(null);
   const [saveLabel, setSaveLabel] = useState('');
   const [saveAddressText, setSaveAddressText] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  /**
+   * Сброс локального состояния при смене `field` в параметрах маршрута (переключение
+   * pickup ↔ dropoff без ухода с экрана). Обновляем прямо во время рендера — без лишнего
+   * холостого рендера, который дал бы эффект (see react.dev: «Adjusting state when a prop
+   * changes»).
+   */
+  const [syncedField, setSyncedField] = useState(params.field);
+  if (params.field !== syncedField) {
+    setSyncedField(params.field);
+    setActiveField(parseAddressFieldParam(params.field));
+    setQuery('');
+    setPendingOrderSelection(null);
+  }
 
   const { data: savedAddresses = [] } = useGetSavedAddressesQuery();
   const canSearch = debouncedQuery.length >= MIN_GEO_QUERY_LENGTH;
@@ -179,16 +187,21 @@ export function AddressSearchScreen() {
     }
   };
 
+  // «Свежие» ref'ы для cleanup-функции useFocusEffect ниже: она не должна пересоздаваться
+  // при каждом изменении query/activeField, поэтому значения обновляем после коммита,
+  // а не читаем их напрямую из замыкания.
   const orderDraftRef = useRef({
     mode,
     activeField,
     query,
     pendingOrderSelection,
   });
-  orderDraftRef.current = { mode, activeField, query, pendingOrderSelection };
-
   const commitActiveFieldDraftRef = useRef(commitActiveFieldDraft);
-  commitActiveFieldDraftRef.current = commitActiveFieldDraft;
+
+  useEffect(() => {
+    orderDraftRef.current = { mode, activeField, query, pendingOrderSelection };
+    commitActiveFieldDraftRef.current = commitActiveFieldDraft;
+  });
 
   useFocusEffect(
     useCallback(() => {

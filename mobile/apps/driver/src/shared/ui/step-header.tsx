@@ -57,12 +57,7 @@ export function StepHeader({
       }}
     >
       <View style={{ alignItems: 'center', flexDirection: 'row', gap: theme.spacing.md }}>
-        <RoundButton
-          accessibilityLabel="Назад"
-          icon="back"
-          onPress={onBack ?? goBack}
-          size={40}
-        />
+        <RoundButton accessibilityLabel="Назад" icon="back" onPress={onBack ?? goBack} size={40} />
         <Text style={{ flex: 1 }} variant="title">
           {title}
         </Text>

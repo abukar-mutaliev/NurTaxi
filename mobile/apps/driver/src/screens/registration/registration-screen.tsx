@@ -181,7 +181,9 @@ export function RegistrationScreen() {
             <AddressSuggestInput
               error={errors.residenceAddress?.message}
               label="Адрес проживания"
-              onChangeText={(value) => setValue('residenceAddress', value, { shouldValidate: true })}
+              onChangeText={(value) =>
+                setValue('residenceAddress', value, { shouldValidate: true })
+              }
               placeholder="г. Назрань, ул. Московская, 1"
               regionId={selectedRegionId}
               value={field.value}

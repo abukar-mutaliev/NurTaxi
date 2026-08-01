@@ -7,7 +7,11 @@
  */
 import type { AddressSuggestion } from '@nurtaxi/shared-core/shared/model';
 
-import { SuggestInput, type SuggestInputProps, type SuggestOption } from '@/shared/ui/suggest-input';
+import {
+  SuggestInput,
+  type SuggestInputProps,
+  type SuggestOption,
+} from '@/shared/ui/suggest-input';
 
 import {
   useAddressSuggestions,
@@ -15,7 +19,8 @@ import {
 } from '../model/use-address-suggestions';
 
 export interface AddressSuggestInputProps
-  extends Omit<SuggestInputProps, 'options' | 'onSelect' | 'loading' | 'emptyHint'>,
+  extends
+    Omit<SuggestInputProps, 'options' | 'onSelect' | 'loading' | 'emptyHint'>,
     Omit<AddressSuggestionsOptions, 'enabled'> {
   /**
    * Вызывается при выборе подсказки — вместе с координатами. Текст поля компонент

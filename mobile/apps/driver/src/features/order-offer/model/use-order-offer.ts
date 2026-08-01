@@ -66,8 +66,5 @@ export function useOrderOffer(): OrderOfferState {
 
   const dismiss = useCallback(() => setOffer(null), []);
 
-  return useMemo(
-    () => ({ offer, secondsLeft: remaining, dismiss }),
-    [offer, remaining, dismiss],
-  );
+  return useMemo(() => ({ offer, secondsLeft: remaining, dismiss }), [offer, remaining, dismiss]);
 }

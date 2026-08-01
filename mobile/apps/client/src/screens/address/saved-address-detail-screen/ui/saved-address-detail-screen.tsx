@@ -4,7 +4,7 @@
 
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { View, useWindowDimensions } from 'react-native';
 
@@ -83,21 +83,18 @@ export function SavedAddressDetailScreen() {
     { skip: !canSearch || !regionId },
   );
 
-  useEffect(() => {
-    if (!address) {
-      return;
-    }
-
+  // Форма заполняется из загруженного адреса. Обновляем прямо при рендере, без лишнего
+  // холостого рендера, который дал бы эффект — как только `address` меняется, значения
+  // подставляются в этом же проходе.
+  const [syncedAddress, setSyncedAddress] = useState(address);
+  if (address && address !== syncedAddress) {
+    setSyncedAddress(address);
     setLabel(address.label);
-
     setAddressText(address.address);
-
     setLat(address.lat);
-
     setLng(address.lng);
-
     setAddressEdited(false);
-  }, [address]);
+  }
 
   /**
    * Ручная правка только включает подсказки. Координаты не сбрасываем: провайдер карт

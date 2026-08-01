@@ -28,7 +28,9 @@ export function useNetworkMonitor(): void {
   const wasConnectedRef = useRef(true);
   const isAuthenticatedRef = useRef(isAuthenticated);
 
-  isAuthenticatedRef.current = isAuthenticated;
+  useEffect(() => {
+    isAuthenticatedRef.current = isAuthenticated;
+  });
 
   useEffect(() => {
     void NetInfo.fetch().then((state) => {

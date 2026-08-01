@@ -41,20 +41,23 @@ type NativeMapComponent = typeof MapCanvasNative;
 
 type MapUnavailableReason = 'no-key' | 'no-native' | 'init-failed';
 
-let cachedNativeMap: NativeMapComponent | null | undefined;
-
 function loadNativeMap(): NativeMapComponent | null {
-  if (cachedNativeMap !== undefined) {
-    return cachedNativeMap;
-  }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- lazy native module
-    cachedNativeMap = require('./map-canvas-native').MapCanvasNative as NativeMapComponent;
+    return require('./map-canvas-native').MapCanvasNative as NativeMapComponent;
   } catch {
-    cachedNativeMap = null;
+    return null;
   }
-  return cachedNativeMap;
 }
+
+/**
+ * Тип компонента должен быть стабильной ссылкой, а не вычисляться на каждый рендер
+ * (`react-hooks/static-components`) — иначе React каждый раз считает его новым
+ * компонентом и сбрасывает внутреннее состояние `NativeMap`. Модуль либо есть, либо нет —
+ * загружаем один раз при импорте; `try/catch` внутри `loadNativeMap` по-прежнему защищает
+ * от падения в Expo Go/dev client без пересборки.
+ */
+const NativeMap = loadNativeMap();
 
 function MapCanvasPlaceholder({ reason }: { reason: MapUnavailableReason }) {
   const theme = useTheme();
@@ -92,7 +95,6 @@ export const MapCanvas = forwardRef<MapCanvasHandle, MapCanvasProps>(
       return <MapCanvasPlaceholder reason="no-native" />;
     }
 
-    const NativeMap = loadNativeMap();
     if (!NativeMap || failed) {
       return <MapCanvasPlaceholder reason="init-failed" />;
     }

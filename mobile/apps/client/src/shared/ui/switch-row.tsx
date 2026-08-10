@@ -16,13 +16,15 @@ export interface SwitchRowProps {
 export function SwitchRow({ title, subtitle, value, onValueChange, disabled }: SwitchRowProps) {
   const [pendingValue, setPendingValue] = useState<boolean | null>(null);
   const valueRef = useRef(value);
-  valueRef.current = value;
-
   useEffect(() => {
-    if (pendingValue !== null && pendingValue === value) {
-      setPendingValue(null);
-    }
-  }, [pendingValue, value]);
+    valueRef.current = value;
+  });
+
+  // Оптимистичное значение снимается, как только подтверждённый `value` его догнал —
+  // прямо при рендере, без лишнего холостого прохода эффектом.
+  if (pendingValue !== null && pendingValue === value) {
+    setPendingValue(null);
+  }
 
   const handleValueChange = (next: boolean) => {
     setPendingValue(next);

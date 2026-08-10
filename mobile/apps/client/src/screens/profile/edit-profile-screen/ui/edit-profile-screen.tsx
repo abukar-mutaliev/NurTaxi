@@ -1,7 +1,7 @@
 /**
  * Редактирование профиля (M2.2, M2.6): имя и фото.
  */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -41,11 +41,13 @@ export function EditProfileScreen() {
   const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
 
-  useEffect(() => {
-    if (profile) {
-      setName(profile.name ?? '');
-    }
-  }, [profile]);
+  // Форма заполняется из загруженного профиля. Обновляем прямо при рендере — как только
+  // `profile` меняется, значения подставляются в этом же проходе, без лишнего эффекта.
+  const [syncedProfile, setSyncedProfile] = useState(profile);
+  if (profile && profile !== syncedProfile) {
+    setSyncedProfile(profile);
+    setName(profile.name ?? '');
+  }
 
   const canSubmit = name.trim().length >= 2 && !isUpdating;
 

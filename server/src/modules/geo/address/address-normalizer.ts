@@ -20,9 +20,18 @@ export function normalizeAddressQuery(raw: string): string {
   q = q.replace(/\s+/g, ' ').trim();
 
   for (const [canonical, aliases] of Object.entries(CITY_ALIASES)) {
+    // Каноническая форма уже в запросе — заменять нечего. Без этой проверки алиас,
+    // который сам является началом канонической формы («назран» ⊂ «назрань»), портит
+    // запрос: replace дописывает хвост и «назрань» превращается в «назраньь»,
+    // после чего не находится ни один адрес пилотного города.
+    if (q.includes(canonical)) {
+      continue;
+    }
+
     for (const alias of aliases) {
       if (q.includes(alias)) {
-        q = q.replace(alias, canonical);
+        q = q.split(alias).join(canonical);
+        break;
       }
     }
   }

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -55,7 +54,13 @@ export function Screen({
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      /**
+       * `padding` нужен на обеих платформах. Android собирается в режиме edge-to-edge
+       * (`edgeToEdgeEnabled=true`), а в нём `windowSoftInputMode=adjustResize` больше не
+       * ужимает окно — клавиатура просто ложится поверх формы и прячет нижние поля.
+       * Без явного behavior KeyboardAvoidingView на Android ничего не делает.
+       */
+      behavior="padding"
       style={[styles.grow, { backgroundColor: theme.colors.background }]}
     >
       {content}

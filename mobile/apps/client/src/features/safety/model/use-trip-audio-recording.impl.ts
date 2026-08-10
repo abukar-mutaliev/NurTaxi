@@ -44,10 +44,15 @@ export function useTripAudioRecording(orderId: string | null, canRecord: boolean
     });
   }, []);
 
-  useEffect(() => {
+  const [syncedOrderId, setSyncedOrderId] = useState(orderId);
+  if (orderId !== syncedOrderId) {
+    setSyncedOrderId(orderId);
     setPhase('idle');
     setError(null);
     setPermissionBlocked(false);
+  }
+
+  useEffect(() => {
     startedAtRef.current = null;
   }, [orderId]);
 

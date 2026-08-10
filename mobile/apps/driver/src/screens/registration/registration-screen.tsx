@@ -17,14 +17,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
   driverRegistrationFormSchema,
-  useDebouncedValue,
   type DriverRegistrationForm,
 } from '@nurtaxi/shared-core/shared/lib';
 import { Button, Card, Input, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useRegisterDriverMutation } from '@nurtaxi/shared-core/entities/driver';
-import { MIN_GEO_QUERY_LENGTH, useSearchAddressesQuery } from '@nurtaxi/shared-core/entities/geo';
 import { useGetRegionsQuery } from '@nurtaxi/shared-core/entities/region';
 
+import { AddressSuggestInput } from '@/features/address';
 import {
   VEHICLE_COLORS,
   VEHICLE_MAKES,
@@ -35,6 +34,9 @@ import { StepHeader } from '@/shared/ui/step-header';
 import { SuggestInput, type SuggestOption } from '@/shared/ui/suggest-input';
 
 const CURRENT_YEAR = new Date().getFullYear();
+
+/** Совпадает с `maxHeight` списка подсказок в `SuggestInput`. */
+const SUGGEST_LIST_MAX_HEIGHT = 232;
 
 /** Строки справочника → опции для SuggestInput. */
 const toOptions = (values: string[], prefix: string): SuggestOption[] =>
@@ -68,33 +70,9 @@ export function RegistrationScreen() {
   });
 
   const selectedRegionId = watch('regionId');
-  const addressValue = watch('residenceAddress');
   const makeValue = watch('vehicle.make');
   const modelValue = watch('vehicle.model');
   const colorValue = watch('vehicle.color');
-
-  // --- Подсказки адреса (серверный поиск с задержкой, чтобы не дёргать API на каждый символ) ---
-  const debouncedAddress = useDebouncedValue(addressValue?.trim() ?? '', 400);
-  const canSearchAddress = debouncedAddress.length >= MIN_GEO_QUERY_LENGTH;
-
-  const { data: addressSuggestions = [], isFetching: addressLoading } = useSearchAddressesQuery(
-    {
-      q: debouncedAddress,
-      limit: 6,
-      regionId: selectedRegionId || undefined,
-    },
-    { skip: !canSearchAddress },
-  );
-
-  const addressOptions = useMemo<SuggestOption[]>(
-    () =>
-      addressSuggestions.map((suggestion) => ({
-        id: suggestion.id,
-        title: suggestion.title,
-        subtitle: suggestion.subtitle,
-      })),
-    [addressSuggestions],
-  );
 
   // --- Подсказки по автомобилю (локальный справочник) ---
   const makeOptions = useMemo(
@@ -132,7 +110,9 @@ export function RegistrationScreen() {
       }
     >
       <ScrollView
-        contentContainerStyle={{ gap: theme.spacing.md, paddingBottom: theme.spacing.xl }}
+        // Запас снизу: у последних полей выпадающий список подсказок раскрывается вниз,
+        // и без него он упирается в край формы.
+        contentContainerStyle={{ gap: theme.spacing.md, paddingBottom: SUGGEST_LIST_MAX_HEIGHT }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -198,21 +178,14 @@ export function RegistrationScreen() {
           control={control}
           name="residenceAddress"
           render={({ field }) => (
-            <SuggestInput
-              emptyHint={
-                canSearchAddress && !addressLoading
-                  ? 'Ничего не нашлось — введите вручную'
-                  : undefined
-              }
+            <AddressSuggestInput
               error={errors.residenceAddress?.message}
               label="Адрес проживания"
-              loading={addressLoading}
-              onChangeText={field.onChange}
-              onSelect={(option) =>
-                setValue('residenceAddress', option.title, { shouldValidate: true })
+              onChangeText={(value) =>
+                setValue('residenceAddress', value, { shouldValidate: true })
               }
-              options={addressOptions}
               placeholder="г. Назрань, ул. Московская, 1"
+              regionId={selectedRegionId}
               value={field.value}
             />
           )}

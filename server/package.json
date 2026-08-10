@@ -27,7 +27,9 @@
     "migration:revert": "npm run typeorm -- migration:revert",
     "seed": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts",
     "seed:fresh": "ts-node -r tsconfig-paths/register src/database/seeds/seed.ts --fresh",
-    "approve-driver": "ts-node -r tsconfig-paths/register src/database/scripts/approve-driver-documents.ts"
+    "approve-driver": "ts-node -r tsconfig-paths/register src/database/scripts/approve-driver-documents.ts",
+    "driver:approve": "ts-node -r tsconfig-paths/register src/database/scripts/approve-driver.ts",
+    "order:simulate": "ts-node -r tsconfig-paths/register src/database/scripts/simulate-order.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1092.0",

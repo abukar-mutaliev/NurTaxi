@@ -23,9 +23,10 @@ export function useMapKitInit(): MapKitInitState {
       return;
     }
 
+    // `canInitialize` уже требует `hasMapKitApiKey()` (Boolean(appConfig.yandexMapKitApiKey)),
+    // так что ключ на этом шаге гарантированно есть — проверка здесь только для TypeScript.
     const apiKey = appConfig.yandexMapKitApiKey;
     if (!apiKey) {
-      setFailed(true);
       return;
     }
 

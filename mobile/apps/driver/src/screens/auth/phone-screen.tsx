@@ -1,8 +1,8 @@
 /**
  * Экран входа водителя → `POST /auth/otp/request` (M1.2).
  *
- * Вёрстка повторяет макет: логотип «Нур», приветствие,
- * поле телефона в виде белой «пилюли» с золотой точкой и градиентная кнопка.
+ * Вёрстка повторяет макет: логотип «Нур», приветствие, поле телефона в виде белой
+ * «пилюли» с золотой точкой и градиентная кнопка.
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -103,7 +103,7 @@ export function PhoneScreen() {
           flexGrow: 1,
           paddingBottom: insets.bottom + sy(24),
           paddingHorizontal: sx(40),
-          paddingTop: Math.max(insets.top, sy(20)) + sy(52),
+          paddingTop: Math.max(insets.top, sy(20)) + sy(24),
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

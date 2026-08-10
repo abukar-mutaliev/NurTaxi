@@ -1,5 +1,5 @@
 import { View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
@@ -12,6 +12,8 @@ export interface StepHeaderProps {
   totalSteps: number;
   caption: string;
   onBack?: () => void;
+  /** Куда уходить, когда возвращаться некуда (экран открыт как корень стека). */
+  fallbackHref?: Href;
 }
 
 /**
@@ -21,11 +23,31 @@ export interface StepHeaderProps {
  * Верхний отступ считается здесь: базовый `Screen` из общего кита не учитывает вырез экрана,
  * и без этого заголовок прилипает к статус-бару.
  */
-export function StepHeader({ title, step, totalSteps, caption, onBack }: StepHeaderProps) {
+export function StepHeader({
+  title,
+  step,
+  totalSteps,
+  caption,
+  onBack,
+  fallbackHref = '/(verification)/status',
+}: StepHeaderProps) {
   const theme = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const progress = Math.min(1, Math.max(0, step / totalSteps));
+
+  /**
+   * На экраны верификации переходят через `router.replace`, поэтому истории у стека нет
+   * и `router.back()` роняет предупреждение «GO_BACK was not handled». Если возвращаться
+   * некуда — уходим на статус верификации.
+   */
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace(fallbackHref);
+  };
 
   return (
     <View
@@ -35,12 +57,7 @@ export function StepHeader({ title, step, totalSteps, caption, onBack }: StepHea
       }}
     >
       <View style={{ alignItems: 'center', flexDirection: 'row', gap: theme.spacing.md }}>
-        <RoundButton
-          accessibilityLabel="Назад"
-          icon="back"
-          onPress={onBack ?? (() => router.back())}
-          size={40}
-        />
+        <RoundButton accessibilityLabel="Назад" icon="back" onPress={onBack ?? goBack} size={40} />
         <Text style={{ flex: 1 }} variant="title">
           {title}
         </Text>

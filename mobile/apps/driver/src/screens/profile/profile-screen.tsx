@@ -4,7 +4,7 @@
  * Данные берутся из `GET /driver/profile` и `GET /driver/earnings`; счётчик одобренных
  * документов считается по `profile.documents`, чтобы не дублировать логику на сервере.
  */
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -18,9 +18,9 @@ import {
 } from '@nurtaxi/shared-core/entities/driver';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
+import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { MenuCard } from '@/shared/ui/menu-card';
 import { PillButton } from '@/shared/ui/pill-button';
-import { RoundButton } from '@/shared/ui/round-button';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 import { StatTiles } from '@/shared/ui/stat-tiles';
 
@@ -61,24 +61,15 @@ export function ProfileScreen() {
       <ScrollView
         contentContainerStyle={{
           gap: theme.spacing.md,
-          paddingBottom: insets.bottom + theme.spacing.xl,
+          paddingBottom: getGlassTabBarBottomInset(insets.bottom) + theme.spacing.lg,
           paddingHorizontal: theme.spacing.lg,
           paddingTop: Math.max(insets.top, theme.spacing.xxl) + theme.spacing.md,
         }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Шапка */}
-        <View style={styles.header}>
-          <RoundButton
-            accessibilityLabel={t('common.back')}
-            icon="back"
-            onPress={() => router.back()}
-          />
-          <Text style={styles.headerTitle} variant="subtitle">
-            {t('profile.title')}
-          </Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <Text style={styles.headerTitle} variant="subtitle">
+          {t('profile.title')}
+        </Text>
 
         {/* Водитель */}
         <View style={[styles.identity, { gap: theme.spacing.md }]}>
@@ -153,7 +144,7 @@ export function ProfileScreen() {
           }
           title="Документы"
         />
-        <MenuCard onPress={() => router.push('/(tabs)/earnings')} title="История поездок" />
+        <MenuCard onPress={() => router.push('/(tabs)/orders' as Href)} title="История поездок" />
         <MenuCard title="Поддержка" />
 
         <PillButton
@@ -189,15 +180,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 10,
   },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  headerSpacer: {
-    width: 44,
-  },
   headerTitle: {
-    flex: 1,
     textAlign: 'center',
   },
   identity: {

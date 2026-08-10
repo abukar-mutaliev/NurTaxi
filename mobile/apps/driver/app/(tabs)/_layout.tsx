@@ -1,31 +1,38 @@
 import { Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { GlassTabBar } from '@/widgets/tab-bar';
 
 /**
- * Группа основных экранов водителя.
- *
- * Таб-бар скрыт: по макету смена занимает весь экран (карта + нижняя карточка), а переходы
- * в профиль и доходы идут круглой кнопкой в шапке и пунктами меню профиля. Структура вкладок
- * при этом сохранена — маршруты и глубокие ссылки продолжают работать.
+ * Основные экраны водителя с плавающим нижним таб-баром: смена, заказы, доходы, профиль.
+ * Сам бар — тот же «стеклянный» компонент, что и в приложении клиента.
  */
 export default function TabsLayout() {
   const { t } = useTranslation();
-  const theme = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textMuted,
-        tabBarStyle: { display: 'none' },
+        tabBarShowLabel: false,
+        sceneStyle: {
+          backgroundColor: 'transparent',
+          flex: 1,
+        },
+        tabBarStyle: {
+          backgroundColor: 'transparent',
+          borderTopWidth: 0,
+          elevation: 0,
+          position: 'absolute',
+          shadowOpacity: 0,
+        },
       }}
+      tabBar={(props) => <GlassTabBar {...props} />}
     >
-      <Tabs.Screen name="index" options={{ title: t('driver.online') }} />
-      <Tabs.Screen name="earnings" options={{ title: t('driver.earnings') }} />
-      <Tabs.Screen name="profile" options={{ title: t('profile.title') }} />
+      <Tabs.Screen name="index" options={{ title: t('tabs.home') }} />
+      <Tabs.Screen name="orders" options={{ title: t('tabs.orders') }} />
+      <Tabs.Screen name="earnings" options={{ title: t('tabs.earnings') }} />
+      <Tabs.Screen name="profile" options={{ title: t('tabs.profile') }} />
     </Tabs>
   );
 }

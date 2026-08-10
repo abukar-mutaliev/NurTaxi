@@ -23,6 +23,7 @@ import {
 } from '@nurtaxi/shared-core/entities/driver';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { useDriverLocationTracking } from '@/features/location-tracking';
 import { IncomingOrderCard, useOrderOffer } from '@/features/order-offer';
 import { onlineIntentChanged, selectWantsOnline } from '@/processes/shift';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
@@ -70,6 +71,10 @@ export function ShiftScreen() {
 
   const isOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
   const canGoOnline = profile?.canGoOnline ?? false;
+
+  // Источник истины — серверный статус: так трансляция позиции переживает перезапуск
+  // приложения посреди смены и не запускается по одному лишь оптимистичному переключателю.
+  useDriverLocationTracking(profile?.onlineStatus === 'online');
 
   const toggleOnline = async (next: boolean) => {
     setError(null);

@@ -7,6 +7,8 @@ import { Stack } from 'expo-router';
 import { Loader } from '@nurtaxi/shared-core/shared/ui';
 
 import { AppProviders, initSentry, useAuthGuard } from '@/app';
+// Побочный эффект: регистрирует фоновую задачу геопозиции до монтирования компонентов (M8.2).
+import '@/features/location-tracking';
 
 initSentry();
 

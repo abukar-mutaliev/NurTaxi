@@ -160,6 +160,10 @@ export function ProfileScreen() {
           title="Документы"
         />
         <MenuCard onPress={() => router.push('/(tabs)/orders' as Href)} title="История поездок" />
+        <MenuCard
+          onPress={() => router.push('/settings' as Href)}
+          title={t('profile.settingsTitle')}
+        />
         <MenuCard onPress={openSupport} title={t('profile.support')} />
 
         <PillButton

@@ -19,7 +19,9 @@ import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/mode
 import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
 import { useGetOrderQuery, useGetReceiptQuery } from '@nurtaxi/shared-core/entities/order';
+import { useCurrentPosition } from '@nurtaxi/shared-core/features/geolocation';
 
+import { useOrderRoute } from '@/features/route';
 import { GlowIcon } from '@/shared/ui/glow-icon';
 import { PillButton } from '@/shared/ui/pill-button';
 import { RoundButton } from '@/shared/ui/round-button';
@@ -87,6 +89,18 @@ export function OrderScreen({ orderId }: { orderId: string }) {
     order?.status === OrderStatus.Completed || order?.status === OrderStatus.Closed;
   // Разбивку по деньгам считает сервер — берём её из чека, а не пересчитываем на клиенте.
   const { data: receipt } = useGetReceiptQuery(orderId, { skip: !orderId || !orderFinished });
+
+  // Маршрут строится от реальной позиции машины, поэтому нужна геопозиция и на этом экране,
+  // а не только в фоновом трекинге смены.
+  const routeActive = Boolean(order) && !orderFinished;
+  const { position } = useCurrentPosition(routeActive);
+  const route = useOrderRoute({
+    driverPosition: position,
+    dropoff: { lat: order?.dropoffLat ?? 0, lng: order?.dropoffLng ?? 0 },
+    enabled: routeActive,
+    pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
+    status: order?.status ?? '',
+  });
 
   if (isLoading || !order) {
     return (
@@ -207,7 +221,24 @@ export function OrderScreen({ orderId }: { orderId: string }) {
       <View style={StyleSheet.absoluteFill}>
         <MapCanvas
           initialPoint={{ lat: order.pickupLat, lng: order.pickupLng }}
+          markers={[
+            {
+              id: 'pickup',
+              kind: 'pickup',
+              point: { lat: order.pickupLat, lng: order.pickupLng },
+              title: order.pickupAddress,
+            },
+            {
+              id: 'dropoff',
+              kind: 'dropoff',
+              point: { lat: order.dropoffLat, lng: order.dropoffLng },
+              title: order.dropoffAddress,
+            },
+          ]}
+          // Маршрут от Yandex учитывает, где машина сейчас; серверная линия — запасной вариант.
+          routePoints={route.points}
           routePolyline={order.route?.polyline ?? null}
+          showsUserLocation
         />
       </View>
 
@@ -319,15 +350,29 @@ export function OrderScreen({ orderId }: { orderId: string }) {
             </View>
           ) : null}
 
+          {/*
+            Пока MapKit считает маршрут, показываем оценку сервера: она снята при создании
+            заказа и для водителя грубее, но лучше прочерка.
+          */}
           <StatTiles
             tiles={[
               {
-                label: 'В пути',
-                value: order.route ? formatDuration(order.route.durationS) : '—',
+                label: route.points
+                  ? route.leg === 'to-pickup'
+                    ? 'До клиента'
+                    : 'До точки Б'
+                  : 'В пути',
+                value:
+                  route.duration ?? (order.route ? formatDuration(order.route.durationS) : '—'),
               },
               {
                 label: 'Расстояние',
-                value: order.route ? formatDistance(order.route.distanceM) : '—',
+                value:
+                  route.distanceM !== null
+                    ? formatDistance(route.distanceM)
+                    : order.route
+                      ? formatDistance(order.route.distanceM)
+                      : '—',
               },
               {
                 label: 'Стоимость',

@@ -20,7 +20,14 @@ const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 const ROUTE_STROKE_COLOR = '#C99A54';
 
 export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(function MapCanvasNative(
-  { markers = [], routePolyline, initialPoint, showsUserLocation = false, onPress },
+  {
+    markers = [],
+    routePolyline,
+    routePoints: explicitRoutePoints,
+    initialPoint,
+    showsUserLocation = false,
+    onPress,
+  },
   ref,
 ) {
   const mapRef = useRef<YandexMapViewRef>(null);
@@ -32,10 +39,13 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   }
   const initialCamera = initialCameraRef.current ?? DEFAULT_CAMERA;
 
-  const routePoints = useMemo(
-    () => (routePolyline ? decodePolyline(routePolyline) : []),
-    [routePolyline],
-  );
+  /** Готовая геометрия важнее закодированной: она построена по актуальной позиции. */
+  const routePoints = useMemo(() => {
+    if (explicitRoutePoints?.length) {
+      return explicitRoutePoints;
+    }
+    return routePolyline ? decodePolyline(routePolyline) : [];
+  }, [explicitRoutePoints, routePolyline]);
 
   const fitPoints = useMemo(() => {
     const markerPoints = markers

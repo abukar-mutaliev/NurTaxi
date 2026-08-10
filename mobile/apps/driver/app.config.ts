@@ -145,7 +145,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         apiKey: yandexMapKitApiKey,
         locale: 'ru_RU',
-        flavor: 'lite',
+        // `full` вместо `lite`: подсказки адресов, геокодинг и построение маршрута
+        // живут только в полной сборке MapKit. На `lite` нативные модули есть, но
+        // их методы отклоняются с «requires the full flavor».
+        flavor: 'full',
       },
     ],
   ],

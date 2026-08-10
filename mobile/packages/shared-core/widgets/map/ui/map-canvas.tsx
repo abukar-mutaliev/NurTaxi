@@ -26,6 +26,12 @@ export interface MapCanvasProps {
   markers?: MapMarker[];
   /** Закодированная линия маршрута из `OrderRoute.polyline`. */
   routePolyline?: string | null;
+  /**
+   * Готовая геометрия маршрута — например, посчитанная на устройстве через Yandex
+   * Transport. Имеет приоритет над `routePolyline`: маршрут, построенный по реальной
+   * позиции водителя, точнее серверного, снятого в момент создания заказа.
+   */
+  routePoints?: GeoPoint[] | null;
   initialPoint?: GeoPoint | null;
   /** Синяя точка MapKit отключена по умолчанию — используем свои маркеры A/B. */
   showsUserLocation?: boolean;

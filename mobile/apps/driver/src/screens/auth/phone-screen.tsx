@@ -1,9 +1,10 @@
 /**
  * Экран входа водителя → `POST /auth/otp/request` (M1.2).
  *
- * Вёрстка повторяет макет: золотая точка и логотип-надпись «Нур», приветствие,
+ * Вёрстка повторяет макет: логотип «Нур», приветствие,
  * поле телефона в виде белой «пилюли» с золотой точкой и градиентная кнопка.
  */
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -30,8 +31,12 @@ import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background
 const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
+const logoAsset = require('@/assets/images/welcome/logo.png');
+
+const LOGO_DESIGN_WIDTH = 164;
+const LOGO_DESIGN_HEIGHT = 199;
+
 const c = {
-  brand: '#3A1D3F',
   title: '#2E2331',
   subtitle: '#9A8F98',
   dot: '#DFAE5C',
@@ -62,6 +67,13 @@ export function PhoneScreen() {
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
   const sy = (value: number) => (value / DESIGN_HEIGHT) * height;
+
+  const logoWidth = sx(LOGO_DESIGN_WIDTH);
+  const logoHeight = sx(LOGO_DESIGN_HEIGHT);
+  /** В ассете знак смещён вправо (~63% ширины). Обрезаем слева, чтобы марка была по центру. */
+  const logoRenderHeight = logoHeight * 1.0017;
+  const logoRenderWidth = logoWidth * 1.3507;
+  const logoCropOffsetX = logoWidth * 0.3507;
 
   const canSubmit = isValidPhone(phone) && !isRequestingOtp;
 
@@ -97,18 +109,17 @@ export function PhoneScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View
-            style={{
-              backgroundColor: c.dot,
-              borderRadius: sx(7),
-              height: sx(14),
-              marginBottom: sy(10),
-              width: sx(14),
-            }}
-          />
-          <Text style={[styles.brand, { fontSize: sx(34), lineHeight: sx(40) }]}>
-            {t('auth.brandName')}
-          </Text>
+          <View style={[styles.logoClip, { height: logoHeight, width: logoWidth }]}>
+            <Image
+              contentFit="fill"
+              source={logoAsset}
+              style={{
+                height: logoRenderHeight,
+                marginLeft: -logoCropOffsetX,
+                width: logoRenderWidth,
+              }}
+            />
+          </View>
           <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(16) }]}>
             {t('auth.phoneTitle')}
           </Text>
@@ -117,7 +128,7 @@ export function PhoneScreen() {
           </Text>
         </View>
 
-        <View style={{ marginTop: sy(104) }}>
+        <View style={{ marginTop: sy(40) }}>
           <View
             style={[
               styles.inputShell,
@@ -173,17 +184,15 @@ export function PhoneScreen() {
 }
 
 const styles = StyleSheet.create({
-  brand: {
-    color: c.brand,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
   error: {
     color: c.danger,
     textAlign: 'center',
   },
   header: {
     alignItems: 'center',
+  },
+  logoClip: {
+    overflow: 'hidden',
   },
   input: {
     color: c.inputText,

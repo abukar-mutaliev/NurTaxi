@@ -137,6 +137,21 @@ export interface UpdateProfilePayload {
   privacySettings?: Partial<PrivacySettings>;
 }
 
+export interface PresignProfilePhotoPayload {
+  contentType: string;
+  fileName?: string;
+}
+
+export interface PresignProfilePhotoResponse {
+  uploadUrl: string;
+  storageKey: string;
+  expiresInSec: number;
+}
+
+export interface ConfirmProfilePhotoPayload {
+  storageKey: string;
+}
+
 /** Согласие на обработку персональных данных, 152-ФЗ (`requirements.md §8.1`). */
 export interface ConsentPayload {
   accepted: true;
@@ -399,6 +414,29 @@ export interface SosResponse {
   sosEventId: string;
   contactsNotified: number;
   activatedAt: string;
+}
+
+export interface PresignTripRecordingPayload {
+  contentType: string;
+  fileName?: string;
+}
+
+export interface PresignTripRecordingResponse {
+  uploadUrl: string;
+  storageKey: string;
+  expiresInSec: number;
+}
+
+export interface ConfirmTripRecordingPayload {
+  storageKey: string;
+  durationSec?: number;
+}
+
+export interface TripRecording {
+  id: string;
+  orderId: string;
+  durationSec: number | null;
+  createdAt: string;
 }
 
 export interface CreateReviewPayload {

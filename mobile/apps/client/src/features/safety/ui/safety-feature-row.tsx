@@ -26,6 +26,9 @@ export interface SafetyFeatureRowProps {
   title: string;
   subtitle: string;
   iconTone?: SafetyFeatureIconTone;
+  active?: boolean;
+  loading?: boolean;
+  disabled?: boolean;
   onPress: () => void;
 }
 
@@ -33,6 +36,9 @@ export function SafetyFeatureRow({
   title,
   subtitle,
   iconTone = 'default',
+  active = false,
+  loading = false,
+  disabled = false,
   onPress,
 }: SafetyFeatureRowProps) {
   const iconColors = iconToneColors[iconTone];
@@ -40,11 +46,19 @@ export function SafetyFeatureRow({
   return (
     <Pressable
       accessibilityRole="button"
+      disabled={disabled || loading}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.row,
+        active && styles.rowActive,
+        (pressed || loading) && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
       <View style={[styles.iconOuter, { backgroundColor: iconColors.outer }]}>
-        <View style={[styles.iconInner, { backgroundColor: iconColors.inner }]} />
+        <View
+          style={[styles.iconInner, { backgroundColor: active ? '#E85D4A' : iconColors.inner }]}
+        />
       </View>
       <View style={styles.textBlock}>
         <Text numberOfLines={1} style={styles.title}>
@@ -79,6 +93,12 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.92,
+  },
+  disabled: {
+    opacity: 0.72,
+  },
+  rowActive: {
+    borderColor: 'rgba(232,93,74,0.35)',
   },
   row: {
     alignItems: 'center',

@@ -4,18 +4,26 @@ import { useTranslation } from 'react-i18next';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
-import { GlassPrimaryButton } from './glass-primary-button';
+import { GlassPrimaryButton, type GlassPrimaryButtonProps } from './glass-primary-button';
+
+export interface GlassDialogAction {
+  title: string;
+  onPress: () => void;
+  variant?: GlassPrimaryButtonProps['variant'];
+}
 
 export interface GlassConfirmDialogProps {
   visible: boolean;
-  title: string;
+  title?: string;
   message?: string;
   confirmTitle?: string;
   cancelTitle?: string;
   destructive?: boolean;
   loading?: boolean;
   dismissable?: boolean;
-  onConfirm: () => void;
+  showCancel?: boolean;
+  actions?: GlassDialogAction[];
+  onConfirm?: () => void;
   onCancel: () => void;
 }
 
@@ -28,6 +36,8 @@ export function GlassConfirmDialog({
   destructive = false,
   loading = false,
   dismissable = true,
+  showCancel = true,
+  actions,
   onConfirm,
   onCancel,
 }: GlassConfirmDialogProps) {
@@ -71,30 +81,50 @@ export function GlassConfirmDialog({
               },
             ]}
           >
-            <Text style={[styles.title, { fontSize: scale * 18 }]}>{title}</Text>
+            {title ? <Text style={[styles.title, { fontSize: scale * 18 }]}>{title}</Text> : null}
             {message ? (
-              <Text style={[styles.message, { fontSize: scale * 15, lineHeight: scale * 22 }]}>
+              <Text
+                style={[
+                  title ? styles.message : styles.messageOnly,
+                  { fontSize: scale * 15, lineHeight: scale * 22 },
+                ]}
+              >
                 {message}
               </Text>
             ) : null}
 
             <View style={{ gap: scale * 10, marginTop: scale * 4 }}>
-              <GlassPrimaryButton
-                disabled={loading}
-                loading={loading}
-                loadingTitle={t('common.loading')}
-                onPress={onConfirm}
-                scale={scale}
-                title={resolvedConfirmTitle}
-                variant={destructive ? 'destructive' : 'primary'}
-              />
-              <GlassPrimaryButton
-                disabled={loading}
-                onPress={onCancel}
-                scale={scale}
-                title={resolvedCancelTitle}
-                variant="secondary"
-              />
+              {actions ? (
+                actions.map((action, index) => (
+                  <GlassPrimaryButton
+                    key={action.title}
+                    disabled={loading}
+                    onPress={action.onPress}
+                    scale={scale}
+                    title={action.title}
+                    variant={action.variant ?? (index === 0 ? 'primary' : 'secondary')}
+                  />
+                ))
+              ) : (
+                <GlassPrimaryButton
+                  disabled={loading}
+                  loading={loading}
+                  loadingTitle={t('common.loading')}
+                  onPress={onConfirm ?? onCancel}
+                  scale={scale}
+                  title={resolvedConfirmTitle}
+                  variant={destructive ? 'destructive' : 'primary'}
+                />
+              )}
+              {showCancel ? (
+                <GlassPrimaryButton
+                  disabled={loading}
+                  onPress={onCancel}
+                  scale={scale}
+                  title={resolvedCancelTitle}
+                  variant="secondary"
+                />
+              ) : null}
             </View>
           </View>
         </View>
@@ -129,6 +159,11 @@ const styles = StyleSheet.create({
   },
   message: {
     color: GLASS_COLORS.subtitle,
+    textAlign: 'center',
+  },
+  messageOnly: {
+    color: GLASS_COLORS.title,
+    fontWeight: '500',
     textAlign: 'center',
   },
   root: {

@@ -4,8 +4,11 @@ import { Repository } from 'typeorm';
 import { Role } from '../../common/enums/role.enum';
 import { ACTIVE_ORDER_STATUSES } from '../../common/enums/order-status.enum';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
+import { UsersService } from '../users/users.service';
 import { Order } from './entities/order.entity';
 import { EmergencyContact } from '../users/entities/emergency-contact.entity';
+
+const STAFF_ROLES: Role[] = [Role.Operator, Role.RegionalAdmin, Role.SuperAdmin];
 
 /**
  * Авторизация подписки на канал order:{id} (Des §10, Req §8.6, §15.1).
@@ -17,6 +20,7 @@ export class OrderTrackingService {
     private readonly orders: Repository<Order>,
     @InjectRepository(EmergencyContact)
     private readonly emergencyContacts: Repository<EmergencyContact>,
+    private readonly usersService: UsersService,
   ) {}
   async canSubscribe(user: AuthenticatedUser, orderId: string): Promise<boolean> {
     const order = await this.orders.findOne({
@@ -24,6 +28,12 @@ export class OrderTrackingService {
       relations: ['driver', 'driver.user'],
     });
     if (!order) return false;
+
+    if (STAFF_ROLES.includes(user.role)) {
+      if (user.role === Role.SuperAdmin) return true;
+      const dbUser = await this.usersService.findById(user.id);
+      return dbUser?.assignedRegionId === order.regionId;
+    }
 
     if (!ACTIVE_ORDER_STATUSES.includes(order.status)) {
       return false;

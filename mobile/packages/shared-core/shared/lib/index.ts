@@ -33,4 +33,14 @@ export { useCountdown } from './hooks/use-countdown';
 export type { Countdown } from './hooks/use-countdown';
 export { useDebouncedValue } from './hooks/use-debounced-value';
 
+export {
+  ensureImagePickerPermission,
+  getImagePickerPermission,
+  requestImagePickerPermission,
+} from './media/image-picker-permission';
+export type {
+  ImagePickerPermissionStatus,
+  ImagePickerSource,
+} from './media/image-picker-permission';
+
 export * from './validation/schemas';

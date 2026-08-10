@@ -43,6 +43,8 @@ export interface NatsConfig {
 
 export interface S3Config {
   endpoint: string;
+  /** Адрес S3 для presigned URL, доступный с мобильных устройств (LAN IP в dev). */
+  publicEndpoint: string;
   region: string;
   accessKey: string;
   secretKey: string;
@@ -139,6 +141,8 @@ export default (): Configuration => ({
   },
   s3: {
     endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:9000',
+    publicEndpoint:
+      process.env.S3_PUBLIC_ENDPOINT ?? process.env.S3_ENDPOINT ?? 'http://localhost:9000',
     region: process.env.S3_REGION ?? 'us-east-1',
     accessKey: process.env.S3_ACCESS_KEY ?? 'nurtaxi',
     secretKey: process.env.S3_SECRET_KEY ?? 'nurtaxi123',

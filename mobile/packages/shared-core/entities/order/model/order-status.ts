@@ -40,6 +40,14 @@ export const SOS_ALLOWED_STATUSES: readonly OrderStatus[] = [
   OrderStatus.InProgress,
 ];
 
+/** Аудиозапись поездки доступна с момента назначения водителя до завершения поездки. */
+export const TRIP_RECORDING_ALLOWED_STATUSES: readonly OrderStatus[] = [
+  OrderStatus.DriverAssigned,
+  OrderStatus.DriverEnRoute,
+  OrderStatus.DriverArrived,
+  OrderStatus.InProgress,
+];
+
 export function isActiveOrder(status: OrderStatus): boolean {
   return ACTIVE_ORDER_STATUSES.includes(status);
 }
@@ -54,6 +62,10 @@ export function isCancellableByClient(status: OrderStatus): boolean {
 
 export function isSosAllowed(status: OrderStatus): boolean {
   return SOS_ALLOWED_STATUSES.includes(status);
+}
+
+export function isTripRecordingAllowed(status: OrderStatus): boolean {
+  return TRIP_RECORDING_ALLOWED_STATUSES.includes(status);
 }
 
 export function isCancelled(status: OrderStatus): boolean {

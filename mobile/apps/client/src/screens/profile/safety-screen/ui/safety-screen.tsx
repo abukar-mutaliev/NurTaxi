@@ -5,23 +5,33 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
-import { useActivateSosMutation, useGetOrderQuery } from '@nurtaxi/shared-core/entities/order';
+import {
+  isTripRecordingAllowed,
+  useActivateSosMutation,
+  useGetOrderQuery,
+} from '@nurtaxi/shared-core/entities/order';
 import { useGetEmergencyContactsQuery } from '@nurtaxi/shared-core/entities/emergency-contact';
 
 import { useAppSelector } from '@/app/store/hooks';
+import {
+  SafetyFeatureRow,
+  TripAudioRecordingRow,
+  type TripAudioRecordingDialogState,
+  type TripAudioRecordingHandlers,
+} from '@/features/safety';
 
 import { selectActiveOrderId } from '@/processes/order-flow';
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
-import { GlassScreenHeader } from '@/shared/ui';
+import { GlassConfirmDialog, GlassScreenHeader } from '@/shared/ui';
 
 import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welcome-gradient-background';
-import { SafetyFeatureRow } from './safety-feature-row';
 
 const colors = {
   background: '#F8F4EF',
@@ -34,6 +44,19 @@ const colors = {
 } as const;
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
+
+type SafetyDialogState =
+  | null
+  | { kind: 'info'; message: string }
+  | { kind: 'noContacts' }
+  | { kind: 'sosConfirm' }
+  | { kind: 'outsideTrip' }
+  | { kind: 'sosSuccess'; count: number }
+  | { kind: 'error'; message: string }
+  | { kind: 'audioOutsideTrip' }
+  | { kind: 'audioStopConfirm' }
+  | { kind: 'audioPermission' }
+  | { kind: 'audioSaved' };
 
 export function SafetyScreen() {
   const { t } = useTranslation();
@@ -49,59 +72,82 @@ export function SafetyScreen() {
   });
   const { data: contacts = [] } = useGetEmergencyContactsQuery();
   const [activateSos, sosState] = useActivateSosMutation();
+  const [dialog, setDialog] = useState<SafetyDialogState>(null);
+
+  const canRecordAudio = Boolean(
+    activeOrderId && activeOrder && isTripRecordingAllowed(activeOrder.status),
+  );
+  const audioHandlersRef = useRef<TripAudioRecordingHandlers | null>(null);
+  const [audioUploading, setAudioUploading] = useState(false);
+
+  const closeDialog = () => {
+    setDialog(null);
+    audioHandlersRef.current?.clearError();
+  };
+
+  const handleAudioDialog = useCallback((nextDialog: TripAudioRecordingDialogState) => {
+    setDialog(nextDialog);
+  }, []);
+
+  const handleBindAudioHandlers = useCallback((handlers: TripAudioRecordingHandlers) => {
+    audioHandlersRef.current = handlers;
+  }, []);
+
+  const handleAudioUploadingChange = useCallback((isUploading: boolean) => {
+    setAudioUploading(isUploading);
+  }, []);
+
+  const confirmStopRecording = () => {
+    closeDialog();
+    audioHandlersRef.current?.confirmStopRecording();
+  };
+
+  const openSettings = () => {
+    closeDialog();
+    audioHandlersRef.current?.openSettings();
+  };
+
+  const goToContacts = () => {
+    closeDialog();
+    router.push('/profile/emergency-contacts');
+  };
 
   const showComingSoon = (message: string) => {
-    Alert.alert(t('common.ok'), message);
+    setDialog({ kind: 'info', message });
+  };
+
+  const confirmSos = () => {
+    if (!activeOrderId || !activeOrder) {
+      return;
+    }
+
+    void activateSos({
+      orderId: activeOrderId,
+      lat: activeOrder.pickupLat,
+      lng: activeOrder.pickupLng,
+      address: activeOrder.pickupAddress,
+    })
+      .unwrap()
+      .then((response) => {
+        setDialog({ kind: 'sosSuccess', count: response.contactsNotified });
+      })
+      .catch((cause) => {
+        setDialog({ kind: 'error', message: toAppError(cause as never).message });
+      });
   };
 
   const triggerPanic = () => {
     if (activeOrderId && activeOrder) {
       if (contacts.length === 0) {
-        Alert.alert(t('sos.title'), t('sos.noContacts'), [
-          { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('safety.goToContacts'),
-            onPress: () => router.push('/profile/emergency-contacts'),
-          },
-        ]);
+        setDialog({ kind: 'noContacts' });
         return;
       }
 
-      Alert.alert(t('sos.title'), t('sos.description'), [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('sos.confirm'),
-          style: 'destructive',
-          onPress: () => {
-            void activateSos({
-              orderId: activeOrderId,
-              lat: activeOrder.pickupLat,
-              lng: activeOrder.pickupLng,
-              address: activeOrder.pickupAddress,
-            })
-              .unwrap()
-              .then((response) => {
-                Alert.alert(
-                  t('sos.activated'),
-                  t('sos.contactsNotified', { count: response.contactsNotified }),
-                );
-              })
-              .catch((cause) => {
-                Alert.alert(t('errors.title'), toAppError(cause as never).message);
-              });
-          },
-        },
-      ]);
+      setDialog({ kind: 'sosConfirm' });
       return;
     }
 
-    Alert.alert(t('safety.panicTitle'), t('safety.panicOutsideTrip'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('safety.goToContacts'),
-        onPress: () => router.push('/profile/emergency-contacts'),
-      },
-    ]);
+    setDialog({ kind: 'outsideTrip' });
   };
 
   return (
@@ -196,10 +242,15 @@ export function SafetyScreen() {
         </Pressable>
 
         <View style={{ gap: scale * 20 }}>
-          <SafetyFeatureRow
-            onPress={() => showComingSoon(t('safety.audioComingSoon'))}
-            subtitle={t('safety.audioSubtitle')}
-            title={t('safety.audioTitle')}
+          <TripAudioRecordingRow
+            canRecord={canRecordAudio}
+            onBindHandlers={handleBindAudioHandlers}
+            onDialog={handleAudioDialog}
+            onStubPress={() => {
+              setDialog({ kind: 'info', message: t('safety.audioRequiresRebuild') });
+            }}
+            onUploadingChange={handleAudioUploadingChange}
+            orderId={activeOrderId}
           />
           <SafetyFeatureRow
             iconTone="safety"
@@ -209,6 +260,104 @@ export function SafetyScreen() {
           />
         </View>
       </ScrollView>
+
+      <GlassConfirmDialog
+        actions={
+          dialog?.kind === 'noContacts' || dialog?.kind === 'outsideTrip'
+            ? [{ title: t('safety.goToContacts'), onPress: goToContacts }]
+            : undefined
+        }
+        confirmTitle={
+          dialog?.kind === 'info' ||
+          dialog?.kind === 'sosSuccess' ||
+          dialog?.kind === 'error' ||
+          dialog?.kind === 'audioOutsideTrip' ||
+          dialog?.kind === 'audioSaved'
+            ? t('common.ok')
+            : dialog?.kind === 'sosConfirm'
+              ? t('sos.confirm')
+              : dialog?.kind === 'audioStopConfirm'
+                ? t('safety.audioStopConfirm')
+                : dialog?.kind === 'audioPermission'
+                  ? t('safety.audioOpenSettings')
+                  : undefined
+        }
+        destructive={dialog?.kind === 'sosConfirm'}
+        dismissable={
+          (dialog?.kind !== 'sosConfirm' || !sosState.isLoading) &&
+          dialog?.kind !== 'audioStopConfirm'
+        }
+        loading={
+          (dialog?.kind === 'sosConfirm' && sosState.isLoading) ||
+          (dialog?.kind === 'audioStopConfirm' && audioUploading)
+        }
+        message={
+          dialog?.kind === 'info'
+            ? dialog.message
+            : dialog?.kind === 'noContacts'
+              ? t('sos.noContacts')
+              : dialog?.kind === 'sosConfirm'
+                ? t('sos.description')
+                : dialog?.kind === 'outsideTrip'
+                  ? t('safety.panicOutsideTrip')
+                  : dialog?.kind === 'audioOutsideTrip'
+                    ? t('safety.audioOutsideTrip')
+                    : dialog?.kind === 'audioStopConfirm'
+                      ? t('safety.audioStopMessage')
+                      : dialog?.kind === 'audioPermission'
+                        ? t('safety.audioPermissionMessage')
+                        : dialog?.kind === 'audioSaved'
+                          ? t('safety.audioSaved')
+                          : dialog?.kind === 'sosSuccess'
+                            ? t('sos.contactsNotified', { count: dialog.count })
+                            : dialog?.kind === 'error'
+                              ? dialog.message
+                              : undefined
+        }
+        onCancel={closeDialog}
+        onConfirm={
+          dialog?.kind === 'sosConfirm'
+            ? confirmSos
+            : dialog?.kind === 'audioStopConfirm'
+              ? confirmStopRecording
+              : dialog?.kind === 'audioPermission'
+                ? openSettings
+                : dialog?.kind === 'info' ||
+                    dialog?.kind === 'sosSuccess' ||
+                    dialog?.kind === 'error' ||
+                    dialog?.kind === 'audioOutsideTrip' ||
+                    dialog?.kind === 'audioSaved'
+                  ? closeDialog
+                  : undefined
+        }
+        showCancel={
+          dialog?.kind === 'noContacts' ||
+          dialog?.kind === 'outsideTrip' ||
+          dialog?.kind === 'sosConfirm' ||
+          dialog?.kind === 'audioStopConfirm' ||
+          dialog?.kind === 'audioPermission'
+        }
+        title={
+          dialog?.kind === 'noContacts' || dialog?.kind === 'sosConfirm'
+            ? t('sos.title')
+            : dialog?.kind === 'outsideTrip'
+              ? t('safety.panicTitle')
+              : dialog?.kind === 'audioOutsideTrip'
+                ? t('safety.audioTitle')
+                : dialog?.kind === 'audioStopConfirm'
+                  ? t('safety.audioStopTitle')
+                  : dialog?.kind === 'audioPermission'
+                    ? t('safety.audioPermissionTitle')
+                    : dialog?.kind === 'audioSaved'
+                      ? t('safety.audioTitle')
+                      : dialog?.kind === 'sosSuccess'
+                        ? t('sos.activated')
+                        : dialog?.kind === 'error'
+                          ? t('errors.title')
+                          : undefined
+        }
+        visible={dialog !== null}
+      />
     </View>
   );
 }

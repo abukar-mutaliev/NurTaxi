@@ -31,21 +31,38 @@ const DOWNLOAD_TTL_SEC = 300;
 export class S3StorageService {
   private readonly logger = new Logger(S3StorageService.name);
   private readonly client: S3Client;
+  private readonly presignClient: S3Client;
   private readonly bucket: string;
   private bucketReady = false;
 
   constructor(private readonly config: ConfigService) {
     const s3 = this.config.getOrThrow<S3Config>('s3');
     this.bucket = s3.bucket;
-    this.client = new S3Client({
-      endpoint: s3.endpoint,
+
+    const clientConfig = {
       region: s3.region,
       credentials: {
         accessKeyId: s3.accessKey,
         secretAccessKey: s3.secretKey,
       },
       forcePathStyle: s3.forcePathStyle,
+      // Без этого SDK v3 добавляет CRC32 в presigned URL — React Native PUT его не шлёт.
+      requestChecksumCalculation: 'WHEN_REQUIRED' as const,
+      responseChecksumValidation: 'WHEN_REQUIRED' as const,
+    };
+
+    this.client = new S3Client({
+      ...clientConfig,
+      endpoint: s3.endpoint,
     });
+
+    this.presignClient =
+      s3.publicEndpoint === s3.endpoint
+        ? this.client
+        : new S3Client({
+            ...clientConfig,
+            endpoint: s3.publicEndpoint,
+          });
   }
 
   async ensureBucket(): Promise<void> {
@@ -71,6 +88,16 @@ export class S3StorageService {
     return `drivers/${driverId}/${documentType}/${Date.now()}.${safeExt}`;
   }
 
+  buildUserPhotoKey(userId: string, extension: string): string {
+    const safeExt = extension.replace(/^\./, '').toLowerCase();
+    return `users/${userId}/photo/${Date.now()}.${safeExt}`;
+  }
+
+  buildTripRecordingKey(orderId: string, clientId: string, extension: string): string {
+    const safeExt = extension.replace(/^\./, '').toLowerCase();
+    return `orders/${orderId}/recordings/${clientId}/${Date.now()}.${safeExt}`;
+  }
+
   async createUploadUrl(
     storageKey: string,
     contentType: string,
@@ -84,7 +111,7 @@ export class S3StorageService {
       ContentType: contentType,
     });
 
-    const uploadUrl = await getSignedUrl(this.client, command, { expiresIn: expiresInSec });
+    const uploadUrl = await getSignedUrl(this.presignClient, command, { expiresIn: expiresInSec });
 
     return { uploadUrl, storageKey, expiresInSec };
   }
@@ -101,7 +128,7 @@ export class S3StorageService {
       Key: storageKey,
     });
 
-    const downloadUrl = await getSignedUrl(this.client, command, { expiresIn: expiresInSec });
+    const downloadUrl = await getSignedUrl(this.presignClient, command, { expiresIn: expiresInSec });
 
     return { downloadUrl, expiresInSec };
   }

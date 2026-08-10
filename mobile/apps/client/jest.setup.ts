@@ -80,6 +80,26 @@ jest.mock('expo-device', () => ({
   isDevice: true,
 }));
 
+jest.mock('expo-audio', () => ({
+  __esModule: true,
+  RecordingPresets: { HIGH_QUALITY: { extension: '.m4a' } },
+  setAudioModeAsync: jest.fn(async () => undefined),
+  useAudioRecorder: jest.fn(() => ({
+    prepareToRecordAsync: jest.fn(async () => undefined),
+    record: jest.fn(),
+    stop: jest.fn(async () => undefined),
+    uri: 'file:///mock-recording.m4a',
+  })),
+  useAudioRecorderState: jest.fn(() => ({
+    isRecording: false,
+    durationMillis: 0,
+  })),
+  AudioModule: {
+    getRecordingPermissionsAsync: jest.fn(async () => ({ granted: true, canAskAgain: true })),
+    requestRecordingPermissionsAsync: jest.fn(async () => ({ granted: true, canAskAgain: true })),
+  },
+}));
+
 jest.mock('expo-yandex-mapkit', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const React = require('react');

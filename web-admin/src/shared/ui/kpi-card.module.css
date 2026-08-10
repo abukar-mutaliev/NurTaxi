@@ -1,0 +1,43 @@
+.card {
+  height: 100%;
+  border-radius: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.icon {
+  font-size: 20px;
+  color: #c99a54;
+  opacity: 0.85;
+}
+
+.value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #2e2331;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 13px;
+  display: block;
+}
+
+.target {
+  font-size: 12px;
+  display: block;
+  margin-top: 8px;
+}

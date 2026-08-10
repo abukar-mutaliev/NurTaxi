@@ -1,0 +1,13 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.hint {
+  font-size: 13px;
+  color: #7a6e78;
+}
+

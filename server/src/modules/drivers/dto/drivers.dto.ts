@@ -160,3 +160,78 @@ export class ListDriversQueryDto {
   @IsString()
   verificationStatus?: string;
 }
+
+export class AdminUpdateDriverVehicleDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  make?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  model?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(4)
+  @MaxLength(20)
+  plateNumber?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(40)
+  color?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(1990)
+  @Max(new Date().getFullYear() + 1)
+  year?: number;
+}
+
+export class AdminUpdateDriverDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(3)
+  @MaxLength(200)
+  fullName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDateString()
+  birthDate?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MinLength(5)
+  residenceAddress?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(70)
+  drivingExperienceYears?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  regionId?: string;
+
+  @ApiPropertyOptional({ type: AdminUpdateDriverVehicleDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AdminUpdateDriverVehicleDto)
+  vehicle?: AdminUpdateDriverVehicleDto;
+}

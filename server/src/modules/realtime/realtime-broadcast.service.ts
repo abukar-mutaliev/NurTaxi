@@ -3,6 +3,9 @@ import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../redis/redis.constants';
 import {
   REALTIME_REDIS_CHANNEL,
+  RealtimeEvent,
+  operatorsAllRoom,
+  regionRoom,
   type RealtimeEnvelope,
   type RealtimeRoom,
 } from './realtime.constants';
@@ -48,17 +51,33 @@ export class RealtimeBroadcastService implements OnModuleInit, OnModuleDestroy {
     this.handler?.(envelope);
   }
 
+  /** Рассылка события операторам региона и супер-админам. */
+  async publishToStaff(
+    regionId: string | null | undefined,
+    event: RealtimeEvent | string,
+    data: Record<string, unknown>,
+  ): Promise<void> {
+    const payload = regionId ? { regionId, ...data } : data;
+    if (regionId) {
+      await this.publish(regionRoom(regionId), event, payload);
+    }
+    await this.publish(operatorsAllRoom(), event, payload);
+  }
+
   async publishOrderStatus(
     orderId: string,
     clientId: string,
     driverUserId: string | null,
+    regionId: string,
     data: Record<string, unknown>,
   ): Promise<void> {
-    await this.publish(`order:${orderId}`, 'order.status', data);
-    await this.publish(`client:${clientId}`, 'order.status', { orderId, ...data });
+    const payload = { orderId, ...data };
+    await this.publish(`order:${orderId}`, RealtimeEvent.OrderStatus, payload);
+    await this.publish(`client:${clientId}`, RealtimeEvent.OrderStatus, payload);
     if (driverUserId) {
-      await this.publish(`driver:${driverUserId}`, 'order.status', { orderId, ...data });
+      await this.publish(`driver:${driverUserId}`, RealtimeEvent.OrderStatus, payload);
     }
+    await this.publishToStaff(regionId, RealtimeEvent.OrderStatus, payload);
   }
 
   /**
@@ -78,7 +97,15 @@ export class RealtimeBroadcastService implements OnModuleInit, OnModuleDestroy {
     await this.publish(`client:${clientId}`, 'driver.location', { orderId, ...data });
   }
 
-  async publishSos(orderId: string, data: Record<string, unknown>): Promise<void> {
-    await this.publish(`order:${orderId}`, 'sos.activated', data);
+  async publishSos(
+    orderId: string,
+    regionId: string,
+    clientId: string,
+    data: Record<string, unknown>,
+  ): Promise<void> {
+    const payload = { orderId, ...data };
+    await this.publish(`order:${orderId}`, RealtimeEvent.SosActivated, payload);
+    await this.publish(`client:${clientId}`, RealtimeEvent.SosActivated, payload);
+    await this.publishToStaff(regionId, RealtimeEvent.SosActivated, payload);
   }
 }

@@ -24,6 +24,9 @@ const c = {
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
 
+const LOGO_DESIGN_WIDTH = 164;
+const LOGO_DESIGN_HEIGHT = 199;
+
 export function WelcomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -35,6 +38,9 @@ export function WelcomeScreen() {
   const sy = (value: number) => (value / DESIGN_HEIGHT) * height;
 
   const goToLogin = () => router.push('/(auth)/phone');
+
+  const logoHeight = sy(300);
+  const logoWidth = (LOGO_DESIGN_WIDTH / LOGO_DESIGN_HEIGHT) * logoHeight;
 
   return (
     <View style={styles.root}>
@@ -50,10 +56,15 @@ export function WelcomeScreen() {
         }}
       >
         <View style={styles.logoArea}>
+          {/*
+            Ассет обрезан по краям знака, поэтому `contain` вписывает логотип целиком.
+            Ручной сдвиг слева срезал «ЖЕ» из «ЖЕНСКОЕ ТАКСИ».
+          */}
           <Image
+            accessibilityLabel={t('auth.brandName')}
             contentFit="contain"
             source={logoAsset}
-            style={{ height: sy(300), width: '100%' }}
+            style={{ height: logoHeight, width: logoWidth }}
           />
         </View>
 

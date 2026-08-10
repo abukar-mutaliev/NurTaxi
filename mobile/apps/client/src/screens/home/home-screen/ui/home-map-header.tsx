@@ -34,7 +34,7 @@ export function HomeMapHeader({
       <View style={styles.row}>
         <View style={styles.sideSlot}>
           <Pressable
-            accessibilityLabel="Меню"
+            accessibilityLabel={t('notifications.title')}
             accessibilityRole="button"
             onPress={onMenuPress}
             style={({ pressed }) => [

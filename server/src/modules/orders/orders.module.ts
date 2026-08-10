@@ -14,9 +14,11 @@ import { EmergencyContact } from '../users/entities/emergency-contact.entity';
 import { Order } from './entities/order.entity';
 import { OrderRoute } from './entities/order-route.entity';
 import { OrderStatusLog } from './entities/order-status-log.entity';
+import { TripRecording } from './entities/trip-recording.entity';
 import { OrdersService } from './orders.service';
 import { OrderTransitionService } from './order-transition.service';
 import { OrderTrackingService } from './order-tracking.service';
+import { TripRecordingService } from './trip-recording.service';
 import { MatchingService } from './matching/matching.service';
 import { OrdersController } from './orders.controller';
 import { DriverOrdersController } from './driver-orders.controller';
@@ -26,7 +28,14 @@ import { DriverOrdersController } from './driver-orders.controller';
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderRoute, OrderStatusLog, EmergencyContact, Receipt]),
+    TypeOrmModule.forFeature([
+      Order,
+      OrderRoute,
+      OrderStatusLog,
+      EmergencyContact,
+      Receipt,
+      TripRecording,
+    ]),
     GeoModule,
     RegionsModule,
     TariffsModule,
@@ -38,7 +47,13 @@ import { DriverOrdersController } from './driver-orders.controller';
     forwardRef(() => ReviewsModule),
   ],
   controllers: [OrdersController, DriverOrdersController],
-  providers: [OrdersService, OrderTransitionService, OrderTrackingService, MatchingService],
+  providers: [
+    OrdersService,
+    OrderTransitionService,
+    OrderTrackingService,
+    MatchingService,
+    TripRecordingService,
+  ],
   exports: [OrdersService, OrderTrackingService, OrderTransitionService, MatchingService],
 })
 export class OrdersModule {}

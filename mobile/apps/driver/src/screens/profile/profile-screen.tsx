@@ -4,7 +4,7 @@
  * Данные берутся из `GET /driver/profile` и `GET /driver/earnings`; счётчик одобренных
  * документов считается по `profile.documents`, чтобы не дублировать логику на сервере.
  */
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
@@ -159,7 +159,7 @@ export function ProfileScreen() {
           }
           title="Документы"
         />
-        <MenuCard onPress={() => router.push('/(tabs)/orders')} title="История поездок" />
+        <MenuCard onPress={() => router.push('/(tabs)/orders' as Href)} title="История поездок" />
         <MenuCard onPress={openSupport} title={t('profile.support')} />
 
         <PillButton

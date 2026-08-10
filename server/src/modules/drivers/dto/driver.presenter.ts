@@ -136,6 +136,9 @@ export class DriverProfileResponse {
   @ApiProperty()
   canGoOnline!: boolean;
 
+  @ApiProperty({ description: 'Статус аккаунта пользователя (active/blocked)' })
+  accountStatus!: string;
+
   static from(
     profile: DriverProfile,
     documents: DriverDocumentResponse[] = [],
@@ -162,6 +165,7 @@ export class DriverProfileResponse {
       vehicles: primaryVehicle ? [VehicleResponse.from(primaryVehicle)] : [],
       documents,
       canGoOnline: profile.verificationStatus === VerificationStatus.Approved,
+      accountStatus: profile.user?.status ?? 'active',
     };
   }
 }

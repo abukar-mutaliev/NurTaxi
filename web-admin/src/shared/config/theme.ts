@@ -1,0 +1,72 @@
+/** Палитра Nur Taxi — золотистая гамма mobile/apps/client (welcome-gradient + glass-theme). */
+export const palette = {
+  goldDeep: '#7A5C28',
+  goldDark: '#A67C3A',
+  gold: '#C99A54',
+  goldLight: '#E8C882',
+  goldWarm: '#F7DCA8',
+  goldPale: '#FCEFD6',
+  goldMuted: 'rgba(201, 154, 84, 0.12)',
+  brandText: '#2E2331',
+  red500: '#B42318',
+  red100: '#FDE7E4',
+  green600: '#6B9B6E',
+  green100: '#E8F0E9',
+  amber500: '#C99A54',
+  amber100: 'rgba(255, 248, 230, 0.85)',
+  neutral0: '#FFFFFF',
+  neutral50: '#F8F4EF',
+  neutral100: '#F3EDE4',
+  neutral200: '#E8E0D8',
+  neutral500: '#7A6E78',
+  neutral700: '#4A4248',
+  neutral900: '#2E2331',
+  hint: '#A99FA6',
+  onGold: '#FFF8EE',
+} as const;
+
+export const antTheme = {
+  token: {
+    colorPrimary: palette.gold,
+    colorInfo: palette.gold,
+    colorSuccess: palette.green600,
+    colorWarning: palette.amber500,
+    colorError: palette.red500,
+    borderRadius: 10,
+    borderRadiusLG: 16,
+    fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+    colorBgLayout: palette.neutral50,
+    colorBgContainer: palette.neutral0,
+    colorText: palette.neutral900,
+    colorTextSecondary: palette.neutral500,
+    controlHeight: 40,
+    controlHeightLG: 48,
+  },
+  components: {
+    Layout: {
+      siderBg: palette.neutral50,
+      triggerBg: palette.goldPale,
+      headerBg: palette.neutral0,
+      bodyBg: palette.neutral50,
+    },
+    Menu: {
+      itemBg: 'transparent',
+      itemColor: palette.neutral900,
+      itemSelectedBg: 'rgba(255, 255, 255, 0.72)',
+      itemSelectedColor: palette.neutral900,
+      itemHoverBg: 'rgba(255, 255, 255, 0.5)',
+      itemHeight: 44,
+      iconSize: 18,
+    },
+    Table: {
+      headerBg: palette.neutral100,
+      rowHoverBg: palette.goldMuted,
+    },
+    Card: {
+      borderRadiusLG: 16,
+    },
+    Button: {
+      primaryShadow: '0 4px 12px rgba(89, 71, 31, 0.1)',
+    },
+  },
+} as const;

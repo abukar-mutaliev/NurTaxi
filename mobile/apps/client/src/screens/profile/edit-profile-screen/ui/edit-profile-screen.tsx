@@ -1,22 +1,19 @@
 /**
- * Редактирование профиля (M2.2, M2.6): имя и язык интерфейса.
+ * Редактирование профиля (M2.2, M2.6): имя и фото.
  */
 import { useState } from 'react';
-import { Pressable, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Pressable, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { SUPPORTED_LANGUAGES } from '@nurtaxi/shared-core/shared/i18n';
-import { AppLanguage } from '@nurtaxi/shared-core/shared/model';
 import { Avatar, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
-import { useProfileUpdate } from '@/features/profile';
+import { useProfilePhotoUpload, useProfileUpdate } from '@/features/profile';
 import {
   GLASS_DESIGN_WIDTH,
-  GlassCard,
+  GlassConfirmDialog,
   GlassPrimaryButton,
   GlassScreenShell,
-  GlassSectionLabel,
   GlassTextField,
   GLASS_COLORS,
 } from '@/shared/ui';
@@ -27,9 +24,21 @@ export function EditProfileScreen() {
   const scale = width / GLASS_DESIGN_WIDTH;
   const { data: profile, isLoading } = useGetMeQuery();
   const { updateProfile, isUpdating, error } = useProfileUpdate();
+  const {
+    openSourcePicker,
+    closeSourcePicker,
+    sourcePickerVisible,
+    permissionDialogVisible,
+    deniedSource,
+    closePermissionDialog,
+    openSettings,
+    pickFromSource,
+    isUploading,
+    error: photoError,
+    clearError,
+  } = useProfilePhotoUpload();
 
   const [name, setName] = useState('');
-  const [language, setLanguage] = useState<AppLanguage>(AppLanguage.Ru);
   const [saved, setSaved] = useState(false);
 
   // Форма заполняется из загруженного профиля. Обновляем прямо при рендере — как только
@@ -38,15 +47,13 @@ export function EditProfileScreen() {
   if (profile && profile !== syncedProfile) {
     setSyncedProfile(profile);
     setName(profile.name ?? '');
-    const lang = profile.language as AppLanguage;
-    setLanguage(SUPPORTED_LANGUAGES.includes(lang) ? lang : AppLanguage.Ru);
   }
 
   const canSubmit = name.trim().length >= 2 && !isUpdating;
 
   const submit = async () => {
     setSaved(false);
-    await updateProfile({ name: name.trim(), language });
+    await updateProfile({ name: name.trim() });
     setSaved(true);
   };
 
@@ -69,9 +76,39 @@ export function EditProfileScreen() {
       title={t('profile.editTitle')}
     >
       <View style={{ alignItems: 'center', gap: scale * 8, paddingVertical: scale * 8 }}>
-        <Avatar name={name || profile.name} size={96} uri={profile.photoUrl} />
+        <Pressable
+          accessibilityLabel={t('profile.changePhoto')}
+          accessibilityRole="button"
+          disabled={isUploading}
+          onPress={() => {
+            clearError();
+            openSourcePicker();
+          }}
+          style={({ pressed }) => ({ opacity: pressed || isUploading ? 0.85 : 1 })}
+        >
+          <View style={{ position: 'relative' }}>
+            <Avatar name={name || profile.name} size={96} uri={profile.photoUrl} />
+            {isUploading ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: 'rgba(46,35,49,0.45)',
+                  borderRadius: 48,
+                  bottom: 0,
+                  justifyContent: 'center',
+                  left: 0,
+                  position: 'absolute',
+                  right: 0,
+                  top: 0,
+                }}
+              >
+                <ActivityIndicator color="#F7F3EE" />
+              </View>
+            ) : null}
+          </View>
+        </Pressable>
         <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 13 }}>
-          {t('onboarding.photoLabel')}
+          {t('profile.changePhoto')}
         </Text>
       </View>
 
@@ -83,31 +120,15 @@ export function EditProfileScreen() {
         value={name}
       />
 
-      <View style={{ gap: scale * 10 }}>
-        <GlassSectionLabel>{t('profile.language')}</GlassSectionLabel>
-        {SUPPORTED_LANGUAGES.map((lang) => {
-          const selected = language === lang;
-          return (
-            <Pressable key={lang} onPress={() => setLanguage(lang)}>
-              <GlassCard tone={selected ? 'selected' : 'default'}>
-                <Text
-                  style={{
-                    color: GLASS_COLORS.title,
-                    fontSize: scale * 15,
-                    fontWeight: selected ? '600' : '500',
-                  }}
-                >
-                  {t(`profile.languages.${lang}`)}
-                </Text>
-              </GlassCard>
-            </Pressable>
-          );
-        })}
-      </View>
-
       {error ? (
         <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
           {error.message}
+        </Text>
+      ) : null}
+
+      {photoError ? (
+        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+          {photoError}
         </Text>
       ) : null}
 
@@ -116,6 +137,38 @@ export function EditProfileScreen() {
           {t('profile.saveSuccess')}
         </Text>
       ) : null}
+
+      <GlassConfirmDialog
+        actions={[
+          {
+            title: t('documents.fromGallery'),
+            onPress: () => pickFromSource('gallery'),
+          },
+          {
+            title: t('documents.fromCamera'),
+            onPress: () => pickFromSource('camera'),
+            variant: 'secondary',
+          },
+        ]}
+        onCancel={closeSourcePicker}
+        title={t('onboarding.photoLabel')}
+        visible={sourcePickerVisible}
+      />
+
+      <GlassConfirmDialog
+        confirmTitle={t('permissions.openSettings')}
+        message={
+          deniedSource === 'camera'
+            ? t('permissions.cameraDescription')
+            : t('permissions.galleryDescription')
+        }
+        onCancel={closePermissionDialog}
+        onConfirm={openSettings}
+        title={
+          deniedSource === 'camera' ? t('permissions.cameraTitle') : t('permissions.galleryTitle')
+        }
+        visible={permissionDialogVisible}
+      />
     </GlassScreenShell>
   );
 }

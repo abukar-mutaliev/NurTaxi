@@ -205,15 +205,85 @@ export class OrderStatusLogResponse {
   @ApiPropertyOptional()
   reason!: string | null;
 
+  @ApiPropertyOptional()
+  actorId!: string | null;
+
+  @ApiPropertyOptional()
+  actorLabel!: string | null;
+
   @ApiProperty()
   createdAt!: string;
 
-  static from(log: OrderStatusLog): OrderStatusLogResponse {
+  static from(log: OrderStatusLog, actorLabel?: string): OrderStatusLogResponse {
     return {
       fromStatus: log.fromStatus,
       toStatus: log.toStatus,
       reason: log.reason,
+      actorId: log.actorId,
+      actorLabel: actorLabel ?? null,
       createdAt: log.createdAt.toISOString(),
+    };
+  }
+}
+
+export class NearbyDriverResponse {
+  @ApiProperty()
+  driverId!: string;
+
+  @ApiProperty()
+  fullName!: string;
+
+  @ApiPropertyOptional()
+  phone!: string | null;
+
+  @ApiProperty()
+  rating!: number;
+
+  @ApiProperty()
+  lat!: number;
+
+  @ApiProperty()
+  lng!: number;
+
+  @ApiProperty()
+  distanceM!: number;
+
+  @ApiPropertyOptional()
+  vehicle!: { make: string; model: string; plateNumber: string } | null;
+
+  static from(candidate: {
+    driverId: string;
+    fullName: string;
+    phone: string | null;
+    rating: number;
+    lat: number;
+    lng: number;
+    distanceM: number;
+    vehicle: { make: string; model: string; plateNumber: string } | null;
+  }): NearbyDriverResponse {
+    return { ...candidate };
+  }
+}
+
+export class OrderListPageResponse {
+  @ApiProperty({ type: [OrderResponse] })
+  items!: OrderResponse[];
+
+  @ApiPropertyOptional()
+  nextCursor!: string | null;
+
+  @ApiProperty()
+  hasMore!: boolean;
+
+  static from(page: {
+    items: Order[];
+    nextCursor: string | null;
+    hasMore: boolean;
+  }): OrderListPageResponse {
+    return {
+      items: page.items.map(OrderResponse.from),
+      nextCursor: page.nextCursor,
+      hasMore: page.hasMore,
     };
   }
 }

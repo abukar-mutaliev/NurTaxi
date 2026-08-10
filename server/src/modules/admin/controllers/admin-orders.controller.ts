@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/auth/jwt-auth.guard';
 import { RolesGuard } from '../../../common/auth/roles.guard';
 import { Roles } from '../../../common/auth/roles.decorator';
@@ -17,7 +17,12 @@ import { CurrentUser } from '../../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../../common/auth/jwt-payload.interface';
 import { Role } from '../../../common/enums/role.enum';
 import { OrderStatus } from '../../../common/enums/order-status.enum';
-import { OrderResponse } from '../../orders/dto/orders.presenter';
+import {
+  NearbyDriverResponse,
+  OrderListPageResponse,
+  OrderResponse,
+  OrderStatusLogResponse,
+} from '../../orders/dto/orders.presenter';
 import { AdminOrdersService } from '../admin-orders.service';
 import { AdminAssignDriverDto, AdminOrderStatusDto, AdminRefundDto } from '../dto/admin.dto';
 
@@ -30,19 +35,42 @@ export class AdminOrdersController {
   constructor(private readonly adminOrders: AdminOrdersService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Список заказов (операторская консоль, §7.4)' })
+  @ApiOperation({ summary: 'Список заказов с cursor-пагинацией (§7.4, §14.5)' })
   async list(
     @CurrentUser() actor: AuthenticatedUser,
     @Query('regionId') regionId?: string,
     @Query('status') status?: OrderStatus,
     @Query('limit') limit?: number,
-  ): Promise<OrderResponse[]> {
-    const orders = await this.adminOrders.listOrders(actor, {
+    @Query('cursor') cursor?: string,
+  ): Promise<OrderListPageResponse> {
+    const page = await this.adminOrders.listOrders(actor, {
       regionId,
       status,
-      limit: limit ? Number(limit) : 50,
+      limit: limit ? Number(limit) : undefined,
+      cursor,
     });
-    return orders.map(OrderResponse.from);
+    return OrderListPageResponse.from(page);
+  }
+
+  @Get(':id/status-logs')
+  @ApiOperation({ summary: 'История статусов заказа' })
+  async statusLogs(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<OrderStatusLogResponse[]> {
+    const logs = await this.adminOrders.getStatusLogs(actor, id);
+    const labels = await this.adminOrders.resolveActorLabels(logs);
+    return logs.map((log) => OrderStatusLogResponse.from(log, labels.get(log.actorId ?? '')));
+  }
+
+  @Get(':id/nearby-drivers')
+  @ApiOperation({ summary: 'Ближайшие свободные водители для назначения' })
+  async nearbyDrivers(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<NearbyDriverResponse[]> {
+    const drivers = await this.adminOrders.findNearbyDrivers(actor, id);
+    return drivers.map(NearbyDriverResponse.from);
   }
 
   @Get(':id')

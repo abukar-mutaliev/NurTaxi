@@ -11,6 +11,6 @@ export { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
 export { ScreenHeader } from './screen-header';
 export { SwitchRow } from './switch-row';
 export type { PlaceholderScreenProps } from './placeholder-screen';
-export type { GlassConfirmDialogProps } from './glass-confirm-dialog';
+export type { GlassConfirmDialogProps, GlassDialogAction } from './glass-confirm-dialog';
 export type { GlassScreenHeaderProps } from './glass-screen-header';
 export type { GlassScreenShellProps } from './glass-screen-shell';

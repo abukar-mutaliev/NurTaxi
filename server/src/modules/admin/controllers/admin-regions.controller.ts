@@ -44,8 +44,10 @@ export class AdminRegionsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Детали региона' })
-  getOne(@Param('id', ParseUUIDPipe) id: string) {
+  @Roles(Role.SuperAdmin, Role.RegionalAdmin, Role.Operator)
+  @ApiOperation({ summary: 'Детали региона (super_admin или staff своего региона)' })
+  async getOne(@CurrentUser() actor: AuthenticatedUser, @Param('id', ParseUUIDPipe) id: string) {
+    await this.scope.assertRegionAccess(actor, id);
     return this.regionsService.getRegion(id);
   }
 

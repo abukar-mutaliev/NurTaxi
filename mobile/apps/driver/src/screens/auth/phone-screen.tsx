@@ -35,6 +35,9 @@ const logoAsset = require('@/assets/images/welcome/logo.png');
 /** Знак без подписи: в поле ввода 24 px текст логотипа всё равно нечитаем. */
 const logoMarkAsset = require('@/assets/images/welcome/logo-mark.png');
 
+const LOGO_DESIGN_WIDTH = 164;
+const LOGO_DESIGN_HEIGHT = 199;
+
 const c = {
   title: '#2E2331',
   subtitle: '#9A8F98',
@@ -65,6 +68,9 @@ export function PhoneScreen() {
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
   const sy = (value: number) => (value / DESIGN_HEIGHT) * height;
+
+  const logoWidth = sx(LOGO_DESIGN_WIDTH);
+  const logoHeight = sx(LOGO_DESIGN_HEIGHT);
 
   const canSubmit = isValidPhone(phone) && !isRequestingOtp;
 
@@ -100,13 +106,17 @@ export function PhoneScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
+          {/*
+            Ассет обрезан по краям знака, поэтому `contain` вписывает логотип в бокс
+            макета целиком. Ручной сдвиг слева срезал «ЖЕ» из «ЖЕНСКОЕ ТАКСИ».
+          */}
           <Image
             accessibilityLabel={t('auth.brandName')}
             contentFit="contain"
             source={logoAsset}
-            style={{ height: sy(150), width: '100%' }}
+            style={{ height: logoHeight, width: logoWidth }}
           />
-          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(20) }]}>
+          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(16) }]}>
             {t('auth.phoneTitle')}
           </Text>
           <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(4) }]}>
@@ -114,7 +124,7 @@ export function PhoneScreen() {
           </Text>
         </View>
 
-        <View style={{ marginTop: sy(64) }}>
+        <View style={{ marginTop: sy(40) }}>
           <View
             style={[
               styles.inputShell,

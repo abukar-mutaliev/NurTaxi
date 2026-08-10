@@ -16,6 +16,8 @@ import { OrdersModule } from '../orders/orders.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { ProviderConfig } from './entities/provider-config.entity';
 import { AdminAuditLog } from './entities/admin-audit-log.entity';
+import { Review } from '../reviews/entities/review.entity';
+import { OrderStatusLog } from '../orders/entities/order-status-log.entity';
 import { AdminScopeService } from './admin-scope.service';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminAuditInterceptor } from './interceptors/admin-audit.interceptor';
@@ -32,6 +34,9 @@ import { AdminOrdersController } from './controllers/admin-orders.controller';
 import { AdminAnalyticsController } from './controllers/admin-analytics.controller';
 import { AdminStaffController } from './controllers/admin-staff.controller';
 import { AdminDriversController } from './controllers/admin-drivers.controller';
+import { AdminComplaintsController } from './controllers/admin-complaints.controller';
+import { AdminAuditController } from './controllers/admin-audit.controller';
+import { AdminComplaintsService } from './admin-complaints.service';
 
 /**
  * Admin & Regions (Des §2.3, §4): регионы, города, тарифы, провайдеры,
@@ -49,6 +54,8 @@ import { AdminDriversController } from './controllers/admin-drivers.controller';
       Payment,
       DriverProfile,
       AdminAuditLog,
+      Review,
+      OrderStatusLog,
     ]),
     TariffsModule,
     RegionsModule,
@@ -65,6 +72,8 @@ import { AdminDriversController } from './controllers/admin-drivers.controller';
     AdminAnalyticsController,
     AdminStaffController,
     AdminDriversController,
+    AdminComplaintsController,
+    AdminAuditController,
   ],
   providers: [
     AdminScopeService,
@@ -76,6 +85,7 @@ import { AdminDriversController } from './controllers/admin-drivers.controller';
     AdminStaffService,
     AdminOrdersService,
     AdminAnalyticsService,
+    AdminComplaintsService,
   ],
   exports: [AdminScopeService],
 })

@@ -6,7 +6,7 @@
  * `(verification)` — это требование `§8.2` и `§12.3`, а не только UX.
  */
 import { useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter, useSegments, type Href } from 'expo-router';
 
 import { VerificationStatus } from '@nurtaxi/shared-core/shared/model';
 import { selectSessionStatus } from '@nurtaxi/shared-core/entities/session';
@@ -21,6 +21,7 @@ const VERIFICATION_GROUP = '(verification)';
  * обратно в приложение: анкета и документы остаются доступны для правок из профиля.
  */
 const VERIFICATION_STATUS_SCREEN = 'status';
+const AUTH_WELCOME_ROUTE = '/(auth)/welcome' as Href;
 
 /**
  * Локальный переключатель для вёрстки: `true` отключает перенаправления, и тогда любой
@@ -46,9 +47,16 @@ export function useAuthGuard(): { isResolving: boolean } {
   const status = useAppSelector(selectSessionStatus);
 
   const isAuthenticated = status === 'authenticated';
-  const { data: profile, isLoading: isProfileLoading } = useGetDriverProfileQuery(undefined, {
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    isError,
+    error,
+  } = useGetDriverProfileQuery(undefined, {
     skip: !isAuthenticated,
   });
+
+  const hasNoProfile = isError && error !== undefined && 'status' in error && error.status === 404;
 
   // Отсутствие профиля означает, что анкета ещё не подана, — это нормальное состояние.
   const isApproved = profile?.verificationStatus === VerificationStatus.Approved;
@@ -60,10 +68,18 @@ export function useAuthGuard(): { isResolving: boolean } {
     }
 
     const group = segments[0];
+    const verificationScreen = segments[1];
 
     if (!isAuthenticated) {
       if (group !== AUTH_GROUP) {
-        router.replace('/(auth)/welcome');
+        router.replace(AUTH_WELCOME_ROUTE);
+      }
+      return;
+    }
+
+    if (hasNoProfile) {
+      if (group !== VERIFICATION_GROUP || verificationScreen !== 'registration') {
+        router.replace('/(verification)/registration');
       }
       return;
     }
@@ -82,10 +98,10 @@ export function useAuthGuard(): { isResolving: boolean } {
 
     // Раньше сюда попадал любой экран группы `(verification)`, поэтому переходы
     // «Автомобиль» и «Документы» из профиля мгновенно откатывались на карту (M7.5).
-    if (group === VERIFICATION_GROUP && segments[1] === VERIFICATION_STATUS_SCREEN) {
+    if (group === VERIFICATION_GROUP && verificationScreen === VERIFICATION_STATUS_SCREEN) {
       router.replace('/(tabs)');
     }
-  }, [router, segments, isAuthenticated, isApproved, isResolving]);
+  }, [router, segments, isAuthenticated, hasNoProfile, isApproved, isResolving]);
 
   // При отключённом guard экран-заглушка «резолвинга» тоже не нужен.
   return { isResolving: SKIP_GUARD ? false : isResolving };

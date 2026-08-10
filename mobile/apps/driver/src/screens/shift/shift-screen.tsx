@@ -7,6 +7,8 @@
  */
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import medium from 'expo-symbols/androidWeights/medium';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Switch, View } from 'react-native';
@@ -91,7 +93,11 @@ export function ShiftScreen() {
         <MapCanvas showsUserLocation />
       </View>
 
-      {/* Верхний ряд: индикатор смены, статус, профиль */}
+      {/*
+        Верхний ряд: статус смены и профиль. Статус читается из самой «пилюли», поэтому
+        отдельная точка-индикатор слева не нужна — вместо неё пустой слот той же ширины,
+        чтобы «пилюля» осталась по центру экрана.
+      */}
       <View
         style={[
           styles.topBar,
@@ -101,49 +107,41 @@ export function ShiftScreen() {
           },
         ]}
       >
-        <RoundButton
-          accessibilityLabel={isOnline ? t('driver.online') : t('driver.offline')}
-          variant="surface"
-        >
-          <View
-            style={{
-              backgroundColor: isOnline ? theme.colors.success : theme.colors.primary,
-              borderRadius: 999,
-              height: 12,
-              width: 12,
-            }}
-          />
-        </RoundButton>
+        <View style={styles.topBarSlot} />
 
-        <View
-          style={[
-            styles.statusPill,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.pill,
-              paddingHorizontal: theme.spacing.lg,
-              paddingVertical: theme.spacing.sm,
-            },
-          ]}
-        >
-          <Text variant="bodyStrong">{isOnline ? 'Вы на линии' : 'Вы офлайн'}</Text>
+        <View style={styles.topBarCenter}>
+          <View
+            style={[
+              styles.statusPill,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                borderRadius: theme.radius.pill,
+                paddingHorizontal: theme.spacing.lg,
+                paddingVertical: theme.spacing.sm,
+              },
+            ]}
+          >
+            <Text variant="bodyStrong">{isOnline ? 'Вы на линии' : 'Вы офлайн'}</Text>
+          </View>
         </View>
 
-        <RoundButton
-          accessibilityLabel={t('profile.title')}
-          onPress={() => router.push('/(tabs)/profile')}
-          variant="surface"
-        >
-          <View
-            style={{
-              backgroundColor: theme.colors.accent,
-              borderRadius: 999,
-              height: 12,
-              width: 12,
-            }}
-          />
-        </RoundButton>
+        <View style={[styles.topBarSlot, styles.topBarSlotRight]}>
+          <RoundButton
+            accessibilityLabel={t('profile.title')}
+            onPress={() => router.push('/(tabs)/profile')}
+            variant="surface"
+          >
+            <SymbolView
+              name={{ android: 'person', ios: 'person.fill', web: 'person' }}
+              resizeMode="scaleAspectFit"
+              size={22}
+              tintColor={theme.colors.primary}
+              type="monochrome"
+              weight={{ android: medium, ios: 'medium' }}
+            />
+          </RoundButton>
+        </View>
       </View>
 
       {/*
@@ -274,5 +272,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  topBarCenter: {
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: 8,
+  },
+  topBarSlot: {
+    alignItems: 'flex-start',
+    // Ширина круглой кнопки: держит «пилюлю» ровно по центру экрана.
+    width: 44,
+  },
+  topBarSlotRight: {
+    alignItems: 'flex-end',
   },
 });

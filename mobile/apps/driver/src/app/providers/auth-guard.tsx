@@ -16,6 +16,11 @@ import { useAppSelector } from '../store/hooks';
 
 const AUTH_GROUP = '(auth)';
 const VERIFICATION_GROUP = '(verification)';
+/**
+ * Экран ожидания внутри `(verification)`. Только он выталкивает допущенного водителя
+ * обратно в приложение: анкета и документы остаются доступны для правок из профиля.
+ */
+const VERIFICATION_STATUS_SCREEN = 'status';
 
 /**
  * Локальный переключатель для вёрстки: `true` отключает перенаправления, и тогда любой
@@ -70,7 +75,14 @@ export function useAuthGuard(): { isResolving: boolean } {
       return;
     }
 
-    if (group === AUTH_GROUP || group === VERIFICATION_GROUP) {
+    if (group === AUTH_GROUP) {
+      router.replace('/(tabs)');
+      return;
+    }
+
+    // Раньше сюда попадал любой экран группы `(verification)`, поэтому переходы
+    // «Автомобиль» и «Документы» из профиля мгновенно откатывались на карту (M7.5).
+    if (group === VERIFICATION_GROUP && segments[1] === VERIFICATION_STATUS_SCREEN) {
       router.replace('/(tabs)');
     }
   }, [router, segments, isAuthenticated, isApproved, isResolving]);

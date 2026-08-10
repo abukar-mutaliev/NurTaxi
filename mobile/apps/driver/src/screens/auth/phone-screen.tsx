@@ -32,11 +32,12 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
+/** Знак без подписи: в поле ввода 24 px текст логотипа всё равно нечитаем. */
+const logoMarkAsset = require('@/assets/images/welcome/logo-mark.png');
 
 const c = {
   title: '#2E2331',
   subtitle: '#9A8F98',
-  dot: '#DFAE5C',
   inputBg: '#FFFFFF',
   inputBorder: '#F0E7DC',
   inputText: '#2E2331',
@@ -125,13 +126,11 @@ export function PhoneScreen() {
               },
             ]}
           >
-            <View
-              style={{
-                backgroundColor: c.dot,
-                borderRadius: sx(8),
-                height: sx(16),
-                width: sx(16),
-              }}
+            <Image
+              accessibilityLabel={t('auth.brandName')}
+              contentFit="contain"
+              source={logoMarkAsset}
+              style={{ height: sx(26), width: sx(24) }}
             />
             <TextInput
               autoFocus

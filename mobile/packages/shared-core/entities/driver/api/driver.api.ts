@@ -12,6 +12,7 @@ import type {
   DriverDocument,
   DriverEarnings,
   DriverOrderActionPayload,
+  DriverOrderOffer,
   DriverProfile,
   LimitQuery,
   Order,
@@ -76,6 +77,18 @@ export const driverApi = baseApi.injectEndpoints({
 
     // --- Заказы водителя (M8) -------------------------------------------------------------
     /**
+     * Предложение, ожидающее ответа водителя (`§15.3`).
+     *
+     * Событие `order.offer` по сокету приходит один раз и только в моменте. Свёрнутое
+     * приложение на Android теряет сокет за считаные секунды — заказ пропадает молча.
+     * Поэтому вернувшись на передний план, приложение спрашивает сервер само.
+     * `null` — ждать нечего.
+     */
+    getPendingOffer: build.query<DriverOrderOffer | null, void>({
+      query: () => ({ url: '/driver/orders/offer' }),
+    }),
+
+    /**
      * История поездок водителя (`§8.13`). Отдельная от `/orders/history`: та закрыта ролью
      * Client и вернула бы водителю 403.
      */
@@ -136,6 +149,7 @@ export const {
   useUpdateWorkScheduleMutation,
   useUpdateDriverLocationMutation,
   useGetDriverOrderHistoryQuery,
+  useLazyGetPendingOfferQuery,
   useAcceptDriverOrderMutation,
   useUpdateDriverOrderStatusMutation,
   useCancelDriverOrderMutation,

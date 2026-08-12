@@ -9,9 +9,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -25,12 +25,19 @@ import {
 } from '@nurtaxi/shared-core/entities/driver';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { useDriverPosition } from '@/features/driver-position';
 import { IncomingOrderCard, useOrderOffer } from '@/features/order-offer';
-import { onlineIntentChanged, selectWantsOnline } from '@/processes/shift';
+import { onlineIntentChanged, selectWantsOnline, useLocationReporting } from '@/processes/shift';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { RoundButton } from '@/shared/ui/round-button';
 import { StatTiles } from '@/shared/ui/stat-tiles';
-import { MapCanvas } from '@/widgets/map';
+import { MapCanvas, type MapCanvasHandle } from '@/widgets/map';
+
+/**
+ * Масштаб, на который встаёт карта, показав водителю его позицию: примерно квартал
+ * вокруг машины. Обзорный масштаб здесь бесполезен — на нём не понять, где ты стоишь.
+ */
+const DRIVER_ZOOM_DELTA = 0.01;
 
 export function ShiftScreen() {
   const { t } = useTranslation();
@@ -73,6 +80,53 @@ export function ShiftScreen() {
   const isOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
   const canGoOnline = profile?.canGoOnline ?? false;
 
+  // --- Своя позиция на линии ---
+  // `error` уже занят отказом переключателя линии — ошибку геопозиции берём под своим именем.
+  const {
+    position,
+    permissionState,
+    canAskAgain,
+    isLocating,
+    openSettings,
+    error: positionError,
+    request: requestLocation,
+  } = useDriverPosition(isOnline);
+  const mapRef = useRef<MapCanvasHandle>(null);
+
+  /**
+   * Позиция нужна не только водителю на карте, но и серверу: подбор машин ищет их по
+   * гео-множеству, куда попадают только приславшие координаты. Без этого водитель на
+   * линии для диспетчеризации не существует и заказов не получает.
+   */
+  useLocationReporting(position, isOnline);
+
+  /**
+   * Карта подводится к машине один раз за выход на линию. Делать это на каждый GPS-тик
+   * нельзя: водитель не смог бы отвести карту в сторону — её бы тут же возвращало назад.
+   * Вернуться к себе он может кнопкой.
+   */
+  const centeredRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOnline) {
+      centeredRef.current = false;
+      return;
+    }
+
+    if (!position || centeredRef.current) {
+      return;
+    }
+
+    centeredRef.current = true;
+    mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
+  }, [isOnline, position]);
+
+  const centerOnDriver = () => {
+    if (position) {
+      mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
+    }
+  };
+
   const toggleOnline = async (next: boolean) => {
     setError(null);
     // Оптимистично двигаем переключатель, чтобы отклик был мгновенным.
@@ -90,7 +144,12 @@ export function ShiftScreen() {
       <StatusBar style="dark" />
 
       <View style={StyleSheet.absoluteFill}>
-        <MapCanvas showsUserLocation />
+        {/*
+          `initialPoint` срабатывает, только если позиция известна уже к первому рендеру
+          (кэш прошлой смены). Обычно она приходит позже, когда камера внутри карты
+          зафиксирована, — поэтому карту к машине подводит эффект через `mapRef`.
+        */}
+        <MapCanvas initialPoint={position} ref={mapRef} showsUserLocation />
       </View>
 
       {/*
@@ -107,7 +166,29 @@ export function ShiftScreen() {
           },
         ]}
       >
-        <View style={styles.topBarSlot} />
+        {/*
+          Слот держит «пилюлю» по центру и вне линии остаётся пустым: искать себя на карте
+          есть смысл только на смене. Ширина слота фиксированная, поэтому появление кнопки
+          не сдвигает «пилюлю».
+        */}
+        <View style={styles.topBarSlot}>
+          {isOnline ? (
+            <RoundButton
+              accessibilityLabel="Показать, где я"
+              onPress={centerOnDriver}
+              variant="surface"
+            >
+              <SymbolView
+                name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
+                resizeMode="scaleAspectFit"
+                size={22}
+                tintColor={position ? theme.colors.primary : theme.colors.textMuted}
+                type="monochrome"
+                weight={{ android: medium, ios: 'medium' }}
+              />
+            </RoundButton>
+          ) : null}
+        </View>
 
         <View style={styles.topBarCenter}>
           <View
@@ -213,6 +294,32 @@ export function ShiftScreen() {
         {error ? (
           <Text tone="danger" variant="caption">
             {error}
+          </Text>
+        ) : null}
+
+        {/*
+          Состояние геопозиции показываем только на линии: вне смены она не нужна,
+          и предупреждение выглядело бы придиркой на пустом месте.
+        */}
+        {isOnline && permissionState === 'denied' ? (
+          <Pressable onPress={() => void (canAskAgain ? requestLocation() : openSettings())}>
+            <Text tone="muted" variant="caption">
+              {canAskAgain
+                ? 'Нажмите, чтобы разрешить доступ к геопозиции и видеть себя на карте'
+                : 'Доступ к геопозиции запрещён. Нажмите, чтобы открыть настройки'}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {isOnline && permissionState === 'granted' && !position && isLocating ? (
+          <Text tone="muted" variant="caption">
+            Определяем ваше положение…
+          </Text>
+        ) : null}
+
+        {positionError ? (
+          <Text tone="muted" variant="caption">
+            {positionError}
           </Text>
         ) : null}
 

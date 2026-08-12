@@ -13,3 +13,4 @@ export {
   shiftSlice,
 } from './model/shift.slice';
 export type { ShiftState, WithShiftState } from './model/shift.slice';
+export { useLocationReporting } from './model/use-location-reporting';

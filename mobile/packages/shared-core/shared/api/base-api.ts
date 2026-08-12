@@ -126,6 +126,13 @@ export const baseApi = createApi({
   /** Заказ и позиция водителя обновляются через WebSocket, кэш живёт недолго. */
   keepUnusedDataFor: 60,
   refetchOnReconnect: true,
+  /**
+   * Свёрнутое приложение на Android теряет WebSocket и пропускает события: клиент не
+   * узнаёт, что водитель принял заказ, выехал и прибыл. Сеть при этом не пропадает,
+   * поэтому `refetchOnReconnect` здесь бессилен — данные подтягиваем при возвращении
+   * приложения на экран. Источник события — `AppState` в `setupNetworkListeners`.
+   */
+  refetchOnFocus: true,
   endpoints: () => ({}),
 });
 

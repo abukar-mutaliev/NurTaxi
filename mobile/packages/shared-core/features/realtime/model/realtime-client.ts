@@ -26,6 +26,29 @@ const statusListeners = new Set<StatusListener>();
 /** Комнаты заказов, на которые нужно переподписаться после reconnect. */
 const subscribedOrders = new Set<string>();
 
+/**
+ * Повторные попытки после отказа на хендшейке (M5.5).
+ *
+ * Socket.IO сам переподключается при обрыве связи, но не тогда, когда сервер отклонил
+ * подключение в middleware — а именно это происходит с протухшим access-токеном (TTL 15
+ * минут). Без своих попыток сокет остаётся мёртвым до перезапуска приложения: REST
+ * продолжает работать, обновляя токены, а события к водителю не приходят вовсе.
+ */
+const RETRY_BASE_MS = 2000;
+const RETRY_MAX_MS = 30_000;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let retryAttempt = 0;
+/** Подписка на смену токена оформляется один раз за жизнь модуля. */
+let tokenSubscription: (() => void) | null = null;
+
+function clearRetry(): void {
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+  retryAttempt = 0;
+}
+
 function setStatus(next: RealtimeStatus): void {
   if (status === next) {
     return;
@@ -40,8 +63,51 @@ function resubscribeAll(active: AppSocket): void {
   });
 }
 
+/**
+ * Планирует повторную попытку с нарастающей задержкой. Токен читается заново в момент
+ * попытки: к тому времени REST мог уже обновить его после `401`.
+ */
+function scheduleRetry(): void {
+  if (retryTimer) {
+    return;
+  }
+
+  const delay = Math.min(RETRY_BASE_MS * 2 ** retryAttempt, RETRY_MAX_MS);
+  retryAttempt += 1;
+
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    // Токена нет — пользователь вышел; молча прекращаем, попытки возобновит `connect`.
+    if (!tokenStorage.getAccessToken()) {
+      return;
+    }
+    realtimeClient.connect();
+  }, delay);
+}
+
+/**
+ * Свежий токен — повод попробовать немедленно, не дожидаясь очередной задержки.
+ * Именно это вытаскивает соединение из мёртвого состояния после протухания токена.
+ */
+function watchTokenChanges(): void {
+  tokenSubscription ??= tokenStorage.onAccessTokenChange((accessToken) => {
+    if (!accessToken) {
+      return;
+    }
+    if (socket?.connected) {
+      return;
+    }
+    clearRetry();
+    realtimeClient.connect();
+  });
+}
+
 export const realtimeClient = {
   connect(): AppSocket | null {
+    // Подписка на токен нужна и тогда, когда подключиться сейчас нечем: она поднимет
+    // соединение, как только REST добудет свежий токен.
+    watchTokenChanges();
+
     const token = tokenStorage.getAccessToken();
     if (!token) {
       return null;
@@ -65,6 +131,7 @@ export const realtimeClient = {
     });
 
     next.on('connect', () => {
+      clearRetry();
       setStatus('connected');
       resubscribeAll(next);
     });
@@ -77,13 +144,26 @@ export const realtimeClient = {
         next.auth = { token: fresh };
       }
     });
-    next.on('connect_error', () => setStatus('error'));
+    /**
+     * `active === true` — транспортная ошибка, Socket.IO повторит сам.
+     * `active === false` — сервер отклонил подключение (протухший или неверный токен),
+     * и без своей попытки соединение больше не поднимется.
+     */
+    next.on('connect_error', () => {
+      setStatus('error');
+      if (!next.active) {
+        scheduleRetry();
+      }
+    });
 
     socket = next;
     return next;
   },
 
   disconnect(): void {
+    // Отписку от токена намеренно не снимаем: выход из сессии её обнулит сам (токена нет),
+    // а повторный вход снова поднимет соединение без лишней перерегистрации.
+    clearRetry();
     subscribedOrders.clear();
     socket?.removeAllListeners();
     socket?.disconnect();

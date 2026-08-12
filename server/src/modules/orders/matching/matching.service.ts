@@ -7,6 +7,13 @@ import {
 } from '../../drivers/location/driver-location.service';
 
 const OFFER_KEY_PREFIX = 'order:offer:';
+/**
+ * Обратный указатель «водитель → заказ». Нужен, чтобы вернувшееся из фона приложение
+ * могло спросить «есть ли для меня предложение» за одно обращение: свёрнутый Android
+ * рвёт сокет, и событие `order.offer` до водителя не доходит вовсе.
+ * TTL тот же, что у самого предложения, — указатель не переживает его.
+ */
+const DRIVER_OFFER_KEY_PREFIX = 'driver:offer:';
 const OFFER_TTL_SEC = 30;
 const SEARCH_RADIUS_KM = 10;
 const MAX_CANDIDATES = 20;
@@ -78,13 +85,24 @@ export class MatchingService {
       expiresAt: new Date(Date.now() + OFFER_TTL_SEC * 1000).toISOString(),
     };
 
+    await this.persistOffer(offer);
+    return offer;
+  }
+
+  /** Пишет предложение и обратный указатель на него одним заходом. */
+  private async persistOffer(offer: MatchOffer): Promise<void> {
     await this.redis.set(
-      `${OFFER_KEY_PREFIX}${orderId}`,
+      `${OFFER_KEY_PREFIX}${offer.orderId}`,
       JSON.stringify(offer),
       'EX',
       OFFER_TTL_SEC,
     );
-    return offer;
+    await this.redis.set(
+      `${DRIVER_OFFER_KEY_PREFIX}${offer.driverId}`,
+      offer.orderId,
+      'EX',
+      OFFER_TTL_SEC,
+    );
   }
 
   async getOffer(orderId: string): Promise<MatchOffer | null> {
@@ -93,8 +111,27 @@ export class MatchingService {
     return JSON.parse(raw) as MatchOffer;
   }
 
+  /**
+   * Предложение, ожидающее ответа конкретного водителя. `null` — ждать нечего.
+   * Указатель может пережить само предложение на доли секунды, поэтому проверяем и его.
+   */
+  async getOfferForDriver(driverId: string): Promise<MatchOffer | null> {
+    const orderId = await this.redis.get(`${DRIVER_OFFER_KEY_PREFIX}${driverId}`);
+    if (!orderId) return null;
+
+    const offer = await this.getOffer(orderId);
+    if (!offer || offer.driverId !== driverId) {
+      return null;
+    }
+    return offer;
+  }
+
   async clearOffer(orderId: string): Promise<void> {
+    const offer = await this.getOffer(orderId);
     await this.redis.del(`${OFFER_KEY_PREFIX}${orderId}`);
+    if (offer) {
+      await this.redis.del(`${DRIVER_OFFER_KEY_PREFIX}${offer.driverId}`);
+    }
   }
 
   /** Следующий кандидат при тайм-ауте/отказе. */
@@ -115,12 +152,9 @@ export class MatchingService {
       expiresAt: new Date(Date.now() + OFFER_TTL_SEC * 1000).toISOString(),
     };
 
-    await this.redis.set(
-      `${OFFER_KEY_PREFIX}${orderId}`,
-      JSON.stringify(offer),
-      'EX',
-      OFFER_TTL_SEC,
-    );
+    // Указатель прежнего кандидата снимаем: предложение ушло дальше, и ему больше не адресовано.
+    await this.redis.del(`${DRIVER_OFFER_KEY_PREFIX}${current.driverId}`);
+    await this.persistOffer(offer);
     return offer;
   }
 

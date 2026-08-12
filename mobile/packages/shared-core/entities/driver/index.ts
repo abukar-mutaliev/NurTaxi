@@ -4,6 +4,7 @@ export {
   useCancelDriverOrderMutation,
   useGetDriverEarningsQuery,
   useGetDriverOrderHistoryQuery,
+  useLazyGetPendingOfferQuery,
   useGetDriverProfileQuery,
   useLazyGetDriverProfileQuery,
   usePresignDriverDocumentMutation,

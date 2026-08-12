@@ -5,7 +5,7 @@
  * (`server/src/modules/realtime/realtime.gateway.ts`). Комнаты назначаются автоматически:
  * `client:{userId}` либо `driver:{userId}`; на `order:{orderId}` подписываемся явно.
  */
-import type { OrderStatus, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
+import type { DriverOrderOffer, OrderStatus } from '@nurtaxi/shared-core/shared/model';
 
 export const RealtimeEvent = {
   OrderStatus: 'order.status',
@@ -46,17 +46,12 @@ export interface SosActivatedEvent {
  * Предложение заказа водителю (`§15.3`). Живёт ограниченное время: после `expiresAt`
  * подбор переходит к следующему кандидату, и принять заказ уже нельзя.
  */
-export interface OrderOfferEvent {
-  orderId: string;
-  expiresAt: string;
-  pickup: { lat: number; lng: number; address: string };
-  dropoff: { lat: number; lng: number; address: string };
-  price: number;
-  paymentMethod: PaymentMethod;
-  comment: string | null;
-  distanceM: number | null;
-  durationS: number | null;
-}
+/**
+ * Тот же тип, что отдаёт `GET /driver/orders/offer`: предложение приходит двумя путями,
+ * и расходиться им нельзя. Определение живёт в общих моделях — там же, где остальные
+ * формы ответов API.
+ */
+export type OrderOfferEvent = DriverOrderOffer;
 
 /** События, которые сервер шлёт приложению. */
 export interface ServerToClientEvents {

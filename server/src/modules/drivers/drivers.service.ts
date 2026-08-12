@@ -362,6 +362,13 @@ export class DriversService {
     }
 
     await this.drivers.save(profile);
+
+    // Уход в офлайн должен убирать водителя из Redis GEO, иначе подбор продолжит
+    // предлагать заказы по последней известной точке (`§15.3`).
+    if (status === 'offline') {
+      await this.driverLocation.removeLocation(profile.regionId, profile.id);
+    }
+
     return this.getProfileByUserId(userId);
   }
 

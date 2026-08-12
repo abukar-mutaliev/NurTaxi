@@ -26,8 +26,9 @@ import {
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { useDriverPosition } from '@/features/driver-position';
+import { useDriverLocationTracking } from '@/features/location-tracking';
 import { IncomingOrderCard, useOrderOffer } from '@/features/order-offer';
-import { onlineIntentChanged, selectWantsOnline, useLocationReporting } from '@/processes/shift';
+import { onlineIntentChanged, selectWantsOnline } from '@/processes/shift';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { RoundButton } from '@/shared/ui/round-button';
 import { StatTiles } from '@/shared/ui/stat-tiles';
@@ -80,7 +81,18 @@ export function ShiftScreen() {
   const isOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
   const canGoOnline = profile?.canGoOnline ?? false;
 
-  // --- Своя позиция на линии ---
+  /**
+   * Передача позиции на сервер. Источник истины — серверный статус: так трансляция
+   * переживает перезапуск приложения посреди смены и не запускается по одному лишь
+   * оптимистичному переключателю. Задача фоновая, поэтому координаты уходят и когда
+   * водитель свернул приложение.
+   */
+  useDriverLocationTracking(profile?.onlineStatus === 'online');
+
+  /**
+   * Позиция для карты — отдельная забота: фоновая задача отправляет координаты серверу,
+   * но экрану их не отдаёт, а водителю нужно видеть себя и уметь вернуть камеру к машине.
+   */
   // `error` уже занят отказом переключателя линии — ошибку геопозиции берём под своим именем.
   const {
     position,
@@ -92,13 +104,6 @@ export function ShiftScreen() {
     request: requestLocation,
   } = useDriverPosition(isOnline);
   const mapRef = useRef<MapCanvasHandle>(null);
-
-  /**
-   * Позиция нужна не только водителю на карте, но и серверу: подбор машин ищет их по
-   * гео-множеству, куда попадают только приславшие координаты. Без этого водитель на
-   * линии для диспетчеризации не существует и заказов не получает.
-   */
-  useLocationReporting(position, isOnline);
 
   /**
    * Карта подводится к машине один раз за выход на линию. Делать это на каждый GPS-тик

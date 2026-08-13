@@ -22,7 +22,9 @@ import {
 import { Button, Card, Input, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useRegisterDriverMutation } from '@nurtaxi/shared-core/entities/driver';
 import { useGetRegionsQuery } from '@nurtaxi/shared-core/entities/region';
+import { selectCurrentUser } from '@nurtaxi/shared-core/entities/session';
 
+import { useAppSelector } from '@/app/store/hooks';
 import { AddressSuggestInput } from '@/features/address';
 import {
   VEHICLE_COLORS,
@@ -50,6 +52,9 @@ export function RegistrationScreen() {
   const [registerDriver, { isLoading: submitting }] = useRegisterDriverMutation();
   const [apiError, setApiError] = useState<string | null>(null);
 
+  // Имя уже введено на экране согласия (M1.7) — не спрашиваем его второй раз.
+  const currentUser = useAppSelector(selectCurrentUser);
+
   const {
     control,
     handleSubmit,
@@ -60,7 +65,7 @@ export function RegistrationScreen() {
     resolver: zodResolver(driverRegistrationFormSchema),
     mode: 'onChange',
     defaultValues: {
-      fullName: '',
+      fullName: currentUser?.name ?? '',
       birthDate: '',
       residenceAddress: '',
       drivingExperienceYears: 0,

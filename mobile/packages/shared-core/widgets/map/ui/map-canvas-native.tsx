@@ -19,8 +19,26 @@ import { NativeMapMarker } from './native-map-marker';
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 const ROUTE_STROKE_COLOR = '#C99A54';
 
+/**
+ * Движение камеры — «просьба», а не обязательство: нативная карта отклоняет вызов, если
+ * представление ещё не готово или его успели отсоединить. Раньше промис отбрасывался через
+ * `void`, и отказ всплывал необработанным — водитель получал красную плашку
+ * «Call to function 'ExpoYandexMapKitView.setCenter' has been rejected» поверх экрана смены.
+ * Неудача здесь безобидна: карта просто остаётся там, где была.
+ */
+function ignoreCameraRejection(result: Promise<unknown> | undefined): void {
+  void result?.catch(() => undefined);
+}
+
 export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(function MapCanvasNative(
-  { markers = [], routePolyline, initialPoint, showsUserLocation = false, onPress },
+  {
+    markers = [],
+    routePolyline,
+    routePoints: explicitRoutePoints,
+    initialPoint,
+    showsUserLocation = false,
+    onPress,
+  },
   ref,
 ) {
   const mapRef = useRef<YandexMapViewRef>(null);
@@ -32,10 +50,13 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   }
   const initialCamera = initialCameraRef.current ?? DEFAULT_CAMERA;
 
-  const routePoints = useMemo(
-    () => (routePolyline ? decodePolyline(routePolyline) : []),
-    [routePolyline],
-  );
+  /** Готовая геометрия важнее закодированной: она построена по актуальной позиции. */
+  const routePoints = useMemo(() => {
+    if (explicitRoutePoints?.length) {
+      return explicitRoutePoints;
+    }
+    return routePolyline ? decodePolyline(routePolyline) : [];
+  }, [explicitRoutePoints, routePolyline]);
 
   const fitPoints = useMemo(() => {
     const markerPoints = markers
@@ -46,7 +67,9 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
 
   const fitCameraToContent = useCallback(() => {
     if (fitPoints.length > 1) {
-      void mapRef.current?.fitMarkers(fitPoints, { edgePadding: MAP_EDGE_PADDING });
+      ignoreCameraRejection(
+        mapRef.current?.fitMarkers(fitPoints, { edgePadding: MAP_EDGE_PADDING }),
+      );
       return;
     }
 
@@ -55,23 +78,27 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
       if (!point) {
         return;
       }
-      void mapRef.current?.setCenter(
-        { latitude: point.latitude, longitude: point.longitude, zoom: 14 },
-        { durationSeconds: 0.4 },
+      ignoreCameraRejection(
+        mapRef.current?.setCenter(
+          { latitude: point.latitude, longitude: point.longitude, zoom: 14 },
+          { durationSeconds: 0.4 },
+        ),
       );
       return;
     }
 
-    void mapRef.current?.fitAllMarkers?.({ edgePadding: MAP_EDGE_PADDING });
+    ignoreCameraRejection(mapRef.current?.fitAllMarkers?.({ edgePadding: MAP_EDGE_PADDING }));
   }, [fitPoints]);
 
   useImperativeHandle(
     ref,
     () => ({
       centerOn(point, zoomDelta) {
-        void mapRef.current?.setCenter(toCameraPosition(point, zoomDelta), {
-          durationSeconds: 0.4,
-        });
+        ignoreCameraRejection(
+          mapRef.current?.setCenter(toCameraPosition(point, zoomDelta), {
+            durationSeconds: 0.4,
+          }),
+        );
       },
       fitToRoute() {
         fitCameraToContent();

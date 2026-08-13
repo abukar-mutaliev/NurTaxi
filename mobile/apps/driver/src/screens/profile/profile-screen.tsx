@@ -7,7 +7,7 @@
 import { useRouter, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
@@ -24,6 +24,9 @@ import { PillButton } from '@/shared/ui/pill-button';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 import { StatTiles } from '@/shared/ui/stat-tiles';
 
+/** Адрес поддержки из `profile.supportHint` — держим рядом, чтобы тексты не разъезжались. */
+const SUPPORT_EMAIL = 'support@nurtaxi.ru';
+
 /** Инициалы для аватара: одна буква, как в макете. */
 function initial(name?: string | null): string {
   return name?.trim()?.[0]?.toUpperCase() ?? '—';
@@ -38,6 +41,18 @@ export function ProfileScreen() {
   const { data: profile, isLoading } = useGetDriverProfileQuery();
   const { data: earnings } = useGetDriverEarningsQuery();
   const { logout } = useAuth();
+
+  const openSupport = () => {
+    Alert.alert(t('profile.support'), t('profile.supportHint'), [
+      { style: 'cancel', text: t('common.cancel') },
+      {
+        onPress: () => {
+          void Linking.openURL(`mailto:${SUPPORT_EMAIL}`);
+        },
+        text: 'Написать',
+      },
+    ]);
+  };
 
   if (isLoading) {
     return (
@@ -145,7 +160,11 @@ export function ProfileScreen() {
           title="Документы"
         />
         <MenuCard onPress={() => router.push('/(tabs)/orders' as Href)} title="История поездок" />
-        <MenuCard title="Поддержка" />
+        <MenuCard
+          onPress={() => router.push('/settings' as Href)}
+          title={t('profile.settingsTitle')}
+        />
+        <MenuCard onPress={openSupport} title={t('profile.support')} />
 
         <PillButton
           onPress={() => {

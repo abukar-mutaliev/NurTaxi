@@ -32,6 +32,8 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
+/** Знак без подписи: в поле ввода 24 px текст логотипа всё равно нечитаем. */
+const logoMarkAsset = require('@/assets/images/welcome/logo-mark.png');
 
 const LOGO_DESIGN_WIDTH = 164;
 const LOGO_DESIGN_HEIGHT = 199;
@@ -39,7 +41,6 @@ const LOGO_DESIGN_HEIGHT = 199;
 const c = {
   title: '#2E2331',
   subtitle: '#9A8F98',
-  dot: '#DFAE5C',
   inputBg: '#FFFFFF',
   inputBorder: '#F0E7DC',
   inputText: '#2E2331',
@@ -70,10 +71,6 @@ export function PhoneScreen() {
 
   const logoWidth = sx(LOGO_DESIGN_WIDTH);
   const logoHeight = sx(LOGO_DESIGN_HEIGHT);
-  /** В ассете знак смещён вправо (~63% ширины). Обрезаем слева, чтобы марка была по центру. */
-  const logoRenderHeight = logoHeight * 1.0017;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
 
   const canSubmit = isValidPhone(phone) && !isRequestingOtp;
 
@@ -109,17 +106,16 @@ export function PhoneScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View style={[styles.logoClip, { height: logoHeight, width: logoWidth }]}>
-            <Image
-              contentFit="fill"
-              source={logoAsset}
-              style={{
-                height: logoRenderHeight,
-                marginLeft: -logoCropOffsetX,
-                width: logoRenderWidth,
-              }}
-            />
-          </View>
+          {/*
+            Ассет обрезан по краям знака, поэтому `contain` вписывает логотип в бокс
+            макета целиком. Ручной сдвиг слева срезал «ЖЕ» из «ЖЕНСКОЕ ТАКСИ».
+          */}
+          <Image
+            accessibilityLabel={t('auth.brandName')}
+            contentFit="contain"
+            source={logoAsset}
+            style={{ height: logoHeight, width: logoWidth }}
+          />
           <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(16) }]}>
             {t('auth.phoneTitle')}
           </Text>
@@ -140,13 +136,11 @@ export function PhoneScreen() {
               },
             ]}
           >
-            <View
-              style={{
-                backgroundColor: c.dot,
-                borderRadius: sx(8),
-                height: sx(16),
-                width: sx(16),
-              }}
+            <Image
+              accessibilityLabel={t('auth.brandName')}
+              contentFit="contain"
+              source={logoMarkAsset}
+              style={{ height: sx(26), width: sx(24) }}
             />
             <TextInput
               autoFocus
@@ -190,9 +184,6 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-  },
-  logoClip: {
-    overflow: 'hidden',
   },
   input: {
     color: c.inputText,

@@ -19,6 +19,24 @@ export interface StoredTokens {
 let cache: StoredTokens | null = null;
 let loaded = false;
 
+/**
+ * Подписчики на смену access-токена (M5.5).
+ *
+ * Нужны WebSocket-соединению: его токен подставляется один раз в хендшейк, и после
+ * протухания сервер отклоняет подключение. REST в этот момент уже обновил токены, но
+ * сокет об этом никак не узнаёт — отсюда уведомление.
+ */
+type AccessTokenListener = (accessToken: string | null) => void;
+const accessTokenListeners = new Set<AccessTokenListener>();
+
+function notifyAccessTokenChanged(previous: string | null): void {
+  const next = cache?.accessToken ?? null;
+  if (next === previous) {
+    return;
+  }
+  accessTokenListeners.forEach((listener) => listener(next));
+}
+
 /** На web SecureStore недоступен — используем sessionStorage только для локальной отладки. */
 const isWeb = Platform.OS === 'web';
 
@@ -63,18 +81,32 @@ export const tokenStorage = {
   },
 
   async save(tokens: StoredTokens): Promise<void> {
+    const previous = cache?.accessToken ?? null;
     cache = tokens;
     loaded = true;
     await Promise.all([
       setItem(ACCESS_KEY, tokens.accessToken),
       setItem(REFRESH_KEY, tokens.refreshToken),
     ]);
+    notifyAccessTokenChanged(previous);
   },
 
   async clear(): Promise<void> {
+    const previous = cache?.accessToken ?? null;
     cache = null;
     loaded = true;
     await Promise.all([removeItem(ACCESS_KEY), removeItem(REFRESH_KEY)]);
+    notifyAccessTokenChanged(previous);
+  },
+
+  /**
+   * Уведомляет о смене access-токена. Возвращает функцию отписки.
+   * Кэш обновляется до записи в защищённое хранилище, поэтому подписчик всегда видит
+   * актуальное значение через `getAccessToken()`.
+   */
+  onAccessTokenChange(listener: AccessTokenListener): () => void {
+    accessTokenListeners.add(listener);
+    return () => accessTokenListeners.delete(listener);
   },
 
   /** Синхронный доступ для `prepareHeaders` и WebSocket-хендшейка. */

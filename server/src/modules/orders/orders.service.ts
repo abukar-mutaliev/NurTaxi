@@ -214,6 +214,38 @@ export class OrdersService {
    * приложение водителя о заказе не узнавало и принять его было неоткуда.
    * Сбой рассылки не отменяет заказ — предложение всё равно живёт в Redis (TTL 30 c).
    */
+  /**
+   * Карточка предложения для водителя. Одна на два канала — событие `order.offer` и
+   * запрос `GET /driver/orders/offer`, — чтобы приложение получало одно и то же
+   * независимо от того, поймало оно событие или спросило само.
+   */
+  private async buildOfferPayload(
+    order: Order,
+    offer: MatchOffer,
+  ): Promise<Record<string, unknown>> {
+    const route = await this.routes.findOne({ where: { orderId: order.id } });
+
+    return {
+      orderId: order.id,
+      expiresAt: offer.expiresAt,
+      pickup: {
+        lat: order.pickupLat,
+        lng: order.pickupLng,
+        address: order.pickupAddress,
+      },
+      dropoff: {
+        lat: order.dropoffLat,
+        lng: order.dropoffLng,
+        address: order.dropoffAddress,
+      },
+      price: Number(order.priceEstimated),
+      paymentMethod: order.paymentMethod,
+      comment: order.comment ?? null,
+      distanceM: route?.distanceM ?? null,
+      durationS: route?.durationS ?? null,
+    };
+  }
+
   private async sendOfferToDriver(order: Order, offer: MatchOffer): Promise<void> {
     if (!this.realtime) {
       return;
@@ -221,33 +253,37 @@ export class OrdersService {
 
     try {
       const driver = await this.driversService.getProfileByDriverId(offer.driverId);
-      const route = await this.routes.findOne({ where: { orderId: order.id } });
-
-      await this.realtime.publishOrderOffer(driver.userId, {
-        orderId: order.id,
-        expiresAt: offer.expiresAt,
-        pickup: {
-          lat: order.pickupLat,
-          lng: order.pickupLng,
-          address: order.pickupAddress,
-        },
-        dropoff: {
-          lat: order.dropoffLat,
-          lng: order.dropoffLng,
-          address: order.dropoffAddress,
-        },
-        price: Number(order.priceEstimated),
-        paymentMethod: order.paymentMethod,
-        comment: order.comment ?? null,
-        distanceM: route?.distanceM ?? null,
-        durationS: route?.durationS ?? null,
-      });
+      await this.realtime.publishOrderOffer(driver.userId, await this.buildOfferPayload(order, offer));
     } catch (error) {
       this.logger.warn(
         `Не удалось отправить предложение заказа ${order.id} водителю ${offer.driverId}: ` +
           `${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  /**
+   * Предложение, ожидающее ответа водителя (`§15.3`).
+   *
+   * Событие `order.offer` уходит один раз и живёт только в моменте: свёрнутое приложение
+   * на Android теряет сокет за считаные секунды, и заказ пропадает молча. Поэтому
+   * вернувшись на передний план, приложение спрашивает сервер само.
+   */
+  async getPendingOfferForDriver(driverUserId: string): Promise<Record<string, unknown> | null> {
+    const driver = await this.driversService.getProfileByUserId(driverUserId);
+    const offer = await this.matching.getOfferForDriver(driver.id);
+
+    if (!offer || !this.matching.canAcceptOffer(offer, driver.id)) {
+      return null;
+    }
+
+    const order = await this.orders.findOne({ where: { id: offer.orderId } });
+    // Заказ мог быть отменён клиентом, пока водителя не было: предлагать его нельзя.
+    if (!order || order.status !== OrderStatus.SearchingDriver) {
+      return null;
+    }
+
+    return this.buildOfferPayload(order, offer);
   }
 
   async acceptOrder(driverUserId: string, orderId: string): Promise<Order> {

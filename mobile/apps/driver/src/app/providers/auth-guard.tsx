@@ -1,22 +1,33 @@
 /**
- * Guard-навигация приложения водителя (M1.8, M7.4).
+ * Guard-навигация приложения водителя (M1.7, M1.8, M7.4).
  *
- * У водителя три состояния вместо двух: гость, «анкета/документы не приняты» и допущенный
- * к работе. Пока верификация не пройдена, приложение не пускает дальше группы
- * `(verification)` — это требование `§8.2` и `§12.3`, а не только UX.
+ * У водителя четыре состояния вместо двух: гость, «согласие ПДн не дано», «анкета/документы
+ * не приняты» и допущенный к работе. Пока согласие не дано и верификация не пройдена,
+ * приложение не пускает дальше групп `(auth)` / `(verification)` — это требования `§8.1`,
+ * `§8.2` и `§12.3`, а не только UX.
  */
 import { useEffect } from 'react';
 import { useRouter, useSegments, type Href } from 'expo-router';
 
 import { VerificationStatus } from '@nurtaxi/shared-core/shared/model';
-import { selectSessionStatus } from '@nurtaxi/shared-core/entities/session';
+import {
+  selectRequiresOnboarding,
+  selectSessionStatus,
+} from '@nurtaxi/shared-core/entities/session';
 import { useGetDriverProfileQuery } from '@nurtaxi/shared-core/entities/driver';
 
 import { useAppSelector } from '../store/hooks';
 
 const AUTH_GROUP = '(auth)';
 const VERIFICATION_GROUP = '(verification)';
+/**
+ * Экран ожидания внутри `(verification)`. Только он выталкивает допущенного водителя
+ * обратно в приложение: анкета и документы остаются доступны для правок из профиля.
+ */
+const VERIFICATION_STATUS_SCREEN = 'status';
+const CONSENT_SCREEN = 'consent';
 const AUTH_WELCOME_ROUTE = '/(auth)/welcome' as Href;
+const CONSENT_ROUTE = '/(auth)/consent' as Href;
 
 /**
  * Локальный переключатель для вёрстки: `true` отключает перенаправления, и тогда любой
@@ -40,6 +51,7 @@ export function useAuthGuard(): { isResolving: boolean } {
   // useSegments типизирован кортежем известных маршрутов; для сравнения групп нужен обычный массив.
   const segments = useSegments() as string[];
   const status = useAppSelector(selectSessionStatus);
+  const requiresConsent = useAppSelector(selectRequiresOnboarding);
 
   const isAuthenticated = status === 'authenticated';
   const {
@@ -63,7 +75,7 @@ export function useAuthGuard(): { isResolving: boolean } {
     }
 
     const group = segments[0];
-    const verificationScreen = segments[1];
+    const screen = segments[1];
 
     if (!isAuthenticated) {
       if (group !== AUTH_GROUP) {
@@ -72,8 +84,19 @@ export function useAuthGuard(): { isResolving: boolean } {
       return;
     }
 
+    /**
+     * Согласие на обработку ПДн — условие работы в сервисе (152-ФЗ, `§8.1`), поэтому оно
+     * идёт раньше анкеты: без него сервер всё равно держит профиль «в онбординге».
+     */
+    if (requiresConsent) {
+      if (group !== AUTH_GROUP || screen !== CONSENT_SCREEN) {
+        router.replace(CONSENT_ROUTE);
+      }
+      return;
+    }
+
     if (hasNoProfile) {
-      if (group !== VERIFICATION_GROUP || verificationScreen !== 'registration') {
+      if (group !== VERIFICATION_GROUP || screen !== 'registration') {
         router.replace('/(verification)/registration');
       }
       return;
@@ -86,10 +109,17 @@ export function useAuthGuard(): { isResolving: boolean } {
       return;
     }
 
-    if (group === AUTH_GROUP || group === VERIFICATION_GROUP) {
+    if (group === AUTH_GROUP) {
+      router.replace('/(tabs)');
+      return;
+    }
+
+    // Раньше сюда попадал любой экран группы `(verification)`, поэтому переходы
+    // «Автомобиль» и «Документы» из профиля мгновенно откатывались на карту (M7.5).
+    if (group === VERIFICATION_GROUP && screen === VERIFICATION_STATUS_SCREEN) {
       router.replace('/(tabs)');
     }
-  }, [router, segments, isAuthenticated, hasNoProfile, isApproved, isResolving]);
+  }, [router, segments, isAuthenticated, requiresConsent, hasNoProfile, isApproved, isResolving]);
 
   // При отключённом guard экран-заглушка «резолвинга» тоже не нужен.
   return { isResolving: SKIP_GUARD ? false : isResolving };

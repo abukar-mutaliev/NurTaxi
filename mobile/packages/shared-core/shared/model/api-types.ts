@@ -540,6 +540,26 @@ export interface UpdateWorkSchedulePayload {
 
 export type UpdateDriverLocationPayload = GeoPoint;
 
+/**
+ * Предложение заказа водителю (`§15.3`).
+ *
+ * Приходит двумя путями и в одном и том же виде: событием `order.offer` по WebSocket и
+ * ответом `GET /driver/orders/offer`. Второй нужен потому, что событие уходит один раз,
+ * а свёрнутое приложение на Android теряет сокет за считаные секунды.
+ */
+export interface DriverOrderOffer {
+  orderId: string;
+  /** Момент, после которого принять заказ уже нельзя. */
+  expiresAt: string;
+  pickup: { lat: number; lng: number; address: string };
+  dropoff: { lat: number; lng: number; address: string };
+  price: number;
+  paymentMethod: PaymentMethod;
+  comment: string | null;
+  distanceM: number | null;
+  durationS: number | null;
+}
+
 export interface DriverEarnings {
   balance: number;
   today: number;

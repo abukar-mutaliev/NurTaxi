@@ -1,11 +1,12 @@
 /**
- * Поле адреса с серверными подсказками.
+ * Поле адреса с подсказками.
  *
  * Единая точка для всех адресных вводов приложения водителя: подсказка, состояние
  * «ищем», подпись при пустой выдаче и координаты выбранного адреса — всё здесь,
- * экранам остаётся передать значение и обработчики.
+ * экранам остаётся передать значение и обработчики. Источник подсказок (Yandex MapKit
+ * или серверный `/geo/search`) выбирает `useAddressSuggestions`.
  */
-import type { AddressSuggestion } from '@nurtaxi/shared-core/shared/model';
+import type { GeoPoint } from '@nurtaxi/shared-core/shared/model';
 
 import {
   SuggestInput,
@@ -15,6 +16,7 @@ import {
 
 import {
   useAddressSuggestions,
+  type AddressOption,
   type AddressSuggestionsOptions,
 } from '../model/use-address-suggestions';
 
@@ -23,11 +25,12 @@ export interface AddressSuggestInputProps
     Omit<SuggestInputProps, 'options' | 'onSelect' | 'loading' | 'emptyHint'>,
     Omit<AddressSuggestionsOptions, 'enabled'> {
   /**
-   * Вызывается при выборе подсказки — вместе с координатами. Текст поля компонент
-   * подставляет сам через `onChangeText`.
+   * Вызывается при выборе подсказки. Координата может прийти позже самого текста —
+   * MapKit отдаёт её не для каждого объекта, — поэтому `point` бывает `null`.
+   * Текст поля компонент подставляет сам через `onChangeText`.
    */
-  onSelectSuggestion?: (suggestion: AddressSuggestion) => void;
-  /** Подпись, когда сервер ничего не нашёл. */
+  onSelectSuggestion?: (suggestion: AddressOption & { point: GeoPoint | null }) => void;
+  /** Подпись, когда ничего не нашлось. */
   emptyHint?: string;
 }
 
@@ -44,17 +47,15 @@ export function AddressSuggestInput({
   emptyHint = DEFAULT_EMPTY_HINT,
   ...inputProps
 }: AddressSuggestInputProps) {
-  const { suggestions, isFetching, isSearchable, error } = useAddressSuggestions(value, {
-    regionId,
-    lat,
-    lng,
-    limit,
-  });
+  const { suggestions, isFetching, isSearchable, error, resolvePoint } = useAddressSuggestions(
+    value,
+    { lat, limit, lng, regionId },
+  );
 
   const options: SuggestOption[] = suggestions.map((suggestion) => ({
     id: suggestion.id,
-    title: suggestion.title,
     subtitle: suggestion.subtitle,
+    title: suggestion.title,
   }));
 
   const handleSelect = (option: SuggestOption) => {
@@ -62,8 +63,18 @@ export function AddressSuggestInput({
     if (!suggestion) {
       return;
     }
+
     onChangeText(suggestion.address || suggestion.title);
-    onSelectSuggestion?.(suggestion);
+
+    if (!onSelectSuggestion) {
+      return;
+    }
+
+    // Координату дозапрашиваем, но текст в поле не ждёт ответа: ввод не должен
+    // подвисать из-за сетевого дозапроса к MapKit.
+    void resolvePoint(suggestion).then((point) => {
+      onSelectSuggestion({ ...suggestion, point });
+    });
   };
 
   return (

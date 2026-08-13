@@ -7,9 +7,11 @@
  */
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { SymbolView } from 'expo-symbols';
+import medium from 'expo-symbols/androidWeights/medium';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Switch, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -23,13 +25,20 @@ import {
 } from '@nurtaxi/shared-core/entities/driver';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { useDriverPosition } from '@/features/driver-position';
 import { useDriverLocationTracking } from '@/features/location-tracking';
 import { IncomingOrderCard, useOrderOffer } from '@/features/order-offer';
 import { onlineIntentChanged, selectWantsOnline } from '@/processes/shift';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { RoundButton } from '@/shared/ui/round-button';
 import { StatTiles } from '@/shared/ui/stat-tiles';
-import { MapCanvas } from '@/widgets/map';
+import { MapCanvas, type MapCanvasHandle } from '@/widgets/map';
+
+/**
+ * Масштаб, на который встаёт карта, показав водителю его позицию: примерно квартал
+ * вокруг машины. Обзорный масштаб здесь бесполезен — на нём не понять, где ты стоишь.
+ */
+const DRIVER_ZOOM_DELTA = 0.01;
 
 export function ShiftScreen() {
   const { t } = useTranslation();
@@ -72,9 +81,56 @@ export function ShiftScreen() {
   const isOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
   const canGoOnline = profile?.canGoOnline ?? false;
 
-  // Источник истины — серверный статус: так трансляция позиции переживает перезапуск
-  // приложения посреди смены и не запускается по одному лишь оптимистичному переключателю.
+  /**
+   * Передача позиции на сервер. Источник истины — серверный статус: так трансляция
+   * переживает перезапуск приложения посреди смены и не запускается по одному лишь
+   * оптимистичному переключателю. Задача фоновая, поэтому координаты уходят и когда
+   * водитель свернул приложение.
+   */
   useDriverLocationTracking(profile?.onlineStatus === 'online');
+
+  /**
+   * Позиция для карты — отдельная забота: фоновая задача отправляет координаты серверу,
+   * но экрану их не отдаёт, а водителю нужно видеть себя и уметь вернуть камеру к машине.
+   */
+  // `error` уже занят отказом переключателя линии — ошибку геопозиции берём под своим именем.
+  const {
+    position,
+    permissionState,
+    canAskAgain,
+    isLocating,
+    openSettings,
+    error: positionError,
+    request: requestLocation,
+  } = useDriverPosition(isOnline);
+  const mapRef = useRef<MapCanvasHandle>(null);
+
+  /**
+   * Карта подводится к машине один раз за выход на линию. Делать это на каждый GPS-тик
+   * нельзя: водитель не смог бы отвести карту в сторону — её бы тут же возвращало назад.
+   * Вернуться к себе он может кнопкой.
+   */
+  const centeredRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOnline) {
+      centeredRef.current = false;
+      return;
+    }
+
+    if (!position || centeredRef.current) {
+      return;
+    }
+
+    centeredRef.current = true;
+    mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
+  }, [isOnline, position]);
+
+  const centerOnDriver = () => {
+    if (position) {
+      mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
+    }
+  };
 
   const toggleOnline = async (next: boolean) => {
     setError(null);
@@ -93,10 +149,19 @@ export function ShiftScreen() {
       <StatusBar style="dark" />
 
       <View style={StyleSheet.absoluteFill}>
-        <MapCanvas showsUserLocation />
+        {/*
+          `initialPoint` срабатывает, только если позиция известна уже к первому рендеру
+          (кэш прошлой смены). Обычно она приходит позже, когда камера внутри карты
+          зафиксирована, — поэтому карту к машине подводит эффект через `mapRef`.
+        */}
+        <MapCanvas initialPoint={position} ref={mapRef} showsUserLocation />
       </View>
 
-      {/* Верхний ряд: индикатор смены, статус, профиль */}
+      {/*
+        Верхний ряд: статус смены и профиль. Статус читается из самой «пилюли», поэтому
+        отдельная точка-индикатор слева не нужна — вместо неё пустой слот той же ширины,
+        чтобы «пилюля» осталась по центру экрана.
+      */}
       <View
         style={[
           styles.topBar,
@@ -106,49 +171,63 @@ export function ShiftScreen() {
           },
         ]}
       >
-        <RoundButton
-          accessibilityLabel={isOnline ? t('driver.online') : t('driver.offline')}
-          variant="surface"
-        >
-          <View
-            style={{
-              backgroundColor: isOnline ? theme.colors.success : theme.colors.primary,
-              borderRadius: 999,
-              height: 12,
-              width: 12,
-            }}
-          />
-        </RoundButton>
-
-        <View
-          style={[
-            styles.statusPill,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.pill,
-              paddingHorizontal: theme.spacing.lg,
-              paddingVertical: theme.spacing.sm,
-            },
-          ]}
-        >
-          <Text variant="bodyStrong">{isOnline ? 'Вы на линии' : 'Вы офлайн'}</Text>
+        {/*
+          Слот держит «пилюлю» по центру и вне линии остаётся пустым: искать себя на карте
+          есть смысл только на смене. Ширина слота фиксированная, поэтому появление кнопки
+          не сдвигает «пилюлю».
+        */}
+        <View style={styles.topBarSlot}>
+          {isOnline ? (
+            <RoundButton
+              accessibilityLabel="Показать, где я"
+              onPress={centerOnDriver}
+              variant="surface"
+            >
+              <SymbolView
+                name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
+                resizeMode="scaleAspectFit"
+                size={22}
+                tintColor={position ? theme.colors.primary : theme.colors.textMuted}
+                type="monochrome"
+                weight={{ android: medium, ios: 'medium' }}
+              />
+            </RoundButton>
+          ) : null}
         </View>
 
-        <RoundButton
-          accessibilityLabel={t('profile.title')}
-          onPress={() => router.push('/(tabs)/profile')}
-          variant="surface"
-        >
+        <View style={styles.topBarCenter}>
           <View
-            style={{
-              backgroundColor: theme.colors.accent,
-              borderRadius: 999,
-              height: 12,
-              width: 12,
-            }}
-          />
-        </RoundButton>
+            style={[
+              styles.statusPill,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                borderRadius: theme.radius.pill,
+                paddingHorizontal: theme.spacing.lg,
+                paddingVertical: theme.spacing.sm,
+              },
+            ]}
+          >
+            <Text variant="bodyStrong">{isOnline ? 'Вы на линии' : 'Вы офлайн'}</Text>
+          </View>
+        </View>
+
+        <View style={[styles.topBarSlot, styles.topBarSlotRight]}>
+          <RoundButton
+            accessibilityLabel={t('profile.title')}
+            onPress={() => router.push('/(tabs)/profile')}
+            variant="surface"
+          >
+            <SymbolView
+              name={{ android: 'person', ios: 'person.fill', web: 'person' }}
+              resizeMode="scaleAspectFit"
+              size={22}
+              tintColor={theme.colors.primary}
+              type="monochrome"
+              weight={{ android: medium, ios: 'medium' }}
+            />
+          </RoundButton>
+        </View>
       </View>
 
       {/*
@@ -223,6 +302,32 @@ export function ShiftScreen() {
           </Text>
         ) : null}
 
+        {/*
+          Состояние геопозиции показываем только на линии: вне смены она не нужна,
+          и предупреждение выглядело бы придиркой на пустом месте.
+        */}
+        {isOnline && permissionState === 'denied' ? (
+          <Pressable onPress={() => void (canAskAgain ? requestLocation() : openSettings())}>
+            <Text tone="muted" variant="caption">
+              {canAskAgain
+                ? 'Нажмите, чтобы разрешить доступ к геопозиции и видеть себя на карте'
+                : 'Доступ к геопозиции запрещён. Нажмите, чтобы открыть настройки'}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {isOnline && permissionState === 'granted' && !position && isLocating ? (
+          <Text tone="muted" variant="caption">
+            Определяем ваше положение…
+          </Text>
+        ) : null}
+
+        {positionError ? (
+          <Text tone="muted" variant="caption">
+            {positionError}
+          </Text>
+        ) : null}
+
         <StatTiles
           tiles={[
             {
@@ -279,5 +384,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  topBarCenter: {
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: 8,
+  },
+  topBarSlot: {
+    alignItems: 'flex-start',
+    // Ширина круглой кнопки: держит «пилюлю» ровно по центру экрана.
+    width: 44,
+  },
+  topBarSlotRight: {
+    alignItems: 'flex-end',
   },
 });

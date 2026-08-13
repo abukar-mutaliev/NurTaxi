@@ -41,10 +41,6 @@ export function WelcomeScreen() {
 
   const logoHeight = sy(300);
   const logoWidth = (LOGO_DESIGN_WIDTH / LOGO_DESIGN_HEIGHT) * logoHeight;
-  /** В ассете знак смещён вправо (~63% ширины). Обрезаем слева, чтобы марка была по центру. */
-  const logoRenderHeight = logoHeight * 1.0017;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
 
   return (
     <View style={styles.root}>
@@ -60,17 +56,16 @@ export function WelcomeScreen() {
         }}
       >
         <View style={styles.logoArea}>
-          <View style={[styles.logoClip, { height: logoHeight, width: logoWidth }]}>
-            <Image
-              contentFit="fill"
-              source={logoAsset}
-              style={{
-                height: logoRenderHeight,
-                marginLeft: -logoCropOffsetX,
-                width: logoRenderWidth,
-              }}
-            />
-          </View>
+          {/*
+            Ассет обрезан по краям знака, поэтому `contain` вписывает логотип целиком.
+            Ручной сдвиг слева срезал «ЖЕ» из «ЖЕНСКОЕ ТАКСИ».
+          */}
+          <Image
+            accessibilityLabel={t('auth.brandName')}
+            contentFit="contain"
+            source={logoAsset}
+            style={{ height: logoHeight, width: logoWidth }}
+          />
         </View>
 
         <PillButton height={sx(58)} onPress={goToLogin} title={t('welcome.start')} />
@@ -102,9 +97,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     width: '100%',
-  },
-  logoClip: {
-    overflow: 'hidden',
   },
   root: {
     backgroundColor: '#F8F4EF',

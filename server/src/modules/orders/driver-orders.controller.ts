@@ -53,6 +53,18 @@ export class DriverOrdersController {
     );
   }
 
+  @Get('offer')
+  @ApiOperation({
+    summary: 'Предложение, ожидающее ответа водителя (Req §15.3)',
+    description:
+      'Событие `order.offer` по WebSocket уходит один раз. Свёрнутое приложение на Android ' +
+      'теряет сокет за считаные секунды и предложение не получает, поэтому вернувшись на ' +
+      'передний план оно спрашивает сервер само. `null` — ждать нечего.',
+  })
+  async pendingOffer(@CurrentUser() user: AuthenticatedUser): Promise<Record<string, unknown> | null> {
+    return this.ordersService.getPendingOfferForDriver(user.id);
+  }
+
   @Post(':id/accept')
   @ApiOperation({ summary: 'Принятие заказа (Req §8.10, Des §6)' })
   async accept(

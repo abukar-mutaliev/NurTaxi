@@ -5,6 +5,7 @@
 import { z } from 'zod';
 
 import { isValidPhone, normalizePhone } from '../format/phone';
+import { PLATE_PATTERN } from '../format/input-masks';
 
 export const phoneSchema = z
   .string()
@@ -67,6 +68,19 @@ export const driverRegistrationFormSchema = z.object({
   birthDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Дата в формате ГГГГ-ММ-ДД')
+    // Маска пропускает любые цифры, поэтому «2000-13-45» дойдёт сюда: проверяем, что такой
+    // календарный день существует, иначе `new Date` молча сдвинет его на следующий месяц.
+    .refine((value) => {
+      const year = Number(value.slice(0, 4));
+      const month = Number(value.slice(5, 7));
+      const day = Number(value.slice(8, 10));
+      const date = new Date(Date.UTC(year, month - 1, day));
+      return (
+        date.getUTCFullYear() === year &&
+        date.getUTCMonth() === month - 1 &&
+        date.getUTCDate() === day
+      );
+    }, 'Такой даты не существует')
     .refine((value) => {
       const age = (Date.now() - new Date(value).getTime()) / (365.25 * 24 * 3600 * 1000);
       return age >= 18 && age <= 100;
@@ -81,7 +95,12 @@ export const driverRegistrationFormSchema = z.object({
   vehicle: z.object({
     make: z.string().trim().min(1, 'Укажите марку'),
     model: z.string().trim().min(1, 'Укажите модель'),
-    plateNumber: z.string().trim().min(5, 'Укажите госномер').max(15),
+    // Номер приходит уже под маской «А123ВС 06» — проверяем ровно эту раскладку.
+    plateNumber: z
+      .string()
+      .trim()
+      .min(1, 'Укажите госномер')
+      .regex(PLATE_PATTERN, 'Госномер в формате А123ВС 06'),
     color: z.string().trim().min(2, 'Укажите цвет'),
     year: z.coerce
       .number()

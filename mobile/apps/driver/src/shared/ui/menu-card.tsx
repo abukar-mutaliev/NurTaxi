@@ -1,19 +1,37 @@
 import { Pressable, StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import medium from 'expo-symbols/androidWeights/medium';
 
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from './chevron';
 
+/**
+ * Значки разделов. Названия у платформ разные: Android берёт Material Symbols,
+ * iOS — SF Symbols, поэтому пара задаётся здесь, а экраны называют раздел по смыслу.
+ */
+export const MENU_ICONS = {
+  car: { android: 'directions_car', ios: 'car.fill', web: 'directions_car' },
+  documents: { android: 'description', ios: 'doc.text.fill', web: 'description' },
+  history: { android: 'history', ios: 'clock.arrow.circlepath', web: 'history' },
+  settings: { android: 'settings', ios: 'gearshape.fill', web: 'settings' },
+  support: { android: 'support_agent', ios: 'questionmark.circle.fill', web: 'support_agent' },
+} as const;
+
+export type MenuIcon = keyof typeof MENU_ICONS;
+
 export interface MenuCardProps {
   title: string;
   subtitle?: string;
-  /** Цвет круглой иконки-точки слева. По умолчанию — брендовый фиолетовый. */
+  /** Значок раздела слева. Без него остаётся прежняя точка. */
+  icon?: MenuIcon;
+  /** Цвет значка. По умолчанию — брендовый фиолетовый. */
   dotTone?: 'primary' | 'accent';
   onPress?: () => void;
 }
 
-/** Пункт меню профиля из макета: белая карточка, круглая иконка-точка и шеврон. */
-export function MenuCard({ title, subtitle, dotTone = 'primary', onPress }: MenuCardProps) {
+/** Пункт меню профиля из макета: белая карточка, круглый значок раздела и шеврон. */
+export function MenuCard({ title, subtitle, icon, dotTone = 'primary', onPress }: MenuCardProps) {
   const theme = useTheme();
 
   const dotBg = dotTone === 'accent' ? 'rgba(232,197,143,0.28)' : 'rgba(58,29,63,0.10)';
@@ -38,7 +56,18 @@ export function MenuCard({ title, subtitle, dotTone = 'primary', onPress }: Menu
       ]}
     >
       <View style={[styles.dotWrap, { backgroundColor: dotBg, borderRadius: 999 }]}>
-        <View style={{ backgroundColor: dotColor, borderRadius: 999, height: 10, width: 10 }} />
+        {icon ? (
+          <SymbolView
+            name={MENU_ICONS[icon]}
+            resizeMode="scaleAspectFit"
+            size={18}
+            tintColor={dotColor}
+            type="monochrome"
+            weight={{ android: medium, ios: 'medium' }}
+          />
+        ) : (
+          <View style={{ backgroundColor: dotColor, borderRadius: 999, height: 10, width: 10 }} />
+        )}
       </View>
 
       <View style={styles.body}>

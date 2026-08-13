@@ -22,6 +22,7 @@ export {
   formatShortDisplayAddress,
   isAdminOnlyAddress,
 } from './format/short-address';
+export { PLATE_PATTERN, formatBirthDateInput, formatPlateInput } from './format/input-masks';
 
 export { boundsOf, decodePolyline, haversineDistance } from './geo/polyline';
 export { toApiGeoLocation } from './geo/location';
@@ -42,5 +43,7 @@ export type {
   ImagePickerPermissionStatus,
   ImagePickerSource,
 } from './media/image-picker-permission';
+export { pickImageFrom, pickImageWithChoice } from './media/pick-image';
+export type { PickedImage, PickImageOutcome } from './media/pick-image';
 
 export * from './validation/schemas';

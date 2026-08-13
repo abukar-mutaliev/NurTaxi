@@ -144,6 +144,7 @@ export function ProfileScreen() {
         {/* Меню */}
         <MenuCard
           dotTone="accent"
+          icon="car"
           onPress={() => router.push('/(verification)/registration')}
           subtitle={
             vehicle
@@ -153,18 +154,24 @@ export function ProfileScreen() {
           title={t('driver.vehicle')}
         />
         <MenuCard
+          icon="documents"
           onPress={() => router.push('/(verification)/documents')}
           subtitle={
             documents.length ? `${approvedDocs} из ${documents.length} одобрено` : 'Не загружены'
           }
           title="Документы"
         />
-        <MenuCard onPress={() => router.push('/(tabs)/orders' as Href)} title="История поездок" />
         <MenuCard
+          icon="history"
+          onPress={() => router.push('/(tabs)/orders' as Href)}
+          title="История поездок"
+        />
+        <MenuCard
+          icon="settings"
           onPress={() => router.push('/settings' as Href)}
           title={t('profile.settingsTitle')}
         />
-        <MenuCard onPress={openSupport} title={t('profile.support')} />
+        <MenuCard icon="support" onPress={openSupport} title={t('profile.support')} />
 
         <PillButton
           onPress={() => {

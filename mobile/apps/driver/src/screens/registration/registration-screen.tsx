@@ -17,6 +17,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
   driverRegistrationFormSchema,
+  formatBirthDateInput,
+  formatPlateInput,
   type DriverRegistrationForm,
 } from '@nurtaxi/shared-core/shared/lib';
 import { Button, Card, Input, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
@@ -152,9 +154,11 @@ export function RegistrationScreen() {
               render={({ field }) => (
                 <Input
                   error={errors.birthDate?.message}
-                  keyboardType="numbers-and-punctuation"
+                  // Тире ставит маска, поэтому клавиатура нужна только цифровая.
+                  keyboardType="number-pad"
                   label="Дата рождения"
-                  onChangeText={field.onChange}
+                  maxLength={10}
+                  onChangeText={(value) => field.onChange(formatBirthDateInput(value))}
                   placeholder="1990-05-15"
                   value={field.value}
                 />
@@ -293,9 +297,12 @@ export function RegistrationScreen() {
               render={({ field }) => (
                 <Input
                   autoCapitalize="characters"
+                  autoCorrect={false}
                   error={errors.vehicle?.plateNumber?.message}
                   label="Госномер"
-                  onChangeText={field.onChange}
+                  // «А123ВС 06» — 9 символов вместе с пробелом перед кодом региона.
+                  maxLength={10}
+                  onChangeText={(value) => field.onChange(formatPlateInput(value))}
                   placeholder="А123ВС 06"
                   value={field.value}
                 />

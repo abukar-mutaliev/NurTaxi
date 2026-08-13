@@ -8,10 +8,10 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
+import { pickImageWithChoice } from '@nurtaxi/shared-core/shared/lib';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { DocumentType } from '@nurtaxi/shared-core/shared/model';
 import {
@@ -50,17 +50,16 @@ export function DocumentsScreen() {
   const pickAndUpload = async (type: DocumentType) => {
     setError(null);
 
-    // 1. Выбор файла (галерея; для селфи можно заменить на launchCameraAsync)
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
-    });
-    if (result.canceled || !result.assets?.[0]) {
+    /**
+     * 1. Выбор источника и файла. Документ можно снять на камеру или взять из галереи —
+     * паспорт удобнее сфотографировать, а фото автомобиля часто уже лежит в галерее.
+     * Разрешение спрашивается здесь же, после выбора источника: этого требует App Store.
+     */
+    const picked = await pickImageWithChoice(DOC_LABELS[type] ?? 'Документ', `${type}.jpg`);
+    if (!picked) {
       return;
     }
-    const asset = result.assets[0];
-    const contentType = asset.mimeType ?? 'image/jpeg';
-    const fileName = asset.fileName ?? `${type}.jpg`;
+    const { contentType, fileName, uri } = picked;
 
     setBusyType(type);
     try {
@@ -72,7 +71,7 @@ export function DocumentsScreen() {
       }).unwrap();
 
       // 3. Кладём файл напрямую в S3 (PUT)
-      const upload = await FileSystem.uploadAsync(uploadUrl, asset.uri, {
+      const upload = await FileSystem.uploadAsync(uploadUrl, uri, {
         httpMethod: 'PUT',
         uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
         headers: { 'Content-Type': contentType },

@@ -23,6 +23,7 @@ export {
   recentAddressUsed,
   recentAddressesCleared,
   recentAddressesReducer,
+  sanitizeRecentAddress,
   selectRecentAddresses,
 } from './model/recent-addresses.slice';
 export type { RecentAddress } from './model/recent-addresses.slice';

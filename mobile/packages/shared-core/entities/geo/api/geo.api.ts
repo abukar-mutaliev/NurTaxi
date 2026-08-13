@@ -1,9 +1,14 @@
 /**
- * Поиск адресов — `GET /geo/search` (M3.4, `§8.9`).
- * Сервер сам учитывает специфику адресации Северного Кавказа и кэширует ответы в Redis.
+ * Геосервис: поиск адресов (`GET /geo/search`) и дорожный маршрут (`GET /geo/route`).
+ * Сервер учитывает адресацию Северного Кавказа и кэширует ответы в Redis.
  */
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
-import type { AddressSuggestion, GeoSearchQuery } from '@nurtaxi/shared-core/shared/model';
+import type {
+  AddressSuggestion,
+  GeoRouteQuery,
+  GeoSearchQuery,
+  OrderRoute,
+} from '@nurtaxi/shared-core/shared/model';
 
 export const geoApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -15,10 +20,22 @@ export const geoApi = baseApi.injectEndpoints({
       // Поисковые ответы не переиспользуем между разными запросами дольше минуты.
       keepUnusedDataFor: 60,
     }),
+    getDrivingRoute: build.query<OrderRoute | null, GeoRouteQuery>({
+      query: ({ originLat, originLng, destLat, destLng }) => ({
+        url: '/geo/route',
+        params: { originLat, originLng, destLat, destLng },
+      }),
+      keepUnusedDataFor: 60,
+    }),
   }),
 });
 
-export const { useSearchAddressesQuery, useLazySearchAddressesQuery } = geoApi;
+export const {
+  useGetDrivingRouteQuery,
+  useLazyGetDrivingRouteQuery,
+  useLazySearchAddressesQuery,
+  useSearchAddressesQuery,
+} = geoApi;
 
 /** Сервер требует минимум 2 символа — не тратим запрос впустую. */
 export const MIN_GEO_QUERY_LENGTH = 2;

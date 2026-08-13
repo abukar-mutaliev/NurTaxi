@@ -38,6 +38,7 @@ import {
   type SelectedAddress,
   parseAddressFieldParam,
   parseAddressModeParam,
+  parseRouteParam,
   selectRecentAddresses,
   useAddressSelection,
   useOrderRegion,
@@ -78,6 +79,7 @@ export function AddressSearchScreen() {
 
   const initialField = parseAddressFieldParam(params.field);
   const mode = parseAddressModeParam(params.mode);
+  const fieldParam = parseRouteParam(params.field);
 
   const { regionId } = useOrderRegion();
   const { pickup, dropoff } = useAppSelector(selectOrderDraft);
@@ -98,6 +100,7 @@ export function AddressSearchScreen() {
   const [saveLabel, setSaveLabel] = useState('');
   const [saveAddressText, setSaveAddressText] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [leavingToOrder, setLeavingToOrder] = useState(false);
 
   /**
    * Сброс локального состояния при смене `field` в параметрах маршрута (переключение
@@ -105,12 +108,13 @@ export function AddressSearchScreen() {
    * холостого рендера, который дал бы эффект (see react.dev: «Adjusting state when a prop
    * changes»).
    */
-  const [syncedField, setSyncedField] = useState(params.field);
-  if (params.field !== syncedField) {
-    setSyncedField(params.field);
-    setActiveField(parseAddressFieldParam(params.field));
+  const [syncedField, setSyncedField] = useState(fieldParam);
+  if (fieldParam !== syncedField) {
+    setSyncedField(fieldParam);
+    setActiveField(parseAddressFieldParam(fieldParam));
     setQuery('');
     setPendingOrderSelection(null);
+    setLeavingToOrder(false);
   }
 
   const { data: savedAddresses = [] } = useGetSavedAddressesQuery();
@@ -205,6 +209,7 @@ export function AddressSearchScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setLeavingToOrder(false);
       return () => {
         const { mode: currentMode, activeField: field } = orderDraftRef.current;
         if (currentMode === 'order') {
@@ -298,6 +303,7 @@ export function AddressSearchScreen() {
     if (!regionId) {
       return;
     }
+    setLeavingToOrder(true);
     selectAddress(activeField, 'order', location, options);
   };
 
@@ -319,6 +325,7 @@ export function AddressSearchScreen() {
 
     const address = formatSaveAddressText(query.trim()) || query.trim();
 
+    setLeavingToOrder(true);
     selectAddress(
       activeField,
       'order',
@@ -456,7 +463,7 @@ export function AddressSearchScreen() {
               </View>
             )}
 
-            {canSearch ? (
+            {canSearch && !leavingToOrder ? (
               <View style={{ gap: scale * 10 }}>
                 <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
                   {t('addresses.searchResults')}
@@ -498,7 +505,7 @@ export function AddressSearchScreen() {
 
             <AddSavedAddressRow onPress={openMapPick} title={t('addresses.pickOnMap')} />
 
-            {savedAddresses.length > 0 ? (
+            {savedAddresses.length > 0 && !leavingToOrder ? (
               <View style={{ gap: scale * 10 }}>
                 <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
                   {t('addresses.favorites')}
@@ -512,8 +519,8 @@ export function AddressSearchScreen() {
                     onPress={() =>
                       handleSelect(
                         {
-                          lat: address.lat,
-                          lng: address.lng,
+                          lat: Number(address.lat),
+                          lng: Number(address.lng),
                           address: address.address,
                         },
                         { skipRecent: true },
@@ -524,22 +531,22 @@ export function AddressSearchScreen() {
               </View>
             ) : null}
 
-            {mode === 'order' && !canSearch && recentAddresses.length > 0 ? (
+            {mode === 'order' && !canSearch && !leavingToOrder && recentAddresses.length > 0 ? (
               <View style={{ gap: scale * 10 }}>
                 <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
                   {t('addresses.recent')}
                 </Text>
                 {recentAddresses.map((address) => (
                   <SavedAddressCard
-                    address={formatSaveAddressText(address.address)}
+                    address={formatSaveAddressText(address.address || address.label)}
                     key={address.id}
-                    label={address.label}
+                    label={address.label || address.address}
                     onPress={() =>
                       handleSelect(
                         {
-                          lat: address.lat,
-                          lng: address.lng,
-                          address: address.address,
+                          lat: Number(address.lat),
+                          lng: Number(address.lng),
+                          address: address.address || address.label,
                           label: address.label,
                         },
                         { label: address.label },

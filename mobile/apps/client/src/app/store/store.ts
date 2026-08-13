@@ -26,7 +26,11 @@ import { sessionReducer } from '@nurtaxi/shared-core/entities/session';
 import { networkReducer, setupNetworkListeners } from '@nurtaxi/shared-core/features/network';
 import { realtimeReducer } from '@nurtaxi/shared-core/features/realtime';
 
-import { orderDraftReducer, recentAddressesReducer } from '@/processes/order-flow';
+import {
+  orderDraftReducer,
+  recentAddressesReducer,
+  sanitizeRecentAddress,
+} from '@/processes/order-flow';
 
 const rootReducer = combineReducers({
   [baseApi.reducerPath]: baseApi.reducer,
@@ -59,6 +63,25 @@ const persistMigrations = createMigrate(
         },
       } as PersistedState;
     },
+    3: (state) => {
+      const persisted = state as (PersistedRootState & PersistedState) | undefined;
+      if (!persisted) {
+        return state;
+      }
+
+      const items = Array.isArray(persisted.recentAddresses?.items)
+        ? persisted.recentAddresses.items
+        : [];
+
+      return {
+        ...persisted,
+        recentAddresses: {
+          items: items
+            .map(sanitizeRecentAddress)
+            .filter((item): item is NonNullable<typeof item> => item !== null),
+        },
+      } as PersistedState;
+    },
   },
   { debug: false },
 );
@@ -66,7 +89,7 @@ const persistMigrations = createMigrate(
 const persistedReducer = persistReducer(
   {
     key: 'nurtaxi.client',
-    version: 2,
+    version: 3,
     storage: persistStorage,
     whitelist: ['orderDraft', 'recentAddresses'],
     migrate: persistMigrations,

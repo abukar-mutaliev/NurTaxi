@@ -12,10 +12,7 @@
 import { Alert, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
-import {
-  ensureImagePickerPermission,
-  type ImagePickerSource,
-} from './image-picker-permission';
+import { ensureImagePickerPermission, type ImagePickerSource } from './image-picker-permission';
 
 export interface PickedImage {
   uri: string;

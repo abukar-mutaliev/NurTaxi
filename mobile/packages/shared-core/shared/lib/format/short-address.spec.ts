@@ -57,4 +57,12 @@ describe('formatShortDisplayAddress', () => {
       ),
     ).toBe('г. Назрань, Московская улица, 12');
   });
+
+  it('не падает на пустом и нестроковом значении', () => {
+    expect(formatShortDisplayAddress(undefined)).toBe('');
+    expect(formatShortDisplayAddress(null)).toBe('');
+    expect(formatShortDisplayAddress('')).toBe('');
+    expect(isAdminOnlyAddress(undefined)).toBe(true);
+    expect(extractLocalityFromAddress(undefined)).toBeNull();
+  });
 });

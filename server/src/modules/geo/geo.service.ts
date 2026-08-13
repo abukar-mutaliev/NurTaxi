@@ -4,6 +4,7 @@ import {
   MAP_PROVIDER,
   type AddressSuggestion,
   type MapProvider,
+  type RouteResult,
 } from './map/map-provider.interface';
 import { normalizeAddressQuery } from './address/address-normalizer';
 import { CircuitBreakerService } from '../../common/resilience/circuit-breaker.service';
@@ -16,6 +17,13 @@ export interface GeoSearchParams {
   lat?: number;
   lng?: number;
   limit?: number;
+}
+
+export interface GeoRouteParams {
+  originLat: number;
+  originLng: number;
+  destLat: number;
+  destLng: number;
 }
 
 @Injectable()
@@ -64,6 +72,43 @@ export class GeoService {
       // Graceful degradation: поиск адресов некритичен для создания заказа (Des §11).
       this.logger.warn(`Map search degraded: ${error instanceof Error ? error.message : error}`);
       return [];
+    }
+  }
+
+  /**
+   * Дорожный маршрут A→B для навигатора. Поиск адресов идёт через MapProvider,
+   * геометрия пути — через RoutingProvider (OSRM), который MapProvider.route уже делегирует.
+   */
+  async route(params: GeoRouteParams): Promise<RouteResult | null> {
+    const origin = { lat: params.originLat, lng: params.originLng };
+    const destination = { lat: params.destLat, lng: params.destLng };
+
+    const cached = await this.cache.getRoute<RouteResult>(
+      origin.lat,
+      origin.lng,
+      destination.lat,
+      destination.lng,
+    );
+    if (cached) return cached;
+
+    try {
+      const result = await resilientCall(
+        () => this.mapProvider.route({ origin, destination }),
+        {
+          timeoutMs: 5000,
+          retries: 1,
+          circuitKey: 'routing',
+          circuitBreaker: this.circuitBreaker,
+          onAttempt: (durationMs, success) =>
+            this.metrics.observeExternalCall('routing', 'route', durationMs, success),
+        },
+      );
+
+      await this.cache.setRoute(origin.lat, origin.lng, destination.lat, destination.lng, result);
+      return result;
+    } catch (error) {
+      this.logger.warn(`Map route degraded: ${error instanceof Error ? error.message : error}`);
+      return null;
     }
   }
 }

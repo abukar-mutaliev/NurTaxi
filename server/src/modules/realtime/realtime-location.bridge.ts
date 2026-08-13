@@ -33,4 +33,29 @@ export class RealtimeLocationBridge {
 
     this.eventBus.publish('driver.location_updated', { orderId: order.id, lat, lng });
   }
+
+  /** Последняя известная точка машины — чтобы клиент увидел её сразу при подписке на заказ. */
+  async snapshotForOrder(orderId: string): Promise<{
+    orderId: string;
+    lat: number;
+    lng: number;
+    at: string;
+  } | null> {
+    const order = await this.ordersService.getActiveOrderLocationContext(orderId);
+    if (!order?.driverId) {
+      return null;
+    }
+
+    const point = await this.driversService.getCachedLocation(order.regionId, order.driverId);
+    if (!point) {
+      return null;
+    }
+
+    return {
+      at: new Date().toISOString(),
+      lat: point.lat,
+      lng: point.lng,
+      orderId: order.id,
+    };
+  }
 }

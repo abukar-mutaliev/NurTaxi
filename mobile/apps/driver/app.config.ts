@@ -59,6 +59,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSPhotoLibraryUsageDescription: 'Нужна для загрузки документов из галереи.',
       UIBackgroundModes: ['location', 'fetch', 'remote-notification'],
       ITSAppUsesNonExemptEncryption: false,
+      LSApplicationQueriesSchemes: ['yandexnavi', 'yandexmaps'],
     },
   },
 
@@ -129,7 +130,24 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-build-properties',
       {
-        android: { compileSdkVersion: 36, targetSdkVersion: 36, minSdkVersion: 26 },
+        android: {
+          compileSdkVersion: 36,
+          targetSdkVersion: 36,
+          minSdkVersion: 26,
+          manifestQueries: {
+            package: ['ru.yandex.yandexnavi', 'ru.yandex.yandexmaps'],
+            intent: [
+              {
+                action: 'android.intent.action.VIEW',
+                data: { scheme: 'yandexnavi' },
+              },
+              {
+                action: 'android.intent.action.VIEW',
+                data: { scheme: 'yandexmaps' },
+              },
+            ],
+          },
+        },
         ios: { deploymentTarget: '16.4' },
       },
     ],

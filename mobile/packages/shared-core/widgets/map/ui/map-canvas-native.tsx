@@ -2,8 +2,16 @@
  * Нативная карта Yandex MapKit — загружается только если `isNativeMapAvailable()`.
  */
 import { Polyline, YandexMapView, type YandexMapViewRef } from 'expo-yandex-mapkit';
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from 'react';
-import { StyleSheet } from 'react-native';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { decodePolyline } from '../../../shared/lib';
 import {
@@ -14,6 +22,7 @@ import {
   toMapPoint,
 } from '../model/map-provider';
 import type { MapCanvasHandle, MapCanvasProps } from './map-canvas';
+import { DriverCarOverlay, type DriverCarOverlayHandle } from './driver-car-overlay';
 import { NativeMapMarker } from './native-map-marker';
 
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
@@ -42,6 +51,8 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   ref,
 ) {
   const mapRef = useRef<YandexMapViewRef>(null);
+  const driverOverlayRef = useRef<DriverCarOverlayHandle>(null);
+  const [mapSize, setMapSize] = useState({ height: 0, width: 0 });
 
   /** Камера задаётся один раз — иначе GPS-тики и смена маркеров сбрасывают zoom. */
   const initialCameraRef = useRef<ReturnType<typeof toCameraPosition> | null>(null);
@@ -49,6 +60,12 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
     initialCameraRef.current = toCameraPosition(initialPoint, 0.02);
   }
   const initialCamera = initialCameraRef.current ?? DEFAULT_CAMERA;
+
+  const pinMarkers = useMemo(() => markers.filter((marker) => marker.kind !== 'driver'), [markers]);
+  const driverMarker = useMemo(
+    () => markers.find((marker) => marker.kind === 'driver' && isValidGeoPoint(marker.point)),
+    [markers],
+  );
 
   /** Готовая геометрия важнее закодированной: она построена по актуальной позиции. */
   const routePoints = useMemo(() => {
@@ -59,10 +76,14 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   }, [explicitRoutePoints, routePolyline]);
 
   const fitPoints = useMemo(() => {
-    const markerPoints = markers
+    if (routePoints.length > 1) {
+      return routePoints.map(toMapPoint);
+    }
+
+    return markers
       .filter((marker) => isValidGeoPoint(marker.point))
-      .map((marker) => normalizeGeoPoint(marker.point));
-    return [...routePoints, ...markerPoints].map(toMapPoint);
+      .map((marker) => normalizeGeoPoint(marker.point))
+      .map(toMapPoint);
   }, [markers, routePoints]);
 
   const fitCameraToContent = useCallback(() => {
@@ -90,6 +111,32 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
     ignoreCameraRejection(mapRef.current?.fitAllMarkers?.({ edgePadding: MAP_EDGE_PADDING }));
   }, [fitPoints]);
 
+  const fittedDestRef = useRef('');
+  useEffect(() => {
+    if (routePoints.length < 2) {
+      return;
+    }
+
+    const destination = routePoints[routePoints.length - 1];
+    if (!destination) {
+      return;
+    }
+
+    const signature = `${destination.lat.toFixed(4)},${destination.lng.toFixed(4)}`;
+    if (fittedDestRef.current === signature) {
+      return;
+    }
+
+    fittedDestRef.current = signature;
+    fitCameraToContent();
+    const retry = setTimeout(fitCameraToContent, 400);
+    const retryLater = setTimeout(fitCameraToContent, 1200);
+    return () => {
+      clearTimeout(retry);
+      clearTimeout(retryLater);
+    };
+  }, [fitCameraToContent, routePoints]);
+
   useImperativeHandle(
     ref,
     () => ({
@@ -108,33 +155,56 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   );
 
   return (
-    <YandexMapView
-      cameraPosition={initialCamera}
-      onMapPress={
-        onPress
-          ? ({ nativeEvent }) =>
-              onPress({ lat: nativeEvent.point.latitude, lng: nativeEvent.point.longitude })
-          : undefined
-      }
-      ref={mapRef}
-      showUserPosition={showsUserLocation}
+    <View
+      onLayout={({ nativeEvent }) => {
+        const { height, width } = nativeEvent.layout;
+        setMapSize((current) =>
+          current.width === width && current.height === height ? current : { height, width },
+        );
+      }}
       style={styles.map}
     >
-      {markers.map((marker) => (
-        <NativeMapMarker
-          key={`${marker.id}:${marker.point.lat}:${marker.point.lng}`}
-          marker={marker}
-        />
-      ))}
+      <YandexMapView
+        cameraPosition={initialCamera}
+        onCameraPositionChanged={({ nativeEvent }) => {
+          driverOverlayRef.current?.setCamera(nativeEvent.cameraPosition);
+        }}
+        onMapPress={
+          onPress
+            ? ({ nativeEvent }) =>
+                onPress({ lat: nativeEvent.point.latitude, lng: nativeEvent.point.longitude })
+            : undefined
+        }
+        ref={mapRef}
+        showUserPosition={showsUserLocation}
+        style={StyleSheet.absoluteFill}
+      >
+        {routePoints.length > 1 ? (
+          <Polyline
+            key={`${routePoints[0]?.lat}:${routePoints[routePoints.length - 1]?.lng}:${routePoints.length}`}
+            outlineColor="#FFFFFF"
+            outlineWidth={2}
+            points={routePoints.map(toMapPoint)}
+            strokeColor={ROUTE_STROKE_COLOR}
+            strokeWidth={6}
+            zIndex={1}
+          />
+        ) : null}
 
-      {routePoints.length > 1 ? (
-        <Polyline
-          points={routePoints.map(toMapPoint)}
-          strokeColor={ROUTE_STROKE_COLOR}
-          strokeWidth={5}
+        {pinMarkers.map((marker) => (
+          <NativeMapMarker key={marker.id} marker={marker} />
+        ))}
+      </YandexMapView>
+
+      {driverMarker ? (
+        <DriverCarOverlay
+          initialCamera={initialCamera}
+          mapSize={mapSize}
+          point={normalizeGeoPoint(driverMarker.point)}
+          ref={driverOverlayRef}
         />
       ) : null}
-    </YandexMapView>
+    </View>
   );
 });
 

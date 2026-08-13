@@ -14,6 +14,7 @@ import {
   isCancellableByClient,
   isSosAllowed,
   isTerminalOrder,
+  orderApi,
   orderStage,
   orderStatusLabelKey,
   orderStatusTone,
@@ -22,6 +23,11 @@ import {
   useGetOrderHistoryQuery,
   useGetOrderQuery,
 } from '@nurtaxi/shared-core/entities/order';
+import {
+  useCurrentPosition,
+  useLocationPermission,
+} from '@nurtaxi/shared-core/features/geolocation';
+import { useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
 import {
   selectDriverPosition,
   selectIsRealtimeOnline,
@@ -50,7 +56,7 @@ import {
   GlassScreenHeader,
   GlassScreenShell,
 } from '@/shared/ui';
-import { MapCanvas, type MapCanvasHandle, type MapMarker } from '@/widgets/map';
+import { MapCanvas, type MapCanvasHandle, resolveOrderMapMarkers } from '@/widgets/map';
 
 import { DriverSearchOverlay } from './driver-search-overlay';
 import { DriverEnRouteOverlay } from './driver-en-route-overlay';
@@ -65,7 +71,15 @@ export function OrderScreen() {
 
   const isOnline = useAppSelector(selectIsRealtimeOnline);
   const driverPosition = useAppSelector(selectDriverPosition(orderId ?? ''));
+  const permission = useLocationPermission();
+  const { position } = useCurrentPosition(permission.state === 'granted');
   const draft = useAppSelector(selectOrderDraft);
+  const cachedStatus = useAppSelector(orderApi.endpoints.getOrder.select(orderId ?? '')).data
+    ?.status;
+  const stillSearching =
+    cachedStatus == null ||
+    cachedStatus === OrderStatus.Created ||
+    cachedStatus === OrderStatus.SearchingDriver;
 
   const {
     data: order,
@@ -75,10 +89,19 @@ export function OrderScreen() {
     refetch,
   } = useGetOrderQuery(orderId ?? '', {
     skip: !orderId,
-    pollingInterval: isOnline ? 0 : 5000,
+    // Пока ищем водителя, опрос нужен даже при «живом» сокете: событие о назначении
+    // легко потерять, и клиент иначе так и останется на «Ищем для вас».
+    pollingInterval: isOnline && !stillSearching ? 0 : 5000,
   });
 
   useOrderRealtime(orderId ?? null);
+
+  useEffect(() => {
+    if (!orderId || !isOnline) {
+      return;
+    }
+    void refetch();
+  }, [isOnline, orderId, refetch]);
 
   const [cancelOrder, cancelState] = useCancelOrderMutation();
   const [activateSos, sosState] = useActivateSosMutation();
@@ -101,46 +124,44 @@ export function OrderScreen() {
     }
   }, [dispatch, order]);
 
-  const markers = useMemo((): MapMarker[] => {
-    if (!order) {
-      return [];
-    }
-    const items: MapMarker[] = [
-      {
-        id: 'pickup',
-        point: { lat: order.pickupLat, lng: order.pickupLng },
-        kind: 'pickup',
-        title: order.pickupAddress,
-      },
-      {
-        id: 'dropoff',
-        point: { lat: order.dropoffLat, lng: order.dropoffLng },
-        kind: 'dropoff',
-        title: order.dropoffAddress,
-      },
-    ];
-    if (driverPosition) {
-      items.push({
-        id: 'driver',
-        point: driverPosition,
-        kind: 'driver',
-      });
-    } else if (order.driver) {
-      items.push({
-        id: 'driver',
-        point: { lat: order.pickupLat, lng: order.pickupLng },
-        kind: 'driver',
-      });
-    }
-    return items;
-  }, [driverPosition, order]);
+  const markers = useMemo(
+    () =>
+      order
+        ? resolveOrderMapMarkers({
+            driver: driverPosition ?? null,
+            dropoff: {
+              address: order.dropoffAddress,
+              lat: order.dropoffLat,
+              lng: order.dropoffLng,
+            },
+            pickup: {
+              address: order.pickupAddress,
+              lat: order.pickupLat,
+              lng: order.pickupLng,
+            },
+            routePolyline: order.route?.polyline,
+          })
+        : [],
+    [driverPosition, order],
+  );
+
+  const liveRoute = useLiveOrderRoute({
+    dropoff: { lat: order?.dropoffLat ?? 0, lng: order?.dropoffLng ?? 0 },
+    enabled: Boolean(
+      order &&
+      (orderStage(order.status) === 'waiting-driver' || orderStage(order.status) === 'riding'),
+    ),
+    origin: driverPosition,
+    pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
+    status: order?.status ?? '',
+  });
 
   useEffect(() => {
     if (!order) {
       return;
     }
     mapRef.current?.fitToRoute();
-  }, [driverPosition, order, order?.route?.polyline]);
+  }, [liveRoute.leg, order?.id, order?.status]);
 
   if (!orderId) {
     return (
@@ -176,6 +197,7 @@ export function OrderScreen() {
       await cancelOrder({ orderId, reason: cancelReason.trim() || undefined }).unwrap();
       setCancelVisible(false);
       dispatch(orderDraftCleared());
+      dispatch(activeOrderChanged(null));
       router.replace('/(tabs)');
     } catch (cause) {
       Alert.alert(t('errors.title'), toAppError(cause as never).message);
@@ -217,9 +239,19 @@ export function OrderScreen() {
     ]);
   };
 
-  const goHome = () => {
-    dispatch(orderDraftCleared());
+  const leaveToHome = () => {
+    if (!order || isTerminalOrder(order.status)) {
+      dispatch(orderDraftCleared());
+      dispatch(activeOrderChanged(null));
+    }
     router.replace('/(tabs)');
+  };
+
+  const centerOnMyLocation = () => {
+    if (!position) {
+      return;
+    }
+    mapRef.current?.centerOn(position, 0.01);
   };
 
   const retryOrder = () => {
@@ -269,12 +301,17 @@ export function OrderScreen() {
     <>
       <Screen edgeToEdge safeBottom={false} scroll={false}>
         <View style={styles.root}>
-          <MapCanvas markers={markers} ref={mapRef} routePolyline={order.route?.polyline ?? null} />
+          <MapCanvas
+            markers={markers}
+            ref={mapRef}
+            routePoints={liveRoute.points}
+            routePolyline={liveRoute.points?.length ? null : (order.route?.polyline ?? null)}
+          />
 
           {showDriverSearch ? (
             <DriverSearchOverlay
               cancelLabel={t('order.cancelShort')}
-              onBack={goHome}
+              onBack={leaveToHome}
               onCancel={() => setCancelVisible(true)}
               subtitleLine1={t('order.searchingSubtitle1')}
               subtitleLine2={t('order.searchingSubtitle2')}
@@ -295,8 +332,8 @@ export function OrderScreen() {
               femaleDriverTitle={t('order.femaleDriverTitle')}
               onCall={callDriver}
               onCancel={() => setCancelVisible(true)}
-              onMenuPress={goHome}
-              onProfilePress={goHome}
+              onMenuPress={leaveToHome}
+              onProfilePress={centerOnMyLocation}
               statusLabel={t(orderStatusLabelKey(order.status))}
             />
           ) : null}
@@ -310,9 +347,9 @@ export function OrderScreen() {
               dropoffAddress={order.dropoffAddress}
               durationLabel={t('order.duration')}
               durationValue={tripDuration}
-              onBack={goHome}
+              onBack={leaveToHome}
               onCancel={() => setCancelVisible(true)}
-              onProfilePress={goHome}
+              onProfilePress={centerOnMyLocation}
               onShare={shareTrip}
               onSos={isSosAllowed(order.status) ? triggerSos : undefined}
               pickupAddress={order.pickupAddress}
@@ -327,7 +364,7 @@ export function OrderScreen() {
           {showLegacyPanel ? (
             <>
               <View style={[styles.header, { paddingHorizontal: 16, paddingTop: 16 }]}>
-                <GlassScreenHeader onBack={goHome} title={t('order.tripTitle')} />
+                <GlassScreenHeader onBack={leaveToHome} title={t('order.tripTitle')} />
               </View>
 
               <View style={[styles.panel, { gap: 12, padding: 16 }]}>
@@ -428,7 +465,7 @@ export function OrderScreen() {
                 ) : null}
 
                 {isTerminalOrder(order.status) && !noDrivers ? (
-                  <GlassPrimaryButton onPress={goHome} title={t('common.close')} />
+                  <GlassPrimaryButton onPress={leaveToHome} title={t('common.close')} />
                 ) : null}
               </View>
             </>

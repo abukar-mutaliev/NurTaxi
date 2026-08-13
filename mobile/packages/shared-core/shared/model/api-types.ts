@@ -293,7 +293,7 @@ export interface City {
 }
 
 // ---------------------------------------------------------------------------
-// Гео — /geo/search (§8.9)
+// Гео — /geo/search (§8.9), /geo/route (§8.10)
 // ---------------------------------------------------------------------------
 
 export interface GeoSearchQuery {
@@ -311,6 +311,13 @@ export interface AddressSuggestion {
   address: string;
   lat: number;
   lng: number;
+}
+
+export interface GeoRouteQuery {
+  originLat: number;
+  originLng: number;
+  destLat: number;
+  destLng: number;
 }
 
 // ---------------------------------------------------------------------------

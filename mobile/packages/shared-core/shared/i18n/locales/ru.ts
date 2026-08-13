@@ -343,6 +343,7 @@ export const ru = {
     acceptOrder: 'Принять',
     declineOrder: 'Отклонить',
     navigate: 'Маршрут',
+    navigatorUnavailable: 'Не удалось открыть Яндекс Навигатор',
     arrived: 'Я на месте',
     startTrip: 'Начать поездку',
     completeTrip: 'Завершить поездку',

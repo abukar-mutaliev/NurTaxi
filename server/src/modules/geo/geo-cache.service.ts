@@ -4,7 +4,9 @@ import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../redis/redis.constants';
 
 const GEO_SEARCH_TTL_SEC = 300;
+const GEO_ROUTE_TTL_SEC = 60;
 const KEY_PREFIX = 'geo:search:';
+const ROUTE_PREFIX = 'geo:route:';
 
 @Injectable()
 export class GeoCacheService {
@@ -29,5 +31,46 @@ export class GeoCacheService {
       'EX',
       GEO_SEARCH_TTL_SEC,
     );
+  }
+
+  /**
+   * Кэш дорожного маршрута. Координаты округляются до ~11 м, чтобы соседние GPS-тики
+   * попадали в один ключ и не дёргали OSRM на каждый шаг машины.
+   */
+  async getRoute<T>(
+    originLat: number,
+    originLng: number,
+    destLat: number,
+    destLng: number,
+  ): Promise<T | null> {
+    const cached = await this.redis.get(this.routeCacheKey(originLat, originLng, destLat, destLng));
+    if (!cached) return null;
+    return JSON.parse(cached) as T;
+  }
+
+  async setRoute<T>(
+    originLat: number,
+    originLng: number,
+    destLat: number,
+    destLng: number,
+    value: T,
+  ): Promise<void> {
+    await this.redis.set(
+      this.routeCacheKey(originLat, originLng, destLat, destLng),
+      JSON.stringify(value),
+      'EX',
+      GEO_ROUTE_TTL_SEC,
+    );
+  }
+
+  private routeCacheKey(
+    originLat: number,
+    originLng: number,
+    destLat: number,
+    destLng: number,
+  ): string {
+    const raw = [originLat, originLng, destLat, destLng].map((value) => value.toFixed(4)).join(':');
+    const hash = createHash('sha256').update(raw).digest('hex').slice(0, 16);
+    return `${ROUTE_PREFIX}${hash}`;
   }
 }

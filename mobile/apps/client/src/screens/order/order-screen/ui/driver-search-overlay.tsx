@@ -229,8 +229,8 @@ const styles = StyleSheet.create({
     color: colors.title,
     fontSize: 28,
     fontWeight: '500',
-    lineHeight: 30,
-    marginTop: -2,
+    includeFontPadding: false,
+    lineHeight: 28,
     textAlign: 'center',
   },
   cancelButton: {

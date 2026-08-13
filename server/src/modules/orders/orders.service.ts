@@ -585,6 +585,16 @@ export class OrdersService {
     });
   }
 
+  async getActiveOrderLocationContext(
+    orderId: string,
+  ): Promise<{ id: string; regionId: string; driverId: string | null } | null> {
+    const order = await this.orders.findOne({
+      where: { id: orderId },
+      select: ['id', 'regionId', 'driverId'],
+    });
+    return order ?? null;
+  }
+
   private loadFullOrder(orderId: string): Promise<Order> {
     return this.orders.findOneOrFail({
       where: { id: orderId },

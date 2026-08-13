@@ -88,4 +88,23 @@ export class DriverLocationService {
 
     return entries;
   }
+
+  async getLocation(
+    regionId: string,
+    driverId: string,
+  ): Promise<{ lat: number; lng: number } | null> {
+    const result = await this.redis.geopos(this.geoKey(regionId), driverId);
+    const coords = result[0];
+    if (!coords || coords[0] == null || coords[1] == null) {
+      return null;
+    }
+
+    const lng = Number.parseFloat(coords[0]);
+    const lat = Number.parseFloat(coords[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return null;
+    }
+
+    return { lat, lng };
+  }
 }

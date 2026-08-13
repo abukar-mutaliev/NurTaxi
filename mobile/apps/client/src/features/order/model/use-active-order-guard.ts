@@ -4,7 +4,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 
-import { isActiveOrder, useGetOrderQuery } from '@nurtaxi/shared-core/entities/order';
+import { OrderStatus } from '@nurtaxi/shared-core/shared/model';
+import { isActiveOrder, orderApi, useGetOrderQuery } from '@nurtaxi/shared-core/entities/order';
 import { selectIsRealtimeOnline } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -31,6 +32,12 @@ export function useActiveOrderGuard(redirect = false): {
   const activeOrderId = useAppSelector(selectActiveOrderId);
 
   const isRealtimeOnline = useAppSelector(selectIsRealtimeOnline);
+  const cachedStatus = useAppSelector(orderApi.endpoints.getOrder.select(activeOrderId ?? '')).data
+    ?.status;
+  const stillSearching =
+    cachedStatus == null ||
+    cachedStatus === OrderStatus.Created ||
+    cachedStatus === OrderStatus.SearchingDriver;
 
   const {
     data: order,
@@ -38,8 +45,9 @@ export function useActiveOrderGuard(redirect = false): {
     refetch,
   } = useGetOrderQuery(activeOrderId ?? '', {
     skip: !activeOrderId,
-    // При живом сокете статусы приходят событиями — опрос только зря жёг бы батарею.
-    pollingInterval: isRealtimeOnline ? 0 : OFFLINE_POLL_MS,
+    // При живом сокете статусы приходят событиями, но на этапе поиска опрос
+    // оставляем: если `order.status` потеряется, клиент застрянет на «Ищем водителя».
+    pollingInterval: isRealtimeOnline && !stillSearching ? 0 : OFFLINE_POLL_MS,
   });
 
   /**

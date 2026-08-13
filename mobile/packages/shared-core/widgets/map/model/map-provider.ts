@@ -15,6 +15,8 @@ export interface CameraPosition {
   latitude: number;
   longitude: number;
   zoom: number;
+  azimuth?: number;
+  tilt?: number;
 }
 
 /**

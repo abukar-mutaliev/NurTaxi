@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { AddressSuggestion } from '../map/map-provider.interface';
+import type { AddressSuggestion, RouteResult } from '../map/map-provider.interface';
 
 export class AddressSuggestionResponse {
   @ApiProperty()
@@ -28,6 +28,25 @@ export class AddressSuggestionResponse {
       address: s.address,
       lat: s.lat,
       lng: s.lng,
+    };
+  }
+}
+
+export class GeoRouteResponse {
+  @ApiProperty()
+  polyline!: string;
+
+  @ApiProperty()
+  distanceM!: number;
+
+  @ApiProperty()
+  durationS!: number;
+
+  static from(route: RouteResult): GeoRouteResponse {
+    return {
+      polyline: route.polyline,
+      distanceM: route.distanceM,
+      durationS: route.durationS,
     };
   }
 }

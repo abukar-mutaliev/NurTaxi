@@ -661,7 +661,11 @@ export class DriversService {
 
   async updateLocation(userId: string, lat: number, lng: number): Promise<void> {
     const profile = await this.getProfileByUserId(userId);
-    if (profile.onlineStatus !== DriverOnlineStatus.Online) {
+    // `busy` — водитель уже в заказе: именно тогда клиент должен видеть машину на карте.
+    if (
+      profile.onlineStatus !== DriverOnlineStatus.Online &&
+      profile.onlineStatus !== DriverOnlineStatus.Busy
+    ) {
       throw new ConflictException({
         code: 'DRIVER_NOT_ONLINE',
         message: 'Обновление позиции доступно только на линии',
@@ -675,6 +679,13 @@ export class DriversService {
       lng,
       Number(profile.rating),
     );
+  }
+
+  async getCachedLocation(
+    regionId: string,
+    driverId: string,
+  ): Promise<{ lat: number; lng: number } | null> {
+    return this.driverLocation.getLocation(regionId, driverId);
   }
 
   async markBusy(userId: string): Promise<void> {

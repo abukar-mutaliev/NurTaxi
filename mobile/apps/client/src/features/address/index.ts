@@ -11,6 +11,7 @@ export {
   makeRecentAddressId,
   recentAddressUsed,
   recentAddressesCleared,
+  sanitizeRecentAddress,
   selectRecentAddresses,
 } from '@/processes/order-flow';
 export type { RecentAddress } from '@/processes/order-flow';

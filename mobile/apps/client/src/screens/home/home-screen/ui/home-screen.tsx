@@ -1,9 +1,9 @@
 /**
  * Главный экран клиента (M3.3): карта, поиск адреса, оформление заказа (Figma node 39:1106).
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import { formatDuration, toApiGeoLocation } from '@nurtaxi/shared-core/shared/li
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import {
+  orderStage,
   orderStatusLabelKey,
   useCreateOrderMutation,
   useGetOrderQuery,
@@ -21,6 +22,8 @@ import {
   useCurrentPosition,
   useLocationPermission,
 } from '@nurtaxi/shared-core/features/geolocation';
+import { useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
+import { selectDriverPosition, useOrderRealtime } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { isAutoPickupLocation, shouldSyncAutoPickup, useOrderRegion } from '@/features/address';
@@ -68,6 +71,7 @@ export function HomeScreen() {
   const { pickup, dropoff } = draft;
   const activeOrderId = useAppSelector(selectActiveOrderId);
   const effectiveActiveId = guardedActiveId ?? activeOrderId;
+  useOrderRealtime(hasActiveOrder ? effectiveActiveId : null);
 
   const { estimate, isEstimating, error: estimateError } = useOrderEstimate();
   const [createOrder, createState] = useCreateOrderMutation();
@@ -77,56 +81,133 @@ export function HomeScreen() {
   const { data: activeOrder } = useGetOrderQuery(effectiveActiveId ?? '', {
     skip: !effectiveActiveId,
   });
+  const driverPosition = useAppSelector(selectDriverPosition(effectiveActiveId ?? ''));
+  const liveRoute = useLiveOrderRoute({
+    dropoff: { lat: activeOrder?.dropoffLat ?? 0, lng: activeOrder?.dropoffLng ?? 0 },
+    enabled: Boolean(
+      activeOrder &&
+      (orderStage(activeOrder.status) === 'waiting-driver' ||
+        orderStage(activeOrder.status) === 'riding'),
+    ),
+    origin: driverPosition ?? null,
+    pickup: { lat: activeOrder?.pickupLat ?? 0, lng: activeOrder?.pickupLng ?? 0 },
+    status: activeOrder?.status ?? '',
+  });
 
   const showOrderSheet = Boolean(pickup && dropoff && !hasActiveOrder);
   const bottomInset = tabBarInset;
 
+  const myLocationLabel = t('addresses.myLocation');
+
   useEffect(() => {
-    if (!position) {
+    if (!position || hasActiveOrder) {
       return;
     }
 
-    const myLocationLabel = t('addresses.myLocation');
+    const nextPickup = {
+      lat: position.lat,
+      lng: position.lng,
+      address: myLocationLabel,
+    };
 
     if (!pickup) {
-      dispatch(
-        pickupSelected({
-          lat: position.lat,
-          lng: position.lng,
-          address: myLocationLabel,
-        }),
-      );
+      dispatch(pickupSelected(nextPickup));
       return;
     }
 
-    if (isAutoPickupLocation(pickup, myLocationLabel) && shouldSyncAutoPickup(pickup, position)) {
-      dispatch(
-        pickupSelected({
-          lat: position.lat,
-          lng: position.lng,
-          address: myLocationLabel,
-        }),
-      );
+    if (!isAutoPickupLocation(pickup, myLocationLabel)) {
+      return;
     }
-  }, [dispatch, pickup, position, t]);
+
+    if (!shouldSyncAutoPickup(pickup, position)) {
+      return;
+    }
+
+    dispatch(pickupSelected(nextPickup));
+  }, [dispatch, hasActiveOrder, myLocationLabel, pickup, position]);
+
+  const markers = useMemo((): MapMarker[] => {
+    if (activeOrder) {
+      return resolveOrderMapMarkers({
+        driver: driverPosition ?? null,
+        dropoff: {
+          address: activeOrder.dropoffAddress,
+          lat: activeOrder.dropoffLat,
+          lng: activeOrder.dropoffLng,
+        },
+        pickup: {
+          address: activeOrder.pickupAddress,
+          lat: activeOrder.pickupLat,
+          lng: activeOrder.pickupLng,
+        },
+        routePolyline: activeOrder.route?.polyline,
+      });
+    }
+
+    return resolveOrderMapMarkers({
+      dropoff,
+      pickup,
+      routePolyline: estimate?.route.polyline,
+    });
+  }, [activeOrder, driverPosition, dropoff, estimate?.route.polyline, pickup]);
+
+  const routePoints = liveRoute.points?.length ? liveRoute.points : null;
+  const routePolyline = routePoints
+    ? null
+    : (activeOrder?.route?.polyline ?? estimate?.route.polyline ?? null);
+
+  const markersRef = useRef(markers);
+  const routePolylineRef = useRef(routePolyline);
+  const routePointsRef = useRef(routePoints);
 
   useEffect(() => {
-    if (pickup && dropoff) {
+    markersRef.current = markers;
+    routePolylineRef.current = routePolyline;
+    routePointsRef.current = routePoints;
+  }, [markers, routePolyline, routePoints]);
+
+  const [frozenMapState, setFrozenMapState] = useState({
+    markers,
+    routePoints,
+    routePolyline,
+  });
+  const [isHomeFocused, setIsHomeFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setIsHomeFocused(true);
+      return () => {
+        setFrozenMapState({
+          markers: markersRef.current,
+          routePoints: routePointsRef.current,
+          routePolyline: routePolylineRef.current,
+        });
+        setIsHomeFocused(false);
+      };
+    }, []),
+  );
+
+  const mapMarkers = isHomeFocused ? markers : frozenMapState.markers;
+  const mapPolyline = isHomeFocused ? routePolyline : frozenMapState.routePolyline;
+  const mapRoutePoints = isHomeFocused ? routePoints : frozenMapState.routePoints;
+
+  useEffect(() => {
+    if (!isHomeFocused) {
+      return;
+    }
+
+    if (activeOrder || (pickup && dropoff)) {
       mapRef.current?.fitToRoute();
     } else if (position) {
       mapRef.current?.centerOn(position, 0.01);
     }
-  }, [dropoff, estimate?.route.polyline, pickup, position]);
+  }, [activeOrder?.id, dropoff, estimate?.route.polyline, isHomeFocused, pickup, position]);
 
-  const markers = useMemo(
-    (): MapMarker[] =>
-      resolveOrderMapMarkers({
-        dropoff,
-        pickup,
-        routePolyline: estimate?.route.polyline,
-      }),
-    [dropoff, estimate?.route.polyline, pickup],
-  );
+  const centerOnMyLocation = () => {
+    if (!position) {
+      return;
+    }
+    mapRef.current?.centerOn(position, 0.01);
+  };
 
   const openSearch = (field: 'pickup' | 'dropoff' = 'dropoff') => {
     if (hasActiveOrder && effectiveActiveId) {
@@ -181,15 +262,16 @@ export function HomeScreen() {
       <View style={styles.mapLayer}>
         <MapCanvas
           initialPoint={position}
-          markers={markers}
+          markers={mapMarkers}
           ref={mapRef}
-          routePolyline={estimate?.route.polyline ?? null}
+          routePoints={mapRoutePoints}
+          routePolyline={mapPolyline}
         />
       </View>
 
       <HomeMapHeader
+        onLocationPress={centerOnMyLocation}
         onMenuPress={() => router.push('/notifications')}
-        onProfilePress={() => router.navigate('/(tabs)/profile')}
         onSearchPress={() => openSearch('dropoff')}
         searchLabel={hasActiveOrder ? t('order.goToActive') : t('order.where')}
       />

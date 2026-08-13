@@ -10,3 +10,22 @@ export function toApiGeoLocation(location: GeoLocation & { label?: string | null
     ...(address ? { address } : {}),
   };
 }
+
+/** Одинаковые точка и адрес — повторный `pickupSelected` не должен триггерить ререндер. */
+export function isSameGeoLocation(
+  left: GeoLocation | null | undefined,
+  right: GeoLocation | null | undefined,
+): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (!left || !right) {
+    return false;
+  }
+
+  return (
+    left.lat === right.lat &&
+    left.lng === right.lng &&
+    (left.address ?? '') === (right.address ?? '')
+  );
+}

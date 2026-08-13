@@ -21,6 +21,16 @@ describe('resolveOrderMapMarkers', () => {
     expect(markers.some((marker) => marker.kind === 'dropoff')).toBe(true);
   });
 
+  it('добавляет маркер водителя, если передана позиция', () => {
+    const markers = resolveOrderMapMarkers({
+      pickup: { lat: 43.2167, lng: 44.7667, address: 'A' },
+      dropoff: { lat: 43.1687, lng: 44.8133, address: 'B' },
+      driver: { lat: 43.22, lng: 44.77 },
+    });
+
+    expect(markers.some((marker) => marker.kind === 'driver')).toBe(true);
+  });
+
   it('разводит маркеры, если A и B слишком близко', () => {
     const markers = resolveOrderMapMarkers({
       pickup: { lat: 43.2167, lng: 44.7667, address: 'A' },

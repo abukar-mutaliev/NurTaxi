@@ -3,14 +3,16 @@
  *
  * `useRealtimeConnection` держит один сокет на всё приложение: подключается, когда
  * пользователь авторизован и приложение активно, и отключается в фоне, чтобы не тратить
- * батарею. `useOrderRealtime` подписывается на комнату конкретного заказа и точечно
- * обновляет кэш RTK Query — экраны продолжают читать данные из `useGetOrderQuery`.
+ * батарею. Статус заказа применяется в кэш `getOrder` здесь, на уровне приложения —
+ * иначе клиент, ушедший с экрана поиска, так и не узнает, что водитель принял заказ.
+ * `useOrderRealtime` дополнительно подписывается на комнату конкретного заказа
+ * (позиция водителя, SOS).
  */
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 import { useSelector } from 'react-redux';
 
-import { useSharedDispatch } from '@nurtaxi/shared-core/shared/lib';
+import { useSharedDispatch, type SharedDispatch } from '@nurtaxi/shared-core/shared/lib';
 import { orderApi } from '@nurtaxi/shared-core/entities/order';
 import {
   selectIsAuthenticated,
@@ -20,7 +22,26 @@ import {
 import { realtimeClient } from './realtime-client';
 import { RealtimeEvent } from './realtime-events';
 import type { DriverLocationEvent, OrderStatusEvent, SosActivatedEvent } from './realtime-events';
-import { driverPositionReceived, realtimeStatusChanged, sosReceived } from './realtime.slice';
+import {
+  driverPositionReceived,
+  realtimeStatusChanged,
+  selectRealtimeStatus,
+  sosReceived,
+  type WithRealtimeState,
+} from './realtime.slice';
+
+function applyOrderStatusToCache(dispatch: SharedDispatch, event: OrderStatusEvent): void {
+  if (!event.orderId || !event.toStatus) {
+    return;
+  }
+  dispatch(
+    orderApi.util.updateQueryData('getOrder', event.orderId, (draft) => {
+      draft.status = event.toStatus;
+    }),
+  );
+  // Полная карточка меняется вместе со статусом (водитель, цена, чек).
+  dispatch(orderApi.util.invalidateTags([{ type: 'Order', id: event.orderId }]));
+}
 
 /** Подключает сокет на время авторизованной сессии. Вызывается один раз в слое `app`. */
 export function useRealtimeConnection(): void {
@@ -51,6 +72,16 @@ export function useRealtimeConnection(): void {
       realtimeClient.disconnect();
     };
   }, [dispatch, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    return realtimeClient.on(RealtimeEvent.OrderStatus, (event) => {
+      applyOrderStatusToCache(dispatch, event);
+    });
+  }, [dispatch, isAuthenticated]);
 }
 
 export interface OrderRealtimeHandlers {
@@ -59,14 +90,18 @@ export interface OrderRealtimeHandlers {
 }
 
 /**
- * Подписка на события конкретного заказа. Статус заказа применяется прямо в кэш
- * `getOrder`, поэтому дополнительный запрос после каждого события не нужен.
+ * Подписка на комнату конкретного заказа. Статус в кэш `getOrder` кладёт
+ * `useRealtimeConnection`; здесь — комната, позиция водителя и SOS.
+ *
+ * `realtimeStatus` в зависимостях: после пересоздания сокета нужно заново
+ * отправить `subscribe:order`, иначе события локации в комнату не придут.
  */
 export function useOrderRealtime(
   orderId: string | null,
   handlers: OrderRealtimeHandlers = {},
 ): void {
   const dispatch = useSharedDispatch();
+  const realtimeStatus = useSelector((state: WithRealtimeState) => selectRealtimeStatus(state));
   const { onStatusChange, onSos } = handlers;
 
   useEffect(() => {
@@ -80,13 +115,6 @@ export function useOrderRealtime(
       if (event.orderId !== orderId) {
         return;
       }
-      dispatch(
-        orderApi.util.updateQueryData('getOrder', orderId, (draft) => {
-          draft.status = event.toStatus;
-        }),
-      );
-      // Полная карточка заказа меняется вместе со статусом (водитель, цена, чек).
-      dispatch(orderApi.util.invalidateTags([{ type: 'Order', id: orderId }]));
       onStatusChange?.(event);
     };
 
@@ -115,5 +143,5 @@ export function useOrderRealtime(
       offSos();
       unsubscribeRoom();
     };
-  }, [dispatch, orderId, onStatusChange, onSos]);
+  }, [dispatch, onSos, onStatusChange, orderId, realtimeStatus]);
 }

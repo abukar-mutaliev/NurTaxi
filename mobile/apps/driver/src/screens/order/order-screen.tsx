@@ -8,9 +8,9 @@
  */
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -19,9 +19,13 @@ import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/mode
 import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
 import { useGetOrderQuery, useGetReceiptQuery } from '@nurtaxi/shared-core/entities/order';
-import { useCurrentPosition } from '@nurtaxi/shared-core/features/geolocation';
+import { openExternalNavigator } from '@nurtaxi/shared-core/features/navigation';
 
+import { useAppSelector } from '@/app/store/hooks';
+import { useDriverPosition } from '@/features/driver-position';
+import { sendDriverLocationUpdate } from '@/features/location-tracking';
 import { useOrderRoute } from '@/features/route';
+import { selectShift } from '@/processes/shift';
 import { GlowIcon } from '@/shared/ui/glow-icon';
 import { PillButton } from '@/shared/ui/pill-button';
 import { RoundButton } from '@/shared/ui/round-button';
@@ -90,17 +94,26 @@ export function OrderScreen({ orderId }: { orderId: string }) {
   // Разбивку по деньгам считает сервер — берём её из чека, а не пересчитываем на клиенте.
   const { data: receipt } = useGetReceiptQuery(orderId, { skip: !orderId || !orderFinished });
 
-  // Маршрут строится от реальной позиции машины, поэтому нужна геопозиция и на этом экране,
-  // а не только в фоновом трекинге смены.
+  // Маршрут строится от живой позиции машины: слежение, как на смене, плюс последняя
+  // точка фонового трекинга — чтобы линия появилась сразу после принятия заказа.
   const routeActive = Boolean(order) && !orderFinished;
-  const { position } = useCurrentPosition(routeActive);
+  const { position } = useDriverPosition(routeActive);
+  const lastSentPosition = useAppSelector(selectShift).lastSentPosition;
+  const driverPosition = position ?? lastSentPosition ?? null;
   const route = useOrderRoute({
-    driverPosition: position,
+    driverPosition,
     dropoff: { lat: order?.dropoffLat ?? 0, lng: order?.dropoffLng ?? 0 },
     enabled: routeActive,
     pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
     status: order?.status ?? '',
   });
+
+  useEffect(() => {
+    if (!routeActive || !driverPosition) {
+      return;
+    }
+    sendDriverLocationUpdate(driverPosition.lat, driverPosition.lng);
+  }, [driverPosition?.lat, driverPosition?.lng, routeActive]);
 
   if (isLoading || !order) {
     return (
@@ -214,31 +227,53 @@ export function OrderScreen({ orderId }: { orderId: string }) {
     }
   };
 
+  const openNavigator = async () => {
+    const destination =
+      route.leg === 'to-pickup'
+        ? { lat: order.pickupLat, lng: order.pickupLng }
+        : { lat: order.dropoffLat, lng: order.dropoffLng };
+    const opened = await openExternalNavigator(destination, driverPosition);
+    if (!opened) {
+      Alert.alert(t('errors.title'), t('driver.navigatorUnavailable'));
+    }
+  };
+
+  const mapMarkers = [
+    {
+      id: 'pickup',
+      kind: 'pickup' as const,
+      point: { lat: order.pickupLat, lng: order.pickupLng },
+      title: order.pickupAddress,
+    },
+    {
+      id: 'dropoff',
+      kind: 'dropoff' as const,
+      point: { lat: order.dropoffLat, lng: order.dropoffLng },
+      title: order.dropoffAddress,
+    },
+    ...(driverPosition
+      ? [
+          {
+            id: 'driver',
+            kind: 'driver' as const,
+            point: { lat: driverPosition.lat, lng: driverPosition.lng },
+          },
+        ]
+      : []),
+  ];
+
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
 
       <View style={StyleSheet.absoluteFill}>
         <MapCanvas
-          initialPoint={{ lat: order.pickupLat, lng: order.pickupLng }}
-          markers={[
-            {
-              id: 'pickup',
-              kind: 'pickup',
-              point: { lat: order.pickupLat, lng: order.pickupLng },
-              title: order.pickupAddress,
-            },
-            {
-              id: 'dropoff',
-              kind: 'dropoff',
-              point: { lat: order.dropoffLat, lng: order.dropoffLng },
-              title: order.dropoffAddress,
-            },
-          ]}
-          // Маршрут от Yandex учитывает, где машина сейчас; серверная линия — запасной вариант.
+          initialPoint={driverPosition ?? { lat: order.pickupLat, lng: order.pickupLng }}
+          markers={mapMarkers}
+          // Живой участок навигации; серверная линия подачи→Б — только запас для поездки.
           routePoints={route.points}
-          routePolyline={order.route?.polyline ?? null}
-          showsUserLocation
+          routePolyline={route.points?.length ? null : (order.route?.polyline ?? null)}
+          showsUserLocation={false}
         />
       </View>
 
@@ -270,7 +305,13 @@ export function OrderScreen({ orderId }: { orderId: string }) {
         >
           <Text variant="bodyStrong">{step?.headline ?? 'Заказ'}</Text>
         </View>
-        <RoundButton accessibilityLabel={t('driver.navigate')} variant="surface">
+        <RoundButton
+          accessibilityLabel={t('driver.navigate')}
+          onPress={() => {
+            void openNavigator();
+          }}
+          variant="surface"
+        >
           <View
             style={{
               backgroundColor: theme.colors.accent,

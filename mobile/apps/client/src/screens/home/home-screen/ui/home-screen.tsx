@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDuration, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
+import { formatDuration, toOrderGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import {
@@ -144,8 +144,8 @@ export function HomeScreen() {
     try {
       const order = await createOrder({
         regionId: draft.regionId,
-        pickup: toApiGeoLocation(draft.pickup),
-        dropoff: toApiGeoLocation(draft.dropoff),
+        pickup: toOrderGeoLocation(draft.pickup),
+        dropoff: toOrderGeoLocation(draft.dropoff),
         tariffId: draft.tariffId ?? undefined,
         paymentMethod: draft.paymentMethod,
         comment: draft.comment.trim() || undefined,

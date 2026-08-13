@@ -486,7 +486,13 @@ export function AddressSearchScreen() {
               </Text>
             ) : null}
 
-            {mode === 'order' && (activeField === 'pickup' || !pickup) ? (
+            {/*
+              Точка подачи бывает выставлена без адреса — например, осталась в черновике от
+              прежней версии приложения. Поле при этом выглядит пустым, и пряча «Моё
+              местоположение» по одному лишь факту наличия `pickup`, мы запирали пассажира:
+              заполнить «Откуда» было нечем. Поэтому смотрим на адрес, а не на объект.
+            */}
+            {mode === 'order' && (activeField === 'pickup' || !pickup?.address?.trim()) ? (
               <SavedAddressCard
                 address={t('addresses.myLocationHint')}
                 disabled={isLocating}

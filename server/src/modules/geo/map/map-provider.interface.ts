@@ -38,6 +38,13 @@ export interface MapProvider {
   search(options: MapSearchOptions): Promise<AddressSuggestion[]>;
   route(options: MapRouteOptions): Promise<RouteResult>;
   eta(from: GeoPoint, to: GeoPoint): Promise<number>;
+  /**
+   * Адрес по координатам. `null` — провайдер не нашёл ничего или недоступен.
+   *
+   * Нужен, когда клиент подставил точку подачи по GPS и адреса не знает: показывать
+   * водителю «Моё местоположение» или голые координаты нельзя, ему ехать к дому.
+   */
+  reverse(point: GeoPoint): Promise<string | null>;
 }
 
 export const MAP_PROVIDER = Symbol('MAP_PROVIDER');

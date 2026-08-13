@@ -106,6 +106,24 @@ export class OrdersService {
     };
   }
 
+  /**
+   * Адрес точки для карточки заказа.
+   *
+   * Клиент присылает адрес не всегда: точку подачи он подставляет по GPS и её адреса не
+   * знает. Водителю в таком случае показывать нечего — ехать он должен к дому, а не к
+   * подписи в чужом интерфейсе, — поэтому адрес восстанавливается по координатам.
+   * Если геокодер не ответил, остаются координаты: они хотя бы верны.
+   */
+  private async resolveAddress(location: { lat: number; lng: number; address?: string }) {
+    const given = location.address?.trim();
+    if (given) {
+      return given;
+    }
+
+    const resolved = await this.mapProvider.reverse({ lat: location.lat, lng: location.lng });
+    return resolved ?? `${location.lat}, ${location.lng}`;
+  }
+
   /** Создание заказа (Req §8.10, §8.11). */
   async create(clientId: string, dto: CreateOrderDto): Promise<Order> {
     if (dto.familyMemberId) {
@@ -127,16 +145,21 @@ export class OrdersService {
       durationS: mapRoute.durationS,
     });
 
+    const [pickupAddress, dropoffAddress] = await Promise.all([
+      this.resolveAddress(dto.pickup),
+      this.resolveAddress(dto.dropoff),
+    ]);
+
     const order = this.orders.create({
       clientId,
       regionId: dto.regionId,
       tariffId: tariff.id,
       pickupLat: dto.pickup.lat,
       pickupLng: dto.pickup.lng,
-      pickupAddress: dto.pickup.address ?? `${dto.pickup.lat}, ${dto.pickup.lng}`,
+      pickupAddress,
       dropoffLat: dto.dropoff.lat,
       dropoffLng: dto.dropoff.lng,
-      dropoffAddress: dto.dropoff.address ?? `${dto.dropoff.lat}, ${dto.dropoff.lng}`,
+      dropoffAddress,
       status: OrderStatus.Created,
       priceEstimated: String(price.estimated),
       paymentMethod: dto.paymentMethod,
@@ -253,7 +276,10 @@ export class OrdersService {
 
     try {
       const driver = await this.driversService.getProfileByDriverId(offer.driverId);
-      await this.realtime.publishOrderOffer(driver.userId, await this.buildOfferPayload(order, offer));
+      await this.realtime.publishOrderOffer(
+        driver.userId,
+        await this.buildOfferPayload(order, offer),
+      );
     } catch (error) {
       this.logger.warn(
         `Не удалось отправить предложение заказа ${order.id} водителю ${offer.driverId}: ` +

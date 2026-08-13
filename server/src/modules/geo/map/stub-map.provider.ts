@@ -9,6 +9,7 @@ import type {
   RouteResult,
 } from './map-provider.interface';
 import { ROUTING_PROVIDER, type RoutingProvider } from './routing-provider.interface';
+import { haversineM } from './geo.util';
 
 interface LocalPoi {
   id: string;
@@ -165,5 +166,22 @@ export class StubMapProvider implements MapProvider {
 
   eta(from: GeoPoint, to: GeoPoint): Promise<number> {
     return this.routing.eta(from, to);
+  }
+
+  /**
+   * Ближайшая точка из локального справочника. Дальше километра не отвечаем: подставить
+   * «Назрань, центр» водителю, который едет в соседнее село, хуже, чем не подставить ничего.
+   */
+  reverse(point: GeoPoint): Promise<string | null> {
+    let nearest: { address: string; distance: number } | null = null;
+
+    for (const poi of this.pois) {
+      const distance = haversineM(point, { lat: poi.lat, lng: poi.lng });
+      if (!nearest || distance < nearest.distance) {
+        nearest = { address: poi.address, distance };
+      }
+    }
+
+    return Promise.resolve(nearest && nearest.distance <= 1000 ? nearest.address : null);
   }
 }

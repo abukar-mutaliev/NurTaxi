@@ -25,7 +25,7 @@ export {
 export { PLATE_PATTERN, formatBirthDateInput, formatPlateInput } from './format/input-masks';
 
 export { boundsOf, decodePolyline, haversineDistance } from './geo/polyline';
-export { toApiGeoLocation } from './geo/location';
+export { toApiGeoLocation, toOrderGeoLocation } from './geo/location';
 
 export { useSharedDispatch } from './redux';
 export type { SharedDispatch } from './redux';

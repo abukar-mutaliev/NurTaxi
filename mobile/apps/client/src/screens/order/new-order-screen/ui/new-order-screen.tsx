@@ -7,7 +7,12 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import {
+  formatDistance,
+  formatDuration,
+  formatMoney,
+  toOrderGeoLocation,
+} from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useCreateOrderMutation } from '@nurtaxi/shared-core/entities/order';
@@ -64,8 +69,8 @@ export function NewOrderScreen() {
     try {
       const order = await createOrder({
         regionId: draft.regionId,
-        pickup: draft.pickup,
-        dropoff: draft.dropoff,
+        pickup: toOrderGeoLocation(draft.pickup),
+        dropoff: toOrderGeoLocation(draft.dropoff),
         tariffId: draft.tariffId ?? undefined,
         paymentMethod: draft.paymentMethod,
         comment: draft.comment.trim() || undefined,

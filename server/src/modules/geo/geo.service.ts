@@ -3,9 +3,11 @@ import { GeoCacheService } from './geo-cache.service';
 import {
   MAP_PROVIDER,
   type AddressSuggestion,
+  type GeoPoint,
   type MapProvider,
   type RouteResult,
 } from './map/map-provider.interface';
+import { isPlaceholderAddress } from './address/is-placeholder-address';
 import { normalizeAddressQuery } from './address/address-normalizer';
 import { CircuitBreakerService } from '../../common/resilience/circuit-breaker.service';
 import { resilientCall } from '../../common/resilience/resilient-call';
@@ -92,17 +94,14 @@ export class GeoService {
     if (cached) return cached;
 
     try {
-      const result = await resilientCall(
-        () => this.mapProvider.route({ origin, destination }),
-        {
-          timeoutMs: 5000,
-          retries: 1,
-          circuitKey: 'routing',
-          circuitBreaker: this.circuitBreaker,
-          onAttempt: (durationMs, success) =>
-            this.metrics.observeExternalCall('routing', 'route', durationMs, success),
-        },
-      );
+      const result = await resilientCall(() => this.mapProvider.route({ origin, destination }), {
+        timeoutMs: 5000,
+        retries: 1,
+        circuitKey: 'routing',
+        circuitBreaker: this.circuitBreaker,
+        onAttempt: (durationMs, success) =>
+          this.metrics.observeExternalCall('routing', 'route', durationMs, success),
+      });
 
       await this.cache.setRoute(origin.lat, origin.lng, destination.lat, destination.lng, result);
       return result;
@@ -110,5 +109,47 @@ export class GeoService {
       this.logger.warn(`Map route degraded: ${error instanceof Error ? error.message : error}`);
       return null;
     }
+  }
+
+  async reverseGeocode(point: GeoPoint): Promise<string | null> {
+    const cached = await this.cache.getReverse(point.lat, point.lng);
+    if (cached) return cached;
+
+    try {
+      const address = await resilientCall(() => this.mapProvider.reverseGeocode(point), {
+        timeoutMs: 5000,
+        retries: 1,
+        circuitKey: 'map',
+        circuitBreaker: this.circuitBreaker,
+        onAttempt: (durationMs, success) =>
+          this.metrics.observeExternalCall('map', 'reverse', durationMs, success),
+      });
+
+      if (address?.trim()) {
+        const resolved = address.trim();
+        await this.cache.setReverse(point.lat, point.lng, resolved);
+        return resolved;
+      }
+
+      return null;
+    } catch (error) {
+      this.logger.warn(
+        `Reverse geocode degraded: ${error instanceof Error ? error.message : error}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Адрес для заказа и журнала: подпись GPS / координаты заменяем улицей по точке.
+   * Если геокодер недоступен, оставляем координаты — это всё ещё лучше, чем «Моё местоположение».
+   */
+  async resolveStoredAddress(location: GeoPoint & { address?: string }): Promise<string> {
+    const fallback = `${location.lat}, ${location.lng}`;
+    if (!isPlaceholderAddress(location.address)) {
+      return location.address!.trim();
+    }
+
+    return (await this.reverseGeocode({ lat: location.lat, lng: location.lng })) ?? fallback;
   }
 }

@@ -1,11 +1,13 @@
-import { Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  ExportDateField,
-  ExportFormat,
-  ExportStatus,
-} from '../../common/enums/compliance.enum';
+import { ExportDateField, ExportFormat, ExportStatus } from '../../common/enums/compliance.enum';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
 import { Order } from '../orders/entities/order.entity';
 import { OrderStatusLog } from '../orders/entities/order-status-log.entity';
@@ -104,10 +106,15 @@ export class RegulatoryExportService implements OnModuleInit, OnModuleDestroy {
     return job;
   }
 
-  async downloadUrl(id: string): Promise<{ downloadUrl: string; expiresInSec: number; checksum: string | null }> {
+  async downloadUrl(
+    id: string,
+  ): Promise<{ downloadUrl: string; expiresInSec: number; checksum: string | null }> {
     const job = await this.get(id);
     if (job.status !== ExportStatus.Ready || !job.storageKey) {
-      throw new NotFoundException({ code: 'EXPORT_NOT_READY', message: 'Файл выгрузки ещё не готов' });
+      throw new NotFoundException({
+        code: 'EXPORT_NOT_READY',
+        message: 'Файл выгрузки ещё не готов',
+      });
     }
     if (job.expiresAt && job.expiresAt < new Date()) {
       job.status = ExportStatus.Expired;
@@ -158,7 +165,8 @@ export class RegulatoryExportService implements OnModuleInit, OnModuleDestroy {
           Bucket: this.bucket,
           Key: storageKey,
           Body: body,
-          ContentType: job.format === ExportFormat.Json ? 'application/json' : 'text/csv; charset=utf-8',
+          ContentType:
+            job.format === ExportFormat.Json ? 'application/json' : 'text/csv; charset=utf-8',
         }),
       );
       job.storageKey = storageKey;
@@ -241,15 +249,11 @@ export class RegulatoryExportService implements OnModuleInit, OnModuleDestroy {
       };
     });
 
-    return serializeExportFile(
-      rows,
-      job.format === ExportFormat.Json ? 'json' : 'csv',
-      {
-        periodFrom: job.periodFrom.toISOString(),
-        periodTo: job.periodTo.toISOString(),
-        dateField: job.dateField,
-        requestRef: job.requestRef,
-      },
-    );
+    return serializeExportFile(rows, job.format === ExportFormat.Json ? 'json' : 'csv', {
+      periodFrom: job.periodFrom.toISOString(),
+      periodTo: job.periodTo.toISOString(),
+      dateField: job.dateField,
+      requestRef: job.requestRef,
+    });
   }
 }

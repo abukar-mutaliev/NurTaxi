@@ -23,7 +23,8 @@ export interface UpsertSiteDto {
 export class PlacementService {
   constructor(
     @InjectRepository(PlacementSite) private readonly sites: Repository<PlacementSite>,
-    @InjectRepository(PlacementComponent) private readonly components: Repository<PlacementComponent>,
+    @InjectRepository(PlacementComponent)
+    private readonly components: Repository<PlacementComponent>,
     @InjectRepository(PlacementSubcontractor)
     private readonly subcontractors: Repository<PlacementSubcontractor>,
     @InjectRepository(PlacementSiteLog) private readonly logs: Repository<PlacementSiteLog>,
@@ -48,12 +49,18 @@ export class PlacementService {
   }
 
   async create(dto: UpsertSiteDto, actorId: string | null): Promise<PlacementSite> {
-    const site = await this.sites.save(this.sites.create({ ...dto, isActive: dto.isActive ?? true }));
+    const site = await this.sites.save(
+      this.sites.create({ ...dto, isActive: dto.isActive ?? true }),
+    );
     await this.log(site.id, 'create', actorId, { after: dto });
     return this.get(site.id);
   }
 
-  async update(id: string, dto: Partial<UpsertSiteDto>, actorId: string | null): Promise<PlacementSite> {
+  async update(
+    id: string,
+    dto: Partial<UpsertSiteDto>,
+    actorId: string | null,
+  ): Promise<PlacementSite> {
     const site = await this.get(id);
     const before = { ...site };
     Object.assign(site, dto);

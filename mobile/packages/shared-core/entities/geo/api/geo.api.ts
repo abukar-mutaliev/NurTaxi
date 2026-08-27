@@ -1,10 +1,12 @@
 /**
- * Геосервис: поиск адресов (`GET /geo/search`) и дорожный маршрут (`GET /geo/route`).
- * Сервер учитывает адресацию Северного Кавказа и кэширует ответы в Redis.
+ * Геосервис: поиск адресов (`GET /geo/search`), маршрут (`GET /geo/route`)
+ * и адрес по координатам (`GET /geo/reverse`).
  */
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
 import type {
   AddressSuggestion,
+  GeoReverseQuery,
+  GeoReverseResult,
   GeoRouteQuery,
   GeoSearchQuery,
   OrderRoute,
@@ -27,6 +29,13 @@ export const geoApi = baseApi.injectEndpoints({
       }),
       keepUnusedDataFor: 60,
     }),
+    reverseGeocode: build.query<GeoReverseResult, GeoReverseQuery>({
+      query: ({ lat, lng }) => ({
+        url: '/geo/reverse',
+        params: { lat, lng },
+      }),
+      keepUnusedDataFor: 300,
+    }),
   }),
 });
 
@@ -34,6 +43,7 @@ export const {
   useGetDrivingRouteQuery,
   useLazyGetDrivingRouteQuery,
   useLazySearchAddressesQuery,
+  useReverseGeocodeQuery,
   useSearchAddressesQuery,
 } = geoApi;
 

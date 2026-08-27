@@ -35,7 +35,12 @@ export class DriverTaxiPermit {
   number!: string;
 
   /** Регион выдачи разрешения: текст, а не FK — разрешение может быть выдано вне регионов работы. */
-  @Column({ name: 'issuing_region', type: 'varchar', length: 512, transformer: encryptedTransformer })
+  @Column({
+    name: 'issuing_region',
+    type: 'varchar',
+    length: 512,
+    transformer: encryptedTransformer,
+  })
   issuingRegion!: string;
 
   @Column({ name: 'issued_at', type: 'date' })

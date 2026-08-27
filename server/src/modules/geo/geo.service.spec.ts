@@ -12,16 +12,19 @@ describe('GeoService', () => {
   };
 
   function createService(overrides?: { cached?: RouteResult | null; route?: jest.Mock }) {
-    const mapProvider: Pick<MapProvider, 'search' | 'route' | 'eta'> = {
+    const mapProvider: Pick<MapProvider, 'search' | 'route' | 'eta' | 'reverseGeocode'> = {
       search: jest.fn(),
       route: overrides?.route ?? jest.fn().mockResolvedValue(routeResult),
       eta: jest.fn(),
+      reverseGeocode: jest.fn().mockResolvedValue('г. Назрань, ул. Московская, 12'),
     };
     const cache = {
       get: jest.fn().mockResolvedValue(null),
       set: jest.fn().mockResolvedValue(undefined),
       getRoute: jest.fn().mockResolvedValue(overrides?.cached ?? null),
       setRoute: jest.fn().mockResolvedValue(undefined),
+      getReverse: jest.fn().mockResolvedValue(null),
+      setReverse: jest.fn().mockResolvedValue(undefined),
     };
     const metrics = { observeExternalCall: jest.fn() };
 
@@ -82,5 +85,38 @@ describe('GeoService', () => {
         destLng: 44.8133,
       }),
     ).resolves.toBeNull();
+  });
+
+  it('resolveStoredAddress заменяет «Моё местоположение» улицей', async () => {
+    const { service, mapProvider, cache } = createService();
+
+    await expect(
+      service.resolveStoredAddress({
+        lat: 43.2189,
+        lng: 44.771,
+        address: 'Моё местоположение',
+      }),
+    ).resolves.toBe('г. Назрань, ул. Московская, 12');
+
+    expect(mapProvider.reverseGeocode).toHaveBeenCalledWith({ lat: 43.2189, lng: 44.771 });
+    expect(cache.setReverse).toHaveBeenCalledWith(
+      43.2189,
+      44.771,
+      'г. Назрань, ул. Московская, 12',
+    );
+  });
+
+  it('resolveStoredAddress оставляет выбранный вручную адрес', async () => {
+    const { service, mapProvider } = createService();
+
+    await expect(
+      service.resolveStoredAddress({
+        lat: 43.1667,
+        lng: 44.8,
+        address: 'г. Магас, ул. Ленина, 3',
+      }),
+    ).resolves.toBe('г. Магас, ул. Ленина, 3');
+
+    expect(mapProvider.reverseGeocode).not.toHaveBeenCalled();
   });
 });

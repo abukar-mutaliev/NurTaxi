@@ -14,7 +14,15 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../redis/redis.constants';
 import { Role } from '../../common/enums/role.enum';
-import { clientRoom, driverRoom, operatorsAllRoom, orderRoom, regionRoom, staffRoom, STAFF_WS_ROLES } from './realtime.constants';
+import {
+  clientRoom,
+  driverRoom,
+  operatorsAllRoom,
+  orderRoom,
+  regionRoom,
+  staffRoom,
+  STAFF_WS_ROLES,
+} from './realtime.constants';
 import { RealtimeBroadcastService } from './realtime-broadcast.service';
 import { WsSubscriptionService } from './ws-subscription.service';
 import { WsAuthService } from './ws-auth.service';
@@ -26,7 +34,9 @@ import { UsersService } from '../users/users.service';
   namespace: '/ws',
   cors: {
     origin: process.env.CORS_ORIGINS
-      ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+      ? process.env.CORS_ORIGINS.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
       : true,
     credentials: true,
   },

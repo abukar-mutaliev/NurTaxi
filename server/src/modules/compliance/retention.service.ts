@@ -15,11 +15,14 @@ export class RetentionService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    this.timer = setInterval(() => {
-      void this.purgeExpired().catch((err) =>
-        this.logger.warn(`Retention purge failed: ${err instanceof Error ? err.message : err}`),
-      );
-    }, 24 * 60 * 60 * 1000);
+    this.timer = setInterval(
+      () => {
+        void this.purgeExpired().catch((err) =>
+          this.logger.warn(`Retention purge failed: ${err instanceof Error ? err.message : err}`),
+        );
+      },
+      24 * 60 * 60 * 1000,
+    );
   }
 
   onModuleDestroy(): void {
@@ -43,7 +46,9 @@ export class RetentionService implements OnModuleInit, OnModuleDestroy {
       existing.value = { months };
       await this.settings.save(existing);
     } else {
-      await this.settings.save(this.settings.create({ key: 'order_retention_months', value: { months } }));
+      await this.settings.save(
+        this.settings.create({ key: 'order_retention_months', value: { months } }),
+      );
     }
     return months;
   }

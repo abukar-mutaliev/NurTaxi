@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { normalizeAddressQuery, scoreMatch, tokenizeQuery } from '../address/address-normalizer';
+import { haversineM } from './geo.util';
 import type {
   AddressSuggestion,
   GeoPoint,
@@ -157,6 +158,21 @@ export class StubMapProvider implements MapProvider {
       lat: poi.lat,
       lng: poi.lng,
     }));
+  }
+
+  async reverseGeocode(point: GeoPoint): Promise<string | null> {
+    let nearest: LocalPoi | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    for (const poi of this.pois) {
+      const distance = haversineM(point, poi);
+      if (distance < nearestDistance) {
+        nearest = poi;
+        nearestDistance = distance;
+      }
+    }
+
+    return nearest?.address ?? null;
   }
 
   route(options: MapRouteOptions): Promise<RouteResult> {

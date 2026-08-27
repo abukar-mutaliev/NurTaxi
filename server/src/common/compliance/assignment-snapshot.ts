@@ -52,7 +52,9 @@ export interface AssignmentSnapshot {
   };
 }
 
-export function historicallyUnavailableSnapshot(capturedAt = new Date().toISOString()): AssignmentSnapshot {
+export function historicallyUnavailableSnapshot(
+  capturedAt = new Date().toISOString(),
+): AssignmentSnapshot {
   return {
     capturedAt,
     historicallyUnavailable: true,

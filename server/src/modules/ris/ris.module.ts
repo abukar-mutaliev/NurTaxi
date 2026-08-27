@@ -17,7 +17,8 @@ import { AdminRisController } from './admin-ris.controller';
     HttpRisChannel,
     {
       provide: RIS_CHANNEL,
-      useFactory: (http: HttpRisChannel, stub: StubRisChannel) => (process.env.RIS_ENDPOINT ? http : stub),
+      useFactory: (http: HttpRisChannel, stub: StubRisChannel) =>
+        process.env.RIS_ENDPOINT ? http : stub,
       inject: [HttpRisChannel, StubRisChannel],
     },
   ],

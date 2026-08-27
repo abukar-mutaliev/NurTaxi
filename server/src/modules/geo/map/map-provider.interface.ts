@@ -36,6 +36,8 @@ export interface MapRouteOptions {
  */
 export interface MapProvider {
   search(options: MapSearchOptions): Promise<AddressSuggestion[]>;
+  /** Адрес по координатам. `null` — провайдер не нашёл улицу или геокодер недоступен. */
+  reverseGeocode(point: GeoPoint): Promise<string | null>;
   route(options: MapRouteOptions): Promise<RouteResult>;
   eta(from: GeoPoint, to: GeoPoint): Promise<number>;
 }

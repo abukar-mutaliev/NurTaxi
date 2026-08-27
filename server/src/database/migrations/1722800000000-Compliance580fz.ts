@@ -492,7 +492,9 @@ export class Compliance580fz1722800000000 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP TRIGGER IF EXISTS "trg_order_offer_logs_protect" ON "order_offer_logs";`);
+    await queryRunner.query(
+      `DROP TRIGGER IF EXISTS "trg_order_offer_logs_protect" ON "order_offer_logs";`,
+    );
     const immutableTables = [
       'order_status_logs',
       'admin_audit_logs',
@@ -526,7 +528,9 @@ export class Compliance580fz1722800000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "fk_orders_permit";`);
     await queryRunner.query(`ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "fk_orders_carrier";`);
     await queryRunner.query(`ALTER TABLE "orders" DROP CONSTRAINT IF EXISTS "fk_orders_vehicle";`);
-    await queryRunner.query(`ALTER TABLE "vehicles" DROP CONSTRAINT IF EXISTS "fk_vehicles_current_permit";`);
+    await queryRunner.query(
+      `ALTER TABLE "vehicles" DROP CONSTRAINT IF EXISTS "fk_vehicles_current_permit";`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS "taxi_permits";`);
     await queryRunner.query(`DROP TABLE IF EXISTS "carriers";`);
 
@@ -550,7 +554,9 @@ export class Compliance580fz1722800000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`ALTER TABLE "admin_audit_logs" DROP COLUMN IF EXISTS "new_value";`);
-    await queryRunner.query(`ALTER TABLE "admin_audit_logs" DROP COLUMN IF EXISTS "previous_value";`);
+    await queryRunner.query(
+      `ALTER TABLE "admin_audit_logs" DROP COLUMN IF EXISTS "previous_value";`,
+    );
     await queryRunner.query(`ALTER TABLE "admin_audit_logs" DROP COLUMN IF EXISTS "result";`);
     await queryRunner.query(`ALTER TABLE "admin_audit_logs" DROP COLUMN IF EXISTS "user_agent";`);
     await queryRunner.query(`ALTER TABLE "regions" DROP COLUMN IF EXISTS "compliance_config";`);

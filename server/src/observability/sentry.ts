@@ -18,7 +18,9 @@ export function initSentry(): void {
     release: process.env.npm_package_version ?? '0.1.0',
     tracesSampleRate: Number.parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE ?? '0.1'),
     beforeSend(event) {
-      return scrubSentryEvent(event as unknown as Record<string, unknown>) as unknown as typeof event;
+      return scrubSentryEvent(
+        event as unknown as Record<string, unknown>,
+      ) as unknown as typeof event;
     },
   });
 }

@@ -51,14 +51,20 @@ async function bootstrap(): Promise<void> {
   );
 
   if (isProd) {
-    app.use((req: { headers: Record<string, string | string[] | undefined>; url: string }, res: { redirect: (c: number, u: string) => void }, next: () => void) => {
-      const proto = req.headers['x-forwarded-proto'];
-      if (proto === 'http') {
-        res.redirect(308, `https://${req.headers.host}${req.url}`);
-        return;
-      }
-      next();
-    });
+    app.use(
+      (
+        req: { headers: Record<string, string | string[] | undefined>; url: string },
+        res: { redirect: (c: number, u: string) => void },
+        next: () => void,
+      ) => {
+        const proto = req.headers['x-forwarded-proto'];
+        if (proto === 'http') {
+          res.redirect(308, `https://${req.headers.host}${req.url}`);
+          return;
+        }
+        next();
+      },
+    );
   }
 
   const corsOrigin = parseCorsOrigins(appConfig.corsOrigins, appConfig.env);

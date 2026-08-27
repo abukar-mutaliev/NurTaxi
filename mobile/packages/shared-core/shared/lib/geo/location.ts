@@ -1,4 +1,5 @@
 import type { GeoLocation } from '../../model';
+import { isPlaceholderAddress } from './is-placeholder-address';
 
 /** Только поля, которые принимает API (`GeoLocationDto`). */
 export function toApiGeoLocation(location: GeoLocation & { label?: string | null }): GeoLocation {
@@ -9,6 +10,22 @@ export function toApiGeoLocation(location: GeoLocation & { label?: string | null
     lng: Number(location.lng),
     ...(address ? { address } : {}),
   };
+}
+
+/**
+ * Для создания заказа: если геокодер уже вернул улицу, отправляем её, а не
+ * подпись «Моё местоположение». Сервер всё равно перепроверит заглушку.
+ */
+export function toStoredGeoLocation(
+  location: GeoLocation,
+  resolvedAddress?: string | null,
+): GeoLocation {
+  const resolved = resolvedAddress?.trim();
+  if (resolved && !isPlaceholderAddress(resolved)) {
+    return toApiGeoLocation({ ...location, address: resolved });
+  }
+
+  return toApiGeoLocation(location);
 }
 
 /** Одинаковые точка и адрес — повторный `pickupSelected` не должен триггерить ререндер. */

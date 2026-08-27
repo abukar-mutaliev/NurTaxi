@@ -4,5 +4,6 @@ export {
   useGetDrivingRouteQuery,
   useLazyGetDrivingRouteQuery,
   useLazySearchAddressesQuery,
+  useReverseGeocodeQuery,
   useSearchAddressesQuery,
 } from './api/geo.api';

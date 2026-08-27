@@ -6,11 +6,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import {
-  ExportDateField,
-  ExportFormat,
-  ExportStatus,
-} from '../../../common/enums/compliance.enum';
+import { ExportDateField, ExportFormat, ExportStatus } from '../../../common/enums/compliance.enum';
 
 @Entity('regulatory_exports')
 @Index('idx_regulatory_exports_created', ['createdAt'])

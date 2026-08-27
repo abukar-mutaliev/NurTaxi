@@ -9,7 +9,9 @@ export interface RisTripPayload {
 }
 
 export interface RisChannel {
-  sendTrip(payload: RisTripPayload): Promise<{ accepted: boolean; response: Record<string, unknown> }>;
+  sendTrip(
+    payload: RisTripPayload,
+  ): Promise<{ accepted: boolean; response: Record<string, unknown> }>;
 }
 
 export const RIS_CHANNEL = Symbol('RIS_CHANNEL');

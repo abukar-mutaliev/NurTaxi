@@ -13,7 +13,11 @@ export class OfferJournalService {
     private readonly logs: Repository<OrderOfferLog>,
   ) {}
 
-  async recordOffered(orderId: string, driverId: string, timeoutSec = DEFAULT_TIMEOUT_SEC): Promise<OrderOfferLog> {
+  async recordOffered(
+    orderId: string,
+    driverId: string,
+    timeoutSec = DEFAULT_TIMEOUT_SEC,
+  ): Promise<OrderOfferLog> {
     const offeredAt = new Date();
     return this.logs.save(
       this.logs.create({

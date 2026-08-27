@@ -25,7 +25,8 @@ export {
 export { PLATE_PATTERN, formatIsoDateInput, formatPlateInput } from './format/input-masks';
 
 export { boundsOf, decodePolyline, haversineDistance } from './geo/polyline';
-export { isSameGeoLocation, toApiGeoLocation } from './geo/location';
+export { isSameGeoLocation, toApiGeoLocation, toStoredGeoLocation } from './geo/location';
+export { isPlaceholderAddress } from './geo/is-placeholder-address';
 
 export { useSharedDispatch } from './redux';
 export type { SharedDispatch } from './redux';

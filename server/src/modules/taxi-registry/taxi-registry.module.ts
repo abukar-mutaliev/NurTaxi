@@ -13,12 +13,7 @@ import { AdminTaxiRegistryController } from './admin-taxi-registry.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      TaxiRegistryCheck,
-      TaxiPermit,
-      DriverProfile,
-      DriverAssignment,
-    ]),
+    TypeOrmModule.forFeature([TaxiRegistryCheck, TaxiPermit, DriverProfile, DriverAssignment]),
     RegionsModule,
   ],
   controllers: [AdminTaxiRegistryController],

@@ -69,8 +69,11 @@ describeE2e('Security compliance access (e2e, FZ-08.19)', () => {
       .set(authHeader(regulatorToken))
       .expect(200);
     const items = logs.body.items ?? logs.body;
-    expect(items.some((row: { action?: string }) => String(row.action).includes('GET') && String(row.action).includes('orders'))).toBe(
-      true,
-    );
+    expect(
+      items.some(
+        (row: { action?: string }) =>
+          String(row.action).includes('GET') && String(row.action).includes('orders'),
+      ),
+    ).toBe(true);
   });
 });

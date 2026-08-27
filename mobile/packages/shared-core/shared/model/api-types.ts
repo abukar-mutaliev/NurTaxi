@@ -323,6 +323,17 @@ export interface GeoRouteQuery {
   destLng: number;
 }
 
+export interface GeoReverseQuery {
+  lat: number;
+  lng: number;
+}
+
+export interface GeoReverseResult {
+  address: string | null;
+  lat: number;
+  lng: number;
+}
+
 // ---------------------------------------------------------------------------
 // Заказы — /orders (§8.10–8.12)
 // ---------------------------------------------------------------------------

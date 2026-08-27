@@ -7,7 +7,9 @@ import type { RisChannel, RisTripPayload } from './ris-channel.interface';
  */
 @Injectable()
 export class HttpRisChannel implements RisChannel {
-  async sendTrip(payload: RisTripPayload): Promise<{ accepted: boolean; response: Record<string, unknown> }> {
+  async sendTrip(
+    payload: RisTripPayload,
+  ): Promise<{ accepted: boolean; response: Record<string, unknown> }> {
     const url = process.env.RIS_ENDPOINT;
     if (!url) {
       throw new Error('RIS_ENDPOINT не задан');

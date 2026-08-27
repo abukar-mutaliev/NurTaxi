@@ -81,12 +81,12 @@ export const SEED_USERS: SeedUserDef[] = [
     name: 'Региональный администратор',
     role: Role.RegionalAdmin,
   },
-    {
-      id: SEED_IDS.users.regulator,
-      phone: '+79000000004',
-      name: 'Регулятор (выгрузка журнала)',
-      role: Role.Regulator,
-    },
+  {
+    id: SEED_IDS.users.regulator,
+    phone: '+79000000004',
+    name: 'Регулятор (выгрузка журнала)',
+    role: Role.Regulator,
+  },
   {
     id: SEED_IDS.users.client1,
     phone: '+79280000001',

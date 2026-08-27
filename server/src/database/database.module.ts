@@ -21,9 +21,7 @@ import type { DatabaseConfig } from '../config/configuration';
           username: db.username,
           password: db.password,
           database: db.database,
-          ssl: db.ssl
-            ? { rejectUnauthorized: db.sslRejectUnauthorized }
-            : false,
+          ssl: db.ssl ? { rejectUnauthorized: db.sslRejectUnauthorized } : false,
           synchronize: false,
           autoLoadEntities: true,
           migrationsTableName: 'schema_migrations',

@@ -40,7 +40,10 @@ export function decryptField(value: string | null | undefined): string | null {
   if (!ivB64 || !tagB64 || !dataB64) return value;
   const decipher = createDecipheriv(ALGO, key, Buffer.from(ivB64, 'base64url'));
   decipher.setAuthTag(Buffer.from(tagB64, 'base64url'));
-  return Buffer.concat([decipher.update(Buffer.from(dataB64, 'base64url')), decipher.final()]).toString('utf8');
+  return Buffer.concat([
+    decipher.update(Buffer.from(dataB64, 'base64url')),
+    decipher.final(),
+  ]).toString('utf8');
 }
 
 export const encryptedTransformer = {

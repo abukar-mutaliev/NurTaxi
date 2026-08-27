@@ -72,7 +72,10 @@ export class AuthService {
     };
   }
 
-  async refresh(refreshToken: string, meta?: { ip?: string | null; userAgent?: string | null }): Promise<TokenPair> {
+  async refresh(
+    refreshToken: string,
+    meta?: { ip?: string | null; userAgent?: string | null },
+  ): Promise<TokenPair> {
     const tokens = await this.tokenService.rotate(refreshToken, async (id) => {
       const user = await this.usersService.getByIdOrThrow(id);
       const authUser: AuthenticatedUser = { id: user.id, role: user.role, phone: user.phone };
@@ -87,7 +90,10 @@ export class AuthService {
     return tokens;
   }
 
-  async logout(refreshToken: string, meta?: { ip?: string | null; userAgent?: string | null }): Promise<void> {
+  async logout(
+    refreshToken: string,
+    meta?: { ip?: string | null; userAgent?: string | null },
+  ): Promise<void> {
     await this.tokenService.revoke(refreshToken);
     this.authEvents.record({
       type: AuthEventType.Logout,

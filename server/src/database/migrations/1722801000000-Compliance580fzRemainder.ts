@@ -60,7 +60,11 @@ export class Compliance580fzRemainder1722801000000 implements MigrationInterface
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`ALTER TABLE "order_status_logs" DROP COLUMN IF EXISTS "record_checksum"`);
-    await queryRunner.query(`ALTER TABLE "order_status_logs" DROP COLUMN IF EXISTS "prev_checksum"`);
+    await queryRunner.query(
+      `ALTER TABLE "order_status_logs" DROP COLUMN IF EXISTS "record_checksum"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "order_status_logs" DROP COLUMN IF EXISTS "prev_checksum"`,
+    );
   }
 }

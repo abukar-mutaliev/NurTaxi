@@ -50,3 +50,18 @@ export class GeoRouteResponse {
     };
   }
 }
+
+export class GeoReverseResponse {
+  @ApiProperty({ nullable: true })
+  address!: string | null;
+
+  @ApiProperty()
+  lat!: number;
+
+  @ApiProperty()
+  lng!: number;
+
+  static from(lat: number, lng: number, address: string | null): GeoReverseResponse {
+    return { address, lat, lng };
+  }
+}

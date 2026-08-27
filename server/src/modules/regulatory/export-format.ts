@@ -19,7 +19,11 @@ export function serializeExportFile(
 ): { body: Buffer; rowCount: number; checksum: string } {
   let text: string;
   if (format === 'json') {
-    text = JSON.stringify({ meta: { encoding: EXPORT_CSV_ENCODING, ...meta }, items: rows }, null, 2);
+    text = JSON.stringify(
+      { meta: { encoding: EXPORT_CSV_ENCODING, ...meta }, items: rows },
+      null,
+      2,
+    );
   } else {
     const headers = rows[0] ? Object.keys(rows[0]) : ['publicNumber'];
     const escape = (value: unknown) => {

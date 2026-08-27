@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDuration, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
+import { formatDuration, toStoredGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import {
@@ -26,7 +26,12 @@ import { useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
 import { selectDriverPosition, useOrderRealtime } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
-import { isAutoPickupLocation, shouldSyncAutoPickup, useOrderRegion } from '@/features/address';
+import {
+  isAutoPickupLocation,
+  shouldSyncAutoPickup,
+  useOrderRegion,
+  useResolvedLocationAddress,
+} from '@/features/address';
 import { useActiveOrderGuard, useOrderEstimate } from '@/features/order';
 import {
   activeOrderChanged,
@@ -98,6 +103,8 @@ export function HomeScreen() {
   const bottomInset = tabBarInset;
 
   const myLocationLabel = t('addresses.myLocation');
+  const resolvedPickupAddress = useResolvedLocationAddress(pickup, [myLocationLabel]);
+  const resolvedDropoffAddress = useResolvedLocationAddress(dropoff, [myLocationLabel]);
 
   useEffect(() => {
     if (!position || hasActiveOrder) {
@@ -225,8 +232,8 @@ export function HomeScreen() {
     try {
       const order = await createOrder({
         regionId: draft.regionId,
-        pickup: toApiGeoLocation(draft.pickup),
-        dropoff: toApiGeoLocation(draft.dropoff),
+        pickup: toStoredGeoLocation(draft.pickup, resolvedPickupAddress),
+        dropoff: toStoredGeoLocation(draft.dropoff, resolvedDropoffAddress),
         tariffId: draft.tariffId ?? undefined,
         paymentMethod: draft.paymentMethod,
         comment: draft.comment.trim() || undefined,
@@ -310,7 +317,7 @@ export function HomeScreen() {
         <HomeOrderSheet
           bottomInset={bottomInset}
           canOrder={Boolean(estimate && !isEstimating)}
-          dropoffAddress={dropoff!.address ?? t('common.notSpecified')}
+          dropoffAddress={resolvedDropoffAddress ?? dropoff!.address ?? t('common.notSpecified')}
           error={createError ?? estimateError?.message ?? null}
           estimate={estimate}
           fromLabel={t('order.from')}
@@ -326,7 +333,7 @@ export function HomeScreen() {
           paymentLabel={paymentLabel}
           paymentMethod={draft.paymentMethod}
           paymentMethodLabel={t('order.paymentMethod')}
-          pickupAddress={pickup!.address ?? t('common.notSpecified')}
+          pickupAddress={resolvedPickupAddress ?? pickup!.address ?? t('common.notSpecified')}
           priceFromLabel={(price) => t('order.priceFrom', { price })}
           selectedTariffId={draft.tariffId}
           toLabel={t('order.to')}

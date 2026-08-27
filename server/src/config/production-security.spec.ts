@@ -4,7 +4,10 @@ import { assertProductionSecurity, parseCorsOrigins } from './production-securit
 describe('assertProductionSecurity', () => {
   it('allows development with defaults', () => {
     expect(() =>
-      assertProductionSecurity({ NODE_ENV: Environment.Development, JWT_ACCESS_SECRET: 'change-me-access-secret' }),
+      assertProductionSecurity({
+        NODE_ENV: Environment.Development,
+        JWT_ACCESS_SECRET: 'change-me-access-secret',
+      }),
     ).not.toThrow();
   });
 

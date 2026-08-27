@@ -17,6 +17,7 @@ import {
 } from '../../common/enums/order-status.enum';
 import { EventBusService } from '../../messaging/event-bus.service';
 import { DriversService } from '../drivers/drivers.service';
+import { GeoService } from '../geo/geo.service';
 import { MAP_PROVIDER, type MapProvider } from '../geo/map/map-provider.interface';
 import { RegionsService } from '../regions/regions.service';
 import { TariffsService } from '../tariffs/tariffs.service';
@@ -75,6 +76,7 @@ export class OrdersService {
     private readonly tariffsService: TariffsService,
     private readonly pricingService: PricingService,
     @Inject(MAP_PROVIDER) private readonly mapProvider: MapProvider,
+    private readonly geoService: GeoService,
     private readonly transitions: OrderTransitionService,
     private readonly matching: MatchingService,
     private readonly driversService: DriversService,
@@ -94,7 +96,12 @@ export class OrdersService {
 
   private readonly logger = new Logger(OrdersService.name);
 
-  async recordTrackPoint(orderId: string, lat: number, lng: number, accuracyM?: number): Promise<void> {
+  async recordTrackPoint(
+    orderId: string,
+    lat: number,
+    lng: number,
+    accuracyM?: number,
+  ): Promise<void> {
     await this.tripTrack?.recordIfDue(orderId, lat, lng, accuracyM);
   }
 
@@ -145,16 +152,21 @@ export class OrdersService {
       `SELECT nextval('order_public_number_seq') AS next`,
     )) as Array<{ next: string }>;
 
+    const [pickupAddress, dropoffAddress] = await Promise.all([
+      this.geoService.resolveStoredAddress(dto.pickup),
+      this.geoService.resolveStoredAddress(dto.dropoff),
+    ]);
+
     const order = this.orders.create({
       clientId,
       regionId: dto.regionId,
       tariffId: tariff.id,
       pickupLat: dto.pickup.lat,
       pickupLng: dto.pickup.lng,
-      pickupAddress: dto.pickup.address ?? `${dto.pickup.lat}, ${dto.pickup.lng}`,
+      pickupAddress,
       dropoffLat: dto.dropoff.lat,
       dropoffLng: dto.dropoff.lng,
-      dropoffAddress: dto.dropoff.address ?? `${dto.dropoff.lat}, ${dto.dropoff.lng}`,
+      dropoffAddress,
       status: OrderStatus.Created,
       priceEstimated: String(price.estimated),
       paymentMethod: dto.paymentMethod,
@@ -270,7 +282,10 @@ export class OrdersService {
 
     try {
       const driver = await this.driversService.getProfileByDriverId(offer.driverId);
-      await this.realtime.publishOrderOffer(driver.userId, await this.buildOfferPayload(order, offer));
+      await this.realtime.publishOrderOffer(
+        driver.userId,
+        await this.buildOfferPayload(order, offer),
+      );
     } catch (error) {
       this.logger.warn(
         `Не удалось отправить предложение заказа ${order.id} водителю ${offer.driverId}: ` +
@@ -346,9 +361,12 @@ export class OrdersService {
         o.driverId = driver.id;
         if (snapshot) {
           o.assignmentSnapshot = snapshot;
-          const vehicle = typeof snapshot.vehicle === 'object' && snapshot.vehicle ? snapshot.vehicle : null;
-          const carrier = typeof snapshot.carrier === 'object' && snapshot.carrier ? snapshot.carrier : null;
-          const permit = typeof snapshot.permit === 'object' && snapshot.permit ? snapshot.permit : null;
+          const vehicle =
+            typeof snapshot.vehicle === 'object' && snapshot.vehicle ? snapshot.vehicle : null;
+          const carrier =
+            typeof snapshot.carrier === 'object' && snapshot.carrier ? snapshot.carrier : null;
+          const permit =
+            typeof snapshot.permit === 'object' && snapshot.permit ? snapshot.permit : null;
           o.vehicleId = vehicle?.id ?? null;
           o.carrierId = carrier?.id ?? null;
           o.permitId = permit?.id ?? null;

@@ -72,3 +72,19 @@ export class GeoRouteQueryDto {
   @Max(180)
   destLng!: number;
 }
+
+export class GeoReverseQueryDto {
+  @ApiProperty({ description: 'Широта' })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat!: number;
+
+  @ApiProperty({ description: 'Долгота' })
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng!: number;
+}

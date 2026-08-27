@@ -1,6 +1,9 @@
 import { CompletenessStatus } from '../../common/enums/compliance.enum';
 import { OrderStatus, TERMINAL_ORDER_STATUSES } from '../../common/enums/order-status.enum';
-import { HISTORICALLY_UNAVAILABLE, type AssignmentSnapshot } from '../../common/compliance/assignment-snapshot';
+import {
+  HISTORICALLY_UNAVAILABLE,
+  type AssignmentSnapshot,
+} from '../../common/compliance/assignment-snapshot';
 import type { Order } from './entities/order.entity';
 
 export interface CompletenessResult {
@@ -43,7 +46,8 @@ export function evaluateOrderCompleteness(order: Order): CompletenessResult {
     if (!present(snapshot.permit)) missing.push('snapshot.permit');
   }
 
-  const tripHappened = order.status === OrderStatus.Closed || order.status === OrderStatus.Completed;
+  const tripHappened =
+    order.status === OrderStatus.Closed || order.status === OrderStatus.Completed;
   if (tripHappened) {
     if (!order.tripStartedAt) missing.push('tripStartedAt');
     if (!order.tripEndedAt) missing.push('tripEndedAt');

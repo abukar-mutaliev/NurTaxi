@@ -122,7 +122,15 @@ export class AdminOrdersService {
   async getOrder(actor: AuthenticatedUser, orderId: string): Promise<Order> {
     const order = await this.orders.findOne({
       where: { id: orderId },
-      relations: ['client', 'driver', 'driver.user', 'driver.vehicles', 'region', 'tariff', 'route'],
+      relations: [
+        'client',
+        'driver',
+        'driver.user',
+        'driver.vehicles',
+        'region',
+        'tariff',
+        'route',
+      ],
     });
     if (!order) {
       throw new NotFoundException({ code: 'ORDER_NOT_FOUND', message: 'Заказ не найден' });
@@ -155,8 +163,7 @@ export class AdminOrdersService {
     const result: NearbyDriverCandidate[] = [];
     for (const candidate of ranked) {
       const profile = await this.driversService.getProfileByDriverId(candidate.driverId);
-      const vehicle =
-        profile.vehicles?.find((v) => v.isPrimary) ?? profile.vehicles?.[0] ?? null;
+      const vehicle = profile.vehicles?.find((v) => v.isPrimary) ?? profile.vehicles?.[0] ?? null;
       result.push({
         driverId: candidate.driverId,
         fullName: profile.fullName,

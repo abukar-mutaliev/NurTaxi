@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { RegistryVerdict } from '../../common/enums/compliance.enum';
-import type { RegistryCheckRequest, RegistryCheckResult, TaxiRegistryProvider } from './taxi-registry.interface';
+import type {
+  RegistryCheckRequest,
+  RegistryCheckResult,
+  TaxiRegistryProvider,
+} from './taxi-registry.interface';
 
 /**
  * HTTP-адаптер государственного реестра такси (C7.10).

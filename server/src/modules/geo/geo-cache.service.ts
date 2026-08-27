@@ -5,8 +5,10 @@ import { REDIS_CLIENT } from '../../redis/redis.constants';
 
 const GEO_SEARCH_TTL_SEC = 300;
 const GEO_ROUTE_TTL_SEC = 60;
+const GEO_REVERSE_TTL_SEC = 300;
 const KEY_PREFIX = 'geo:search:';
 const ROUTE_PREFIX = 'geo:route:';
+const REVERSE_PREFIX = 'geo:reverse:';
 
 @Injectable()
 export class GeoCacheService {
@@ -63,6 +65,21 @@ export class GeoCacheService {
     );
   }
 
+  async getReverse(lat: number, lng: number): Promise<string | null> {
+    const cached = await this.redis.get(this.reverseCacheKey(lat, lng));
+    if (!cached) return null;
+    return JSON.parse(cached) as string;
+  }
+
+  async setReverse(lat: number, lng: number, address: string): Promise<void> {
+    await this.redis.set(
+      this.reverseCacheKey(lat, lng),
+      JSON.stringify(address),
+      'EX',
+      GEO_REVERSE_TTL_SEC,
+    );
+  }
+
   private routeCacheKey(
     originLat: number,
     originLng: number,
@@ -72,5 +89,11 @@ export class GeoCacheService {
     const raw = [originLat, originLng, destLat, destLng].map((value) => value.toFixed(4)).join(':');
     const hash = createHash('sha256').update(raw).digest('hex').slice(0, 16);
     return `${ROUTE_PREFIX}${hash}`;
+  }
+
+  private reverseCacheKey(lat: number, lng: number): string {
+    const raw = `${lat.toFixed(4)}:${lng.toFixed(4)}`;
+    const hash = createHash('sha256').update(raw).digest('hex').slice(0, 16);
+    return `${REVERSE_PREFIX}${hash}`;
   }
 }

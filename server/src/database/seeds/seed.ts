@@ -285,7 +285,10 @@ async function seedCarriers(manager: EntityManager): Promise<void> {
     permit = await permits.save(permits.create(permitData));
   }
 
-  await vehicles.update({ id: SEED_IDS.vehicles.driver1 }, { currentPermitId: permit.id, vin: 'XTA21144050123456' });
+  await vehicles.update(
+    { id: SEED_IDS.vehicles.driver1 },
+    { currentPermitId: permit.id, vin: 'XTA21144050123456' },
+  );
 
   let assignment = await assignments.findOne({ where: { id: SEED_IDS.assignments.driver1 } });
   const assignmentData: Partial<DriverAssignment> = {

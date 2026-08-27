@@ -110,7 +110,12 @@ export class Order {
   @Column({ name: 'trip_ended_at', type: 'timestamptz', nullable: true })
   tripEndedAt!: Date | null;
 
-  @Column({ name: 'completeness_status', type: 'varchar', length: 32, default: CompletenessStatus.Pending })
+  @Column({
+    name: 'completeness_status',
+    type: 'varchar',
+    length: 32,
+    default: CompletenessStatus.Pending,
+  })
   completenessStatus!: CompletenessStatus;
 
   @Column({ name: 'vehicle_id', type: 'uuid', nullable: true })

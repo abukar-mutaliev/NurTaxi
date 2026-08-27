@@ -180,8 +180,7 @@ export class AdminAnalyticsService {
     const paymentSuccessRate =
       paymentAttempts > 0 ? Math.round((succeededCount / paymentAttempts) * 1000) / 10 : 0;
 
-    const driverAvailabilityRate =
-      approved > 0 ? Math.round((online / approved) * 1000) / 10 : 0;
+    const driverAvailabilityRate = approved > 0 ? Math.round((online / approved) * 1000) / 10 : 0;
 
     const timeseries = await this.buildTimeseries(regionId, period.from, period.to);
 

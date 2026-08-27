@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { resilientCall } from '../../common/resilience/resilient-call';
 import { CircuitBreakerService } from '../../common/resilience/circuit-breaker.service';
-import { PermitStatus, RegistrySubjectType, RegistryVerdict } from '../../common/enums/compliance.enum';
+import {
+  PermitStatus,
+  RegistrySubjectType,
+  RegistryVerdict,
+} from '../../common/enums/compliance.enum';
 import { resolveComplianceConfig } from '../../common/compliance/compliance-config';
 import { RegionsService } from '../regions/regions.service';
 import { TaxiRegistryCheck } from './entities/taxi-registry-check.entity';
@@ -34,7 +38,10 @@ export class TaxiRegistryService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     if (process.env.NODE_ENV === 'test') return;
-    const intervalMs = Number.parseInt(process.env.TAXI_REGISTRY_RECHECK_MS ?? String(6 * 60 * 60 * 1000), 10);
+    const intervalMs = Number.parseInt(
+      process.env.TAXI_REGISTRY_RECHECK_MS ?? String(6 * 60 * 60 * 1000),
+      10,
+    );
     this.timer = setInterval(() => {
       void this.recheckActive().catch((err) =>
         this.logger.warn(`registry recheck failed: ${err instanceof Error ? err.message : err}`),
@@ -60,7 +67,9 @@ export class TaxiRegistryService implements OnModuleInit, OnModuleDestroy {
       });
     } catch (error) {
       result = {
-        verdict: compliance.taxiRegistryStrict ? RegistryVerdict.Unavailable : RegistryVerdict.Unconfirmed,
+        verdict: compliance.taxiRegistryStrict
+          ? RegistryVerdict.Unavailable
+          : RegistryVerdict.Unconfirmed,
         source: 'stub',
         request,
         response: { error: error instanceof Error ? error.message : String(error) },
@@ -98,7 +107,10 @@ export class TaxiRegistryService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async isDriverAllowedOnLine(driverId: string, regionId: string): Promise<{ allowed: boolean; reason?: string }> {
+  async isDriverAllowedOnLine(
+    driverId: string,
+    regionId: string,
+  ): Promise<{ allowed: boolean; reason?: string }> {
     const region = await this.regions.getRegionOrThrow(regionId);
     const compliance = resolveComplianceConfig(region.complianceConfig);
     if (!compliance.taxiRegistryRequired) {

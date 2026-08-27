@@ -57,7 +57,8 @@ export class AdminAuditInterceptor implements NestInterceptor {
               query: req.query ?? {},
             },
             ipAddress: req.ip ?? null,
-            userAgent: (req as { headers?: { 'user-agent'?: string } }).headers?.['user-agent'] ?? null,
+            userAgent:
+              (req as { headers?: { 'user-agent'?: string } }).headers?.['user-agent'] ?? null,
             result: 'success',
           });
         },

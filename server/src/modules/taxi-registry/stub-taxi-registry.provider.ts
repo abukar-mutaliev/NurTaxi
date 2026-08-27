@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { RegistryVerdict } from '../../common/enums/compliance.enum';
-import type { RegistryCheckRequest, RegistryCheckResult, TaxiRegistryProvider } from './taxi-registry.interface';
+import type {
+  RegistryCheckRequest,
+  RegistryCheckResult,
+  TaxiRegistryProvider,
+} from './taxi-registry.interface';
 
 /**
  * Заглушка поставщика сведений реестра для dev/test (FZ-06.7).
@@ -10,8 +14,7 @@ import type { RegistryCheckRequest, RegistryCheckResult, TaxiRegistryProvider } 
 export class StubTaxiRegistryProvider implements TaxiRegistryProvider {
   async check(request: RegistryCheckRequest): Promise<RegistryCheckResult> {
     const invalidMarker =
-      request.permitNumber?.toUpperCase().includes('INVALID') ||
-      request.inn === '0000000000';
+      request.permitNumber?.toUpperCase().includes('INVALID') || request.inn === '0000000000';
     return {
       verdict: invalidMarker ? RegistryVerdict.Invalid : RegistryVerdict.Valid,
       source: 'stub',

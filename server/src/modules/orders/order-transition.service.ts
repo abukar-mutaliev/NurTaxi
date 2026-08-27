@@ -97,7 +97,8 @@ export class OrderTransitionService {
     this.recordOrderOutcome(options.toStatus, saved.regionId);
 
     const isTerminal =
-      TERMINAL_ORDER_STATUSES.includes(options.toStatus) || options.toStatus === OrderStatus.Completed;
+      TERMINAL_ORDER_STATUSES.includes(options.toStatus) ||
+      options.toStatus === OrderStatus.Completed;
     if (isTerminal) {
       if (CANCELLED.includes(options.toStatus) && saved.tripStartedAt && !saved.tripEndedAt) {
         saved.tripEndedAt = new Date();

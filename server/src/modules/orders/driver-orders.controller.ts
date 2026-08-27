@@ -61,7 +61,9 @@ export class DriverOrdersController {
       'теряет сокет за считаные секунды и предложение не получает, поэтому вернувшись на ' +
       'передний план оно спрашивает сервер само. `null` — ждать нечего.',
   })
-  async pendingOffer(@CurrentUser() user: AuthenticatedUser): Promise<Record<string, unknown> | null> {
+  async pendingOffer(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Record<string, unknown> | null> {
     return this.ordersService.getPendingOfferForDriver(user.id);
   }
 

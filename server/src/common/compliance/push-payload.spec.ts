@@ -13,6 +13,8 @@ describe('sanitizePushData (FZ-02.4)', () => {
   });
 
   it('falls back to eventType', () => {
-    expect(sanitizePushData({ eventType: 'trip.completed' })).toEqual({ eventId: 'trip.completed' });
+    expect(sanitizePushData({ eventType: 'trip.completed' })).toEqual({
+      eventId: 'trip.completed',
+    });
   });
 });

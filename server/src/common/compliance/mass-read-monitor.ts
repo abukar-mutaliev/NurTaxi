@@ -14,7 +14,10 @@ export class MassReadMonitor {
   private readonly counts = new Map<string, { windowStart: number; count: number }>();
 
   constructor(
-    private readonly threshold = Number.parseInt(process.env.MASS_READ_ALERT_THRESHOLD ?? '200', 10),
+    private readonly threshold = Number.parseInt(
+      process.env.MASS_READ_ALERT_THRESHOLD ?? '200',
+      10,
+    ),
     private readonly windowMs = 60 * 60 * 1000,
   ) {}
 
@@ -35,7 +38,10 @@ export class MassReadMonitor {
       return false;
     }
     current.count += 1;
-    return current.count === this.threshold + 1 || (current.count > this.threshold && current.count % 50 === 0);
+    return (
+      current.count === this.threshold + 1 ||
+      (current.count > this.threshold && current.count % 50 === 0)
+    );
   }
 
   getThreshold(): number {

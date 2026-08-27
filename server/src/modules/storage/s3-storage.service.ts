@@ -128,7 +128,9 @@ export class S3StorageService {
       Key: storageKey,
     });
 
-    const downloadUrl = await getSignedUrl(this.presignClient, command, { expiresIn: expiresInSec });
+    const downloadUrl = await getSignedUrl(this.presignClient, command, {
+      expiresIn: expiresInSec,
+    });
 
     return { downloadUrl, expiresInSec };
   }

@@ -6,7 +6,9 @@ import type { RisChannel, RisTripPayload } from './ris-channel.interface';
 export class StubRisChannel implements RisChannel {
   readonly received: RisTripPayload[] = [];
 
-  async sendTrip(payload: RisTripPayload): Promise<{ accepted: boolean; response: Record<string, unknown> }> {
+  async sendTrip(
+    payload: RisTripPayload,
+  ): Promise<{ accepted: boolean; response: Record<string, unknown> }> {
     this.received.push(payload);
     return { accepted: true, response: { stub: true, orderId: payload.orderId } };
   }

@@ -25,7 +25,10 @@ export class AdminRetentionController {
   @Get()
   @ApiOperation({ summary: 'Срок хранения журнала заказов, месяцы (FZ-03.1)' })
   async get() {
-    return { months: await this.retention.getRetentionMonths(), minimum: MIN_ORDER_RETENTION_MONTHS };
+    return {
+      months: await this.retention.getRetentionMonths(),
+      minimum: MIN_ORDER_RETENTION_MONTHS,
+    };
   }
 
   @Patch()

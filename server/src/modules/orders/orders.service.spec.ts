@@ -19,6 +19,8 @@ import { PaymentsService } from '../payments/payments.service';
 import { FamilyService } from '../users/family.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { Receipt } from '../payments/entities/receipt.entity';
+import { GeoService } from '../geo/geo.service';
+import { PaymentMethod } from '../../common/enums/order-status.enum';
 import type { Region } from '../regions/entities/region.entity';
 import type { Tariff } from '../tariffs/entities/tariff.entity';
 
@@ -62,6 +64,17 @@ describe('OrdersService', () => {
     create: jest.fn((data) => data),
     save: jest.fn((data) => Promise.resolve({ ...data, id: data.id ?? 'order-1' })),
     query: jest.fn().mockResolvedValue([{ next: '100001' }]),
+  };
+
+  const geoServiceMock = {
+    resolveStoredAddress: jest.fn(
+      async (location: { lat: number; lng: number; address?: string }) => {
+        if (location.address && location.address !== 'Моё местоположение') {
+          return location.address;
+        }
+        return 'г. Назрань, ул. Московская, 12';
+      },
+    ),
   };
 
   beforeEach(async () => {
@@ -108,7 +121,7 @@ describe('OrdersService', () => {
         {
           provide: MatchingService,
           useValue: {
-            findCandidates: jest.fn(),
+            findCandidates: jest.fn().mockResolvedValue([]),
             createOffer: jest.fn(),
             getOffer: jest.fn(),
             clearOffer: jest.fn(),
@@ -117,7 +130,7 @@ describe('OrdersService', () => {
         {
           provide: DriversService,
           useValue: {
-            getOnlineDriverIds: jest.fn(),
+            getOnlineDriverIds: jest.fn().mockResolvedValue([]),
             getProfileByUserId: jest.fn(),
             markBusy: jest.fn(),
             markOnlineAfterTrip: jest.fn(),
@@ -128,6 +141,7 @@ describe('OrdersService', () => {
           provide: PaymentsService,
           useValue: { settleCompletedOrder: jest.fn() },
         },
+        { provide: GeoService, useValue: geoServiceMock },
       ],
     }).compile();
 
@@ -144,5 +158,32 @@ describe('OrdersService', () => {
     expect(result.route.distanceM).toBeGreaterThan(0);
     expect(result.price.estimated).toBeGreaterThan(0);
     expect(result.tariff.name).toBe('Стандарт');
+  });
+
+  it('при создании заказа подменяет «Моё местоположение» на адрес по координатам', async () => {
+    repoMock.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValue({
+      id: 'order-1',
+      regionId: region.id,
+      pickupLat: 43.2167,
+      pickupLng: 44.7667,
+    });
+    repoMock.findOneOrFail.mockResolvedValue({
+      id: 'order-1',
+      pickupAddress: 'г. Назрань, ул. Московская, 12',
+    });
+
+    await service.create('client-1', {
+      regionId: region.id,
+      pickup: { lat: 43.2167, lng: 44.7667, address: 'Моё местоположение' },
+      dropoff: { lat: 43.1667, lng: 44.8, address: 'Магас' },
+      paymentMethod: PaymentMethod.Cash,
+    });
+
+    expect(repoMock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pickupAddress: 'г. Назрань, ул. Московская, 12',
+        dropoffAddress: 'Магас',
+      }),
+    );
   });
 });

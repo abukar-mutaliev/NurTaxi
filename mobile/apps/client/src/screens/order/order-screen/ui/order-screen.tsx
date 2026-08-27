@@ -157,7 +157,7 @@ export function OrderScreen() {
   });
 
   useEffect(() => {
-    if (!order) {
+    if (!order?.id) {
       return;
     }
     mapRef.current?.fitToRoute();

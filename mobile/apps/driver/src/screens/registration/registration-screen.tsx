@@ -15,7 +15,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -69,7 +69,6 @@ export function RegistrationScreen() {
     control,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors, isValid },
   } = useForm<DriverRegistrationForm>({
     resolver: zodResolver(driverRegistrationFormSchema),
@@ -85,11 +84,11 @@ export function RegistrationScreen() {
     },
   });
 
-  const selectedRegionId = watch('regionId');
-  const makeValue = watch('vehicle.make');
-  const modelValue = watch('vehicle.model');
-  const colorValue = watch('vehicle.color');
-  const permitValue = watch('taxiPermit');
+  const selectedRegionId = useWatch({ control, name: 'regionId' });
+  const makeValue = useWatch({ control, name: 'vehicle.make' });
+  const modelValue = useWatch({ control, name: 'vehicle.model' });
+  const colorValue = useWatch({ control, name: 'vehicle.color' });
+  const permitValue = useWatch({ control, name: 'taxiPermit' });
 
   /**
    * Разрешение на деятельность такси включается для каждого региона отдельно

@@ -109,10 +109,12 @@ export function OrderScreen({ orderId }: { orderId: string }) {
   });
 
   useEffect(() => {
-    if (!routeActive || !driverPosition) {
+    const lat = driverPosition?.lat;
+    const lng = driverPosition?.lng;
+    if (!routeActive || lat == null || lng == null) {
       return;
     }
-    sendDriverLocationUpdate(driverPosition.lat, driverPosition.lng);
+    sendDriverLocationUpdate(lat, lng);
   }, [driverPosition?.lat, driverPosition?.lng, routeActive]);
 
   if (isLoading || !order) {

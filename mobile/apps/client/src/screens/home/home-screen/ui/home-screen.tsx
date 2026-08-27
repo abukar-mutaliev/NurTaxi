@@ -195,7 +195,7 @@ export function HomeScreen() {
       return;
     }
 
-    if (activeOrder || (pickup && dropoff)) {
+    if (activeOrder?.id || (pickup && dropoff)) {
       mapRef.current?.fitToRoute();
     } else if (position) {
       mapRef.current?.centerOn(position, 0.01);

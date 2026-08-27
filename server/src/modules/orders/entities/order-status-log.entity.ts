@@ -36,6 +36,12 @@ export class OrderStatusLog {
   @Column({ type: 'text', nullable: true })
   reason!: string | null;
 
+  @Column({ name: 'prev_checksum', type: 'varchar', length: 64, nullable: true })
+  prevChecksum!: string | null;
+
+  @Column({ name: 'record_checksum', type: 'varchar', length: 64, nullable: true })
+  recordChecksum!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

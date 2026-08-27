@@ -18,6 +18,10 @@ import { Order } from '../../modules/orders/entities/order.entity';
 import { OrderRoute } from '../../modules/orders/entities/order-route.entity';
 import { OrderStatusLog } from '../../modules/orders/entities/order-status-log.entity';
 import { Region } from '../../modules/regions/entities/region.entity';
+import { Carrier } from '../../modules/carriers/entities/carrier.entity';
+import { TaxiPermit } from '../../modules/carriers/entities/taxi-permit.entity';
+import { DriverAssignment } from '../../modules/carriers/entities/driver-assignment.entity';
+import { CarrierStatus, PermitStatus } from '../../common/enums/compliance.enum';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
 import {
@@ -236,6 +240,71 @@ async function seedFamilyMembers(manager: EntityManager): Promise<void> {
   }
 }
 
+async function seedCarriers(manager: EntityManager): Promise<void> {
+  const carriers = manager.getRepository(Carrier);
+  const permits = manager.getRepository(TaxiPermit);
+  const assignments = manager.getRepository(DriverAssignment);
+  const vehicles = manager.getRepository(Vehicle);
+
+  let carrier = await carriers.findOne({ where: { id: SEED_IDS.carriers.park1 } });
+  const carrierData: Partial<Carrier> = {
+    id: SEED_IDS.carriers.park1,
+    name: 'ООО «Нур Такси Парк»',
+    legalForm: 'ООО',
+    inn: '0608012345',
+    ogrn: '1060608012345',
+    address: 'Республика Ингушетия, г. Магас',
+    phone: '+78732200000',
+    email: 'park@nurtaxi.local',
+    regionId: INGUSHETIA_REGION_ID,
+    status: CarrierStatus.Active,
+    registryStatus: 'active',
+  };
+  if (carrier) {
+    Object.assign(carrier, carrierData);
+    carrier = await carriers.save(carrier);
+  } else {
+    carrier = await carriers.save(carriers.create(carrierData));
+  }
+
+  let permit = await permits.findOne({ where: { id: SEED_IDS.permits.driver1 } });
+  const permitData: Partial<TaxiPermit> = {
+    id: SEED_IDS.permits.driver1,
+    number: '06-ТАКСИ-000011',
+    issuedBy: 'Минтранс РИ',
+    issuedAt: '2025-01-15',
+    expiresAt: '2027-01-15',
+    carrierId: carrier.id,
+    vehicleId: SEED_IDS.vehicles.driver1,
+    status: PermitStatus.Active,
+  };
+  if (permit) {
+    Object.assign(permit, permitData);
+    permit = await permits.save(permit);
+  } else {
+    permit = await permits.save(permits.create(permitData));
+  }
+
+  await vehicles.update({ id: SEED_IDS.vehicles.driver1 }, { currentPermitId: permit.id, vin: 'XTA21144050123456' });
+
+  let assignment = await assignments.findOne({ where: { id: SEED_IDS.assignments.driver1 } });
+  const assignmentData: Partial<DriverAssignment> = {
+    id: SEED_IDS.assignments.driver1,
+    driverId: SEED_IDS.driverProfiles.driver1,
+    carrierId: carrier.id,
+    vehicleId: SEED_IDS.vehicles.driver1,
+    validFrom: new Date('2025-01-15T00:00:00Z'),
+    validTo: null,
+    basis: 'трудовой договор / самозанятость (seed, B.4)',
+  };
+  if (assignment) {
+    Object.assign(assignment, assignmentData);
+    await assignments.save(assignment);
+  } else {
+    await assignments.save(assignments.create(assignmentData));
+  }
+}
+
 async function seedOrders(manager: EntityManager): Promise<void> {
   const orderRepo = manager.getRepository(Order);
   const routeRepo = manager.getRepository(OrderRoute);
@@ -310,6 +379,15 @@ async function clearSeedData(manager: EntityManager): Promise<void> {
   await manager.delete(Order, { id: In(orderIds) });
 
   const driverProfileIds = Object.values(SEED_IDS.driverProfiles);
+  await manager.delete(DriverAssignment, { id: In(Object.values(SEED_IDS.assignments)) });
+  await manager
+    .createQueryBuilder()
+    .update(Vehicle)
+    .set({ currentPermitId: null })
+    .where({ id: In(Object.values(SEED_IDS.vehicles)) })
+    .execute();
+  await manager.delete(TaxiPermit, { id: In(Object.values(SEED_IDS.permits)) });
+  await manager.delete(Carrier, { id: In(Object.values(SEED_IDS.carriers)) });
   await manager.delete(DriverDocument, { driverId: In(driverProfileIds) });
   await manager.delete(Vehicle, { driverId: In(driverProfileIds) });
   await manager.delete(DriverProfile, { id: In(driverProfileIds) });
@@ -381,6 +459,7 @@ async function runSeed(ds: DataSource): Promise<void> {
     await seedUsers(queryRunner.manager);
     await seedRegionFlags(queryRunner.manager);
     await seedDrivers(queryRunner.manager);
+    await seedCarriers(queryRunner.manager);
     await seedClientExtras(queryRunner.manager);
     await seedFamilyMembers(queryRunner.manager);
     await seedOrders(queryRunner.manager);

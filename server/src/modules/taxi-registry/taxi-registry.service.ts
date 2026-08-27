@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { resilientCall } from '../../common/resilience/resilient-call';
 import { CircuitBreakerService } from '../../common/resilience/circuit-breaker.service';
-import { RegistrySubjectType, RegistryVerdict } from '../../common/enums/compliance.enum';
+import { PermitStatus, RegistrySubjectType, RegistryVerdict } from '../../common/enums/compliance.enum';
 import { resolveComplianceConfig } from '../../common/compliance/compliance-config';
 import { RegionsService } from '../regions/regions.service';
 import { TaxiRegistryCheck } from './entities/taxi-registry-check.entity';
@@ -12,28 +12,39 @@ import {
   type RegistryCheckRequest,
   type TaxiRegistryProvider,
 } from './taxi-registry.interface';
-import { Carrier } from '../carriers/entities/carrier.entity';
 import { TaxiPermit } from '../carriers/entities/taxi-permit.entity';
-import { Vehicle } from '../drivers/entities/vehicle.entity';
-import { PermitStatus } from '../../common/enums/compliance.enum';
 import { DriverOnlineStatus } from '../../common/enums/driver-online-status.enum';
 import { DriverProfile } from '../drivers/entities/driver-profile.entity';
 import { DriverAssignment } from '../carriers/entities/driver-assignment.entity';
-import { IsNull } from 'typeorm';
 
 @Injectable()
-export class TaxiRegistryService {
+export class TaxiRegistryService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(TaxiRegistryService.name);
+  private timer?: NodeJS.Timeout;
+
   constructor(
     @Inject(TAXI_REGISTRY_PROVIDER) private readonly provider: TaxiRegistryProvider,
     @InjectRepository(TaxiRegistryCheck) private readonly checks: Repository<TaxiRegistryCheck>,
-    @InjectRepository(Carrier) private readonly carriers: Repository<Carrier>,
     @InjectRepository(TaxiPermit) private readonly permits: Repository<TaxiPermit>,
-    @InjectRepository(Vehicle) private readonly vehicles: Repository<Vehicle>,
     @InjectRepository(DriverProfile) private readonly drivers: Repository<DriverProfile>,
     @InjectRepository(DriverAssignment) private readonly assignments: Repository<DriverAssignment>,
     private readonly regions: RegionsService,
     private readonly circuitBreaker: CircuitBreakerService,
   ) {}
+
+  onModuleInit(): void {
+    if (process.env.NODE_ENV === 'test') return;
+    const intervalMs = Number.parseInt(process.env.TAXI_REGISTRY_RECHECK_MS ?? String(6 * 60 * 60 * 1000), 10);
+    this.timer = setInterval(() => {
+      void this.recheckActive().catch((err) =>
+        this.logger.warn(`registry recheck failed: ${err instanceof Error ? err.message : err}`),
+      );
+    }, intervalMs);
+  }
+
+  onModuleDestroy(): void {
+    if (this.timer) clearInterval(this.timer);
+  }
 
   async checkAndStore(request: RegistryCheckRequest): Promise<TaxiRegistryCheck> {
     const region = await this.regions.getRegionOrThrow(request.regionId);

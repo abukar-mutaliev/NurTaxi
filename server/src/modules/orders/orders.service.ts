@@ -26,6 +26,7 @@ import { Order } from './entities/order.entity';
 import { OrderRoute } from './entities/order-route.entity';
 import { OrderStatusLog } from './entities/order-status-log.entity';
 import { OrderTransitionService } from './order-transition.service';
+import { appendOrderStatusLog } from './append-order-status-log';
 import { MatchingService, type MatchOffer } from './matching/matching.service';
 import { RealtimeBroadcastService } from '../realtime/realtime-broadcast.service';
 import { PaymentsService } from '../payments/payments.service';
@@ -172,14 +173,12 @@ export class OrdersService {
     });
     await this.routes.save(route);
 
-    await this.logs.save(
-      this.logs.create({
-        orderId: saved.id,
-        fromStatus: null,
-        toStatus: OrderStatus.Created,
-        actorId: clientId,
-      }),
-    );
+    await appendOrderStatusLog(this.logs, {
+      orderId: saved.id,
+      fromStatus: null,
+      toStatus: OrderStatus.Created,
+      actorId: clientId,
+    });
 
     this.eventBus.publish('order.created', { orderId: saved.id, clientId });
 

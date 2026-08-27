@@ -218,6 +218,9 @@ export class OrderStatusLogResponse {
   @ApiProperty()
   createdAt!: string;
 
+  @ApiPropertyOptional()
+  recordChecksum!: string | null;
+
   static from(log: OrderStatusLog, actorLabel?: string): OrderStatusLogResponse {
     return {
       fromStatus: log.fromStatus,
@@ -226,6 +229,7 @@ export class OrderStatusLogResponse {
       actorId: log.actorId,
       actorLabel: actorLabel ?? null,
       createdAt: log.createdAt.toISOString(),
+      recordChecksum: log.recordChecksum ?? null,
     };
   }
 }

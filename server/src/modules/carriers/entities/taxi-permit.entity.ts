@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { PermitStatus } from '../../../common/enums/compliance.enum';
+import { encryptedTransformer } from '../../../common/crypto/field-encryption';
 import { Carrier } from './carrier.entity';
 import { Vehicle } from '../../drivers/entities/vehicle.entity';
 
@@ -22,10 +23,10 @@ export class TaxiPermit {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'varchar', length: 64 })
+  @Column({ type: 'varchar', length: 512, transformer: encryptedTransformer })
   number!: string;
 
-  @Column({ name: 'issued_by', type: 'varchar', length: 240 })
+  @Column({ name: 'issued_by', type: 'varchar', length: 512, transformer: encryptedTransformer })
   issuedBy!: string;
 
   @Column({ name: 'issued_at', type: 'date' })

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,6 +12,7 @@ import { OrderStatusLog } from '../orders/entities/order-status-log.entity';
 import { RegulatoryExport } from './entities/regulatory-export.entity';
 import { RegulatoryDisclosure } from './entities/regulatory-disclosure.entity';
 import { S3StorageService } from '../storage/s3-storage.service';
+import { serializeExportFile } from './export-format';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import type { S3Config } from '../../config/configuration';
@@ -27,8 +27,6 @@ export interface CreateExportDto {
   format?: ExportFormat;
 }
 
-const CSV_SEPARATOR = ';';
-const CSV_ENCODING = 'utf-8';
 const EXPORT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
@@ -243,38 +241,15 @@ export class RegulatoryExportService implements OnModuleInit, OnModuleDestroy {
       };
     });
 
-    let text: string;
-    if (job.format === ExportFormat.Json) {
-      text = JSON.stringify(
-        {
-          meta: {
-            encoding: CSV_ENCODING,
-            periodFrom: job.periodFrom.toISOString(),
-            periodTo: job.periodTo.toISOString(),
-            dateField: job.dateField,
-            requestRef: job.requestRef,
-          },
-          items: rows,
-        },
-        null,
-        2,
-      );
-    } else {
-      const headers = rows[0] ? Object.keys(rows[0]) : ['publicNumber'];
-      const escape = (value: unknown) => {
-        const str = value == null ? '' : String(value);
-        if (/[";\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
-        return str;
-      };
-      const lines = [
-        headers.join(CSV_SEPARATOR),
-        ...rows.map((row) => headers.map((h) => escape((row as Record<string, unknown>)[h])).join(CSV_SEPARATOR)),
-      ];
-      text = `\uFEFF${lines.join('\n')}`;
-    }
-
-    const body = Buffer.from(text, 'utf8');
-    const checksum = createHash('sha256').update(body).digest('hex');
-    return { body, rowCount: rows.length, checksum };
+    return serializeExportFile(
+      rows,
+      job.format === ExportFormat.Json ? 'json' : 'csv',
+      {
+        periodFrom: job.periodFrom.toISOString(),
+        periodTo: job.periodTo.toISOString(),
+        dateField: job.dateField,
+        requestRef: job.requestRef,
+      },
+    );
   }
 }

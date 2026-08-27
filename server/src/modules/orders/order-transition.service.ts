@@ -11,6 +11,7 @@ import { OrderStatusLog } from './entities/order-status-log.entity';
 import { assertTransitionAllowed } from './state/order-state-machine';
 import { CompletenessStatus } from '../../common/enums/compliance.enum';
 import { evaluateOrderCompleteness } from './order-completeness';
+import { appendOrderStatusLog } from './append-order-status-log';
 import { RisService } from '../ris/ris.service';
 
 const CANCELLED: OrderStatus[] = [
@@ -68,15 +69,13 @@ export class OrderTransitionService {
       throw error;
     }
 
-    await this.logs.save(
-      this.logs.create({
-        orderId: saved.id,
-        fromStatus,
-        toStatus: options.toStatus,
-        actorId: options.actorId ?? null,
-        reason: options.reason ?? null,
-      }),
-    );
+    await appendOrderStatusLog(this.logs, {
+      orderId: saved.id,
+      fromStatus,
+      toStatus: options.toStatus,
+      actorId: options.actorId ?? null,
+      reason: options.reason ?? null,
+    });
 
     this.eventBus.publish('order.status_changed', {
       orderId: saved.id,

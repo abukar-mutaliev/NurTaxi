@@ -1,13 +1,16 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import type { AuthenticatedUser } from '../../../common/auth/jwt-payload.interface';
+import { massReadMonitor } from '../../../common/compliance/mass-read-monitor';
 import { AdminAuditService } from '../admin-audit.service';
 
 const MUTATING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
 @Injectable()
 export class AdminAuditInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(AdminAuditInterceptor.name);
+
   constructor(private readonly audit: AdminAuditService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
@@ -31,6 +34,14 @@ export class AdminAuditInterceptor implements NestInterceptor {
 
     const actor = req.user;
     if (!actor) return next.handle();
+
+    if (massReadMonitor.isPiiListPath(req.path, req.method)) {
+      if (massReadMonitor.record(actor.id, req.path)) {
+        this.logger.warn(
+          `MASS_READ_THRESHOLD actor=${actor.id} path=${req.path} threshold=${massReadMonitor.getThreshold()}`,
+        );
+      }
+    }
 
     return next.handle().pipe(
       tap({

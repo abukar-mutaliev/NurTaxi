@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { encryptedTransformer } from '../../../common/crypto/field-encryption';
 import { DriverProfile } from './driver-profile.entity';
 
 /**
@@ -30,11 +31,11 @@ export class DriverTaxiPermit {
   @JoinColumn({ name: 'driver_id' })
   driver!: DriverProfile;
 
-  @Column({ type: 'varchar', length: 64 })
+  @Column({ type: 'varchar', length: 512, transformer: encryptedTransformer })
   number!: string;
 
   /** Регион выдачи разрешения: текст, а не FK — разрешение может быть выдано вне регионов работы. */
-  @Column({ name: 'issuing_region', type: 'varchar', length: 160 })
+  @Column({ name: 'issuing_region', type: 'varchar', length: 512, transformer: encryptedTransformer })
   issuingRegion!: string;
 
   @Column({ name: 'issued_at', type: 'date' })

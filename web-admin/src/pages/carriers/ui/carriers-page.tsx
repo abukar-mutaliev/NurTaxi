@@ -1,5 +1,5 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Form, Input, Modal, Select, Table, Tag, message } from 'antd';
+import { Alert, Button, Card, Drawer, Form, Input, Modal, Select, Table, Tag, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -14,6 +14,7 @@ import { useActiveRegionId } from '@/features/region-context';
 import { PageHeader, QueryState } from '@/shared/ui';
 import { getErrorMessage } from '@/shared/lib/utils';
 import { RegionScopeBanner } from '@/widgets/region-scope-banner';
+import { RegistryChecksCard } from '@/widgets/registry-checks';
 
 export function CarriersPage() {
   const { t } = useTranslation();
@@ -25,6 +26,7 @@ export function CarriersPage() {
   const { data: expiring = [] } = useListExpiringPermitsQuery(regionId ? { regionId } : undefined);
   const [createCarrier, { isLoading: creating }] = useCreateCarrierMutation();
   const [open, setOpen] = useState(false);
+  const [selected, setSelected] = useState<Carrier | null>(null);
   const [form] = Form.useForm();
 
   const columns: ColumnsType<Carrier> = useMemo(
@@ -91,7 +93,13 @@ export function CarriersPage() {
         onRetry={() => void refetch()}
       >
         <Card bordered={false}>
-          <Table rowKey="id" columns={columns} dataSource={data} scroll={{ x: 960 }} />
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={data}
+            scroll={{ x: 960 }}
+            onRow={(record) => ({ onClick: () => setSelected(record) })}
+          />
         </Card>
       </QueryState>
       <Modal
@@ -133,6 +141,21 @@ export function CarriersPage() {
           </Form.Item>
         </Form>
       </Modal>
+      <Drawer
+        title={selected?.name}
+        open={Boolean(selected)}
+        onClose={() => setSelected(null)}
+        width={480}
+      >
+        {selected ? (
+          <>
+            <p>
+              ИНН {selected.inn} · ОГРН {selected.ogrn}
+            </p>
+            <RegistryChecksCard subjectType="carrier" subjectId={selected.id} />
+          </>
+        ) : null}
+      </Drawer>
     </div>
   );
 }

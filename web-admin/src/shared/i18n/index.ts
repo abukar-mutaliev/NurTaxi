@@ -181,6 +181,7 @@ const resources = {
         taxiPermitExpiresAt: 'Срок действия',
         taxiPermitPerpetual: 'Бессрочное',
         taxiPermitMissing: 'Не указано',
+        registryChecks: 'Проверки в реестре такси',
         docApproved: 'Документ одобрен',
         docRejected: 'Документ отклонён',
         driverApproved: 'Водитель одобрен',
@@ -273,6 +274,10 @@ const resources = {
         ordersCompleted: 'Завершённые',
         driversOnline: 'Водители онлайн',
         paymentsTotal: 'Сумма платежей',
+        regulatorSubtitle: 'Доступ уполномоченного органа: журнал, выгрузки, аудит',
+        regulatorOrders: 'Просмотр заказов и фильтрация по периоду',
+        regulatorExports: 'Оформление и скачивание выгрузки журнала',
+        regulatorAudit: 'Журнал фактов доступа к сведениям',
       },
       realtime: {
         live: 'Live',

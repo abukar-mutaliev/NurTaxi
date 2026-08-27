@@ -49,7 +49,9 @@ config:
   DB_SSL_REJECT_UNAUTHORIZED: 'true'
 
 # Секреты в кластере берутся из внешнего хранилища (Vault) через существующий Secret.
-# Имя Secret'а с ключами БД/Redis/JWT/провайдеров (Des §14).
+# Обязательные ключи (C5.11, C5.14): JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, DB_PASSWORD,
+# FIELD_ENCRYPTION_KEY (≥32 символов). Опционально после B.1/B.3: TAXI_REGISTRY_URL,
+# TAXI_REGISTRY_TOKEN, RIS_ENDPOINT, RIS_TOKEN, PUSH_ENDPOINT, PUSH_TOKEN.
 existingSecret: nurtaxi-backend-secrets
 
 # Метрики для Prometheus Operator.

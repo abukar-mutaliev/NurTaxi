@@ -33,6 +33,9 @@ export function assertProductionSecurity(env: Record<string, string | undefined>
   if (!env.CORS_ORIGINS || env.CORS_ORIGINS.trim() === '' || env.CORS_ORIGINS.includes('*')) {
     problems.push('CORS_ORIGINS должен содержать явный список источников без *');
   }
+  if (!env.FIELD_ENCRYPTION_KEY || env.FIELD_ENCRYPTION_KEY.length < 32) {
+    problems.push('FIELD_ENCRYPTION_KEY должен быть задан (минимум 32 символа)');
+  }
   const s3Region = env.S3_REGION ?? '';
   if (/us-|eu-|ap-|sa-|ca-|af-|me-/.test(s3Region) && !s3Region.startsWith('ru-')) {
     problems.push(`S3_REGION=${s3Region} указывает на зарубежную зону`);

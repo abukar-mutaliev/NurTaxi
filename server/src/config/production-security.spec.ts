@@ -22,6 +22,35 @@ describe('assertProductionSecurity', () => {
     ).toThrow(/Отказ старта/);
   });
 
+  it('refuses production without FIELD_ENCRYPTION_KEY', () => {
+    expect(() =>
+      assertProductionSecurity({
+        NODE_ENV: Environment.Production,
+        JWT_ACCESS_SECRET: 'a-long-enough-access-secret-value',
+        JWT_REFRESH_SECRET: 'a-long-enough-refresh-secret-value',
+        DB_PASSWORD: 'strong-db-password',
+        DB_SSL: 'true',
+        CORS_ORIGINS: 'https://admin.nurtaxi.ru',
+        S3_REGION: 'ru-central-1',
+      }),
+    ).toThrow(/FIELD_ENCRYPTION_KEY/);
+  });
+
+  it('allows production when secrets, TLS, CORS and encryption key are set', () => {
+    expect(() =>
+      assertProductionSecurity({
+        NODE_ENV: Environment.Production,
+        JWT_ACCESS_SECRET: 'a-long-enough-access-secret-value',
+        JWT_REFRESH_SECRET: 'a-long-enough-refresh-secret-value',
+        DB_PASSWORD: 'strong-db-password',
+        DB_SSL: 'true',
+        CORS_ORIGINS: 'https://admin.nurtaxi.ru',
+        S3_REGION: 'ru-central-1',
+        FIELD_ENCRYPTION_KEY: 'nurtaxi-prod-field-encryption-key-32ch',
+      }),
+    ).not.toThrow();
+  });
+
   it('parses explicit CORS origins in production', () => {
     expect(parseCorsOrigins('https://admin.nurtaxi.ru', Environment.Production)).toEqual([
       'https://admin.nurtaxi.ru',

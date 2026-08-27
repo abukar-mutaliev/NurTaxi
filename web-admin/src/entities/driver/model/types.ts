@@ -22,6 +22,7 @@ export interface Vehicle {
 
 /** Разрешение на деятельность такси (`§8.2`); требуется не во всех регионах. */
 export interface TaxiPermit {
+  id?: string;
   number: string;
   issuingRegion: string;
   issuedAt: string;

@@ -91,6 +91,9 @@ export class DriverDocumentResponse {
 
 export class TaxiPermitResponse {
   @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
   number!: string;
 
   @ApiProperty()
@@ -107,6 +110,7 @@ export class TaxiPermitResponse {
 
   static from(permit: DriverTaxiPermit): TaxiPermitResponse {
     return {
+      id: permit.id,
       number: permit.number,
       issuingRegion: permit.issuingRegion,
       issuedAt: permit.issuedAt,

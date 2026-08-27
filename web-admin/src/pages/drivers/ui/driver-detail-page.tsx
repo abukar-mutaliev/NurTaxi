@@ -39,6 +39,7 @@ import {
 import { RegionScopeBanner } from '@/widgets/region-scope-banner';
 import { DocumentStatus, UserStatus } from '@/shared/model/enums';
 import { PageHeader, PageLoader, VerificationStatusTag, DocumentStatusTag } from '@/shared/ui';
+import { RegistryChecksCard } from '@/widgets/registry-checks';
 import { formatPhone, getErrorMessage } from '@/shared/lib/utils';
 
 const { Text } = Typography;
@@ -299,6 +300,18 @@ export function DriverDetailPage() {
                 ) : (
                   <Text type="secondary">{t('drivers.taxiPermitMissing')}</Text>
                 )}
+                <Text strong style={{ display: 'block', marginTop: 16, marginBottom: 8 }}>
+                  {t('drivers.registryChecks')}
+                </Text>
+                <RegistryChecksCard
+                  subjectType="vehicle"
+                  subjectId={vehicle?.id}
+                />
+                {driver.taxiPermit?.id ? (
+                  <div style={{ marginTop: 12 }}>
+                    <RegistryChecksCard subjectType="permit" subjectId={driver.taxiPermit.id} />
+                  </div>
+                ) : null}
               </>
             )}
           </Card>

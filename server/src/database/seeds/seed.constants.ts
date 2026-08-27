@@ -44,6 +44,15 @@ export const SEED_IDS = {
   familyMembers: {
     client1Client2: '00000000-0000-4000-8000-000000000801',
   },
+  carriers: {
+    park1: '00000000-0000-4000-8000-000000000901',
+  },
+  permits: {
+    driver1: '00000000-0000-4000-8000-000000000911',
+  },
+  assignments: {
+    driver1: '00000000-0000-4000-8000-000000000921',
+  },
 } as const;
 
 export interface SeedUserDef {
@@ -65,6 +74,12 @@ export const SEED_USERS: SeedUserDef[] = [
     phone: '+79000000002',
     name: 'Оператор модерации',
     role: Role.Operator,
+  },
+  {
+    id: SEED_IDS.users.regionalAdmin,
+    phone: '+79000000003',
+    name: 'Региональный администратор',
+    role: Role.RegionalAdmin,
   },
     {
       id: SEED_IDS.users.regulator,

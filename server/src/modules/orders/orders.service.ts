@@ -32,6 +32,11 @@ import { PaymentsService } from '../payments/payments.service';
 import { FamilyService } from '../users/family.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { Receipt } from '../payments/entities/receipt.entity';
+import { AssignmentSnapshotService } from '../carriers/assignment-snapshot.service';
+import { OfferJournalService } from './offer-journal.service';
+import { TripTrackService } from './trip-track.service';
+import { OfferOutcome } from '../../common/enums/compliance.enum';
+import { UsersService } from '../users/users.service';
 import type { CreateOrderDto, OrderEstimateDto } from './dto/orders.dto';
 import type { OrderEstimateResponse } from './dto/orders.presenter';
 import {
@@ -80,9 +85,17 @@ export class OrdersService {
     @InjectRepository(Receipt)
     private readonly receipts: Repository<Receipt>,
     @Optional() private readonly realtime?: RealtimeBroadcastService,
+    @Optional() private readonly snapshots?: AssignmentSnapshotService,
+    @Optional() private readonly offerJournal?: OfferJournalService,
+    @Optional() private readonly usersService?: UsersService,
+    @Optional() private readonly tripTrack?: TripTrackService,
   ) {}
 
   private readonly logger = new Logger(OrdersService.name);
+
+  async recordTrackPoint(orderId: string, lat: number, lng: number, accuracyM?: number): Promise<void> {
+    await this.tripTrack?.recordIfDue(orderId, lat, lng, accuracyM);
+  }
 
   async estimate(dto: OrderEstimateDto): Promise<OrderEstimateResponse> {
     const region = await this.regionsService.getRegionOrThrow(dto.regionId);
@@ -127,6 +140,10 @@ export class OrdersService {
       durationS: mapRoute.durationS,
     });
 
+    const [{ next }] = (await this.orders.query(
+      `SELECT nextval('order_public_number_seq') AS next`,
+    )) as Array<{ next: string }>;
+
     const order = this.orders.create({
       clientId,
       regionId: dto.regionId,
@@ -142,6 +159,7 @@ export class OrdersService {
       paymentMethod: dto.paymentMethod,
       comment: dto.comment ?? null,
       familyMemberId: dto.familyMemberId ?? null,
+      publicNumber: `NT-${String(next).padStart(8, '0')}`,
     });
 
     const saved = await this.orders.save(order);
@@ -313,6 +331,13 @@ export class OrdersService {
     }
 
     await this.matching.clearOffer(orderId);
+    await this.offerJournal?.resolvePending(orderId, driver.id, OfferOutcome.Accepted, true);
+    await this.offerJournal?.supersedePending(orderId, driver.id);
+
+    const client = await this.usersService?.findById(order.clientId);
+    const snapshot = this.snapshots
+      ? await this.snapshots.capture(driver, client?.phone ?? null)
+      : null;
 
     const updated = await this.transitions.transition({
       orderId,
@@ -320,6 +345,15 @@ export class OrdersService {
       actorId: driverUserId,
       mutate: (o) => {
         o.driverId = driver.id;
+        if (snapshot) {
+          o.assignmentSnapshot = snapshot;
+          const vehicle = typeof snapshot.vehicle === 'object' && snapshot.vehicle ? snapshot.vehicle : null;
+          const carrier = typeof snapshot.carrier === 'object' && snapshot.carrier ? snapshot.carrier : null;
+          const permit = typeof snapshot.permit === 'object' && snapshot.permit ? snapshot.permit : null;
+          o.vehicleId = vehicle?.id ?? null;
+          o.carrierId = carrier?.id ?? null;
+          o.permitId = permit?.id ?? null;
+        }
       },
     });
 
@@ -352,6 +386,10 @@ export class OrdersService {
       orderId,
       toStatus,
       actorId: driverUserId,
+      mutate: (o) => {
+        if (action === 'start') o.tripStartedAt = new Date();
+        if (action === 'complete') o.tripEndedAt = new Date();
+      },
     });
 
     if (toStatus === OrderStatus.Completed) {

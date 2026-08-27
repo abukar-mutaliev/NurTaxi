@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { trace } from '@opentelemetry/api';
 import type { Params } from 'nestjs-pino';
-import type { ReqId } from 'pino-http';
+import { LOGGER_REDACT_PATHS } from '../common/compliance/pii-scrubber';
 
-type HttpRequest = IncomingMessage & { id?: ReqId };
+type HttpRequest = IncomingMessage & { id?: string };
 
 /**
  * Конфигурация структурированного (JSON) логирования через pino.
@@ -47,20 +47,7 @@ export function buildLoggerConfig(): Params {
       },
       // Маскирование чувствительных полей (ПДн, секреты, токены) в прикладных логах.
       redact: {
-        paths: [
-          'req.headers.authorization',
-          'req.headers.cookie',
-          'req.body.password',
-          'req.body.otp',
-          'req.body.code',
-          'req.body.phone',
-          'req.body.token',
-          'req.body.refreshToken',
-          '*.password',
-          '*.otp',
-          '*.idempotencyKey',
-          '*.credentials',
-        ],
+        paths: LOGGER_REDACT_PATHS,
         censor: '[REDACTED]',
       },
       customProps: (req: IncomingMessage) => {

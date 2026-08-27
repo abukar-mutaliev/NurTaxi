@@ -25,5 +25,5 @@ export function assertRegionAccess(
 }
 
 export function isRegionLockedRole(role: Role): boolean {
-  return role === Role.Operator || role === Role.RegionalAdmin;
+  return role === Role.Operator || role === Role.RegionalAdmin || role === Role.Regulator;
 }

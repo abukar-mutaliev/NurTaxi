@@ -82,11 +82,11 @@ export class AdminScopeService {
   }
 
   validateStaffAssignment(role: Role, regionId?: string | null): void {
-    const staffRoles = [Role.Operator, Role.RegionalAdmin];
+    const staffRoles = [Role.Operator, Role.RegionalAdmin, Role.Regulator];
     if (!staffRoles.includes(role)) {
       throw new BadRequestException({
         code: 'INVALID_STAFF_ROLE',
-        message: 'Можно назначить только operator или regional_admin',
+        message: 'Можно назначить только operator, regional_admin или regulator',
       });
     }
     if (!regionId) {

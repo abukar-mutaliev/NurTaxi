@@ -24,7 +24,12 @@ import { UsersService } from '../users/users.service';
 
 @WebSocketGateway({
   namespace: '/ws',
-  cors: { origin: true, credentials: true },
+  cors: {
+    origin: process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+      : true,
+    credentials: true,
+  },
 })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(RealtimeGateway.name);

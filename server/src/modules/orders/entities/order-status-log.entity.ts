@@ -20,7 +20,7 @@ export class OrderStatusLog {
   @Column({ name: 'order_id', type: 'uuid' })
   orderId!: string;
 
-  @ManyToOne(() => Order, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 

@@ -12,6 +12,8 @@ describe('PricingService', () => {
     timezone: 'Europe/Moscow',
     currency: 'RUB',
     featureFlags: { surge_pricing: false },
+    driverRequirements: {},
+    complianceConfig: {},
     createdAt: new Date(),
     updatedAt: new Date(),
   };

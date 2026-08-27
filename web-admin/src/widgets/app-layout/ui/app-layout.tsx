@@ -11,6 +11,10 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   MessageOutlined,
+  AuditOutlined,
+  BankOutlined,
+  CloudServerOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import { Avatar, Button, Dropdown, Layout, Menu, Select, Space, Typography } from 'antd';
 import type { MenuProps } from 'antd';
@@ -105,11 +109,39 @@ export function AppLayout() {
         permission: 'orders.manage',
       },
       {
+        key: 'carriers',
+        path: '/carriers',
+        label: t('nav.carriers'),
+        icon: <BankOutlined />,
+        permission: 'carriers.manage',
+      },
+      {
+        key: 'placement',
+        path: '/placement',
+        label: t('nav.placement'),
+        icon: <CloudServerOutlined />,
+        permission: 'sites.manage',
+      },
+      {
+        key: 'exports',
+        path: '/exports',
+        label: t('nav.exports'),
+        icon: <ExportOutlined />,
+        permission: 'orders.export',
+      },
+      {
         key: 'appeals',
         path: '/appeals',
         label: t('nav.appeals'),
         icon: <MessageOutlined />,
         permission: 'appeals.manage',
+      },
+      {
+        key: 'audit',
+        path: '/audit',
+        label: t('nav.audit'),
+        icon: <AuditOutlined />,
+        permission: 'audit.view',
       },
     ],
     [t],

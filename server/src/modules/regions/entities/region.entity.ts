@@ -5,6 +5,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import type { DriverRequirements } from '../../../common/enums/driver-requirement.enum';
+import type { RegionComplianceConfig } from '../../../common/compliance/compliance-config';
 
 /**
  * Минимальная модель региона (Des §4.1, §13.5).
@@ -29,6 +31,16 @@ export class Region {
 
   @Column({ name: 'feature_flags', type: 'jsonb', default: () => "'{}'" })
   featureFlags!: Record<string, boolean>;
+
+  /**
+   * Режимы региональных требований к анкете водителя (`hidden`/`optional`/`required`).
+   * Хранится частично: недостающие ключи добираются из `DEFAULT_DRIVER_REQUIREMENTS`.
+   */
+  @Column({ name: 'driver_requirements', type: 'jsonb', default: () => "'{}'" })
+  driverRequirements!: Partial<DriverRequirements>;
+
+  @Column({ name: 'compliance_config', type: 'jsonb', default: () => "'{}'" })
+  complianceConfig!: Partial<RegionComplianceConfig>;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

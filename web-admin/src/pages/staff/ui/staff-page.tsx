@@ -220,6 +220,7 @@ export function StaffPage() {
               options={[
                 { value: Role.Operator, label: roleLabel(Role.Operator) },
                 { value: Role.RegionalAdmin, label: roleLabel(Role.RegionalAdmin) },
+                { value: Role.Regulator, label: roleLabel(Role.Regulator) },
               ]}
             />
           </Form.Item>

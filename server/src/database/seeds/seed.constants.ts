@@ -15,6 +15,7 @@ export const SEED_IDS = {
     superAdmin: '00000000-0000-4000-8000-000000000201',
     operator: '00000000-0000-4000-8000-000000000202',
     regionalAdmin: '00000000-0000-4000-8000-000000000203',
+    regulator: '00000000-0000-4000-8000-000000000204',
     client1: '00000000-0000-4000-8000-000000000211',
     client2: '00000000-0000-4000-8000-000000000212',
     driver1: '00000000-0000-4000-8000-000000000221',
@@ -65,12 +66,12 @@ export const SEED_USERS: SeedUserDef[] = [
     name: 'Оператор модерации',
     role: Role.Operator,
   },
-  {
-    id: SEED_IDS.users.regionalAdmin,
-    phone: '+79000000003',
-    name: 'Региональный админ',
-    role: Role.RegionalAdmin,
-  },
+    {
+      id: SEED_IDS.users.regulator,
+      phone: '+79000000004',
+      name: 'Регулятор (выгрузка журнала)',
+      role: Role.Regulator,
+    },
   {
     id: SEED_IDS.users.client1,
     phone: '+79280000001',

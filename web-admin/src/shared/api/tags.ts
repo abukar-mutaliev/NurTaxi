@@ -10,6 +10,9 @@ export const API_TAGS = {
   Analytics: 'Analytics',
   Complaint: 'Complaint',
   Audit: 'Audit',
+  Carrier: 'Carrier',
+  Placement: 'Placement',
+  Export: 'Export',
 } as const;
 
 export type ApiTag = (typeof API_TAGS)[keyof typeof API_TAGS];

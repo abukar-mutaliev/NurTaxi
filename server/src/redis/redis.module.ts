@@ -23,6 +23,9 @@ import { REDIS_CLIENT } from './redis.constants';
           password: redis.password,
           lazyConnect: false,
           maxRetriesPerRequest: 3,
+          tls: redis.tls
+            ? { rejectUnauthorized: redis.tlsRejectUnauthorized }
+            : undefined,
         });
       },
     },

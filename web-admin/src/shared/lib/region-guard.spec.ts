@@ -24,6 +24,7 @@ describe('region-guard', () => {
 
   it('identifies locked roles', () => {
     expect(isRegionLockedRole(Role.Operator)).toBe(true);
+    expect(isRegionLockedRole(Role.Regulator)).toBe(true);
     expect(isRegionLockedRole(Role.SuperAdmin)).toBe(false);
   });
 });

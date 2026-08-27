@@ -12,7 +12,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
 import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { DriverRequirementKey, RequirementMode } from '@nurtaxi/shared-core/shared/model';
 import {
+  requirementMode,
   useGetDriverEarningsQuery,
   useGetDriverProfileQuery,
 } from '@nurtaxi/shared-core/entities/driver';
@@ -67,6 +69,21 @@ export function ProfileScreen() {
   const documents = profile?.documents ?? [];
   const approvedDocs = documents.filter((doc) => doc.status === 'approved').length;
   const isVerified = profile?.verificationStatus === 'approved';
+
+  // Блок разрешения включается для каждого региона отдельно — вне таких регионов не показываем.
+  const permitMode = requirementMode(profile?.requirements, DriverRequirementKey.TaxiPermit);
+  const permit = profile?.taxiPermit;
+  const permitSubtitle = permit
+    ? [
+        permit.number,
+        permit.expiresAt ? `до ${permit.expiresAt}` : 'бессрочное',
+        permit.isExpired ? 'просрочено' : null,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : permitMode === RequirementMode.Required
+      ? 'Не указано — требуется в вашем регионе'
+      : 'Не указано';
 
   return (
     <View style={styles.root}>
@@ -153,6 +170,15 @@ export function ProfileScreen() {
           }
           title={t('driver.vehicle')}
         />
+        {permitMode === RequirementMode.Hidden ? null : (
+          <MenuCard
+            dotTone={permit && !permit.isExpired ? undefined : 'accent'}
+            icon="documents"
+            onPress={() => router.push('/(verification)/registration')}
+            subtitle={permitSubtitle}
+            title="Разрешение такси"
+          />
+        )}
         <MenuCard
           icon="documents"
           onPress={() => router.push('/(verification)/documents')}

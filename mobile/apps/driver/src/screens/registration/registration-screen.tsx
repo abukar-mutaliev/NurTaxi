@@ -7,6 +7,10 @@
  * Ввод адреса подсказывает `GET /geo/search` (сервер учитывает адресацию Северного Кавказа),
  * а марка, модель и цвет — локальный справочник: он не меняется от запроса к запросу,
  * поэтому подсказка появляется мгновенно, без сети.
+ *
+ * Блок «Разрешение на деятельность такси» показывается и становится обязательным по
+ * настройке выбранного региона (`region.driverRequirements`), которая задаётся в
+ * админ-панели: новый регион со своими правилами не требует релиза приложения.
  */
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
@@ -16,13 +20,17 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
+  EMPTY_TAXI_PERMIT_FORM,
   driverRegistrationFormSchema,
-  formatBirthDateInput,
+  formatIsoDateInput,
   formatPlateInput,
+  isTaxiPermitFilled,
+  toTaxiPermitPayload,
   type DriverRegistrationForm,
 } from '@nurtaxi/shared-core/shared/lib';
 import { Button, Card, Input, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
-import { useRegisterDriverMutation } from '@nurtaxi/shared-core/entities/driver';
+import { DriverRequirementKey, RequirementMode } from '@nurtaxi/shared-core/shared/model';
+import { requirementMode, useRegisterDriverMutation } from '@nurtaxi/shared-core/entities/driver';
 import { useGetRegionsQuery } from '@nurtaxi/shared-core/entities/region';
 import { selectCurrentUser } from '@nurtaxi/shared-core/entities/session';
 
@@ -73,6 +81,7 @@ export function RegistrationScreen() {
       drivingExperienceYears: 0,
       regionId: '',
       vehicle: { make: '', model: '', plateNumber: '', color: '', year: CURRENT_YEAR },
+      taxiPermit: EMPTY_TAXI_PERMIT_FORM,
     },
   });
 
@@ -80,6 +89,20 @@ export function RegistrationScreen() {
   const makeValue = watch('vehicle.make');
   const modelValue = watch('vehicle.model');
   const colorValue = watch('vehicle.color');
+  const permitValue = watch('taxiPermit');
+
+  /**
+   * Разрешение на деятельность такси включается для каждого региона отдельно
+   * (`region.driverRequirements`), поэтому блок и его обязательность приходят с сервера:
+   * новый регион настраивается в админ-панели и не требует обновления приложения.
+   */
+  const selectedRegion = regions.find((region) => region.id === selectedRegionId);
+  const permitMode = requirementMode(
+    selectedRegion?.driverRequirements,
+    DriverRequirementKey.TaxiPermit,
+  );
+  const permitRequired = permitMode === RequirementMode.Required;
+  const permitMissing = permitRequired && !isTaxiPermitFilled(permitValue);
 
   // --- Подсказки по автомобилю (локальный справочник) ---
   const makeOptions = useMemo(
@@ -95,10 +118,26 @@ export function RegistrationScreen() {
     [colorValue],
   );
 
+  // Разрешение бывает выдано в другом субъекте, поэтому список регионов — подсказка, не выбор.
+  const issuingRegionOptions = useMemo(
+    () =>
+      toOptions(
+        filterCatalog(
+          regions.map((region) => region.name),
+          permitValue?.issuingRegion ?? '',
+        ),
+        'permit-region',
+      ),
+    [regions, permitValue?.issuingRegion],
+  );
+
   const onSubmit = async (form: DriverRegistrationForm) => {
     setApiError(null);
     try {
-      await registerDriver(form).unwrap();
+      await registerDriver({
+        ...form,
+        taxiPermit: toTaxiPermitPayload(form.taxiPermit),
+      }).unwrap();
       router.push('/(verification)/documents');
     } catch (cause) {
       setApiError(toAppError(cause as never).message);
@@ -109,7 +148,7 @@ export function RegistrationScreen() {
     <Screen
       footer={
         <Button
-          disabled={!isValid || submitting}
+          disabled={!isValid || permitMissing || submitting}
           loading={submitting}
           onPress={handleSubmit(onSubmit)}
           title="Далее — документы"
@@ -158,7 +197,7 @@ export function RegistrationScreen() {
                   keyboardType="number-pad"
                   label="Дата рождения"
                   maxLength={10}
-                  onChangeText={(value) => field.onChange(formatBirthDateInput(value))}
+                  onChangeText={(value) => field.onChange(formatIsoDateInput(value))}
                   placeholder="1990-05-15"
                   value={field.value}
                 />
@@ -214,7 +253,15 @@ export function RegistrationScreen() {
                 return (
                   <Pressable
                     key={region.id}
-                    onPress={() => setValue('regionId', region.id, { shouldValidate: true })}
+                    onPress={() => {
+                      setValue('regionId', region.id, { shouldValidate: true });
+                      // Чаще всего разрешение выдано там же, где водитель работает.
+                      if (!permitValue?.issuingRegion) {
+                        setValue('taxiPermit.issuingRegion', region.name, {
+                          shouldValidate: true,
+                        });
+                      }
+                    }}
                   >
                     <Card tone={active ? 'muted' : 'surface'}>
                       <Text tone={active ? 'primary' : 'default'} variant="bodyStrong">
@@ -344,6 +391,97 @@ export function RegistrationScreen() {
             />
           )}
         />
+
+        {/* --- Разрешение на деятельность такси (показывается по настройке региона) --- */}
+        {permitMode === RequirementMode.Hidden ? null : (
+          <>
+            <View style={{ gap: theme.spacing.xs, paddingTop: theme.spacing.sm }}>
+              <Text variant="title">Разрешение на деятельность такси</Text>
+              <Text tone={permitMissing ? 'danger' : 'muted'} variant="caption">
+                {permitRequired
+                  ? 'В выбранном регионе разрешение обязательно'
+                  : 'Необязательно в выбранном регионе — можно заполнить позже'}
+              </Text>
+            </View>
+
+            <Controller
+              control={control}
+              name="taxiPermit.number"
+              render={({ field }) => (
+                <Input
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  error={errors.taxiPermit?.number?.message}
+                  label="Номер разрешения"
+                  onChangeText={field.onChange}
+                  placeholder="АА-06-001234"
+                  value={field.value}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="taxiPermit.issuingRegion"
+              render={({ field }) => (
+                <SuggestInput
+                  autoCapitalize="words"
+                  error={errors.taxiPermit?.issuingRegion?.message}
+                  label="Регион выдачи"
+                  onChangeText={field.onChange}
+                  onSelect={(option) =>
+                    setValue('taxiPermit.issuingRegion', option.title, { shouldValidate: true })
+                  }
+                  options={issuingRegionOptions}
+                  placeholder="Республика Ингушетия"
+                  value={field.value}
+                />
+              )}
+            />
+
+            <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="taxiPermit.issuedAt"
+                  render={({ field }) => (
+                    <Input
+                      error={errors.taxiPermit?.issuedAt?.message}
+                      keyboardType="number-pad"
+                      label="Дата выдачи"
+                      maxLength={10}
+                      onChangeText={(value) => field.onChange(formatIsoDateInput(value))}
+                      placeholder="2024-03-01"
+                      value={field.value}
+                    />
+                  )}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Controller
+                  control={control}
+                  name="taxiPermit.expiresAt"
+                  render={({ field }) => (
+                    <Input
+                      error={errors.taxiPermit?.expiresAt?.message}
+                      hint="Пусто — бессрочное"
+                      keyboardType="number-pad"
+                      label="Срок действия"
+                      maxLength={10}
+                      onChangeText={(value) => field.onChange(formatIsoDateInput(value))}
+                      placeholder="2029-03-01"
+                      value={field.value}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            <Text tone="muted" variant="caption">
+              Скан разрешения загрузите на следующем шаге вместе с остальными документами.
+            </Text>
+          </>
+        )}
 
         {apiError ? (
           <Card tone="danger">

@@ -4,11 +4,12 @@ export const Role = {
   Operator: 'operator',
   RegionalAdmin: 'regional_admin',
   SuperAdmin: 'super_admin',
+  Regulator: 'regulator',
 } as const;
 
 export type Role = (typeof Role)[keyof typeof Role];
 
-export const ADMIN_ROLES: Role[] = [Role.SuperAdmin, Role.RegionalAdmin, Role.Operator];
+export const ADMIN_ROLES: Role[] = [Role.SuperAdmin, Role.RegionalAdmin, Role.Operator, Role.Regulator];
 
 export const OrderStatus = {
   Created: 'created',

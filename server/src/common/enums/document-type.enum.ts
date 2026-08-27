@@ -9,9 +9,11 @@ export enum DocumentType {
   CarPhoto = 'car_photo',
   InteriorPhoto = 'interior_photo',
   Selfie = 'selfie',
+  /** Разрешение на деятельность такси — требуется не во всех регионах, см. `driver-requirement.enum`. */
+  TaxiPermit = 'taxi_permit',
 }
 
-/** Обязательные документы для отправки на проверку (Req §8.2, этап 3). */
+/** Базовый комплект, обязательный во всех регионах (Req §8.2, этап 3). */
 export const REQUIRED_DOCUMENT_TYPES: DocumentType[] = [
   DocumentType.Passport,
   DocumentType.License,

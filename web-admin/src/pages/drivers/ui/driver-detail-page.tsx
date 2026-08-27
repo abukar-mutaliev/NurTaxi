@@ -51,6 +51,7 @@ const DOC_LABELS: Record<string, string> = {
   car_photo: 'Фото авто',
   interior_photo: 'Фото салона',
   selfie: 'Селфи',
+  taxi_permit: 'Разрешение такси',
 };
 
 export function DriverDetailPage() {
@@ -186,6 +187,7 @@ export function DriverDetailPage() {
   const isBlocked = driver.accountStatus === UserStatus.Blocked;
   const hasPendingDocuments = driver.documents.some((doc) => doc.status === DocumentStatus.Pending);
   const vehicle = driver.vehicles[0];
+  const permitMode = driver.requirements?.taxi_permit ?? 'hidden';
 
   return (
     <div>
@@ -264,6 +266,39 @@ export function DriverDetailPage() {
                   <Descriptions.Item label={t('drivers.plateNumber')}>{vehicle.plateNumber}</Descriptions.Item>
                   <Descriptions.Item label={t('drivers.color')}>{vehicle.color}</Descriptions.Item>
                 </Descriptions>
+              </>
+            )}
+            {/* Реквизиты нужны рядом со сканом: без них модератору нечего сверять. */}
+            {permitMode !== 'hidden' && (
+              <>
+                <Text strong style={{ display: 'block', marginTop: 16, marginBottom: 8 }}>
+                  {t('drivers.taxiPermit')}
+                  {permitMode === 'required' ? ` (${t('drivers.taxiPermitRequired')})` : ''}
+                </Text>
+                {driver.taxiPermit ? (
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label={t('drivers.taxiPermitNumber')}>
+                      {driver.taxiPermit.number}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('drivers.taxiPermitIssuingRegion')}>
+                      {driver.taxiPermit.issuingRegion}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('drivers.taxiPermitIssuedAt')}>
+                      {driver.taxiPermit.issuedAt}
+                    </Descriptions.Item>
+                    <Descriptions.Item label={t('drivers.taxiPermitExpiresAt')}>
+                      {driver.taxiPermit.expiresAt ? (
+                        <Tag color={driver.taxiPermit.isExpired ? 'red' : 'green'}>
+                          {driver.taxiPermit.expiresAt}
+                        </Tag>
+                      ) : (
+                        t('drivers.taxiPermitPerpetual')
+                      )}
+                    </Descriptions.Item>
+                  </Descriptions>
+                ) : (
+                  <Text type="secondary">{t('drivers.taxiPermitMissing')}</Text>
+                )}
               </>
             )}
           </Card>

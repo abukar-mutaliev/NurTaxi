@@ -5,13 +5,22 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from '../../common/enums/role.enum';
 import { UserStatus } from '../../common/enums/user-status.enum';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
-import { DocumentType, REQUIRED_DOCUMENT_TYPES } from '../../common/enums/document-type.enum';
+import { DocumentType } from '../../common/enums/document-type.enum';
+import {
+  DriverRequirementKey,
+  RequirementMode,
+  isRequirementMandatory,
+  requiredDocumentTypesFor,
+  resolveDriverRequirements,
+  type DriverRequirements,
+} from '../../common/enums/driver-requirement.enum';
 import { DriverOnlineStatus } from '../../common/enums/driver-online-status.enum';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
 import { EventBusService } from '../../messaging/event-bus.service';
@@ -22,15 +31,23 @@ import { RegionsService } from '../regions/regions.service';
 import { DriverLocationService } from './location/driver-location.service';
 import { DriverProfile } from './entities/driver-profile.entity';
 import { DriverDocument } from './entities/driver-document.entity';
+import { DriverTaxiPermit, isPermitExpired } from './entities/driver-taxi-permit.entity';
 import { Vehicle } from './entities/vehicle.entity';
 import {
   DOCUMENT_AUTO_VERIFIER,
   type DocumentAutoVerifier,
 } from './verification/document-auto-verifier.interface';
-import type { RegisterDriverDto, RegisterDocumentDto, PresignDocumentDto, AdminUpdateDriverDto } from './dto/drivers.dto';
+import type {
+  RegisterDriverDto,
+  RegisterDocumentDto,
+  PresignDocumentDto,
+  AdminUpdateDriverDto,
+  TaxiPermitDto,
+} from './dto/drivers.dto';
 import type { WorkSchedule } from './entities/work-schedule.types';
 import { LedgerService } from '../payments/ledger.service';
 import { Payout } from '../payments/entities/payout.entity';
+import { TaxiRegistryService } from '../taxi-registry/taxi-registry.service';
 
 const CONTENT_TYPE_EXT: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -48,6 +65,8 @@ export class DriversService {
     private readonly documents: Repository<DriverDocument>,
     @InjectRepository(Vehicle)
     private readonly vehicles: Repository<Vehicle>,
+    @InjectRepository(DriverTaxiPermit)
+    private readonly taxiPermits: Repository<DriverTaxiPermit>,
     private readonly regionsService: RegionsService,
     private readonly driverLocation: DriverLocationService,
     private readonly usersService: UsersService,
@@ -56,6 +75,7 @@ export class DriversService {
     @Inject(DOCUMENT_AUTO_VERIFIER)
     private readonly autoVerifier: DocumentAutoVerifier,
     private readonly ledgerService: LedgerService,
+    @Optional() private readonly taxiRegistry?: TaxiRegistryService,
   ) {}
 
   listActiveRegions() {
@@ -65,7 +85,7 @@ export class DriversService {
   async getProfileByUserId(userId: string): Promise<DriverProfile> {
     const profile = await this.drivers.findOne({
       where: { userId },
-      relations: ['user', 'vehicles', 'documents', 'region'],
+      relations: ['user', 'vehicles', 'documents', 'region', 'taxiPermit'],
     });
     if (!profile) {
       throw new NotFoundException({
@@ -96,7 +116,8 @@ export class DriversService {
       });
     }
 
-    await this.regionsService.getRegionOrThrow(dto.regionId);
+    const region = await this.regionsService.getRegionOrThrow(dto.regionId);
+    const requirements = resolveDriverRequirements(region.driverRequirements);
 
     let profile = await this.drivers.findOne({
       where: { userId },
@@ -113,6 +134,9 @@ export class DriversService {
         message: 'Верифицированный профиль нельзя изменить без обращения в поддержку',
       });
     }
+
+    // Проверяем разрешение до сохранения анкеты, чтобы отказ не оставлял профиль изменённым.
+    await this.assertTaxiPermitAcceptable(requirements, profile?.id, dto.taxiPermit);
 
     if (!profile) {
       profile = this.drivers.create({
@@ -141,6 +165,13 @@ export class DriversService {
 
     await this.upsertPrimaryVehicle(profile.id, dto.vehicle);
 
+    if (
+      dto.taxiPermit &&
+      requirements[DriverRequirementKey.TaxiPermit] !== RequirementMode.Hidden
+    ) {
+      await this.upsertTaxiPermit(profile.id, dto.taxiPermit);
+    }
+
     if (user.role === Role.Client) {
       user.role = Role.Driver;
       await this.drivers.manager.getRepository(User).save(user);
@@ -162,6 +193,104 @@ export class DriversService {
     }
 
     await this.vehicles.save(vehicle);
+  }
+
+  // --- Разрешение на деятельность такси (Req §8.2; обязательность — по региону) ---
+
+  /** Режимы требований региона: анкета и комплект документов строятся по ним. */
+  private async requirementsForRegion(regionId: string): Promise<DriverRequirements> {
+    const region = await this.regionsService.findById(regionId);
+    return resolveDriverRequirements(region?.driverRequirements);
+  }
+
+  /**
+   * Проверяет, что регион либо не требует разрешение, либо оно приходит в анкете
+   * (или уже сохранено ранее), и что даты разрешения непротиворечивы.
+   */
+  private async assertTaxiPermitAcceptable(
+    requirements: DriverRequirements,
+    driverId: string | undefined,
+    dto: TaxiPermitDto | undefined,
+  ): Promise<void> {
+    if (dto) {
+      this.assertPermitDatesValid(dto);
+    }
+
+    if (!isRequirementMandatory(requirements, DriverRequirementKey.TaxiPermit) || dto) {
+      return;
+    }
+
+    const existing = driverId ? await this.taxiPermits.findOne({ where: { driverId } }) : null;
+    if (!existing) {
+      throw new BadRequestException({
+        code: 'TAXI_PERMIT_REQUIRED',
+        message: 'В выбранном регионе нужно указать разрешение на деятельность такси',
+      });
+    }
+    if (isPermitExpired(existing.expiresAt)) {
+      throw new BadRequestException({
+        code: 'TAXI_PERMIT_EXPIRED',
+        message: 'Срок действия разрешения истёк — укажите действующее разрешение',
+      });
+    }
+  }
+
+  private assertPermitDatesValid(dto: TaxiPermitDto): void {
+    const today = new Date().toISOString().slice(0, 10);
+    const issuedAt = dto.issuedAt.slice(0, 10);
+    const expiresAt = dto.expiresAt ? dto.expiresAt.slice(0, 10) : null;
+
+    if (issuedAt > today) {
+      throw new BadRequestException({
+        code: 'TAXI_PERMIT_INVALID_DATES',
+        message: 'Дата выдачи разрешения не может быть в будущем',
+      });
+    }
+    if (expiresAt && expiresAt <= issuedAt) {
+      throw new BadRequestException({
+        code: 'TAXI_PERMIT_INVALID_DATES',
+        message: 'Срок действия должен быть позже даты выдачи',
+      });
+    }
+    if (expiresAt && expiresAt < today) {
+      throw new BadRequestException({
+        code: 'TAXI_PERMIT_EXPIRED',
+        message: 'Срок действия разрешения истёк',
+      });
+    }
+  }
+
+  /** Выход на линию в регионе с обязательным разрешением требует действующего разрешения. */
+  private async assertTaxiPermitValidForWork(profile: DriverProfile): Promise<void> {
+    const requirements = await this.requirementsForRegion(profile.regionId);
+    if (!isRequirementMandatory(requirements, DriverRequirementKey.TaxiPermit)) {
+      return;
+    }
+
+    const permit = await this.taxiPermits.findOne({ where: { driverId: profile.id } });
+    if (!permit || isPermitExpired(permit.expiresAt)) {
+      throw new ForbiddenException({
+        code: 'TAXI_PERMIT_EXPIRED',
+        message: 'Обновите разрешение на деятельность такси, чтобы выйти на линию',
+        details: { expiresAt: permit?.expiresAt ?? null },
+      });
+    }
+  }
+
+  private async upsertTaxiPermit(driverId: string, dto: TaxiPermitDto): Promise<DriverTaxiPermit> {
+    const values = {
+      number: dto.number.trim(),
+      issuingRegion: dto.issuingRegion.trim(),
+      issuedAt: dto.issuedAt.slice(0, 10),
+      expiresAt: dto.expiresAt ? dto.expiresAt.slice(0, 10) : null,
+    };
+
+    const existing = await this.taxiPermits.findOne({ where: { driverId } });
+    const permit = existing
+      ? Object.assign(existing, values)
+      : this.taxiPermits.create({ driverId, ...values });
+
+    return this.taxiPermits.save(permit);
   }
 
   async createDocumentUploadUrl(userId: string, dto: PresignDocumentDto) {
@@ -261,15 +390,37 @@ export class DriversService {
     }
   }
 
+  /**
+   * Чего не хватает анкете для отправки на проверку с учётом требований региона:
+   * комплект документов и реквизиты разрешения считаются вместе, чтобы обязательность
+   * блока в регионе задавалась в одном месте.
+   */
+  private async collectMissingRequirements(
+    profile: DriverProfile,
+    docs: DriverDocument[],
+  ): Promise<{ documents: DocumentType[]; taxiPermit: boolean }> {
+    const requirements = await this.requirementsForRegion(profile.regionId);
+    const uploadedTypes = new Set(docs.map((d) => d.type));
+
+    const permitMandatory = isRequirementMandatory(requirements, DriverRequirementKey.TaxiPermit);
+    const permit = permitMandatory
+      ? await this.taxiPermits.findOne({ where: { driverId: profile.id } })
+      : null;
+
+    return {
+      documents: requiredDocumentTypesFor(requirements).filter((t) => !uploadedTypes.has(t)),
+      taxiPermit: permitMandatory && (!permit || isPermitExpired(permit.expiresAt)),
+    };
+  }
+
   /** Пересчитывает статус верификации после загрузки/модерации документов. */
   async syncVerificationStatus(driverId: string): Promise<VerificationStatus> {
     const profile = await this.drivers.findOneOrFail({ where: { id: driverId } });
     const docs = await this.documents.find({ where: { driverId } });
 
-    const uploadedTypes = new Set(docs.map((d) => d.type));
-    const allUploaded = REQUIRED_DOCUMENT_TYPES.every((t) => uploadedTypes.has(t));
+    const missing = await this.collectMissingRequirements(profile, docs);
 
-    if (!allUploaded) {
+    if (missing.documents.length > 0 || missing.taxiPermit) {
       if (profile.verificationStatus !== VerificationStatus.Rejected) {
         profile.verificationStatus = VerificationStatus.Draft;
       }
@@ -303,14 +454,20 @@ export class DriversService {
     const profile = await this.getProfileByUserId(userId);
     const docs = await this.documents.find({ where: { driverId: profile.id } });
 
-    const uploadedTypes = new Set(docs.map((d) => d.type));
-    const missing = REQUIRED_DOCUMENT_TYPES.filter((t) => !uploadedTypes.has(t));
+    const missing = await this.collectMissingRequirements(profile, docs);
 
-    if (missing.length > 0) {
+    if (missing.taxiPermit) {
+      throw new BadRequestException({
+        code: 'TAXI_PERMIT_REQUIRED',
+        message: 'Укажите действующее разрешение на деятельность такси',
+      });
+    }
+
+    if (missing.documents.length > 0) {
       throw new BadRequestException({
         code: 'DOCUMENTS_INCOMPLETE',
         message: 'Загрузите все обязательные документы',
-        details: { missing },
+        details: { missing: missing.documents },
       });
     }
 
@@ -348,6 +505,18 @@ export class DriversService {
           code: 'DRIVER_BUSY',
           message: 'Нельзя изменить статус во время активной поездки',
         });
+      }
+
+      // Верификация могла пройти до истечения разрешения — проверяем срок на каждом выходе.
+      await this.assertTaxiPermitValidForWork(profile);
+      if (this.taxiRegistry) {
+        const gate = await this.taxiRegistry.isDriverAllowedOnLine(profile.id, profile.regionId);
+        if (!gate.allowed) {
+          throw new ForbiddenException({
+            code: 'REGISTRY_CHECK_FAILED',
+            message: gate.reason ?? 'Выход на линию запрещён: нет подтверждённого разрешения',
+          });
+        }
       }
 
       profile.onlineStatus = DriverOnlineStatus.Online;
@@ -434,7 +603,7 @@ export class DriversService {
 
     return this.drivers.find({
       where,
-      relations: ['user', 'vehicles', 'documents', 'region'],
+      relations: ['user', 'vehicles', 'documents', 'region', 'taxiPermit'],
       order: { updatedAt: 'DESC' },
     });
   }
@@ -453,7 +622,7 @@ export class DriversService {
   async getDriverForModeration(driverId: string): Promise<DriverProfile> {
     const profile = await this.drivers.findOne({
       where: { id: driverId },
-      relations: ['user', 'vehicles', 'documents', 'region'],
+      relations: ['user', 'vehicles', 'documents', 'region', 'taxiPermit'],
     });
     if (!profile) {
       throw new NotFoundException({ code: 'DRIVER_NOT_FOUND', message: 'Водитель не найден' });
@@ -552,6 +721,11 @@ export class DriversService {
         if (dto.vehicle.year !== undefined) vehicle.year = dto.vehicle.year;
         await this.vehicles.save(vehicle);
       }
+    }
+
+    if (dto.taxiPermit) {
+      this.assertPermitDatesValid(dto.taxiPermit);
+      await this.upsertTaxiPermit(driverId, dto.taxiPermit);
     }
 
     return this.getDriverForModeration(driverId);

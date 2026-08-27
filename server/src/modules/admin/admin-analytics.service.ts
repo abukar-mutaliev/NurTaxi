@@ -311,7 +311,6 @@ export class AdminAnalyticsService {
       },
       relations: ['client', 'driver'],
       order: { createdAt: 'DESC' },
-      take: 5000,
     });
 
     return rows.map((o) => ({
@@ -333,7 +332,6 @@ export class AdminAnalyticsService {
       where: regionId ? { regionId } : {},
       relations: ['user'],
       order: { fullName: 'ASC' },
-      take: 5000,
     });
 
     return rows.map((d) => ({
@@ -358,8 +356,7 @@ export class AdminAnalyticsService {
       .innerJoinAndSelect('p.order', 'o')
       .where('p.created_at >= :from', { from })
       .andWhere('p.created_at <= :to', { to })
-      .orderBy('p.created_at', 'DESC')
-      .take(5000);
+      .orderBy('p.created_at', 'DESC');
     if (regionId) qb.andWhere('o.region_id = :regionId', { regionId });
 
     const rows = await qb.getMany();

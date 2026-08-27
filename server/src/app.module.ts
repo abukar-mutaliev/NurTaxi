@@ -30,6 +30,12 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { PromoModule } from './modules/promo/promo.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { CarriersModule } from './modules/carriers/carriers.module';
+import { PlacementModule } from './modules/placement/placement.module';
+import { RegulatoryModule } from './modules/regulatory/regulatory.module';
+import { TaxiRegistryModule } from './modules/taxi-registry/taxi-registry.module';
+import { RisModule } from './modules/ris/ris.module';
+import { ComplianceModule } from './modules/compliance/compliance.module';
 
 @Module({
   imports: [
@@ -61,6 +67,12 @@ import { StorageModule } from './modules/storage/storage.module';
     PaymentsModule,
     NotificationsModule,
     PromoModule,
+    TaxiRegistryModule,
+    CarriersModule,
+    PlacementModule,
+    RegulatoryModule,
+    RisModule,
+    ComplianceModule,
     AdminModule,
     AnalyticsModule,
     RealtimeModule,

@@ -22,7 +22,7 @@ export {
   formatShortDisplayAddress,
   isAdminOnlyAddress,
 } from './format/short-address';
-export { PLATE_PATTERN, formatBirthDateInput, formatPlateInput } from './format/input-masks';
+export { PLATE_PATTERN, formatIsoDateInput, formatPlateInput } from './format/input-masks';
 
 export { boundsOf, decodePolyline, haversineDistance } from './geo/polyline';
 export { isSameGeoLocation, toApiGeoLocation } from './geo/location';

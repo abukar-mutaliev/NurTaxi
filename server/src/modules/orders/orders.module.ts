@@ -15,13 +15,19 @@ import { Order } from './entities/order.entity';
 import { OrderRoute } from './entities/order-route.entity';
 import { OrderStatusLog } from './entities/order-status-log.entity';
 import { TripRecording } from './entities/trip-recording.entity';
+import { OrderOfferLog } from './entities/order-offer-log.entity';
+import { TripTrackPoint } from './entities/trip-track-point.entity';
 import { OrdersService } from './orders.service';
 import { OrderTransitionService } from './order-transition.service';
 import { OrderTrackingService } from './order-tracking.service';
 import { TripRecordingService } from './trip-recording.service';
 import { MatchingService } from './matching/matching.service';
+import { OfferJournalService } from './offer-journal.service';
+import { TripTrackService } from './trip-track.service';
 import { OrdersController } from './orders.controller';
 import { DriverOrdersController } from './driver-orders.controller';
+import { CarriersModule } from '../carriers/carriers.module';
+import { RisModule } from '../ris/ris.module';
 
 /**
  * Orders & Matching (Des §2.3, §5, §6). Фазы 4–5.
@@ -35,10 +41,14 @@ import { DriverOrdersController } from './driver-orders.controller';
       EmergencyContact,
       Receipt,
       TripRecording,
+      OrderOfferLog,
+      TripTrackPoint,
     ]),
     GeoModule,
     RegionsModule,
     TariffsModule,
+    CarriersModule,
+    forwardRef(() => RisModule),
     forwardRef(() => DriversModule),
     UsersModule,
     forwardRef(() => RealtimeModule),
@@ -53,7 +63,16 @@ import { DriverOrdersController } from './driver-orders.controller';
     OrderTrackingService,
     MatchingService,
     TripRecordingService,
+    OfferJournalService,
+    TripTrackService,
   ],
-  exports: [OrdersService, OrderTrackingService, OrderTransitionService, MatchingService],
+  exports: [
+    OrdersService,
+    OrderTrackingService,
+    OrderTransitionService,
+    MatchingService,
+    OfferJournalService,
+    TripTrackService,
+  ],
 })
 export class OrdersModule {}

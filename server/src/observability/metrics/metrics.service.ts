@@ -67,6 +67,26 @@ export class MetricsService {
     registers: [this.registry],
   });
 
+  readonly risOutboxDepth = new Gauge({
+    name: 'ris_outbox_pending',
+    help: 'Размер очереди неотправленных событий в региональную ИС (FZ-07.7)',
+    registers: [this.registry],
+  });
+
+  readonly risDeliveryDuration = new Histogram({
+    name: 'ris_delivery_delay_seconds',
+    help: 'Задержка доставки события в региональную ИС',
+    buckets: [1, 5, 15, 30, 60, 120, 300, 900],
+    registers: [this.registry],
+  });
+
+  readonly orderCompletenessViolations = new Counter({
+    name: 'order_completeness_violations_total',
+    help: 'Заказы в терминальном статусе без полного обязательного набора сведений (FZ-04.9)',
+    labelNames: ['region_id'] as const,
+    registers: [this.registry],
+  });
+
   constructor() {
     this.registry.setDefaultLabels({ service: process.env.OTEL_SERVICE_NAME ?? 'nurtaxi-backend' });
     collectDefaultMetrics({ register: this.registry });
@@ -114,6 +134,18 @@ export class MetricsService {
 
   setReady(ready: boolean): void {
     this.serviceReady.set(ready ? 1 : 0);
+  }
+
+  setRisOutboxDepth(depth: number): void {
+    this.risOutboxDepth.set(depth);
+  }
+
+  observeRisDelivery(delaySeconds: number): void {
+    this.risDeliveryDuration.observe(delaySeconds);
+  }
+
+  incCompletenessViolation(regionId: string): void {
+    this.orderCompletenessViolations.inc({ region_id: regionId });
   }
 
   async metrics(): Promise<string> {

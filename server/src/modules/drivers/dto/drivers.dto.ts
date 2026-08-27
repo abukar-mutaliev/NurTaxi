@@ -50,6 +50,36 @@ export class VehicleDto {
   year!: number;
 }
 
+/**
+ * Разрешение на деятельность такси (Req §8.2).
+ * Обязательность блока задаётся для каждого региона отдельно (`regions.driver_requirements`).
+ */
+export class TaxiPermitDto {
+  @ApiProperty({ example: 'АА-06-001234' })
+  @IsString()
+  @MinLength(3)
+  @MaxLength(64)
+  number!: string;
+
+  @ApiProperty({ example: 'Республика Ингушетия', description: 'Регион выдачи разрешения' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(160)
+  issuingRegion!: string;
+
+  @ApiProperty({ example: '2024-03-01' })
+  @IsDateString()
+  issuedAt!: string;
+
+  @ApiPropertyOptional({
+    example: '2029-03-01',
+    description: 'Срок действия; не передаётся для бессрочного разрешения',
+  })
+  @IsOptional()
+  @IsDateString()
+  expiresAt?: string | null;
+}
+
 export class RegisterDriverDto {
   @ApiProperty({ example: 'Иванова Мария Петровна' })
   @IsString()
@@ -80,6 +110,15 @@ export class RegisterDriverDto {
   @ValidateNested()
   @Type(() => VehicleDto)
   vehicle!: VehicleDto;
+
+  @ApiPropertyOptional({
+    type: TaxiPermitDto,
+    description: 'Обязателен, если регион требует разрешение на деятельность такси',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TaxiPermitDto)
+  taxiPermit?: TaxiPermitDto;
 }
 
 export class PresignDocumentDto {
@@ -234,4 +273,10 @@ export class AdminUpdateDriverDto {
   @ValidateNested()
   @Type(() => AdminUpdateDriverVehicleDto)
   vehicle?: AdminUpdateDriverVehicleDto;
+
+  @ApiPropertyOptional({ type: TaxiPermitDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TaxiPermitDto)
+  taxiPermit?: TaxiPermitDto;
 }

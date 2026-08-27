@@ -14,7 +14,7 @@ import { UsersService } from '../users/users.service';
 import type { AssignStaffDto } from './dto/admin.dto';
 import { AdminScopeService } from './admin-scope.service';
 
-const STAFF_ROLES = [Role.Operator, Role.RegionalAdmin];
+const STAFF_ROLES = [Role.Operator, Role.RegionalAdmin, Role.Regulator];
 
 @Injectable()
 export class AdminStaffService {

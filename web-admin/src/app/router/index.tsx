@@ -12,6 +12,9 @@ import { DriversPage, DriverDetailPage } from '@/pages/drivers';
 import { AppealsPage } from '@/pages/appeals';
 import { AuditPage } from '@/pages/audit';
 import { OrdersPage, OrderDetailPage } from '@/pages/orders';
+import { CarriersPage } from '@/pages/carriers';
+import { PlacementPage } from '@/pages/placement';
+import { ExportsPage } from '@/pages/exports';
 
 export function AppRouter() {
   return (
@@ -64,7 +67,7 @@ export function AppRouter() {
             <Route
               path="audit"
               element={
-                <RoleRoute permission="staff.manage">
+                <RoleRoute permission="audit.view">
                   <AuditPage />
                 </RoleRoute>
               }
@@ -106,6 +109,30 @@ export function AppRouter() {
               element={
                 <RoleRoute permission="orders.manage">
                   <OrderDetailPage />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="carriers"
+              element={
+                <RoleRoute permission="carriers.manage">
+                  <CarriersPage />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="placement"
+              element={
+                <RoleRoute permission="sites.manage">
+                  <PlacementPage />
+                </RoleRoute>
+              }
+            />
+            <Route
+              path="exports"
+              element={
+                <RoleRoute permission="orders.export">
+                  <ExportsPage />
                 </RoleRoute>
               }
             />

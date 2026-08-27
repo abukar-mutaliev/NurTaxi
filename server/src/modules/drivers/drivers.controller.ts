@@ -49,12 +49,7 @@ export class DriversController {
   @ApiOperation({ summary: 'Список активных регионов для регистрации' })
   async listRegions(): Promise<RegionResponse[]> {
     const regions = await this.driversService.listActiveRegions();
-    return regions.map((r) => ({
-      id: r.id,
-      name: r.name,
-      timezone: r.timezone,
-      currency: r.currency,
-    }));
+    return regions.map(RegionResponse.from);
   }
 
   @Post('register')

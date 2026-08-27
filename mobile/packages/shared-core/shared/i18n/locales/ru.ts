@@ -369,6 +369,7 @@ export const ru = {
     car_photo: 'Фото автомобиля',
     interior_photo: 'Фото салона',
     selfie: 'Селфи',
+    taxi_permit: 'Разрешение на деятельность такси',
     upload: 'Загрузить',
     uploaded: 'Загружено',
     fromCamera: 'Снять камерой',

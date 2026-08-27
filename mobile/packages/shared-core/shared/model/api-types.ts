@@ -11,6 +11,7 @@ import type {
   DocumentStatus,
   DocumentType,
   DriverOnlineStatus,
+  DriverRequirements,
   DriverOrderAction,
   FamilyMemberStatus,
   NotificationChannel,
@@ -283,6 +284,8 @@ export interface Region {
   timezone: string;
   currency: string;
   featureFlags: Record<string, boolean>;
+  /** Режимы требований к анкете водителя в этом регионе (`§7.6`). */
+  driverRequirements: DriverRequirements;
 }
 
 export interface City {
@@ -477,6 +480,20 @@ export interface VehiclePayload {
   year: number;
 }
 
+/** Реквизиты разрешения на деятельность такси (`§8.2`). */
+export interface TaxiPermitPayload {
+  number: string;
+  issuingRegion: string;
+  issuedAt: string;
+  /** Не передаётся, если разрешение бессрочное. */
+  expiresAt?: string | null;
+}
+
+export interface TaxiPermit extends TaxiPermitPayload {
+  expiresAt: string | null;
+  isExpired: boolean;
+}
+
 export interface RegisterDriverPayload {
   fullName: string;
   birthDate: string;
@@ -484,6 +501,8 @@ export interface RegisterDriverPayload {
   drivingExperienceYears: number;
   regionId: string;
   vehicle: VehiclePayload;
+  /** Обязателен, если регион требует разрешение на деятельность такси. */
+  taxiPermit?: TaxiPermitPayload;
 }
 
 export type WorkSchedule = Partial<Record<DayKey, { from: string; to: string } | null>>;
@@ -515,6 +534,11 @@ export interface DriverProfile {
   workSchedule: WorkSchedule | null;
   vehicles: Vehicle[];
   documents: DriverDocument[];
+  taxiPermit: TaxiPermit | null;
+  /** Режимы требований региона: по ним анкета решает, какие блоки показывать. */
+  requirements: DriverRequirements;
+  /** Комплект документов, обязательный в регионе водителя. */
+  requiredDocumentTypes: DocumentType[];
   /** Сервер уже учёл верификацию и блокировки — на клиенте не пересчитываем. */
   canGoOnline: boolean;
 }

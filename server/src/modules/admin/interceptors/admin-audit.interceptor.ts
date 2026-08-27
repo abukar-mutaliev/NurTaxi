@@ -22,7 +22,10 @@ export class AdminAuditInterceptor implements NestInterceptor {
       ip?: string;
     }>();
 
-    if (!MUTATING_METHODS.has(req.method) || !req.path.includes('/admin')) {
+    if (!MUTATING_METHODS.has(req.method) && !req.path.includes('/admin')) {
+      return next.handle();
+    }
+    if (!req.path.includes('/admin')) {
       return next.handle();
     }
 
@@ -30,19 +33,35 @@ export class AdminAuditInterceptor implements NestInterceptor {
     if (!actor) return next.handle();
 
     return next.handle().pipe(
-      tap(() => {
-        void this.audit.log({
-          actorId: actor.id,
-          regionId: (req.body?.regionId as string | undefined) ?? req.query?.regionId ?? null,
-          action: `${req.method} ${req.path}`,
-          resourceType: 'admin',
-          resourceId: req.params?.id ?? null,
-          payload: {
-            body: req.body ?? {},
-            query: req.query ?? {},
-          },
-          ipAddress: req.ip ?? null,
-        });
+      tap({
+        next: () => {
+          void this.audit.log({
+            actorId: actor.id,
+            regionId: (req.body?.regionId as string | undefined) ?? req.query?.regionId ?? null,
+            action: `${req.method} ${req.path}`,
+            resourceType: 'admin',
+            resourceId: req.params?.id ?? null,
+            payload: {
+              body: req.body ?? {},
+              query: req.query ?? {},
+            },
+            ipAddress: req.ip ?? null,
+            userAgent: (req as { headers?: { 'user-agent'?: string } }).headers?.['user-agent'] ?? null,
+            result: 'success',
+          });
+        },
+        error: () => {
+          void this.audit.log({
+            actorId: actor.id,
+            regionId: (req.query?.regionId as string | undefined) ?? null,
+            action: `${req.method} ${req.path}`,
+            resourceType: 'admin',
+            resourceId: req.params?.id ?? null,
+            payload: { query: req.query ?? {} },
+            ipAddress: req.ip ?? null,
+            result: 'error',
+          });
+        },
       }),
     );
   }

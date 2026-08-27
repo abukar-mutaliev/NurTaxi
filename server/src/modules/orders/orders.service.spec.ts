@@ -32,6 +32,8 @@ describe('OrdersService', () => {
     timezone: 'Europe/Moscow',
     currency: 'RUB',
     featureFlags: {},
+    driverRequirements: {},
+    complianceConfig: {},
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -59,6 +61,7 @@ describe('OrdersService', () => {
     findOneOrFail: jest.fn(),
     create: jest.fn((data) => data),
     save: jest.fn((data) => Promise.resolve({ ...data, id: data.id ?? 'order-1' })),
+    query: jest.fn().mockResolvedValue([{ next: '100001' }]),
   };
 
   beforeEach(async () => {

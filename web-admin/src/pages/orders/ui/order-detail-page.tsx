@@ -27,6 +27,7 @@ import {
   useRefundOrderMutation,
 } from '@/entities/order';
 import { useOrderRealtime } from '@/features/realtime';
+import { Can } from '@/shared/rbac';
 import { PageHeader, PageLoader, OrderStatusTag, getOrderStatusLabel, getOrderStatusSelectOptions } from '@/shared/ui';
 import { OrderRouteMap } from '@/widgets/order-route-map';
 import { formatDistance } from '@/shared/lib/polyline';
@@ -143,18 +144,20 @@ export function OrderDetailPage() {
   return (
     <div>
       <PageHeader
-        title={`Заказ ${order.id.slice(0, 8)}…`}
+        title={order.publicNumber ?? `Заказ ${order.id.slice(0, 8)}…`}
         subtitle={formatDate(order.createdAt)}
         extra={
           <Space wrap>
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
               Назад
             </Button>
-            <Button onClick={() => setAssignOpen(true)}>{t('orders.assignDriver')}</Button>
-            <Button onClick={() => setStatusOpen(true)}>{t('orders.changeStatus')}</Button>
-            <Button danger onClick={() => setRefundOpen(true)}>
-              {t('orders.refund')}
-            </Button>
+            <Can permission="orders.mutate">
+              <Button onClick={() => setAssignOpen(true)}>{t('orders.assignDriver')}</Button>
+              <Button onClick={() => setStatusOpen(true)}>{t('orders.changeStatus')}</Button>
+              <Button danger onClick={() => setRefundOpen(true)}>
+                {t('orders.refund')}
+              </Button>
+            </Can>
           </Space>
         }
       />
@@ -182,6 +185,9 @@ export function OrderDetailPage() {
         <Col xs={24} lg={14}>
           <Card title="Детали" bordered={false}>
             <Descriptions column={1}>
+              <Descriptions.Item label={t('orders.publicNumber')}>
+                {order.publicNumber ?? '—'}
+              </Descriptions.Item>
               <Descriptions.Item label={t('orders.pickup')}>{order.pickupAddress}</Descriptions.Item>
               <Descriptions.Item label={t('orders.dropoff')}>{order.dropoffAddress}</Descriptions.Item>
               <Descriptions.Item label={t('common.status')}>

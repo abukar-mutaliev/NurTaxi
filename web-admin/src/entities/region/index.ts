@@ -5,11 +5,16 @@ export type {
   UpdateRegionDto,
   CreateCityDto,
   UpdateCityDto,
+  DriverRequirementCatalog,
+  DriverRequirements,
+  RequirementMode,
+  RegionComplianceConfig,
 } from './model/types';
 export {
   regionApi,
   useListRegionsQuery,
   useGetRegionQuery,
+  useGetDriverRequirementCatalogQuery,
   useCreateRegionMutation,
   useUpdateRegionMutation,
   useListCitiesQuery,

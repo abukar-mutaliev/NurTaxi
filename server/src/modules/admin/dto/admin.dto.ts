@@ -17,6 +17,8 @@ import {
 } from 'class-validator';
 import { Role } from '../../../common/enums/role.enum';
 import { UserStatus } from '../../../common/enums/user-status.enum';
+import type { RegionComplianceConfig } from '../../../common/compliance/compliance-config';
+import type { DriverRequirements } from '../../../common/enums/driver-requirement.enum';
 import { normalizePhone } from '../../auth/phone.util';
 import { ProviderType } from '../enums/provider-type.enum';
 import type { CancellationPolicy } from '../../tariffs/entities/tariff.entity';
@@ -43,6 +45,21 @@ export class CreateRegionDto {
   @IsOptional()
   @IsObject()
   featureFlags?: Record<string, boolean>;
+
+  @ApiPropertyOptional({
+    description:
+      'Режимы требований к анкете водителя. Ключи — из GET /admin/regions/driver-requirements, ' +
+      'значения — hidden | optional | required',
+    example: { taxi_permit: 'required' },
+  })
+  @IsOptional()
+  @IsObject()
+  driverRequirements?: Partial<DriverRequirements>;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsObject()
+  complianceConfig?: Partial<RegionComplianceConfig>;
 }
 
 export class UpdateRegionDto extends PartialType(CreateRegionDto) {
@@ -254,8 +271,8 @@ export class AssignStaffDto {
   @MaxLength(120)
   name?: string;
 
-  @ApiProperty({ enum: [Role.Operator, Role.RegionalAdmin] })
-  @IsIn([Role.Operator, Role.RegionalAdmin])
+  @ApiProperty({ enum: [Role.Operator, Role.RegionalAdmin, Role.Regulator] })
+  @IsIn([Role.Operator, Role.RegionalAdmin, Role.Regulator])
   role!: Role;
 
   @ApiProperty()

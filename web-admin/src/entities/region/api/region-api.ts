@@ -4,6 +4,7 @@ import type {
   City,
   CreateCityDto,
   CreateRegionDto,
+  DriverRequirementCatalog,
   Region,
   UpdateCityDto,
   UpdateRegionDto,
@@ -17,6 +18,13 @@ export const regionApi = baseApi.injectEndpoints({
         params: params?.includeInactive ? { includeInactive: 'true' } : undefined,
       }),
       providesTags: [API_TAGS.Region],
+    }),
+    /**
+     * Справочник требований к анкете водителя. Приходит с бэкенда, поэтому новое
+     * требование появляется в форме региона без правок админ-панели.
+     */
+    getDriverRequirementCatalog: build.query<DriverRequirementCatalog, void>({
+      query: () => '/admin/regions/driver-requirements',
     }),
     getRegion: build.query<Region, string>({
       query: (id) => `/admin/regions/${id}`,
@@ -59,6 +67,7 @@ export const regionApi = baseApi.injectEndpoints({
 export const {
   useListRegionsQuery,
   useGetRegionQuery,
+  useGetDriverRequirementCatalogQuery,
   useCreateRegionMutation,
   useUpdateRegionMutation,
   useListCitiesQuery,

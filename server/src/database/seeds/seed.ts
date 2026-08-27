@@ -52,7 +52,7 @@ async function upsertUser(manager: EntityManager, def: (typeof SEED_USERS)[numbe
     pdnConsentAt: new Date('2026-01-01T00:00:00Z'),
     pdnConsentVersion: PDN_CONSENT_VERSION,
     assignedRegionId:
-      def.role === Role.RegionalAdmin || def.role === Role.Operator
+      def.role === Role.RegionalAdmin || def.role === Role.Operator || def.role === Role.Regulator
         ? INGUSHETIA_REGION_ID
         : null,
   };

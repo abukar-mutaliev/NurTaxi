@@ -44,6 +44,18 @@ export class AdminAuditLog {
   @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress!: string | null;
 
+  @Column({ name: 'user_agent', type: 'varchar', length: 512, nullable: true })
+  userAgent!: string | null;
+
+  @Column({ type: 'varchar', length: 32, default: 'success' })
+  result!: string;
+
+  @Column({ name: 'previous_value', type: 'jsonb', nullable: true })
+  previousValue!: Record<string, unknown> | null;
+
+  @Column({ name: 'new_value', type: 'jsonb', nullable: true })
+  newValue!: Record<string, unknown> | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 }

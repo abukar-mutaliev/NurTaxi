@@ -12,10 +12,13 @@ terraform {
     }
   }
 
-  # Бэкенд состояния (заполнить под выбранного облачного провайдера).
+  # Состояние хранится в российском объектном хранилище выбранного оператора.
   # backend "s3" {
-  #   bucket = "nurtaxi-tf-state"
-  #   key    = "staging/terraform.tfstate"
-  #   region = "eu-central-1"
+  #   bucket   = "nurtaxi-tf-state"
+  #   key      = "staging/terraform.tfstate"
+  #   region   = "ru-central-1"
+  #   endpoint = "https://storage.yandexcloud.net"
+  #   skip_region_validation      = true
+  #   skip_credentials_validation = true
   # }
 }

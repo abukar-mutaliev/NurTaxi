@@ -21,6 +21,15 @@ describe('RBAC permissions', () => {
     expect(can(Role.RegionalAdmin, 'providers.manage')).toBe(false);
   });
 
+  it('grants regulator read/export without mutation', () => {
+    expect(isAdminRole(Role.Regulator)).toBe(true);
+    expect(can(Role.Regulator, 'orders.manage')).toBe(true);
+    expect(can(Role.Regulator, 'orders.export')).toBe(true);
+    expect(can(Role.Regulator, 'orders.mutate')).toBe(false);
+    expect(can(Role.Regulator, 'audit.view')).toBe(true);
+    expect(can(Role.Regulator, 'staff.manage')).toBe(false);
+  });
+
   it('rejects client and driver from admin panel', () => {
     expect(isAdminRole(Role.Client)).toBe(false);
     expect(isAdminRole(Role.Driver)).toBe(false);

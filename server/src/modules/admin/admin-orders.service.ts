@@ -60,7 +60,15 @@ export class AdminOrdersService {
 
   async listOrders(
     actor: AuthenticatedUser,
-    filters: { regionId?: string; status?: OrderStatus; limit?: number; cursor?: string },
+    filters: {
+      regionId?: string;
+      status?: OrderStatus;
+      limit?: number;
+      cursor?: string;
+      from?: string;
+      to?: string;
+      dateField?: 'created' | 'completed';
+    },
   ): Promise<OrderListPage> {
     const regionId = await this.scope.resolveListRegionId(actor, filters.regionId);
     const take = Math.min(Math.max(filters.limit ?? 20, 1), 100);
@@ -81,6 +89,14 @@ export class AdminOrdersService {
     }
     if (filters.status) {
       qb.andWhere('order.status = :status', { status: filters.status });
+    }
+    if (filters.from) {
+      const col = filters.dateField === 'completed' ? 'order.tripEndedAt' : 'order.createdAt';
+      qb.andWhere(`${col} >= :from`, { from: new Date(filters.from) });
+    }
+    if (filters.to) {
+      const col = filters.dateField === 'completed' ? 'order.tripEndedAt' : 'order.createdAt';
+      qb.andWhere(`${col} <= :to`, { to: new Date(filters.to) });
     }
 
     const decoded = filters.cursor ? decodeCursor(filters.cursor) : null;

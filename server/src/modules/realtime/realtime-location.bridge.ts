@@ -32,6 +32,7 @@ export class RealtimeLocationBridge {
     });
 
     this.eventBus.publish('driver.location_updated', { orderId: order.id, lat, lng });
+    await this.ordersService.recordTrackPoint(order.id, lat, lng);
   }
 
   /** Последняя известная точка машины — чтобы клиент увидел её сразу при подписке на заказ. */

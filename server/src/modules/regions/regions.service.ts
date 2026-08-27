@@ -19,6 +19,14 @@ export class RegionsService {
     return this.regions.find({ where: { isActive: true }, order: { name: 'ASC' } });
   }
 
+  /**
+   * Регион без фильтра по `isActive` и без кеша: нужен фоновым проверкам (например,
+   * требованиям к анкете водителя), которые не должны ломаться после отключения региона.
+   */
+  findById(id: string): Promise<Region | null> {
+    return this.regions.findOne({ where: { id } });
+  }
+
   async getRegionOrThrow(id: string): Promise<Region> {
     const cached = await this.cache.get<Region>(id);
     if (cached) return cached;

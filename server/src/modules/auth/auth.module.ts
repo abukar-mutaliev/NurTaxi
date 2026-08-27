@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -9,20 +10,23 @@ import { TokenService } from './token/token.service';
 import { JwtStrategy } from './token/jwt.strategy';
 import { SMS_PROVIDER } from './sms/sms-provider.interface';
 import { StubSmsProvider } from './sms/stub-sms.provider';
+import { AuthEventLog } from './entities/auth-event-log.entity';
+import { AuthEventsService } from './auth-events.service';
 
-/**
- * Auth & Users (Des §2.3, §9): OTP-регистрация, JWT (access/refresh с ротацией),
- * защита OTP от перебора, RBAC. Секреты/TTL берутся из конфигурации per-call,
- * поэтому JwtModule регистрируется без глобального секрета.
- */
 @Module({
-  imports: [forwardRef(() => UsersModule), PassportModule, JwtModule.register({})],
+  imports: [
+    forwardRef(() => UsersModule),
+    PassportModule,
+    JwtModule.register({}),
+    TypeOrmModule.forFeature([AuthEventLog]),
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
     OtpService,
     TokenService,
     JwtStrategy,
+    AuthEventsService,
     { provide: SMS_PROVIDER, useClass: StubSmsProvider },
   ],
   exports: [TokenService, SMS_PROVIDER],

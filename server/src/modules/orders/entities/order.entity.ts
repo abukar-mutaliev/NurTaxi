@@ -9,11 +9,16 @@ import {
   UpdateDateColumn,
   VersionColumn,
 } from 'typeorm';
+import { CompletenessStatus } from '../../../common/enums/compliance.enum';
 import { OrderStatus, PaymentMethod } from '../../../common/enums/order-status.enum';
+import type { AssignmentSnapshot } from '../../../common/compliance/assignment-snapshot';
 import { User } from '../../users/entities/user.entity';
 import { Region } from '../../regions/entities/region.entity';
 import { Tariff } from '../../tariffs/entities/tariff.entity';
 import { DriverProfile } from '../../drivers/entities/driver-profile.entity';
+import { Vehicle } from '../../drivers/entities/vehicle.entity';
+import { Carrier } from '../../carriers/entities/carrier.entity';
+import { TaxiPermit } from '../../carriers/entities/taxi-permit.entity';
 import { OrderRoute } from './order-route.entity';
 
 /**
@@ -90,6 +95,44 @@ export class Order {
 
   @Column({ name: 'family_member_id', type: 'uuid', nullable: true })
   familyMemberId!: string | null;
+
+  /** Человекочитаемый номер заказа, уникальный и последовательный (FZ-04.7). */
+  @Column({ name: 'public_number', type: 'varchar', length: 20 })
+  publicNumber!: string;
+
+  /** Снимок перевозчика/разрешения/водителя/ТС на момент назначения (FZ-04.4). */
+  @Column({ name: 'assignment_snapshot', type: 'jsonb', nullable: true })
+  assignmentSnapshot!: AssignmentSnapshot | null;
+
+  @Column({ name: 'trip_started_at', type: 'timestamptz', nullable: true })
+  tripStartedAt!: Date | null;
+
+  @Column({ name: 'trip_ended_at', type: 'timestamptz', nullable: true })
+  tripEndedAt!: Date | null;
+
+  @Column({ name: 'completeness_status', type: 'varchar', length: 32, default: CompletenessStatus.Pending })
+  completenessStatus!: CompletenessStatus;
+
+  @Column({ name: 'vehicle_id', type: 'uuid', nullable: true })
+  vehicleId!: string | null;
+
+  @ManyToOne(() => Vehicle, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'vehicle_id' })
+  vehicle!: Vehicle | null;
+
+  @Column({ name: 'carrier_id', type: 'uuid', nullable: true })
+  carrierId!: string | null;
+
+  @ManyToOne(() => Carrier, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'carrier_id' })
+  carrier!: Carrier | null;
+
+  @Column({ name: 'permit_id', type: 'uuid', nullable: true })
+  permitId!: string | null;
+
+  @ManyToOne(() => TaxiPermit, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'permit_id' })
+  permit!: TaxiPermit | null;
 
   @VersionColumn()
   version!: number;

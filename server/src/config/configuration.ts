@@ -19,6 +19,8 @@ export interface AppConfig {
   name: string;
   port: number;
   apiPrefix: string;
+  corsOrigins: string;
+  sentryEnabled: boolean;
 }
 
 export interface DatabaseConfig {
@@ -28,6 +30,7 @@ export interface DatabaseConfig {
   password: string;
   database: string;
   ssl: boolean;
+  sslRejectUnauthorized: boolean;
   runMigrations: boolean;
 }
 
@@ -35,6 +38,8 @@ export interface RedisConfig {
   host: string;
   port: number;
   password?: string;
+  tls: boolean;
+  tlsRejectUnauthorized: boolean;
 }
 
 export interface NatsConfig {
@@ -121,6 +126,8 @@ export default (): Configuration => ({
     name: process.env.APP_NAME ?? 'nurtaxi-backend',
     port: toInt(process.env.PORT, 3000),
     apiPrefix: process.env.API_PREFIX ?? 'api/v1',
+    corsOrigins: process.env.CORS_ORIGINS ?? '',
+    sentryEnabled: toBool(process.env.SENTRY_ENABLED),
   },
   database: {
     host: process.env.DB_HOST ?? 'localhost',
@@ -129,12 +136,15 @@ export default (): Configuration => ({
     password: process.env.DB_PASSWORD ?? 'nurtaxi',
     database: process.env.DB_DATABASE ?? 'nurtaxi',
     ssl: toBool(process.env.DB_SSL),
+    sslRejectUnauthorized: toBool(process.env.DB_SSL_REJECT_UNAUTHORIZED, true),
     runMigrations: toBool(process.env.DB_RUN_MIGRATIONS),
   },
   redis: {
     host: process.env.REDIS_HOST ?? 'localhost',
     port: toInt(process.env.REDIS_PORT, 6379),
     password: process.env.REDIS_PASSWORD || undefined,
+    tls: toBool(process.env.REDIS_TLS),
+    tlsRejectUnauthorized: toBool(process.env.REDIS_TLS_REJECT_UNAUTHORIZED, true),
   },
   nats: {
     url: process.env.NATS_URL ?? 'nats://localhost:4222',
@@ -143,7 +153,7 @@ export default (): Configuration => ({
     endpoint: process.env.S3_ENDPOINT ?? 'http://localhost:9000',
     publicEndpoint:
       process.env.S3_PUBLIC_ENDPOINT ?? process.env.S3_ENDPOINT ?? 'http://localhost:9000',
-    region: process.env.S3_REGION ?? 'us-east-1',
+    region: process.env.S3_REGION ?? 'ru-central-1',
     accessKey: process.env.S3_ACCESS_KEY ?? 'nurtaxi',
     secretKey: process.env.S3_SECRET_KEY ?? 'nurtaxi123',
     bucket: process.env.S3_BUCKET ?? 'nurtaxi-documents',

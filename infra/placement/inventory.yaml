@@ -1,0 +1,25 @@
+# Соответствие инвентаря инфраструктуры реестру площадок (FZ-09.2)
+
+# component_key должен совпадать с placement_components.component_key
+sites:
+  - name: primary-ru-central-1
+    operator: pending-B6
+    region_code: ru-central-1
+    purpose: compute
+    components:
+      - kubernetes
+      - backend
+      - postgres-primary
+      - redis
+      - nats
+      - object-storage
+      - container-registry
+      - otel-collector
+  - name: backups-ru-central-1
+    operator: pending-B6
+    region_code: ru-central-1
+    purpose: backups
+    components:
+      - postgres-replicas
+      - postgres-backups
+      - log-archive

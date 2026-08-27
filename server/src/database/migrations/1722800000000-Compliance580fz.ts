@@ -592,6 +592,29 @@ export class Compliance580fz1722800000000 implements MigrationInterface {
     columns: Array<{ table: string; column: string }>,
   ): Promise<void> {
     const oldName = `${name}_old`;
+    const defaults: Array<{ table: string; column: string; value: string | null }> = [];
+
+    for (const col of columns) {
+      const rows: Array<{ column_default: string | null }> = await queryRunner.query(
+        `
+          SELECT column_default
+          FROM information_schema.columns
+          WHERE table_schema = current_schema()
+            AND table_name = $1
+            AND column_name = $2
+        `,
+        [col.table, col.column],
+      );
+      const raw = rows[0]?.column_default ?? null;
+      const match = raw?.match(/^'((?:\\'|[^'])*)'/);
+      defaults.push({ ...col, value: match ? match[1].replace(/\\'/g, "'") : null });
+      if (raw) {
+        await queryRunner.query(
+          `ALTER TABLE "${col.table}" ALTER COLUMN "${col.column}" DROP DEFAULT`,
+        );
+      }
+    }
+
     await queryRunner.query(`ALTER TYPE "${name}" RENAME TO "${oldName}";`);
     await queryRunner.query(
       `CREATE TYPE "${name}" AS ENUM (${values.map((v) => `'${v}'`).join(', ')});`,
@@ -604,5 +627,13 @@ export class Compliance580fz1722800000000 implements MigrationInterface {
       `);
     }
     await queryRunner.query(`DROP TYPE "${oldName}";`);
+
+    for (const col of defaults) {
+      if (col.value === null) continue;
+      const escaped = col.value.replace(/'/g, "''");
+      await queryRunner.query(
+        `ALTER TABLE "${col.table}" ALTER COLUMN "${col.column}" SET DEFAULT '${escaped}'`,
+      );
+    }
   }
 }

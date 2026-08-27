@@ -27,4 +27,19 @@ describe('assertProductionSecurity', () => {
       'https://admin.nurtaxi.ru',
     ]);
   });
+
+  it('allows all origins in development when CORS_ORIGINS is empty', () => {
+    expect(parseCorsOrigins(undefined, Environment.Development)).toBe(true);
+    expect(parseCorsOrigins('', Environment.Development)).toBe(true);
+  });
+
+  it('keeps localhost admin origins in development when CORS_ORIGINS is set', () => {
+    expect(parseCorsOrigins('https://taxi.rulplus.ru', Environment.Development)).toEqual(
+      expect.arrayContaining([
+        'https://taxi.rulplus.ru',
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+      ]),
+    );
+  });
 });

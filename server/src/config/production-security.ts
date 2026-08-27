@@ -43,6 +43,12 @@ export function assertProductionSecurity(env: Record<string, string | undefined>
   }
 }
 
+const DEV_ADMIN_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+];
+
 export function parseCorsOrigins(raw: string | undefined, env: string): string[] | boolean {
   if (env === Environment.Production || env === Environment.Staging) {
     return (raw ?? '')
@@ -51,8 +57,9 @@ export function parseCorsOrigins(raw: string | undefined, env: string): string[]
       .filter(Boolean);
   }
   if (!raw) return true;
-  return raw
+  const listed = raw
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+  return [...new Set([...listed, ...DEV_ADMIN_ORIGINS])];
 }

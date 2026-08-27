@@ -1,16 +1,10 @@
 /**
  * Подписи GPS и точки на карте нельзя сохранять как адрес заказа.
  */
-const PLACEHOLDER_PATTERNS = [
-  /^мо[её]\s+местоположение$/i,
-  /^my location$/i,
-  /^точка на карте/i,
-  /^map point\b/i,
-  /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/,
-];
+const GPS_LABELS = new Set(['мое местоположение', 'мои местоположение', 'my location']);
 
 function normalizeAddress(value: string): string {
-  return value.trim().toLowerCase().replace(/ё/g, 'е');
+  return value.trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ');
 }
 
 export function isPlaceholderAddress(
@@ -22,10 +16,18 @@ export function isPlaceholderAddress(
     return true;
   }
 
-  if (PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(value))) {
+  const normalized = normalizeAddress(value);
+  if (GPS_LABELS.has(normalized)) {
     return true;
   }
 
-  const normalized = normalizeAddress(value);
+  if (normalized.startsWith('точка на карте') || normalized.startsWith('map point')) {
+    return true;
+  }
+
+  if (/^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(value)) {
+    return true;
+  }
+
   return extraLabels.some((label) => label.trim() && normalizeAddress(label) === normalized);
 }

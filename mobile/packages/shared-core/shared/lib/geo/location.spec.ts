@@ -11,7 +11,7 @@ describe('toStoredGeoLocation', () => {
     });
   });
 
-  it('оставляет исходный адрес, если геокодер ещё не ответил', () => {
-    expect(toStoredGeoLocation(point)).toEqual(point);
+  it('не отправляет GPS-подпись, если улица не получена', () => {
+    expect(toStoredGeoLocation(point)).toEqual({ lat: 43.2189, lng: 44.771 });
   });
 });

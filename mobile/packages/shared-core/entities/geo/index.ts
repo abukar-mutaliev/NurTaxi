@@ -3,6 +3,7 @@ export {
   geoApi,
   useGetDrivingRouteQuery,
   useLazyGetDrivingRouteQuery,
+  useLazyReverseGeocodeQuery,
   useLazySearchAddressesQuery,
   useReverseGeocodeQuery,
   useSearchAddressesQuery,

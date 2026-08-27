@@ -21,5 +21,8 @@ export {
   parseRouteParam,
 } from './model/parse-address-route-params';
 export { isAutoPickupLocation, shouldSyncAutoPickup } from './model/is-auto-pickup-location';
-export { useResolvedLocationAddress } from './model/use-resolved-location-address';
+export {
+  useResolvedLocationAddress,
+  useResolveLocationForOrder,
+} from './model/use-resolved-location-address';
 export { DEFAULT_REGION_ID, useOrderRegion } from './model/use-order-region';

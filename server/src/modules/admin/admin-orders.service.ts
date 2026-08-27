@@ -109,7 +109,10 @@ export class AdminOrdersService {
 
     const rows = await qb.getMany();
     const hasMore = rows.length > take;
-    const items = hasMore ? rows.slice(0, take) : rows;
+    const sliced = hasMore ? rows.slice(0, take) : rows;
+    const items = await Promise.all(
+      sliced.map((order) => this.ordersService.repairOrderAddresses(order)),
+    );
     const last = items[items.length - 1];
 
     return {
@@ -136,7 +139,7 @@ export class AdminOrdersService {
       throw new NotFoundException({ code: 'ORDER_NOT_FOUND', message: 'Заказ не найден' });
     }
     await this.scope.assertRegionAccess(actor, order.regionId);
-    return order;
+    return this.ordersService.repairOrderAddresses(order);
   }
 
   async getStatusLogs(actor: AuthenticatedUser, orderId: string): Promise<OrderStatusLog[]> {

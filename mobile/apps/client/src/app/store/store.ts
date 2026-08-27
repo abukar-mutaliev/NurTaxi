@@ -23,6 +23,7 @@ import { baseApi } from '@nurtaxi/shared-core/shared/api';
 import { persistStorage, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import type { GeoLocation } from '@nurtaxi/shared-core/shared/model';
 import { sessionReducer } from '@nurtaxi/shared-core/entities/session';
+import '@nurtaxi/shared-core/entities/geo';
 import { networkReducer, setupNetworkListeners } from '@nurtaxi/shared-core/features/network';
 import { realtimeReducer } from '@nurtaxi/shared-core/features/realtime';
 

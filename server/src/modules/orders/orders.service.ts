@@ -18,6 +18,7 @@ import {
 import { EventBusService } from '../../messaging/event-bus.service';
 import { DriversService } from '../drivers/drivers.service';
 import { GeoService } from '../geo/geo.service';
+import { isPlaceholderAddress } from '../geo/address/is-placeholder-address';
 import { MAP_PROVIDER, type MapProvider } from '../geo/map/map-provider.interface';
 import { RegionsService } from '../regions/regions.service';
 import { TariffsService } from '../tariffs/tariffs.service';
@@ -156,6 +157,12 @@ export class OrdersService {
       this.geoService.resolveStoredAddress(dto.pickup),
       this.geoService.resolveStoredAddress(dto.dropoff),
     ]);
+
+    if (pickupAddress !== (dto.pickup.address ?? '').trim()) {
+      this.logger.log(
+        `Pickup address resolved: "${dto.pickup.address ?? ''}" -> "${pickupAddress}"`,
+      );
+    }
 
     const order = this.orders.create({
       clientId,
@@ -553,8 +560,10 @@ export class OrdersService {
       take: limit,
     });
 
+    const repaired = await Promise.all(orders.map((order) => this.repairOrderAddresses(order)));
+
     return Promise.all(
-      orders.map(async (order) => {
+      repaired.map(async (order) => {
         const [receipt, reviews] = await Promise.all([
           this.receipts.findOne({ where: { orderId: order.id } }),
           this.reviewsService.listForOrder(order.id),
@@ -578,8 +587,10 @@ export class OrdersService {
       take: limit,
     });
 
+    const repaired = await Promise.all(orders.map((order) => this.repairOrderAddresses(order)));
+
     return Promise.all(
-      orders.map(async (order) => {
+      repaired.map(async (order) => {
         const [receipt, reviews] = await Promise.all([
           this.receipts.findOne({ where: { orderId: order.id } }),
           this.reviewsService.listForOrder(order.id),
@@ -650,10 +661,50 @@ export class OrdersService {
     return order ?? null;
   }
 
-  private loadFullOrder(orderId: string): Promise<Order> {
-    return this.orders.findOneOrFail({
+  /**
+   * Старые заказы могли сохраниться с подписью «Моё местоположение».
+   * При чтении подменяем улицей по координатам и пишем в БД.
+   */
+  async repairOrderAddresses(order: Order): Promise<Order> {
+    const pickupNeedsRepair = isPlaceholderAddress(order.pickupAddress);
+    const dropoffNeedsRepair = isPlaceholderAddress(order.dropoffAddress);
+    if (!pickupNeedsRepair && !dropoffNeedsRepair) {
+      return order;
+    }
+
+    const [pickupAddress, dropoffAddress] = await Promise.all([
+      pickupNeedsRepair
+        ? this.geoService.resolveStoredAddress({
+            lat: order.pickupLat,
+            lng: order.pickupLng,
+            address: order.pickupAddress,
+          })
+        : order.pickupAddress,
+      dropoffNeedsRepair
+        ? this.geoService.resolveStoredAddress({
+            lat: order.dropoffLat,
+            lng: order.dropoffLng,
+            address: order.dropoffAddress,
+          })
+        : order.dropoffAddress,
+    ]);
+
+    if (pickupAddress === order.pickupAddress && dropoffAddress === order.dropoffAddress) {
+      return order;
+    }
+
+    order.pickupAddress = pickupAddress;
+    order.dropoffAddress = dropoffAddress;
+    await this.orders.update(order.id, { pickupAddress, dropoffAddress });
+    this.logger.log(`Repaired placeholder addresses for order ${order.id}`);
+    return order;
+  }
+
+  private async loadFullOrder(orderId: string): Promise<Order> {
+    const order = await this.orders.findOneOrFail({
       where: { id: orderId },
       relations: ['route', 'tariff', 'region', 'driver', 'driver.vehicles', 'driver.user'],
     });
+    return this.repairOrderAddresses(order);
   }
 }

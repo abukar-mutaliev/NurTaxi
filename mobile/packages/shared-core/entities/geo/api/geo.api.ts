@@ -42,6 +42,7 @@ export const geoApi = baseApi.injectEndpoints({
 export const {
   useGetDrivingRouteQuery,
   useLazyGetDrivingRouteQuery,
+  useLazyReverseGeocodeQuery,
   useLazySearchAddressesQuery,
   useReverseGeocodeQuery,
   useSearchAddressesQuery,

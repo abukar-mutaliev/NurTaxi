@@ -13,8 +13,9 @@ export function toApiGeoLocation(location: GeoLocation & { label?: string | null
 }
 
 /**
- * Для создания заказа: если геокодер уже вернул улицу, отправляем её, а не
- * подпись «Моё местоположение». Сервер всё равно перепроверит заглушку.
+ * Для создания заказа: в API уходит улица, а не GPS-подпись.
+ * Если улицу так и не получили — координаты без `address`, чтобы старый
+ * бэкенд не записал в БД «Моё местоположение».
  */
 export function toStoredGeoLocation(
   location: GeoLocation,
@@ -23,6 +24,10 @@ export function toStoredGeoLocation(
   const resolved = resolvedAddress?.trim();
   if (resolved && !isPlaceholderAddress(resolved)) {
     return toApiGeoLocation({ ...location, address: resolved });
+  }
+
+  if (isPlaceholderAddress(location.address)) {
+    return { lat: Number(location.lat), lng: Number(location.lng) };
   }
 
   return toApiGeoLocation(location);

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDuration, toStoredGeoLocation } from '@nurtaxi/shared-core/shared/lib';
+import { formatDuration } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import {
@@ -30,6 +30,7 @@ import {
   isAutoPickupLocation,
   shouldSyncAutoPickup,
   useOrderRegion,
+  useResolveLocationForOrder,
   useResolvedLocationAddress,
 } from '@/features/address';
 import { useActiveOrderGuard, useOrderEstimate } from '@/features/order';
@@ -105,6 +106,7 @@ export function HomeScreen() {
   const myLocationLabel = t('addresses.myLocation');
   const resolvedPickupAddress = useResolvedLocationAddress(pickup, [myLocationLabel]);
   const resolvedDropoffAddress = useResolvedLocationAddress(dropoff, [myLocationLabel]);
+  const resolveLocationForOrder = useResolveLocationForOrder(myLocationLabel);
 
   useEffect(() => {
     if (!position || hasActiveOrder) {
@@ -232,8 +234,8 @@ export function HomeScreen() {
     try {
       const order = await createOrder({
         regionId: draft.regionId,
-        pickup: toStoredGeoLocation(draft.pickup, resolvedPickupAddress),
-        dropoff: toStoredGeoLocation(draft.dropoff, resolvedDropoffAddress),
+        pickup: await resolveLocationForOrder(draft.pickup),
+        dropoff: await resolveLocationForOrder(draft.dropoff),
         tariffId: draft.tariffId ?? undefined,
         paymentMethod: draft.paymentMethod,
         comment: draft.comment.trim() || undefined,

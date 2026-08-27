@@ -63,6 +63,7 @@ describe('OrdersService', () => {
     findOneOrFail: jest.fn(),
     create: jest.fn((data) => data),
     save: jest.fn((data) => Promise.resolve({ ...data, id: data.id ?? 'order-1' })),
+    update: jest.fn().mockResolvedValue({ affected: 1 }),
     query: jest.fn().mockResolvedValue([{ next: '100001' }]),
   };
 
@@ -169,7 +170,12 @@ describe('OrdersService', () => {
     });
     repoMock.findOneOrFail.mockResolvedValue({
       id: 'order-1',
+      pickupLat: 43.2167,
+      pickupLng: 44.7667,
       pickupAddress: 'г. Назрань, ул. Московская, 12',
+      dropoffLat: 43.1667,
+      dropoffLng: 44.8,
+      dropoffAddress: 'Магас',
     });
 
     await service.create('client-1', {
@@ -185,5 +191,30 @@ describe('OrdersService', () => {
         dropoffAddress: 'Магас',
       }),
     );
+  });
+
+  it('при чтении заказа заменяет сохранённую GPS-подпись улицей', async () => {
+    const stored = {
+      id: 'order-2',
+      clientId: 'client-1',
+      pickupLat: 43.2189,
+      pickupLng: 44.771,
+      pickupAddress: 'Моё местоположение',
+      dropoffLat: 43.1667,
+      dropoffLng: 44.8,
+      dropoffAddress: 'Магас',
+    };
+    repoMock.findOneOrFail.mockResolvedValue(stored);
+
+    const order = await service.getOrderForUser('client-1', 'order-2', 'client');
+
+    expect(geoServiceMock.resolveStoredAddress).toHaveBeenCalledWith(
+      expect.objectContaining({ address: 'Моё местоположение' }),
+    );
+    expect(order.pickupAddress).toBe('г. Назрань, ул. Московская, 12');
+    expect(repoMock.update).toHaveBeenCalledWith('order-2', {
+      pickupAddress: 'г. Назрань, ул. Московская, 12',
+      dropoffAddress: 'Магас',
+    });
   });
 });

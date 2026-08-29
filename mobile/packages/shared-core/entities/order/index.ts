@@ -25,6 +25,8 @@ export {
   isSosAllowed,
   isTerminalOrder,
   isTripRecordingAllowed,
+  formatOrderStatusLabel,
+  ORDER_STATUS_LABELS_RU,
   orderStage,
   orderStatusLabelKey,
   orderStatusTone,

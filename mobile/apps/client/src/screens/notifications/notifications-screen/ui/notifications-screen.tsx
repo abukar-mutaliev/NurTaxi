@@ -15,7 +15,10 @@ import {
   useMarkAllNotificationsReadMutation,
   useMarkNotificationReadMutation,
 } from '@nurtaxi/shared-core/entities/notification';
-import { resolveNotificationHref } from '@nurtaxi/shared-core/features/notifications';
+import {
+  resolveNotificationCopy,
+  resolveNotificationHref,
+} from '@nurtaxi/shared-core/features/notifications';
 
 import { WelcomeGradientBackground } from '@/screens/auth/welcome-screen/ui/welcome-gradient-background';
 import {
@@ -124,39 +127,42 @@ export function NotificationsScreen() {
         keyExtractor={(item) => item.id}
         onRefresh={refetch}
         refreshing={isFetching}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => {
-              void openNotification(item.id, item.type, item.data);
-            }}
-          >
-            <GlassCard tone={item.readAt ? 'default' : 'selected'}>
-              <View
-                style={{
-                  alignItems: 'center',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Text
+        renderItem={({ item }) => {
+          const copy = resolveNotificationCopy(item);
+          return (
+            <Pressable
+              onPress={() => {
+                void openNotification(item.id, item.type, item.data);
+              }}
+            >
+              <GlassCard tone={item.readAt ? 'default' : 'selected'}>
+                <View
                   style={{
-                    color: GLASS_COLORS.title,
-                    flex: 1,
-                    fontSize: scale * 15,
-                    fontWeight: '600',
+                    alignItems: 'center',
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
                   }}
                 >
-                  {item.title}
+                  <Text
+                    style={{
+                      color: GLASS_COLORS.title,
+                      flex: 1,
+                      fontSize: scale * 15,
+                      fontWeight: '600',
+                    }}
+                  >
+                    {copy.title}
+                  </Text>
+                  {!item.readAt ? <Badge label={t('notifications.unread')} tone="primary" /> : null}
+                </View>
+                <GlassCaption>{copy.body}</GlassCaption>
+                <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * 11 }}>
+                  {formatDateTime(item.createdAt)}
                 </Text>
-                {!item.readAt ? <Badge label={t('notifications.unread')} tone="primary" /> : null}
-              </View>
-              <GlassCaption>{item.body}</GlassCaption>
-              <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * 11 }}>
-                {formatDateTime(item.createdAt)}
-              </Text>
-            </GlassCard>
-          </Pressable>
-        )}
+              </GlassCard>
+            </Pressable>
+          );
+        }}
         showsVerticalScrollIndicator={false}
       />
     </View>

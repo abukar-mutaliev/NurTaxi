@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { EventBusService } from '../../messaging/event-bus.service';
+import { getOrderStatusLabelRu } from './notification-templates';
 import { NotificationsService } from './notifications.service';
 
 @Injectable()
@@ -50,7 +51,7 @@ export class NotificationEventListener implements OnModuleInit {
 
   private bodyFor(eventType: string, data: Record<string, unknown>): string | undefined {
     if (eventType === 'order.status_changed' && typeof data.toStatus === 'string') {
-      return `Новый статус: ${data.toStatus}`;
+      return getOrderStatusLabelRu(data.toStatus);
     }
     if (eventType === 'payment.completed' && typeof data.amount === 'number') {
       return `Списано ${data.amount} ${data.currency ?? 'RUB'}`;

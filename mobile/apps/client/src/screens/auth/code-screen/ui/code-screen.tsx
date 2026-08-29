@@ -22,7 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { isDevEnvironment } from '@nurtaxi/shared-core/shared/config';
+import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatCountdown, formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
@@ -242,7 +242,7 @@ export function CodeScreen() {
             <Text style={[styles.hint, { fontSize: sx(13) }]}>{t('auth.changeNumber')}</Text>
           </Pressable>
 
-          {isDevEnvironment && devCode ? (
+          {!isProdEnvironment && devCode ? (
             <View
               style={[
                 styles.devCard,

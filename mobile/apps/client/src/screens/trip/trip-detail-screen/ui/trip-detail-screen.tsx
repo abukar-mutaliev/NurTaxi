@@ -10,7 +10,7 @@ import { formatDateTime, formatMoney, formatRating } from '@nurtaxi/shared-core/
 import { OrderStatus, ReviewTarget } from '@nurtaxi/shared-core/shared/model';
 import { Avatar, Badge, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
-  orderStatusLabelKey,
+  formatOrderStatusLabel,
   orderStatusTone,
   useGetOrderHistoryQuery,
   useGetOrderQuery,
@@ -93,7 +93,7 @@ export function TripDetailScreen() {
           >
             <GlassCaption>{formatDateTime(order.createdAt)}</GlassCaption>
             <Badge
-              label={t(orderStatusLabelKey(order.status))}
+              label={formatOrderStatusLabel(order.status)}
               tone={orderStatusTone(order.status)}
             />
           </View>

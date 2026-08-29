@@ -13,8 +13,8 @@ import { formatDuration } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import {
+  formatOrderStatusLabel,
   orderStage,
-  orderStatusLabelKey,
   useCreateOrderMutation,
   useGetOrderQuery,
 } from '@nurtaxi/shared-core/entities/order';
@@ -300,7 +300,7 @@ export function HomeScreen() {
         >
           <View style={styles.activeOrderCard}>
             <Text style={styles.activeOrderTitle}>
-              {t(orderStatusLabelKey(activeOrder.status))}
+              {formatOrderStatusLabel(activeOrder.status)}
             </Text>
             <Text numberOfLines={1} style={styles.activeOrderSubtitle}>
               {activeOrder.dropoffAddress}

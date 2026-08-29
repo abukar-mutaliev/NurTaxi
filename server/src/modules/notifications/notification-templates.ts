@@ -53,6 +53,25 @@ const templates: Record<string, NotificationTemplate> = {
   },
 };
 
+const ORDER_STATUS_LABELS_RU: Record<string, string> = {
+  created: 'Заказ создан',
+  searching_driver: 'Ищем водителя',
+  driver_assigned: 'Водитель назначен',
+  driver_en_route: 'Водитель едет к вам',
+  driver_arrived: 'Водитель на месте',
+  in_progress: 'Вы в поездке',
+  completed: 'Поездка завершена',
+  closed: 'Поездка закрыта',
+  cancelled_by_client: 'Вы отменили заказ',
+  cancelled_by_driver: 'Водитель отменил заказ',
+  cancelled_system: 'Заказ отменён',
+  failed_payment: 'Ошибка оплаты',
+};
+
+export function getOrderStatusLabelRu(status: string): string {
+  return ORDER_STATUS_LABELS_RU[status] ?? 'Статус поездки обновлён';
+}
+
 export function getNotificationTemplate(eventType: string): NotificationTemplate | null {
   return templates[eventType] ?? null;
 }

@@ -81,6 +81,39 @@ export function orderStatusLabelKey(status: OrderStatus): string {
   return `orderStatus.${status}`;
 }
 
+/** Запасной русский текст, если i18n не нашёл перевод и вернул ключ или сырой enum. */
+export const ORDER_STATUS_LABELS_RU: Record<OrderStatus, string> = {
+  [OrderStatus.Created]: 'Заказ создан',
+  [OrderStatus.SearchingDriver]: 'Ищем водителя',
+  [OrderStatus.DriverAssigned]: 'Водитель назначен',
+  [OrderStatus.DriverEnRoute]: 'Водитель едет к вам',
+  [OrderStatus.DriverArrived]: 'Водитель на месте',
+  [OrderStatus.InProgress]: 'Вы в поездке',
+  [OrderStatus.Completed]: 'Поездка завершена',
+  [OrderStatus.Closed]: 'Поездка закрыта',
+  [OrderStatus.CancelledByClient]: 'Вы отменили заказ',
+  [OrderStatus.CancelledByDriver]: 'Водитель отменил заказ',
+  [OrderStatus.CancelledSystem]: 'Заказ отменён',
+  [OrderStatus.FailedPayment]: 'Ошибка оплаты',
+};
+
+export function formatOrderStatusLabel(
+  status: string,
+  translate?: (key: string) => string,
+): string {
+  const fallback = ORDER_STATUS_LABELS_RU[status as OrderStatus] ?? status;
+  if (!translate) {
+    return fallback;
+  }
+
+  const key = `orderStatus.${status}`;
+  const translated = translate(key);
+  if (!translated || translated === key || translated === status) {
+    return fallback;
+  }
+  return translated;
+}
+
 export function orderStatusTone(status: OrderStatus): BadgeTone {
   if (isCancelled(status)) {
     return 'danger';

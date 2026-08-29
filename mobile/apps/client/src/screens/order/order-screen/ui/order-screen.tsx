@@ -15,8 +15,8 @@ import {
   isSosAllowed,
   isTerminalOrder,
   orderApi,
+  formatOrderStatusLabel,
   orderStage,
-  orderStatusLabelKey,
   orderStatusTone,
   useActivateSosMutation,
   useCancelOrderMutation,
@@ -334,7 +334,7 @@ export function OrderScreen() {
               onCancel={() => setCancelVisible(true)}
               onMenuPress={leaveToHome}
               onProfilePress={centerOnMyLocation}
-              statusLabel={t(orderStatusLabelKey(order.status))}
+              statusLabel={formatOrderStatusLabel(order.status)}
             />
           ) : null}
 
@@ -371,7 +371,7 @@ export function OrderScreen() {
                 <GlassCard>
                   <View style={styles.statusRow}>
                     <Badge
-                      label={t(orderStatusLabelKey(order.status))}
+                      label={formatOrderStatusLabel(order.status)}
                       tone={orderStatusTone(order.status)}
                     />
                     {!isOnline ? (

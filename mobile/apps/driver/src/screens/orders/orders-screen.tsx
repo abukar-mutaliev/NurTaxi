@@ -15,7 +15,7 @@ import { formatDateTime, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderHistoryItem } from '@nurtaxi/shared-core/shared/model';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useGetDriverOrderHistoryQuery } from '@nurtaxi/shared-core/entities/driver';
-import { isActiveOrder, orderStatusLabelKey } from '@nurtaxi/shared-core/entities/order';
+import { formatOrderStatusLabel, isActiveOrder } from '@nurtaxi/shared-core/entities/order';
 
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
@@ -106,7 +106,6 @@ interface OrderCardProps {
 }
 
 function OrderCard({ item, onPress }: OrderCardProps) {
-  const { t } = useTranslation();
   const theme = useTheme();
   const { order, receiptAmount } = item;
 
@@ -146,7 +145,7 @@ function OrderCard({ item, onPress }: OrderCardProps) {
       </View>
 
       <Text style={{ color: theme.colors.accent }} variant="micro">
-        {t(orderStatusLabelKey(order.status))}
+        {formatOrderStatusLabel(order.status)}
       </Text>
     </Pressable>
   );

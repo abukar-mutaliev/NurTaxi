@@ -20,7 +20,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { isDevEnvironment } from '@nurtaxi/shared-core/shared/config';
+import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
@@ -161,9 +161,9 @@ export function CodeScreen() {
           )}
         </View>
 
-        {isDevEnvironment ? (
+        {!isProdEnvironment && devCode ? (
           <Text style={[styles.hint, { fontSize: sx(12), marginTop: sy(26) }]}>
-            {devCode ? t('auth.devCodeHint', { code: devCode }) : 'Демо: введите любые 4 цифры'}
+            {t('auth.devCodeHint', { code: devCode })}
           </Text>
         ) : null}
       </ScrollView>

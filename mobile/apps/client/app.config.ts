@@ -32,7 +32,7 @@ const VARIANTS: Record<
     name: 'Nur Taxi',
     identifier: 'ru.nurtaxi.client',
     scheme: 'nurtaxi',
-    defaultApiUrl: 'https://api.nurtaxi.ru/api/v1',
+    defaultApiUrl: 'https://taxi.rulplus.ru/api/v1',
   },
 };
 

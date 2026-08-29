@@ -31,7 +31,7 @@ const VARIANTS: Record<
     name: 'Nur Taxi Водитель',
     identifier: 'ru.nurtaxi.driver',
     scheme: 'nurtaxi-driver',
-    defaultApiUrl: 'https://api.nurtaxi.ru/api/v1',
+    defaultApiUrl: 'https://taxi.rulplus.ru/api/v1',
   },
 };
 

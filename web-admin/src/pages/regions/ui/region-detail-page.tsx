@@ -1,17 +1,33 @@
 import { ArrowLeftOutlined, PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Descriptions, Form, Input, Modal, Space, Switch, Table, message } from 'antd';
+import {
+  Button,
+  Card,
+  Descriptions,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Typography,
+  message,
+} from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   useCreateCityMutation,
+  useGetDriverRequirementCatalogQuery,
   useGetRegionQuery,
   useListCitiesQuery,
   useUpdateCityMutation,
   useUpdateRegionMutation,
   getFeatureFlagLabel,
   type City,
+  type RequirementMode,
+  type RegionComplianceConfig,
 } from '@/entities/region';
 import { PageHeader, ActiveTag, PageLoader } from '@/shared/ui';
 import { getErrorMessage } from '@/shared/lib/utils';
@@ -22,6 +38,7 @@ export function RegionDetailPage() {
   const navigate = useNavigate();
   const { data: region, isLoading } = useGetRegionQuery(id, { skip: !id });
   const { data: cities = [], refetch } = useListCitiesQuery({ regionId: id, includeInactive: true }, { skip: !id });
+  const { data: requirementCatalog } = useGetDriverRequirementCatalogQuery();
   const [createCity, { isLoading: creating }] = useCreateCityMutation();
   const [updateCity] = useUpdateCityMutation();
   const [updateRegion] = useUpdateRegionMutation();
@@ -84,6 +101,47 @@ export function RegionDetailPage() {
     }
   };
 
+  const saveCompliance = async (patch: Partial<RegionComplianceConfig>) => {
+    if (!region) return;
+    try {
+      await updateRegion({
+        id,
+        body: {
+          complianceConfig: {
+            ...(region.complianceConfig ?? {
+              taxiRegistryRequired: false,
+              taxiRegistryStrict: false,
+              risTransferEnabled: false,
+              risPayloadSchema: 'v1',
+              tripTrackIntervalSec: 10,
+              tripTrackRetentionDays: 180,
+            }),
+            ...patch,
+          },
+        },
+      }).unwrap();
+      message.success(t('regions.regionUpdated'));
+    } catch (err) {
+      message.error(getErrorMessage(err));
+    }
+  };
+  const saveRequirement = async (key: string, mode: RequirementMode) => {
+    try {
+      await updateRegion({
+        id,
+        body: {
+          driverRequirements: {
+            ...(region?.driverRequirements ?? {}),
+            [key]: mode,
+          },
+        },
+      }).unwrap();
+      message.success(t('regions.requirementUpdated'));
+    } catch (err) {
+      message.error(getErrorMessage(err));
+    }
+  };
+
   if (isLoading || !region) return <PageLoader />;
 
   const flags = Object.entries(region.featureFlags ?? {});
@@ -131,6 +189,65 @@ export function RegionDetailPage() {
               }
             }}
           />
+        </Space>
+      </Card>
+
+      <Card title={t('regions.compliance')} bordered={false} style={{ marginBottom: 24 }}>
+        <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
+          {t('regions.complianceHint')}
+        </Typography.Paragraph>
+        <Space direction="vertical" size="middle">
+          <Switch
+            checked={region.complianceConfig?.taxiRegistryRequired ?? false}
+            checkedChildren={t('regions.registryRequired')}
+            unCheckedChildren={t('regions.registryOff')}
+            onChange={(checked) => void saveCompliance({ taxiRegistryRequired: checked })}
+          />
+          <Switch
+            checked={region.complianceConfig?.taxiRegistryStrict ?? false}
+            checkedChildren={t('regions.registryStrict')}
+            unCheckedChildren={t('regions.registrySoft')}
+            onChange={(checked) => void saveCompliance({ taxiRegistryStrict: checked })}
+          />
+          <Switch
+            checked={region.complianceConfig?.risTransferEnabled ?? false}
+            checkedChildren={t('regions.risOn')}
+            unCheckedChildren={t('regions.risOff')}
+            onChange={(checked) => void saveCompliance({ risTransferEnabled: checked })}
+          />
+        </Space>
+      </Card>
+
+      <Card
+        title={t('regions.driverRequirements')}
+        bordered={false}
+        style={{ marginBottom: 24 }}
+      >
+        <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
+          {t('regions.driverRequirementsHint')}
+        </Typography.Paragraph>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          {(requirementCatalog?.requirements ?? []).map((requirement) => (
+            <Space key={requirement.key} align="start" size="middle" wrap>
+              <Select<RequirementMode>
+                onChange={(mode) => void saveRequirement(requirement.key, mode)}
+                options={(requirementCatalog?.modes ?? []).map((mode) => ({
+                  value: mode,
+                  label: t(`regions.requirementModes.${mode}`),
+                }))}
+                style={{ minWidth: 180 }}
+                value={
+                  region.driverRequirements?.[requirement.key] ??
+                  requirementCatalog?.defaults?.[requirement.key]
+                }
+              />
+              <div>
+                <Typography.Text strong>{requirement.label}</Typography.Text>
+                <br />
+                <Typography.Text type="secondary">{requirement.description}</Typography.Text>
+              </div>
+            </Space>
+          ))}
         </Space>
       </Card>
 

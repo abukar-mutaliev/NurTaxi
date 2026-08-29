@@ -69,7 +69,7 @@ export const DocumentStatus = {
 } as const;
 export type DocumentStatus = (typeof DocumentStatus)[keyof typeof DocumentStatus];
 
-/** Обязательные документы водителя, requirements.md §8.2. */
+/** Документы водителя, requirements.md §8.2. */
 export const DocumentType = {
   Passport: 'passport',
   License: 'license',
@@ -78,8 +78,31 @@ export const DocumentType = {
   CarPhoto: 'car_photo',
   InteriorPhoto: 'interior_photo',
   Selfie: 'selfie',
+  TaxiPermit: 'taxi_permit',
 } as const;
 export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType];
+
+/**
+ * Требования к анкете водителя, включаемые для каждого региона отдельно (`§7.6`).
+ * Режим приходит с сервера вместе с регионом, поэтому новый регион настраивается
+ * из админ-панели и не требует релиза приложения.
+ */
+export const DriverRequirementKey = {
+  TaxiPermit: 'taxi_permit',
+} as const;
+export type DriverRequirementKey = (typeof DriverRequirementKey)[keyof typeof DriverRequirementKey];
+
+export const RequirementMode = {
+  /** Блок скрыт в анкете. */
+  Hidden: 'hidden',
+  /** Блок показывается, но не блокирует отправку на проверку. */
+  Optional: 'optional',
+  /** Без блока анкету нельзя отправить на проверку. */
+  Required: 'required',
+} as const;
+export type RequirementMode = (typeof RequirementMode)[keyof typeof RequirementMode];
+
+export type DriverRequirements = Partial<Record<DriverRequirementKey, RequirementMode>>;
 
 export const PaymentStatus = {
   Pending: 'pending',

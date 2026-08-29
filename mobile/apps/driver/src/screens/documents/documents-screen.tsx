@@ -4,8 +4,11 @@
  * Двухшаговая приватная загрузка: `POST /driver/documents/presign` → PUT файла напрямую
  * в S3 (presigned URL) → `POST /driver/documents` (регистрация storageKey). Когда все
  * обязательные типы загружены — `POST /driver/documents/submit` (на модерацию).
+ *
+ * Список обязательных типов приходит с сервера (`profile.requiredDocumentTypes`): он зависит
+ * от требований региона, поэтому включение нового документа не требует релиза приложения.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -13,9 +16,15 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { pickImageWithChoice } from '@nurtaxi/shared-core/shared/lib';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
-import { DocumentType } from '@nurtaxi/shared-core/shared/model';
 import {
-  REQUIRED_DOCUMENT_TYPES,
+  DocumentType,
+  DriverRequirementKey,
+  RequirementMode,
+} from '@nurtaxi/shared-core/shared/model';
+import {
+  requiredDocumentTypes,
+  requirementMode,
+  useGetDriverProfileQuery,
   usePresignDriverDocumentMutation,
   useRegisterDriverDocumentMutation,
   useSubmitDriverDocumentsMutation,
@@ -31,12 +40,14 @@ const DOC_LABELS: Record<string, string> = {
   car_photo: 'Фото автомобиля',
   interior_photo: 'Фото салона',
   selfie: 'Селфи',
+  taxi_permit: 'Разрешение на деятельность такси',
 };
 
 export function DocumentsScreen() {
   const theme = useTheme();
   const router = useRouter();
 
+  const { data: profile } = useGetDriverProfileQuery();
   const [presign] = usePresignDriverDocumentMutation();
   const [registerDoc] = useRegisterDriverDocumentMutation();
   const [submitDocs, { isLoading: submitting }] = useSubmitDriverDocumentsMutation();
@@ -45,7 +56,27 @@ export function DocumentsScreen() {
   const [busyType, setBusyType] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const allDone = REQUIRED_DOCUMENT_TYPES.every((type) => uploaded[type]);
+  /**
+   * Обязательный комплект считает сервер по требованиям региона, поэтому разрешение
+   * на деятельность такси появляется в списке само. Когда блок необязательный, строку
+   * всё равно показываем — но только тем, кто разрешение уже указал в анкете.
+   */
+  const requiredTypes = useMemo(() => requiredDocumentTypes(profile), [profile]);
+  const visibleTypes = useMemo(() => {
+    const permitOptional =
+      requirementMode(profile?.requirements, DriverRequirementKey.TaxiPermit) ===
+      RequirementMode.Optional;
+    const showOptionalPermit =
+      permitOptional && !!profile?.taxiPermit && !requiredTypes.includes(DocumentType.TaxiPermit);
+
+    return showOptionalPermit ? [...requiredTypes, DocumentType.TaxiPermit] : requiredTypes;
+  }, [profile, requiredTypes]);
+
+  // Загруженное на прошлом заходе приходит в профиле — иначе экран покажет пустой список.
+  const isUploaded = (type: DocumentType): boolean =>
+    uploaded[type] || (profile?.documents.some((doc) => doc.type === type) ?? false);
+
+  const allDone = requiredTypes.every(isUploaded);
 
   const pickAndUpload = async (type: DocumentType) => {
     setError(null);
@@ -100,7 +131,7 @@ export function DocumentsScreen() {
     }
   };
 
-  const doneCount = REQUIRED_DOCUMENT_TYPES.filter((t) => uploaded[t]).length;
+  const doneCount = requiredTypes.filter(isUploaded).length;
 
   return (
     <Screen
@@ -118,15 +149,16 @@ export function DocumentsScreen() {
         contentContainerStyle={{ gap: theme.spacing.sm, paddingBottom: theme.spacing.xl }}
       >
         <StepHeader
-          caption={`Загрузите ${REQUIRED_DOCUMENT_TYPES.length} документов (${doneCount}/${REQUIRED_DOCUMENT_TYPES.length})`}
+          caption={`Загрузите ${requiredTypes.length} документов (${doneCount}/${requiredTypes.length})`}
           step={2}
           title="Документы"
           totalSteps={2}
         />
 
-        {REQUIRED_DOCUMENT_TYPES.map((type) => {
-          const done = !!uploaded[type];
+        {visibleTypes.map((type) => {
+          const done = isUploaded(type);
           const busy = busyType === type;
+          const optional = !requiredTypes.includes(type);
           return (
             <Pressable key={type} disabled={busy} onPress={() => pickAndUpload(type)}>
               <Card tone={done ? 'success' : 'surface'}>
@@ -155,7 +187,10 @@ export function DocumentsScreen() {
                       }}
                     />
                     <View style={{ flex: 1 }}>
-                      <Text variant="bodyStrong">{DOC_LABELS[type] ?? type}</Text>
+                      <Text variant="bodyStrong">
+                        {DOC_LABELS[type] ?? type}
+                        {optional ? ' · необязательно' : ''}
+                      </Text>
                       <Text tone="muted" variant="caption">
                         {busy ? 'Загрузка…' : done ? 'Загружено' : 'Нажмите, чтобы загрузить'}
                       </Text>

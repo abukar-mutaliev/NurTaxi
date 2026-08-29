@@ -17,14 +17,14 @@ export interface HomeMapHeaderProps {
   searchLabel: string;
   onMenuPress: () => void;
   onSearchPress: () => void;
-  onProfilePress: () => void;
+  onLocationPress: () => void;
 }
 
 export function HomeMapHeader({
   searchLabel,
   onMenuPress,
   onSearchPress,
-  onProfilePress,
+  onLocationPress,
 }: HomeMapHeaderProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -70,9 +70,9 @@ export function HomeMapHeader({
 
         <View style={[styles.sideSlot, styles.sideSlotRight]}>
           <Pressable
-            accessibilityLabel={t('profile.title')}
+            accessibilityLabel={t('addresses.myLocation')}
             accessibilityRole="button"
-            onPress={onProfilePress}
+            onPress={onLocationPress}
             style={({ pressed }) => [
               styles.glassButton,
               styles.iconButton,
@@ -155,6 +155,8 @@ const styles = StyleSheet.create({
     color: headerColors.text,
     fontSize: 15,
     fontWeight: '600',
+    includeFontPadding: false,
+    lineHeight: 20,
     textAlign: 'center',
   },
 });

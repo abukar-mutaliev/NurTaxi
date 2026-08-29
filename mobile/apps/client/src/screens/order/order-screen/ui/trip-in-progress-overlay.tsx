@@ -77,35 +77,41 @@ export function TripInProgressOverlay({
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onBack}
-            style={({ pressed }) => [
-              styles.glassButton,
-              styles.iconButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.backIcon}>‹</Text>
-          </Pressable>
-
-          <View style={[styles.glassButton, styles.statusPill]}>
-            <Text numberOfLines={1} style={styles.statusText}>
-              {title}
-            </Text>
+          <View style={styles.sideSlot}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onBack}
+              style={({ pressed }) => [
+                styles.glassButton,
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.backIcon}>‹</Text>
+            </Pressable>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={onProfilePress}
-            style={({ pressed }) => [
-              styles.glassButton,
-              styles.iconButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View style={styles.profileDot} />
-          </Pressable>
+          <View style={styles.centerSlot}>
+            <View style={[styles.glassButton, styles.statusPill]}>
+              <Text numberOfLines={1} style={styles.statusText}>
+                {title}
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.sideSlot, styles.sideSlotRight]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onProfilePress}
+              style={({ pressed }) => [
+                styles.glassButton,
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.profileDot} />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -206,8 +212,9 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 28,
     fontWeight: '500',
-    lineHeight: 30,
-    marginTop: -2,
+    includeFontPadding: false,
+    lineHeight: 28,
+    textAlign: 'center',
   },
   bottom: {
     bottom: 0,
@@ -258,10 +265,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 12,
   },
+  centerSlot: {
+    flex: 1,
+    paddingHorizontal: 8,
+  },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
   },
   iconButton: {
     alignItems: 'center',
@@ -321,19 +331,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 22,
   },
+  sideSlot: {
+    alignItems: 'flex-start',
+    width: 44,
+  },
+  sideSlotRight: {
+    alignItems: 'flex-end',
+  },
   statusPill: {
     alignItems: 'center',
     borderRadius: 22,
-    flex: 1,
     height: 44,
     justifyContent: 'center',
-    maxWidth: 168,
     paddingHorizontal: 12,
+    width: '100%',
   },
   statusText: {
     color: colors.text,
     fontSize: 15,
     fontWeight: '600',
+    includeFontPadding: false,
+    lineHeight: 20,
     textAlign: 'center',
   },
   topBar: {

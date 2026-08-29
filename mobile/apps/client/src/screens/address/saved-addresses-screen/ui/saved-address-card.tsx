@@ -42,6 +42,7 @@ export function SavedAddressCard({
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ busy: loading, disabled: isDisabled }}
+      collapsable={false}
       disabled={isDisabled}
       onLongPress={onLongPress}
       onPress={onPress}

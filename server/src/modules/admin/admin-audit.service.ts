@@ -15,6 +15,10 @@ export interface AuditLogEntry {
   resourceId?: string | null;
   payload?: Record<string, unknown>;
   ipAddress?: string | null;
+  userAgent?: string | null;
+  result?: string;
+  previousValue?: Record<string, unknown> | null;
+  newValue?: Record<string, unknown> | null;
 }
 
 @Injectable()
@@ -38,6 +42,10 @@ export class AdminAuditService {
           resourceId: entry.resourceId ?? null,
           payload: entry.payload ?? {},
           ipAddress: entry.ipAddress ?? null,
+          userAgent: entry.userAgent ?? null,
+          result: entry.result ?? 'success',
+          previousValue: entry.previousValue ?? null,
+          newValue: entry.newValue ?? null,
         }),
       );
     } catch (error) {
@@ -47,7 +55,16 @@ export class AdminAuditService {
 
   async listLogs(
     actor: AuthenticatedUser,
-    filters: { regionId?: string; limit?: number; cursor?: string; resourceId?: string },
+    filters: {
+      regionId?: string;
+      limit?: number;
+      cursor?: string;
+      resourceId?: string;
+      actorId?: string;
+      action?: string;
+      from?: string;
+      to?: string;
+    },
   ): Promise<{ items: AdminAuditLog[]; nextCursor: string | null; hasMore: boolean }> {
     const take = Math.min(Math.max(filters.limit ?? 30, 1), 100);
 
@@ -58,7 +75,7 @@ export class AdminAuditService {
       .addOrderBy('log.id', 'DESC')
       .take(take + 1);
 
-    if (actor.role === Role.SuperAdmin) {
+    if (actor.role === Role.SuperAdmin || actor.role === Role.Regulator) {
       if (filters.regionId) {
         qb.andWhere('log.regionId = :regionId', { regionId: filters.regionId });
       }
@@ -69,6 +86,18 @@ export class AdminAuditService {
 
     if (filters.resourceId) {
       qb.andWhere('log.resourceId = :resourceId', { resourceId: filters.resourceId });
+    }
+    if (filters.actorId) {
+      qb.andWhere('log.actorId = :actorId', { actorId: filters.actorId });
+    }
+    if (filters.action) {
+      qb.andWhere('log.action ILIKE :action', { action: `%${filters.action}%` });
+    }
+    if (filters.from) {
+      qb.andWhere('log.createdAt >= :from', { from: new Date(filters.from) });
+    }
+    if (filters.to) {
+      qb.andWhere('log.createdAt <= :to', { to: new Date(filters.to) });
     }
 
     const decoded = filters.cursor ? decodeCursor(filters.cursor) : null;

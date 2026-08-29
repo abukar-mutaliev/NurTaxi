@@ -22,6 +22,8 @@ export {
   canSubmitForReview,
   isVerificationPending,
   missingDocumentTypes,
+  requiredDocumentTypes,
+  requirementMode,
   verificationLabelKey,
   verificationTone,
 } from './model/verification';

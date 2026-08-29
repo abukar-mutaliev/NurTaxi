@@ -1,28 +1,28 @@
-import { PLATE_PATTERN, formatBirthDateInput, formatPlateInput } from './input-masks';
+import { PLATE_PATTERN, formatIsoDateInput, formatPlateInput } from './input-masks';
 
-describe('formatBirthDateInput', () => {
+describe('formatIsoDateInput', () => {
   it('расставляет тире по мере ввода', () => {
-    expect(formatBirthDateInput('1')).toBe('1');
-    expect(formatBirthDateInput('1990')).toBe('1990');
-    expect(formatBirthDateInput('19900')).toBe('1990-0');
-    expect(formatBirthDateInput('199001')).toBe('1990-01');
-    expect(formatBirthDateInput('19900111')).toBe('1990-01-11');
+    expect(formatIsoDateInput('1')).toBe('1');
+    expect(formatIsoDateInput('1990')).toBe('1990');
+    expect(formatIsoDateInput('19900')).toBe('1990-0');
+    expect(formatIsoDateInput('199001')).toBe('1990-01');
+    expect(formatIsoDateInput('19900111')).toBe('1990-01-11');
   });
 
   it('терпит уже расставленные разделители и вставку из буфера', () => {
-    expect(formatBirthDateInput('1990-01-11')).toBe('1990-01-11');
-    expect(formatBirthDateInput('11.01.1990')).toBe('1101-19-90');
+    expect(formatIsoDateInput('1990-01-11')).toBe('1990-01-11');
+    expect(formatIsoDateInput('11.01.1990')).toBe('1101-19-90');
   });
 
   it('отбрасывает буквы и лишние цифры', () => {
-    expect(formatBirthDateInput('19a90b0111')).toBe('1990-01-11');
-    expect(formatBirthDateInput('199001119999')).toBe('1990-01-11');
+    expect(formatIsoDateInput('19a90b0111')).toBe('1990-01-11');
+    expect(formatIsoDateInput('199001119999')).toBe('1990-01-11');
   });
 
   /** Удаление тире должно стирать цифру перед ним, а не «залипать» на разделителе. */
   it('корректно сокращается при удалении', () => {
-    expect(formatBirthDateInput('1990-01-')).toBe('1990-01');
-    expect(formatBirthDateInput('1990-0')).toBe('1990-0');
+    expect(formatIsoDateInput('1990-01-')).toBe('1990-01');
+    expect(formatIsoDateInput('1990-0')).toBe('1990-0');
   });
 });
 

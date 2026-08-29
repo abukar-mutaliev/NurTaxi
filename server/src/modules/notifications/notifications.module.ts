@@ -10,6 +10,7 @@ import { NotificationsController } from './notifications.controller';
 import { PushTokensController } from './push-tokens.controller';
 import { PushTokensService } from './push-tokens.service';
 import { StubPushProvider } from './push/stub-push.provider';
+import { HttpPushProvider } from './push/http-push.provider';
 import { PUSH_PROVIDER } from './push/push-provider.interface';
 
 /**
@@ -28,7 +29,13 @@ import { PUSH_PROVIDER } from './push/push-provider.interface';
     PushTokensService,
     NotificationEventListener,
     StubPushProvider,
-    { provide: PUSH_PROVIDER, useExisting: StubPushProvider },
+    HttpPushProvider,
+    {
+      provide: PUSH_PROVIDER,
+      useFactory: (http: HttpPushProvider, stub: StubPushProvider) =>
+        process.env.PUSH_ENDPOINT ? http : stub,
+      inject: [HttpPushProvider, StubPushProvider],
+    },
   ],
   exports: [NotificationsService, PushTokensService],
 })

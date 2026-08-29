@@ -11,6 +11,7 @@ export {
   makeRecentAddressId,
   recentAddressUsed,
   recentAddressesCleared,
+  sanitizeRecentAddress,
   selectRecentAddresses,
 } from '@/processes/order-flow';
 export type { RecentAddress } from '@/processes/order-flow';
@@ -20,4 +21,8 @@ export {
   parseRouteParam,
 } from './model/parse-address-route-params';
 export { isAutoPickupLocation, shouldSyncAutoPickup } from './model/is-auto-pickup-location';
+export {
+  useResolvedLocationAddress,
+  useResolveLocationForOrder,
+} from './model/use-resolved-location-address';
 export { DEFAULT_REGION_ID, useOrderRegion } from './model/use-order-region';

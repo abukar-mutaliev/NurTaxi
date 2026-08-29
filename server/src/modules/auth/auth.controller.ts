@@ -1,4 +1,5 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -22,22 +23,31 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({ summary: 'Подтверждение кода и выдача токенов' })
-  verifyOtp(@Body() dto: OtpVerifyDto) {
-    return this.authService.verifyOtp(dto.phone, dto.code);
+  verifyOtp(@Body() dto: OtpVerifyDto, @Req() req: Request) {
+    return this.authService.verifyOtp(dto.phone, dto.code, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Обновление access-токена (ротация refresh)' })
-  refresh(@Body() dto: RefreshDto) {
-    return this.authService.refresh(dto.refreshToken);
+  refresh(@Body() dto: RefreshDto, @Req() req: Request) {
+    return this.authService.refresh(dto.refreshToken, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Выход (отзыв refresh-токена)' })
-  async logout(@Body() dto: LogoutDto) {
-    await this.authService.logout(dto.refreshToken);
+  async logout(@Body() dto: LogoutDto, @Req() req: Request) {
+    await this.authService.logout(dto.refreshToken, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
     return { success: true };
   }
 }

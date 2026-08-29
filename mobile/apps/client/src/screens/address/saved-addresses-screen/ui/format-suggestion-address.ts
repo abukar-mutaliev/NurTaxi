@@ -6,7 +6,7 @@ import {
 import type { AddressSuggestion, GeoLocation } from '@nurtaxi/shared-core/shared/model';
 
 /** Адрес для сохранения в избранное: без региона и района. */
-export function formatSaveAddressText(address: string): string {
+export function formatSaveAddressText(address: string | null | undefined): string {
   return formatShortDisplayAddress(address);
 }
 
@@ -115,9 +115,13 @@ export function formatSuggestionDisplayText(
   return resolveShortSuggestionAddress(item);
 }
 
+function suggestionTitle(item: Pick<AddressSuggestion, 'address' | 'subtitle' | 'title'>): string {
+  return item.title?.trim() || item.subtitle?.trim() || item.address?.trim() || '';
+}
+
 function buildInitialInsertText(item: AddressSuggestion, short: string): string {
   if (!short) {
-    return item.title.trim();
+    return suggestionTitle(item);
   }
 
   const parts = splitParts(short);
@@ -162,7 +166,7 @@ function mergeAddressWithSuggestion(
     return `${currentLocality}, ${streetSegment}`;
   }
 
-  const title = item.title.trim();
+  const title = suggestionTitle(item);
   const titleLooksLikeStreet =
     isStreetLikePart(title) ||
     STREET_PREFIX.test(title) ||

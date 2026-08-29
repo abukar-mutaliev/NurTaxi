@@ -6,6 +6,7 @@ import { NotificationChannel } from '../../common/enums/phase8.enum';
 import { Notification } from './entities/notification.entity';
 import { getNotificationTemplate, isChannelEnabled } from './notification-templates';
 import { PUSH_PROVIDER, type PushProvider } from './push/push-provider.interface';
+import { sanitizePushData } from '../../common/compliance/push-payload';
 import { UsersService } from '../users/users.service';
 
 export interface NotifyUserOptions {
@@ -60,7 +61,7 @@ export class NotificationsService {
         await this.push.send(user.id, {
           title,
           body,
-          data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+          data: sanitizePushData({ eventId: options.eventType, ...data }),
         });
       }
 

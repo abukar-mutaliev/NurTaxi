@@ -18,7 +18,7 @@ import { ProviderConfig } from './entities/provider-config.entity';
 import { AdminAuditLog } from './entities/admin-audit-log.entity';
 import { Review } from '../reviews/entities/review.entity';
 import { OrderStatusLog } from '../orders/entities/order-status-log.entity';
-import { AdminScopeService } from './admin-scope.service';
+import { AdminScopeModule } from './admin-scope.module';
 import { AdminAuditService } from './admin-audit.service';
 import { AdminAuditInterceptor } from './interceptors/admin-audit.interceptor';
 import { AdminRegionsService } from './admin-regions.service';
@@ -63,6 +63,7 @@ import { AdminComplaintsService } from './admin-complaints.service';
     DriversModule,
     forwardRef(() => OrdersModule),
     forwardRef(() => PaymentsModule),
+    AdminScopeModule,
   ],
   controllers: [
     AdminRegionsController,
@@ -76,7 +77,6 @@ import { AdminComplaintsService } from './admin-complaints.service';
     AdminAuditController,
   ],
   providers: [
-    AdminScopeService,
     AdminAuditService,
     { provide: APP_INTERCEPTOR, useClass: AdminAuditInterceptor },
     AdminRegionsService,
@@ -87,6 +87,6 @@ import { AdminComplaintsService } from './admin-complaints.service';
     AdminAnalyticsService,
     AdminComplaintsService,
   ],
-  exports: [AdminScopeService],
+  exports: [AdminScopeModule],
 })
 export class AdminModule {}

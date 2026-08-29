@@ -2,17 +2,25 @@ import type { TFunction } from 'i18next';
 
 export type SavedAddressLabelKind = 'home' | 'work' | 'study' | 'parents' | 'custom';
 
-function normalizeLabel(label: string): string {
-  return label.trim().toLowerCase();
+function normalizeLabel(label: string | null | undefined): string {
+  return typeof label === 'string' ? label.trim().toLowerCase() : '';
 }
 
 function matchesAny(normalized: string, values: string[]): boolean {
-  return values.some((value) => value.trim().toLowerCase() === normalized);
+  return values.some(
+    (value) => typeof value === 'string' && value.trim().toLowerCase() === normalized,
+  );
 }
 
 /** Определяет тип метки: Дом, Работа, Учеба, Родители или произвольное название. */
-export function getSavedAddressLabelKind(label: string, t: TFunction): SavedAddressLabelKind {
+export function getSavedAddressLabelKind(
+  label: string | null | undefined,
+  t: TFunction,
+): SavedAddressLabelKind {
   const normalized = normalizeLabel(label);
+  if (!normalized) {
+    return 'custom';
+  }
 
   if (matchesAny(normalized, [t('addresses.home'), 'дом', 'home'])) {
     return 'home';

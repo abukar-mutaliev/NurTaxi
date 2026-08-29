@@ -1,9 +1,14 @@
 /** Производные признаки статуса верификации водителя (`§8.2`, `§12.3`). */
-import { DocumentType, VerificationStatus } from '@nurtaxi/shared-core/shared/model';
-import type { DriverProfile } from '@nurtaxi/shared-core/shared/model';
+import {
+  DocumentType,
+  DriverRequirementKey,
+  RequirementMode,
+  VerificationStatus,
+} from '@nurtaxi/shared-core/shared/model';
+import type { DriverProfile, DriverRequirements } from '@nurtaxi/shared-core/shared/model';
 import type { BadgeTone } from '@nurtaxi/shared-core/shared/ui';
 
-/** Полный комплект документов, требуемый `requirements.md §8.2`. */
+/** Базовый комплект документов `requirements.md §8.2` — обязателен во всех регионах. */
 export const REQUIRED_DOCUMENT_TYPES: readonly DocumentType[] = [
   DocumentType.Passport,
   DocumentType.License,
@@ -14,6 +19,26 @@ export const REQUIRED_DOCUMENT_TYPES: readonly DocumentType[] = [
   DocumentType.Selfie,
 ];
 
+/**
+ * Комплект документов для конкретного водителя.
+ *
+ * Список считает сервер по требованиям региона, поэтому новый обязательный документ
+ * появляется в приложении без релиза. Константа — запасной вариант для профиля,
+ * который ещё не загрузился.
+ */
+export function requiredDocumentTypes(profile: DriverProfile | undefined): DocumentType[] {
+  const fromServer = profile?.requiredDocumentTypes;
+  return fromServer?.length ? [...fromServer] : [...REQUIRED_DOCUMENT_TYPES];
+}
+
+/** Режим требования в регионе водителя; по умолчанию блок не показываем. */
+export function requirementMode(
+  requirements: DriverRequirements | undefined,
+  key: DriverRequirementKey,
+): RequirementMode {
+  return requirements?.[key] ?? RequirementMode.Hidden;
+}
+
 export function missingDocumentTypes(profile: DriverProfile | undefined): DocumentType[] {
   if (!profile) {
     return [...REQUIRED_DOCUMENT_TYPES];
@@ -21,7 +46,7 @@ export function missingDocumentTypes(profile: DriverProfile | undefined): Docume
   const uploaded = new Set(
     profile.documents.filter((doc) => doc.status !== 'rejected').map((doc) => doc.type),
   );
-  return REQUIRED_DOCUMENT_TYPES.filter((type) => !uploaded.has(type));
+  return requiredDocumentTypes(profile).filter((type) => !uploaded.has(type));
 }
 
 export function canSubmitForReview(profile: DriverProfile | undefined): boolean {

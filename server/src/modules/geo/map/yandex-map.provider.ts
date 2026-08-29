@@ -8,6 +8,7 @@ import type {
   MapRouteOptions,
   MapSearchOptions,
 } from './map-provider.interface';
+import { formatDisplayAddress } from '../address/format-display-address';
 import { ROUTING_PROVIDER, type RoutingProvider } from './routing-provider.interface';
 
 /** Bbox Республики Ингушетия (lon,lat) для ограничения поиска в пилотном регионе. */
@@ -72,6 +73,20 @@ export class YandexMapProvider implements MapProvider {
     }
 
     throw new Error('Yandex map provider: no Geosuggest or Geocoder API key configured');
+  }
+
+  async reverseGeocode(point: GeoPoint): Promise<string | null> {
+    if (!this.config.yandexGeocoderApiKey) {
+      return null;
+    }
+
+    const geoObject =
+      (await this.geocodeByPoint(point, 'house')) ?? (await this.geocodeByPoint(point));
+    if (!geoObject) {
+      return null;
+    }
+
+    return this.formatGeoObjectAddress(geoObject);
   }
 
   route(options: MapRouteOptions) {
@@ -179,6 +194,45 @@ export class YandexMapProvider implements MapProvider {
     return (data.response?.GeoObjectCollection?.featureMember ?? [])
       .map((member, index) => this.geoObjectToSuggestion(member.GeoObject, index))
       .filter((item): item is AddressSuggestion => item !== null);
+  }
+
+  private async geocodeByPoint(point: GeoPoint, kind?: 'house'): Promise<YandexGeoObject | null> {
+    const params = new URLSearchParams({
+      apikey: this.config.yandexGeocoderApiKey,
+      geocode: `${point.lng},${point.lat}`,
+      format: 'json',
+      lang: this.config.locale,
+      results: '1',
+    });
+    if (kind) {
+      params.set('kind', kind);
+    }
+
+    try {
+      const url = `${this.config.geocoderUrl}?${params.toString()}`;
+      const data = await this.fetchJson<YandexGeocoderResponse>(url, 'geocoder');
+      return data.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject ?? null;
+    } catch (error) {
+      this.logger.warn(`Reverse geocode failed: ${error instanceof Error ? error.message : error}`);
+      return null;
+    }
+  }
+
+  private formatGeoObjectAddress(geoObject: YandexGeoObject): string | null {
+    const meta = geoObject.metaDataProperty?.GeocoderMetaData;
+    const formatted = meta?.Address?.formatted ?? meta?.text ?? '';
+    const short = formatDisplayAddress(formatted);
+    if (short) {
+      return short;
+    }
+
+    const name = geoObject.name?.trim() ?? '';
+    const locality = geoObject.description?.split(',')[0]?.trim() ?? '';
+    if (name && locality && !name.toLowerCase().includes(locality.toLowerCase())) {
+      return `${locality}, ${name}`;
+    }
+
+    return name || formatted || null;
   }
 
   private async geocodeByUri(uri: string): Promise<GeoPoint | null> {

@@ -20,7 +20,7 @@ export class OrderStatusLog {
   @Column({ name: 'order_id', type: 'uuid' })
   orderId!: string;
 
-  @ManyToOne(() => Order, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 
@@ -35,6 +35,12 @@ export class OrderStatusLog {
 
   @Column({ type: 'text', nullable: true })
   reason!: string | null;
+
+  @Column({ name: 'prev_checksum', type: 'varchar', length: 64, nullable: true })
+  prevChecksum!: string | null;
+
+  @Column({ name: 'record_checksum', type: 'varchar', length: 64, nullable: true })
+  recordChecksum!: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

@@ -48,6 +48,12 @@ export class Vehicle {
   @Column({ name: 'is_primary', type: 'boolean', default: true })
   isPrimary!: boolean;
 
+  @Column({ type: 'varchar', length: 17, nullable: true })
+  vin!: string | null;
+
+  @Column({ name: 'current_permit_id', type: 'uuid', nullable: true })
+  currentPermitId!: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 

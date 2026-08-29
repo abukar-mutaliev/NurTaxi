@@ -12,7 +12,9 @@ import { Button, Card, Col, DatePicker, Row, Space, Statistic } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useGetSummaryQuery } from '@/entities/analytics';
+import { useCan } from '@/shared/rbac';
 import { useRegionScope } from '@/features/region-context';
 import { RegionScopeBanner } from '@/widgets/region-scope-banner';
 import { AnalyticsReports } from '@/widgets/analytics-reports';
@@ -36,6 +38,8 @@ const { RangePicker } = DatePicker;
 
 export function DashboardPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const canAnalytics = useCan('analytics.view');
   const { regionId, regionName, isRegionLocked } = useRegionScope();
   const [range, setRange] = useState<[Dayjs, Dayjs]>([
     dayjs().subtract(30, 'day').startOf('day'),
@@ -51,9 +55,37 @@ export function DashboardPage() {
     [regionId, range],
   );
 
-  const { data, isLoading, isFetching, refetch } = useGetSummaryQuery(queryParams);
+  const { data, isLoading, isFetching, refetch } = useGetSummaryQuery(queryParams, {
+    skip: !canAnalytics,
+  });
 
-  if (isLoading) return <PageLoader />;
+  if (canAnalytics && isLoading) return <PageLoader />;
+
+  if (!canAnalytics) {
+    return (
+      <div>
+        <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.regulatorSubtitle')} />
+        <RegionScopeBanner />
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={8}>
+            <Card title={t('nav.orders')} hoverable onClick={() => navigate('/orders')}>
+              {t('dashboard.regulatorOrders')}
+            </Card>
+          </Col>
+          <Col xs={24} md={8}>
+            <Card title={t('nav.exports')} hoverable onClick={() => navigate('/exports')}>
+              {t('dashboard.regulatorExports')}
+            </Card>
+          </Col>
+          <Col xs={24} md={8}>
+            <Card title={t('nav.audit')} hoverable onClick={() => navigate('/audit')}>
+              {t('dashboard.regulatorAudit')}
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    );
+  }
 
   const subtitle = regionName
     ? isRegionLocked

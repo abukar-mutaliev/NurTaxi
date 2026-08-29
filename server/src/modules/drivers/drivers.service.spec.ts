@@ -2,7 +2,11 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Role } from '../../common/enums/role.enum';
 import { UserStatus } from '../../common/enums/user-status.enum';
-import { DocumentType } from '../../common/enums/document-type.enum';
+import {
+  DocumentType,
+  REQUIRED_DOCUMENT_TYPES as BASE_DOCUMENT_TYPES,
+} from '../../common/enums/document-type.enum';
+import { DriverRequirementKey, RequirementMode } from '../../common/enums/driver-requirement.enum';
 import { DriverOnlineStatus } from '../../common/enums/driver-online-status.enum';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
 import { EventBusService } from '../../messaging/event-bus.service';
@@ -19,6 +23,7 @@ import { Region } from '../regions/entities/region.entity';
 import { DriverLocationService } from './location/driver-location.service';
 import { DriverProfile } from './entities/driver-profile.entity';
 import { DriverDocument } from './entities/driver-document.entity';
+import { DriverTaxiPermit } from './entities/driver-taxi-permit.entity';
 import { Vehicle } from './entities/vehicle.entity';
 import { DriversService } from './drivers.service';
 import { DOCUMENT_AUTO_VERIFIER } from './verification/document-auto-verifier.interface';
@@ -54,11 +59,15 @@ describe('DriversService', () => {
     timezone: 'Europe/Moscow',
     currency: 'RUB',
     featureFlags: {},
+    driverRequirements: {},
+    complianceConfig: {},
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
   let driverStore: DriverProfile | null = null;
+  let regionStore: Region = region;
+  let permitStore: DriverTaxiPermit | null = null;
   const documentStore = new Map<string, DriverDocument>();
 
   const usersServiceMock = {
@@ -136,12 +145,26 @@ describe('DriversService', () => {
     save: jest.fn((v: Vehicle) => Promise.resolve(v)),
   };
 
+  const permitsRepoMock = {
+    findOne: jest.fn(({ where }: { where: Partial<DriverTaxiPermit> }) =>
+      Promise.resolve(permitStore?.driverId === where.driverId ? permitStore : null),
+    ),
+    create: jest.fn(
+      (data: Partial<DriverTaxiPermit>) => ({ ...data, id: 'permit-1' }) as DriverTaxiPermit,
+    ),
+    save: jest.fn((permit: DriverTaxiPermit) => {
+      permitStore = permit;
+      return Promise.resolve(permit);
+    }),
+  };
+
   const regionsServiceMock = {
     getRegionOrThrow: jest.fn((id: string) => {
-      if (id === regionId) return Promise.resolve({ ...region });
+      if (id === regionId) return Promise.resolve({ ...regionStore });
       return Promise.reject(new Error('not found'));
     }),
-    listActiveRegions: jest.fn(() => Promise.resolve([region])),
+    findById: jest.fn((id: string) => Promise.resolve(id === regionId ? { ...regionStore } : null)),
+    listActiveRegions: jest.fn(() => Promise.resolve([regionStore])),
   };
 
   const driverLocationMock = {
@@ -164,6 +187,8 @@ describe('DriversService', () => {
 
   beforeEach(async () => {
     driverStore = null;
+    permitStore = null;
+    regionStore = region;
     documentStore.clear();
     jest.clearAllMocks();
 
@@ -173,6 +198,7 @@ describe('DriversService', () => {
         { provide: getRepositoryToken(DriverProfile), useValue: driversRepoMock },
         { provide: getRepositoryToken(DriverDocument), useValue: documentsRepoMock },
         { provide: getRepositoryToken(Vehicle), useValue: vehiclesRepoMock },
+        { provide: getRepositoryToken(DriverTaxiPermit), useValue: permitsRepoMock },
         { provide: RegionsService, useValue: regionsServiceMock },
         { provide: DriverLocationService, useValue: driverLocationMock },
         { provide: UsersService, useValue: usersServiceMock },
@@ -245,5 +271,80 @@ describe('DriversService', () => {
     }
     const status = await service.syncVerificationStatus('driver-1');
     expect(status).toBe(VerificationStatus.Pending);
+  });
+
+  describe('разрешение на деятельность такси', () => {
+    const permit = {
+      number: 'АА-06-001234',
+      issuingRegion: 'Республика Ингушетия',
+      issuedAt: '2024-03-01',
+      expiresAt: '2099-03-01',
+    };
+
+    const requirePermit = () => {
+      regionStore = {
+        ...region,
+        driverRequirements: { [DriverRequirementKey.TaxiPermit]: RequirementMode.Required },
+      };
+    };
+
+    const uploadDocuments = async (types: DocumentType[]) => {
+      for (const type of types) {
+        await service.registerDocument(userId, {
+          type,
+          storageKey: `drivers/driver-1/${type}/file.jpg`,
+          contentType: 'image/jpeg',
+        });
+      }
+    };
+
+    it('не требуется в регионе без такого требования', async () => {
+      const profile = await service.register(userId, registerDto);
+      expect(profile.verificationStatus).toBe(VerificationStatus.Draft);
+    });
+
+    it('сохраняется, если водитель заполнил необязательный блок', async () => {
+      await service.register(userId, { ...registerDto, taxiPermit: permit });
+      expect(permitStore).toMatchObject({ number: permit.number, expiresAt: permit.expiresAt });
+    });
+
+    it('обязателен для анкеты в регионе, который его требует', async () => {
+      requirePermit();
+      await expect(service.register(userId, registerDto)).rejects.toMatchObject({
+        response: { code: 'TAXI_PERMIT_REQUIRED' },
+      });
+    });
+
+    it('отклоняет просроченное разрешение', async () => {
+      requirePermit();
+      await expect(
+        service.register(userId, {
+          ...registerDto,
+          taxiPermit: { ...permit, expiresAt: '2025-01-01' },
+        }),
+      ).rejects.toMatchObject({ response: { code: 'TAXI_PERMIT_EXPIRED' } });
+    });
+
+    it('добавляет скан разрешения в обязательный комплект документов', async () => {
+      requirePermit();
+      await service.register(userId, { ...registerDto, taxiPermit: permit });
+
+      await uploadDocuments(BASE_DOCUMENT_TYPES);
+      expect(await service.syncVerificationStatus('driver-1')).toBe(VerificationStatus.Draft);
+
+      await uploadDocuments([DocumentType.TaxiPermit]);
+      expect(await service.syncVerificationStatus('driver-1')).toBe(VerificationStatus.Pending);
+    });
+
+    it('не пускает на линию с истёкшим разрешением', async () => {
+      await service.register(userId, { ...registerDto, taxiPermit: permit });
+      requirePermit();
+      driverStore!.verificationStatus = VerificationStatus.Approved;
+      permitStore = { ...permitStore!, expiresAt: '2020-01-01' };
+
+      await expect(service.updateOnlineStatus(userId, 'online')).rejects.toMatchObject({
+        response: { code: 'TAXI_PERMIT_EXPIRED' },
+      });
+    });
   });
 });

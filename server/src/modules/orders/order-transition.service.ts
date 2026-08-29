@@ -2,13 +2,23 @@ import { ConflictException, Injectable, NotFoundException, Optional } from '@nes
 import { OptimisticLockVersionMismatchError } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OrderStatus } from '../../common/enums/order-status.enum';
+import { OrderStatus, TERMINAL_ORDER_STATUSES } from '../../common/enums/order-status.enum';
 import { EventBusService } from '../../messaging/event-bus.service';
 import { MetricsService } from '../../observability/metrics/metrics.service';
 import { RealtimeBroadcastService } from '../realtime/realtime-broadcast.service';
 import { Order } from './entities/order.entity';
 import { OrderStatusLog } from './entities/order-status-log.entity';
 import { assertTransitionAllowed } from './state/order-state-machine';
+import { CompletenessStatus } from '../../common/enums/compliance.enum';
+import { evaluateOrderCompleteness } from './order-completeness';
+import { appendOrderStatusLog } from './append-order-status-log';
+import { RisService } from '../ris/ris.service';
+
+const CANCELLED: OrderStatus[] = [
+  OrderStatus.CancelledByClient,
+  OrderStatus.CancelledByDriver,
+  OrderStatus.CancelledSystem,
+];
 
 export interface TransitionOptions {
   orderId: string;
@@ -28,6 +38,7 @@ export class OrderTransitionService {
     private readonly eventBus: EventBusService,
     @Optional() private readonly realtime?: RealtimeBroadcastService,
     @Optional() private readonly metrics?: MetricsService,
+    @Optional() private readonly ris?: RisService,
   ) {}
 
   async transition(options: TransitionOptions): Promise<Order> {
@@ -58,15 +69,13 @@ export class OrderTransitionService {
       throw error;
     }
 
-    await this.logs.save(
-      this.logs.create({
-        orderId: saved.id,
-        fromStatus,
-        toStatus: options.toStatus,
-        actorId: options.actorId ?? null,
-        reason: options.reason ?? null,
-      }),
-    );
+    await appendOrderStatusLog(this.logs, {
+      orderId: saved.id,
+      fromStatus,
+      toStatus: options.toStatus,
+      actorId: options.actorId ?? null,
+      reason: options.reason ?? null,
+    });
 
     this.eventBus.publish('order.status_changed', {
       orderId: saved.id,
@@ -86,6 +95,24 @@ export class OrderTransitionService {
     }
 
     this.recordOrderOutcome(options.toStatus, saved.regionId);
+
+    const isTerminal =
+      TERMINAL_ORDER_STATUSES.includes(options.toStatus) ||
+      options.toStatus === OrderStatus.Completed;
+    if (isTerminal) {
+      if (CANCELLED.includes(options.toStatus) && saved.tripStartedAt && !saved.tripEndedAt) {
+        saved.tripEndedAt = new Date();
+      }
+      const completeness = evaluateOrderCompleteness(saved);
+      saved.completenessStatus = completeness.status;
+      await this.orders.save(saved);
+      if (completeness.status === CompletenessStatus.Incomplete) {
+        this.metrics?.incCompletenessViolation(saved.regionId);
+      }
+      if (options.toStatus === OrderStatus.Completed || options.toStatus === OrderStatus.Closed) {
+        void this.ris?.enqueueTrip(saved);
+      }
+    }
 
     if (
       options.toStatus === OrderStatus.CancelledByClient ||

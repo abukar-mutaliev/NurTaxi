@@ -1,9 +1,13 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
-import { GeoSearchQueryDto } from './dto/geo.dto';
+import { GeoReverseQueryDto, GeoRouteQueryDto, GeoSearchQueryDto } from './dto/geo.dto';
 import { GeoService } from './geo.service';
-import { AddressSuggestionResponse } from './dto/geo.presenter';
+import {
+  AddressSuggestionResponse,
+  GeoReverseResponse,
+  GeoRouteResponse,
+} from './dto/geo.presenter';
 
 @ApiTags('geo')
 @ApiBearerAuth()
@@ -23,5 +27,24 @@ export class GeoController {
       limit: query.limit,
     });
     return results.map(AddressSuggestionResponse.from);
+  }
+
+  @Get('route')
+  @ApiOperation({ summary: 'Дорожный маршрут A→B для навигатора (Req §8.10)' })
+  async route(@Query() query: GeoRouteQueryDto): Promise<GeoRouteResponse> {
+    const result = await this.geoService.route({
+      originLat: query.originLat,
+      originLng: query.originLng,
+      destLat: query.destLat,
+      destLng: query.destLng,
+    });
+    return result ? GeoRouteResponse.from(result) : { polyline: '', distanceM: 0, durationS: 0 };
+  }
+
+  @Get('reverse')
+  @ApiOperation({ summary: 'Адрес по координатам (обратное геокодирование)' })
+  async reverse(@Query() query: GeoReverseQueryDto): Promise<GeoReverseResponse> {
+    const address = await this.geoService.reverseGeocode({ lat: query.lat, lng: query.lng });
+    return GeoReverseResponse.from(query.lat, query.lng, address);
   }
 }

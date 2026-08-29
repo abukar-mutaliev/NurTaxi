@@ -1,10 +1,12 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../../redis/redis.constants';
 import {
   DriverLocationService,
   type DriverGeoEntry,
 } from '../../drivers/location/driver-location.service';
+import { OfferJournalService } from '../offer-journal.service';
+import { OfferOutcome } from '../../../common/enums/compliance.enum';
 
 const OFFER_KEY_PREFIX = 'order:offer:';
 /**
@@ -40,6 +42,7 @@ export class MatchingService {
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly driverLocation: DriverLocationService,
+    @Optional() private readonly offerJournal?: OfferJournalService,
   ) {}
 
   async findCandidates(
@@ -86,6 +89,7 @@ export class MatchingService {
     };
 
     await this.persistOffer(offer);
+    await this.offerJournal?.recordOffered(orderId, offer.driverId, OFFER_TTL_SEC);
     return offer;
   }
 
@@ -154,7 +158,9 @@ export class MatchingService {
 
     // Указатель прежнего кандидата снимаем: предложение ушло дальше, и ему больше не адресовано.
     await this.redis.del(`${DRIVER_OFFER_KEY_PREFIX}${current.driverId}`);
+    await this.offerJournal?.resolvePending(orderId, current.driverId, OfferOutcome.Timeout);
     await this.persistOffer(offer);
+    await this.offerJournal?.recordOffered(orderId, offer.driverId, OFFER_TTL_SEC);
     return offer;
   }
 

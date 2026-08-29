@@ -19,12 +19,22 @@ import {
 type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 type StatusListener = (status: RealtimeStatus) => void;
+type SocketEventListener = (...args: unknown[]) => void;
 
 let socket: AppSocket | null = null;
 let status: RealtimeStatus = 'idle';
 const statusListeners = new Set<StatusListener>();
 /** Комнаты заказов, на которые нужно переподписаться после reconnect. */
 const subscribedOrders = new Set<string>();
+/**
+ * Обработчики прикладных событий живут здесь, а не только на текущем сокете.
+ *
+ * `connect()` при обрыве создаёт новый `io()` и снимает слушателей со старого.
+ * Если вешать `socket.on(...)` без реестра, экран заказа перестаёт получать
+ * `order.status` — клиент так и остаётся на «Ищем водителя», хотя сокет уже
+ * снова «подключён» и поллинг из-за этого выключен.
+ */
+const eventListeners = new Map<keyof ServerToClientEvents, Set<SocketEventListener>>();
 
 /**
  * Повторные попытки после отказа на хендшейке (M5.5).
@@ -60,6 +70,14 @@ function setStatus(next: RealtimeStatus): void {
 function resubscribeAll(active: AppSocket): void {
   subscribedOrders.forEach((orderId) => {
     active.emit(RealtimeEvent.SubscribeOrder, { orderId });
+  });
+}
+
+function bindEventListeners(active: AppSocket): void {
+  eventListeners.forEach((handlers, event) => {
+    handlers.forEach((handler) => {
+      active.on(event, handler as never);
+    });
   });
 }
 
@@ -156,6 +174,7 @@ export const realtimeClient = {
       }
     });
 
+    bindEventListeners(next);
     socket = next;
     return next;
   },
@@ -206,13 +225,22 @@ export const realtimeClient = {
 
   /**
    * Подписка на серверное событие. Возвращает функцию отписки.
-   * Приведение типов нужно потому, что типы socket.io не сводят обобщённый ключ `E`
-   * к конкретной сигнатуре обработчика.
+   *
+   * Слушатель хранится в реестре и заново вешается на каждый новый сокет:
+   * иначе после `connect()` с пересозданием соединения обработчики пропадают,
+   * а хук, который их ставил, об этом не узнаёт.
    */
   on<E extends keyof ServerToClientEvents>(event: E, handler: ServerToClientEvents[E]): () => void {
-    const listener = handler as (...args: unknown[]) => void;
+    const listener = handler as SocketEventListener;
+    let handlers = eventListeners.get(event);
+    if (!handlers) {
+      handlers = new Set();
+      eventListeners.set(event, handlers);
+    }
+    handlers.add(listener);
     socket?.on(event, listener as never);
     return () => {
+      handlers?.delete(listener);
       socket?.off(event, listener as never);
     };
   },

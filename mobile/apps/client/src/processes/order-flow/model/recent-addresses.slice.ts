@@ -24,7 +24,41 @@ const initialState: RecentAddressesState = {
 };
 
 export function makeRecentAddressId(lat: number, lng: number): string {
-  return `${lat.toFixed(5)}_${lng.toFixed(5)}`;
+  return `${Number(lat).toFixed(5)}_${Number(lng).toFixed(5)}`;
+}
+
+function toAddressText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+/** Отсекает битые записи из persist (строковые координаты, пустой адрес) — иначе падает список. */
+export function sanitizeRecentAddress(item: unknown): RecentAddress | null {
+  if (!item || typeof item !== 'object') {
+    return null;
+  }
+
+  const raw = item as Partial<RecentAddress>;
+  const lat = Number(raw.lat);
+  const lng = Number(raw.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  const address = toAddressText(raw.address);
+  const label = toAddressText(raw.label);
+  const text = address || label;
+  if (!text) {
+    return null;
+  }
+
+  return {
+    id: toAddressText(raw.id) || makeRecentAddressId(lat, lng),
+    label: label || text.split(',')[0]?.trim() || text,
+    address: address || text,
+    lat,
+    lng,
+    usedAt: Number(raw.usedAt) || 0,
+  };
 }
 
 export function buildRecentAddress(input: {
@@ -33,15 +67,17 @@ export function buildRecentAddress(input: {
   address: string;
   label?: string;
 }): RecentAddress {
-  const address = input.address.trim();
-  const label = input.label?.trim() || address.split(',')[0]?.trim() || address;
+  const address = toAddressText(input.address) || toAddressText(input.label);
+  const label = toAddressText(input.label) || address.split(',')[0]?.trim() || address;
+  const lat = Number(input.lat);
+  const lng = Number(input.lng);
 
   return {
-    id: makeRecentAddressId(input.lat, input.lng),
-    label,
-    address,
-    lat: input.lat,
-    lng: input.lng,
+    id: makeRecentAddressId(lat, lng),
+    label: label || address,
+    address: address || label,
+    lat,
+    lng,
     usedAt: Date.now(),
   };
 }
@@ -51,9 +87,20 @@ export const recentAddressesSlice = createSlice({
   initialState,
   reducers: {
     recentAddressUsed(state, action: PayloadAction<RecentAddress>) {
-      const next = action.payload;
-      const filtered = state.items.filter((item) => item.id !== next.id);
-      state.items = [next, ...filtered].slice(0, MAX_RECENT_ADDRESSES);
+      const next = sanitizeRecentAddress({ ...action.payload, usedAt: Date.now() });
+      if (!next) {
+        return;
+      }
+
+      const items = Array.isArray(state.items) ? state.items : [];
+      const existingIndex = items.findIndex((item) => item.id === next.id);
+      if (existingIndex >= 0) {
+        items[existingIndex] = next;
+        state.items = items;
+        return;
+      }
+
+      state.items = [next, ...items].slice(0, MAX_RECENT_ADDRESSES);
     },
     recentAddressesCleared(state) {
       state.items = [];
@@ -69,4 +116,6 @@ export interface WithRecentAddressesState {
 }
 
 export const selectRecentAddresses = (state: WithRecentAddressesState): RecentAddress[] =>
-  state.recentAddresses.items;
+  (state.recentAddresses?.items ?? [])
+    .map(sanitizeRecentAddress)
+    .filter((item): item is RecentAddress => item !== null);

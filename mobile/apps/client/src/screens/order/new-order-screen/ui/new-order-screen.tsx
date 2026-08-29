@@ -7,17 +7,13 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import {
-  formatDistance,
-  formatDuration,
-  formatMoney,
-  toOrderGeoLocation,
-} from '@nurtaxi/shared-core/shared/lib';
+import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useCreateOrderMutation } from '@nurtaxi/shared-core/entities/order';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { useResolveLocationForOrder, useResolvedLocationAddress } from '@/features/address';
 import { useActiveOrderGuard, useOrderEstimate } from '@/features/order';
 import {
   activeOrderChanged,
@@ -47,6 +43,10 @@ export function NewOrderScreen() {
 
   const { hasActiveOrder, isChecking } = useActiveOrderGuard(true);
   const draft = useAppSelector(selectOrderDraft);
+  const myLocationLabel = t('addresses.myLocation');
+  const resolvedPickupAddress = useResolvedLocationAddress(draft.pickup, [myLocationLabel]);
+  const resolvedDropoffAddress = useResolvedLocationAddress(draft.dropoff, [myLocationLabel]);
+  const resolveLocationForOrder = useResolveLocationForOrder(myLocationLabel);
   const { estimate, isEstimating, error, refetch } = useOrderEstimate();
   const [createOrder, createState] = useCreateOrderMutation();
   const [createError, setCreateError] = useState<string | null>(null);
@@ -69,8 +69,8 @@ export function NewOrderScreen() {
     try {
       const order = await createOrder({
         regionId: draft.regionId,
-        pickup: toOrderGeoLocation(draft.pickup),
-        dropoff: toOrderGeoLocation(draft.dropoff),
+        pickup: await resolveLocationForOrder(draft.pickup),
+        dropoff: await resolveLocationForOrder(draft.dropoff),
         tariffId: draft.tariffId ?? undefined,
         paymentMethod: draft.paymentMethod,
         comment: draft.comment.trim() || undefined,
@@ -109,11 +109,11 @@ export function NewOrderScreen() {
       <GlassCard>
         <GlassSectionLabel>{t('order.from')}</GlassSectionLabel>
         <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
-          {draft.pickup?.address ?? t('common.notSpecified')}
+          {resolvedPickupAddress ?? draft.pickup?.address ?? t('common.notSpecified')}
         </Text>
         <GlassSectionLabel>{t('order.to')}</GlassSectionLabel>
         <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
-          {draft.dropoff?.address ?? t('common.notSpecified')}
+          {resolvedDropoffAddress ?? draft.dropoff?.address ?? t('common.notSpecified')}
         </Text>
       </GlassCard>
 

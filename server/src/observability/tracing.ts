@@ -35,6 +35,18 @@ export function initTracing(): void {
       getNodeAutoInstrumentations({
         // Шумные инструментации файловой системы отключаем.
         '@opentelemetry/instrumentation-fs': { enabled: false },
+        '@opentelemetry/instrumentation-http': {
+          enabled: true,
+          ignoreIncomingRequestHook: (req) => {
+            const url = req.url ?? '';
+            return url.startsWith('/metrics') || url.includes('/health');
+          },
+          headersToSpanAttributes: { client: { requestHeaders: [] } },
+        },
+        '@opentelemetry/instrumentation-pg': {
+          enabled: true,
+          enhancedDatabaseReporting: false,
+        },
       }),
     ],
   });

@@ -2,6 +2,7 @@
  * Выбор адреса в черновик заказа или сохранение в избранное (M3.4–M3.7).
  */
 import { useCallback } from 'react';
+import { InteractionManager } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -71,10 +72,13 @@ export function useAddressSelection() {
       }
 
       const myLocationLabel = t('addresses.myLocation');
-      const rawAddress = location.address?.trim() || undefined;
+      const rawAddress =
+        (typeof location.address === 'string' ? location.address.trim() : '') ||
+        (typeof location.label === 'string' ? location.label.trim() : '') ||
+        undefined;
       const address =
         rawAddress && rawAddress !== myLocationLabel
-          ? formatShortDisplayAddress(rawAddress)
+          ? formatShortDisplayAddress(rawAddress) || rawAddress
           : rawAddress;
 
       const normalized = toApiGeoLocation({
@@ -90,16 +94,19 @@ export function useAddressSelection() {
         Boolean(normalized.address);
 
       if (shouldTrackRecent) {
-        dispatch(
-          recentAddressUsed(
-            buildRecentAddress({
-              lat: normalized.lat,
-              lng: normalized.lng,
-              address: normalized.address!,
-              label: options?.label ?? location.label,
-            }),
-          ),
-        );
+        const recent = buildRecentAddress({
+          lat: normalized.lat,
+          lng: normalized.lng,
+          address: normalized.address!,
+          label: options?.label ?? location.label,
+        });
+        if (recent.address) {
+          // Не двигаем список на этом же кадре: на Android Fabric падает addViewAt,
+          // когда нативные SymbolView в «Недавние» переставляются и экран тут же уходит.
+          InteractionManager.runAfterInteractions(() => {
+            dispatch(recentAddressUsed(recent));
+          });
+        }
       }
 
       if (field === 'pickup') {
@@ -111,7 +118,11 @@ export function useAddressSelection() {
       } else {
         dispatch(dropoffSelected(normalized));
         ensurePickupFromGps();
-        router.replace('/(tabs)');
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)');
+        }
       }
     },
     [dispatch, ensurePickupFromGps, router, t],

@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
     color: colors.title,
     fontSize: 28,
     fontWeight: '500',
-    lineHeight: 30,
-    marginTop: -2,
+    includeFontPadding: false,
+    lineHeight: 28,
     textAlign: 'center',
   },
   pressed: {
@@ -93,6 +93,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 20,
     fontWeight: '600',
+    includeFontPadding: false,
+    lineHeight: 24,
     textAlign: 'center',
   },
 });

@@ -16,6 +16,7 @@ import { User } from '../../users/entities/user.entity';
 import { Region } from '../../regions/entities/region.entity';
 import { Vehicle } from './vehicle.entity';
 import { DriverDocument } from './driver-document.entity';
+import { DriverTaxiPermit } from './driver-taxi-permit.entity';
 import type { WorkSchedule } from './work-schedule.types';
 
 /**
@@ -89,6 +90,9 @@ export class DriverProfile {
 
   @OneToMany(() => DriverDocument, (document) => document.driver)
   documents!: DriverDocument[];
+
+  @OneToOne(() => DriverTaxiPermit, (permit) => permit.driver)
+  taxiPermit!: DriverTaxiPermit | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;

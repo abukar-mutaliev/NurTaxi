@@ -17,6 +17,8 @@ import {
 } from '../../common/enums/order-status.enum';
 import { EventBusService } from '../../messaging/event-bus.service';
 import { DriversService } from '../drivers/drivers.service';
+import { GeoService } from '../geo/geo.service';
+import { isPlaceholderAddress } from '../geo/address/is-placeholder-address';
 import { MAP_PROVIDER, type MapProvider } from '../geo/map/map-provider.interface';
 import { RegionsService } from '../regions/regions.service';
 import { TariffsService } from '../tariffs/tariffs.service';
@@ -26,12 +28,18 @@ import { Order } from './entities/order.entity';
 import { OrderRoute } from './entities/order-route.entity';
 import { OrderStatusLog } from './entities/order-status-log.entity';
 import { OrderTransitionService } from './order-transition.service';
+import { appendOrderStatusLog } from './append-order-status-log';
 import { MatchingService, type MatchOffer } from './matching/matching.service';
 import { RealtimeBroadcastService } from '../realtime/realtime-broadcast.service';
 import { PaymentsService } from '../payments/payments.service';
 import { FamilyService } from '../users/family.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { Receipt } from '../payments/entities/receipt.entity';
+import { AssignmentSnapshotService } from '../carriers/assignment-snapshot.service';
+import { OfferJournalService } from './offer-journal.service';
+import { TripTrackService } from './trip-track.service';
+import { OfferOutcome } from '../../common/enums/compliance.enum';
+import { UsersService } from '../users/users.service';
 import type { CreateOrderDto, OrderEstimateDto } from './dto/orders.dto';
 import type { OrderEstimateResponse } from './dto/orders.presenter';
 import {
@@ -69,6 +77,7 @@ export class OrdersService {
     private readonly tariffsService: TariffsService,
     private readonly pricingService: PricingService,
     @Inject(MAP_PROVIDER) private readonly mapProvider: MapProvider,
+    private readonly geoService: GeoService,
     private readonly transitions: OrderTransitionService,
     private readonly matching: MatchingService,
     private readonly driversService: DriversService,
@@ -80,9 +89,22 @@ export class OrdersService {
     @InjectRepository(Receipt)
     private readonly receipts: Repository<Receipt>,
     @Optional() private readonly realtime?: RealtimeBroadcastService,
+    @Optional() private readonly snapshots?: AssignmentSnapshotService,
+    @Optional() private readonly offerJournal?: OfferJournalService,
+    @Optional() private readonly usersService?: UsersService,
+    @Optional() private readonly tripTrack?: TripTrackService,
   ) {}
 
   private readonly logger = new Logger(OrdersService.name);
+
+  async recordTrackPoint(
+    orderId: string,
+    lat: number,
+    lng: number,
+    accuracyM?: number,
+  ): Promise<void> {
+    await this.tripTrack?.recordIfDue(orderId, lat, lng, accuracyM);
+  }
 
   async estimate(dto: OrderEstimateDto): Promise<OrderEstimateResponse> {
     const region = await this.regionsService.getRegionOrThrow(dto.regionId);
@@ -106,24 +128,6 @@ export class OrdersService {
     };
   }
 
-  /**
-   * Адрес точки для карточки заказа.
-   *
-   * Клиент присылает адрес не всегда: точку подачи он подставляет по GPS и её адреса не
-   * знает. Водителю в таком случае показывать нечего — ехать он должен к дому, а не к
-   * подписи в чужом интерфейсе, — поэтому адрес восстанавливается по координатам.
-   * Если геокодер не ответил, остаются координаты: они хотя бы верны.
-   */
-  private async resolveAddress(location: { lat: number; lng: number; address?: string }) {
-    const given = location.address?.trim();
-    if (given) {
-      return given;
-    }
-
-    const resolved = await this.mapProvider.reverse({ lat: location.lat, lng: location.lng });
-    return resolved ?? `${location.lat}, ${location.lng}`;
-  }
-
   /** Создание заказа (Req §8.10, §8.11). */
   async create(clientId: string, dto: CreateOrderDto): Promise<Order> {
     if (dto.familyMemberId) {
@@ -145,10 +149,20 @@ export class OrdersService {
       durationS: mapRoute.durationS,
     });
 
+    const [{ next }] = (await this.orders.query(
+      `SELECT nextval('order_public_number_seq') AS next`,
+    )) as Array<{ next: string }>;
+
     const [pickupAddress, dropoffAddress] = await Promise.all([
-      this.resolveAddress(dto.pickup),
-      this.resolveAddress(dto.dropoff),
+      this.geoService.resolveStoredAddress(dto.pickup),
+      this.geoService.resolveStoredAddress(dto.dropoff),
     ]);
+
+    if (pickupAddress !== (dto.pickup.address ?? '').trim()) {
+      this.logger.log(
+        `Pickup address resolved: "${dto.pickup.address ?? ''}" -> "${pickupAddress}"`,
+      );
+    }
 
     const order = this.orders.create({
       clientId,
@@ -165,6 +179,7 @@ export class OrdersService {
       paymentMethod: dto.paymentMethod,
       comment: dto.comment ?? null,
       familyMemberId: dto.familyMemberId ?? null,
+      publicNumber: `NT-${String(next).padStart(8, '0')}`,
     });
 
     const saved = await this.orders.save(order);
@@ -177,14 +192,12 @@ export class OrdersService {
     });
     await this.routes.save(route);
 
-    await this.logs.save(
-      this.logs.create({
-        orderId: saved.id,
-        fromStatus: null,
-        toStatus: OrderStatus.Created,
-        actorId: clientId,
-      }),
-    );
+    await appendOrderStatusLog(this.logs, {
+      orderId: saved.id,
+      fromStatus: null,
+      toStatus: OrderStatus.Created,
+      actorId: clientId,
+    });
 
     this.eventBus.publish('order.created', { orderId: saved.id, clientId });
 
@@ -339,6 +352,13 @@ export class OrdersService {
     }
 
     await this.matching.clearOffer(orderId);
+    await this.offerJournal?.resolvePending(orderId, driver.id, OfferOutcome.Accepted, true);
+    await this.offerJournal?.supersedePending(orderId, driver.id);
+
+    const client = await this.usersService?.findById(order.clientId);
+    const snapshot = this.snapshots
+      ? await this.snapshots.capture(driver, client?.phone ?? null)
+      : null;
 
     const updated = await this.transitions.transition({
       orderId,
@@ -346,6 +366,18 @@ export class OrdersService {
       actorId: driverUserId,
       mutate: (o) => {
         o.driverId = driver.id;
+        if (snapshot) {
+          o.assignmentSnapshot = snapshot;
+          const vehicle =
+            typeof snapshot.vehicle === 'object' && snapshot.vehicle ? snapshot.vehicle : null;
+          const carrier =
+            typeof snapshot.carrier === 'object' && snapshot.carrier ? snapshot.carrier : null;
+          const permit =
+            typeof snapshot.permit === 'object' && snapshot.permit ? snapshot.permit : null;
+          o.vehicleId = vehicle?.id ?? null;
+          o.carrierId = carrier?.id ?? null;
+          o.permitId = permit?.id ?? null;
+        }
       },
     });
 
@@ -378,6 +410,10 @@ export class OrdersService {
       orderId,
       toStatus,
       actorId: driverUserId,
+      mutate: (o) => {
+        if (action === 'start') o.tripStartedAt = new Date();
+        if (action === 'complete') o.tripEndedAt = new Date();
+      },
     });
 
     if (toStatus === OrderStatus.Completed) {
@@ -524,8 +560,10 @@ export class OrdersService {
       take: limit,
     });
 
+    const repaired = await Promise.all(orders.map((order) => this.repairOrderAddresses(order)));
+
     return Promise.all(
-      orders.map(async (order) => {
+      repaired.map(async (order) => {
         const [receipt, reviews] = await Promise.all([
           this.receipts.findOne({ where: { orderId: order.id } }),
           this.reviewsService.listForOrder(order.id),
@@ -549,8 +587,10 @@ export class OrdersService {
       take: limit,
     });
 
+    const repaired = await Promise.all(orders.map((order) => this.repairOrderAddresses(order)));
+
     return Promise.all(
-      orders.map(async (order) => {
+      repaired.map(async (order) => {
         const [receipt, reviews] = await Promise.all([
           this.receipts.findOne({ where: { orderId: order.id } }),
           this.reviewsService.listForOrder(order.id),
@@ -611,10 +651,60 @@ export class OrdersService {
     });
   }
 
-  private loadFullOrder(orderId: string): Promise<Order> {
-    return this.orders.findOneOrFail({
+  async getActiveOrderLocationContext(
+    orderId: string,
+  ): Promise<{ id: string; regionId: string; driverId: string | null } | null> {
+    const order = await this.orders.findOne({
+      where: { id: orderId },
+      select: ['id', 'regionId', 'driverId'],
+    });
+    return order ?? null;
+  }
+
+  /**
+   * Старые заказы могли сохраниться с подписью «Моё местоположение».
+   * При чтении подменяем улицей по координатам и пишем в БД.
+   */
+  async repairOrderAddresses(order: Order): Promise<Order> {
+    const pickupNeedsRepair = isPlaceholderAddress(order.pickupAddress);
+    const dropoffNeedsRepair = isPlaceholderAddress(order.dropoffAddress);
+    if (!pickupNeedsRepair && !dropoffNeedsRepair) {
+      return order;
+    }
+
+    const [pickupAddress, dropoffAddress] = await Promise.all([
+      pickupNeedsRepair
+        ? this.geoService.resolveStoredAddress({
+            lat: order.pickupLat,
+            lng: order.pickupLng,
+            address: order.pickupAddress,
+          })
+        : order.pickupAddress,
+      dropoffNeedsRepair
+        ? this.geoService.resolveStoredAddress({
+            lat: order.dropoffLat,
+            lng: order.dropoffLng,
+            address: order.dropoffAddress,
+          })
+        : order.dropoffAddress,
+    ]);
+
+    if (pickupAddress === order.pickupAddress && dropoffAddress === order.dropoffAddress) {
+      return order;
+    }
+
+    order.pickupAddress = pickupAddress;
+    order.dropoffAddress = dropoffAddress;
+    await this.orders.update(order.id, { pickupAddress, dropoffAddress });
+    this.logger.log(`Repaired placeholder addresses for order ${order.id}`);
+    return order;
+  }
+
+  private async loadFullOrder(orderId: string): Promise<Order> {
+    const order = await this.orders.findOneOrFail({
       where: { id: orderId },
       relations: ['route', 'tariff', 'region', 'driver', 'driver.vehicles', 'driver.user'],
     });
+    return this.repairOrderAddresses(order);
   }
 }

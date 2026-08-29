@@ -108,39 +108,45 @@ export function DriverEnRouteOverlay({
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onMenuPress}
-            style={({ pressed }) => [
-              styles.glassButton,
-              styles.iconButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View style={styles.menuIcon}>
-              <View style={styles.menuLine} />
-              <View style={styles.menuLine} />
-              <View style={styles.menuLine} />
-            </View>
-          </Pressable>
-
-          <View style={[styles.glassButton, styles.statusPill]}>
-            <Text numberOfLines={1} style={styles.statusText}>
-              {statusLabel}
-            </Text>
+          <View style={styles.sideSlot}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onMenuPress}
+              style={({ pressed }) => [
+                styles.glassButton,
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.menuIcon}>
+                <View style={styles.menuLine} />
+                <View style={styles.menuLine} />
+                <View style={styles.menuLine} />
+              </View>
+            </Pressable>
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={onProfilePress}
-            style={({ pressed }) => [
-              styles.glassButton,
-              styles.iconButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View style={styles.profileDot} />
-          </Pressable>
+          <View style={styles.centerSlot}>
+            <View style={[styles.glassButton, styles.statusPill]}>
+              <Text numberOfLines={1} style={styles.statusText}>
+                {statusLabel}
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.sideSlot, styles.sideSlotRight]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onProfilePress}
+              style={({ pressed }) => [
+                styles.glassButton,
+                styles.iconButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.profileDot} />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -324,10 +330,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 12,
   },
+  centerSlot: {
+    flex: 1,
+    paddingHorizontal: 8,
+  },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
   },
   iconButton: {
     alignItems: 'center',
@@ -422,19 +431,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  sideSlot: {
+    alignItems: 'flex-start',
+    width: 44,
+  },
+  sideSlotRight: {
+    alignItems: 'flex-end',
+  },
   statusPill: {
     alignItems: 'center',
     borderRadius: 22,
-    flex: 1,
     height: 44,
     justifyContent: 'center',
-    maxWidth: 168,
     paddingHorizontal: 12,
+    width: '100%',
   },
   statusText: {
     color: colors.text,
     fontSize: 15,
     fontWeight: '600',
+    includeFontPadding: false,
+    lineHeight: 20,
     textAlign: 'center',
   },
   topBar: {

@@ -1,12 +1,22 @@
 import 'reflect-metadata';
-import { DataSource, EntityManager, In } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import dataSource from '../data-source';
 import { DocumentStatus } from '../../common/enums/document-status.enum';
-import { REQUIRED_DOCUMENT_TYPES } from '../../common/enums/document-type.enum';
+import {
+  DriverRequirementKey,
+  isRequirementMandatory,
+  requiredDocumentTypesFor,
+  resolveDriverRequirements,
+} from '../../common/enums/driver-requirement.enum';
 import { VerificationStatus } from '../../common/enums/verification-status.enum';
 import { Role } from '../../common/enums/role.enum';
 import { DriverProfile } from '../../modules/drivers/entities/driver-profile.entity';
 import { DriverDocument } from '../../modules/drivers/entities/driver-document.entity';
+import {
+  DriverTaxiPermit,
+  isPermitExpired,
+} from '../../modules/drivers/entities/driver-taxi-permit.entity';
+import { Region } from '../../modules/regions/entities/region.entity';
 import { User } from '../../modules/users/entities/user.entity';
 
 const DEV_MODERATOR_ID = '00000000-0000-4000-8000-000000000000';
@@ -196,12 +206,27 @@ async function syncVerificationStatus(
   const profile = await profileRepo.findOneOrFail({ where: { id: driverId } });
   const docs = await documentRepo.find({ where: { driverId } });
 
-  const uploadedTypes = new Set(docs.map((d) => d.type));
-  const allUploaded = REQUIRED_DOCUMENT_TYPES.every((t) => uploadedTypes.has(t));
+  // Комплект зависит от региона, поэтому скрипт спрашивает те же требования, что и API.
+  const region = await manager.getRepository(Region).findOne({ where: { id: profile.regionId } });
+  const requirements = resolveDriverRequirements(region?.driverRequirements);
 
-  if (!allUploaded) {
-    const missing = REQUIRED_DOCUMENT_TYPES.filter((t) => !uploadedTypes.has(t));
-    console.warn(`  ⚠ Не все документы загружены. Отсутствуют: ${missing.join(', ')}`);
+  const uploadedTypes = new Set(docs.map((d) => d.type));
+  const missing = requiredDocumentTypesFor(requirements).filter((t) => !uploadedTypes.has(t));
+
+  const permit = isRequirementMandatory(requirements, DriverRequirementKey.TaxiPermit)
+    ? await manager.getRepository(DriverTaxiPermit).findOne({ where: { driverId } })
+    : null;
+  const permitMissing =
+    isRequirementMandatory(requirements, DriverRequirementKey.TaxiPermit) &&
+    (!permit || isPermitExpired(permit.expiresAt));
+
+  if (missing.length > 0 || permitMissing) {
+    if (missing.length > 0) {
+      console.warn(`  ⚠ Не все документы загружены. Отсутствуют: ${missing.join(', ')}`);
+    }
+    if (permitMissing) {
+      console.warn('  ⚠ Нет действующего разрешения на деятельность такси (требуется в регионе)');
+    }
     if (profile.verificationStatus !== VerificationStatus.Rejected) {
       profile.verificationStatus = VerificationStatus.Draft;
     }

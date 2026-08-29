@@ -16,7 +16,7 @@ export class OrderRoute {
   @Column({ name: 'order_id', type: 'uuid' })
   orderId!: string;
 
-  @OneToOne(() => Order, (order) => order.route, { onDelete: 'CASCADE' })
+  @OneToOne(() => Order, (order) => order.route, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'order_id' })
   order!: Order;
 

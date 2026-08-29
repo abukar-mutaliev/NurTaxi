@@ -60,7 +60,15 @@ export class AdminOrdersService {
 
   async listOrders(
     actor: AuthenticatedUser,
-    filters: { regionId?: string; status?: OrderStatus; limit?: number; cursor?: string },
+    filters: {
+      regionId?: string;
+      status?: OrderStatus;
+      limit?: number;
+      cursor?: string;
+      from?: string;
+      to?: string;
+      dateField?: 'created' | 'completed';
+    },
   ): Promise<OrderListPage> {
     const regionId = await this.scope.resolveListRegionId(actor, filters.regionId);
     const take = Math.min(Math.max(filters.limit ?? 20, 1), 100);
@@ -82,6 +90,14 @@ export class AdminOrdersService {
     if (filters.status) {
       qb.andWhere('order.status = :status', { status: filters.status });
     }
+    if (filters.from) {
+      const col = filters.dateField === 'completed' ? 'order.tripEndedAt' : 'order.createdAt';
+      qb.andWhere(`${col} >= :from`, { from: new Date(filters.from) });
+    }
+    if (filters.to) {
+      const col = filters.dateField === 'completed' ? 'order.tripEndedAt' : 'order.createdAt';
+      qb.andWhere(`${col} <= :to`, { to: new Date(filters.to) });
+    }
 
     const decoded = filters.cursor ? decodeCursor(filters.cursor) : null;
     if (decoded) {
@@ -93,7 +109,10 @@ export class AdminOrdersService {
 
     const rows = await qb.getMany();
     const hasMore = rows.length > take;
-    const items = hasMore ? rows.slice(0, take) : rows;
+    const sliced = hasMore ? rows.slice(0, take) : rows;
+    const items = await Promise.all(
+      sliced.map((order) => this.ordersService.repairOrderAddresses(order)),
+    );
     const last = items[items.length - 1];
 
     return {
@@ -106,13 +125,21 @@ export class AdminOrdersService {
   async getOrder(actor: AuthenticatedUser, orderId: string): Promise<Order> {
     const order = await this.orders.findOne({
       where: { id: orderId },
-      relations: ['client', 'driver', 'driver.user', 'driver.vehicles', 'region', 'tariff', 'route'],
+      relations: [
+        'client',
+        'driver',
+        'driver.user',
+        'driver.vehicles',
+        'region',
+        'tariff',
+        'route',
+      ],
     });
     if (!order) {
       throw new NotFoundException({ code: 'ORDER_NOT_FOUND', message: 'Заказ не найден' });
     }
     await this.scope.assertRegionAccess(actor, order.regionId);
-    return order;
+    return this.ordersService.repairOrderAddresses(order);
   }
 
   async getStatusLogs(actor: AuthenticatedUser, orderId: string): Promise<OrderStatusLog[]> {
@@ -139,8 +166,7 @@ export class AdminOrdersService {
     const result: NearbyDriverCandidate[] = [];
     for (const candidate of ranked) {
       const profile = await this.driversService.getProfileByDriverId(candidate.driverId);
-      const vehicle =
-        profile.vehicles?.find((v) => v.isPrimary) ?? profile.vehicles?.[0] ?? null;
+      const vehicle = profile.vehicles?.find((v) => v.isPrimary) ?? profile.vehicles?.[0] ?? null;
       result.push({
         driverId: candidate.driverId,
         fullName: profile.fullName,

@@ -14,7 +14,15 @@ import { createAdapter } from '@socket.io/redis-adapter';
 import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../../redis/redis.constants';
 import { Role } from '../../common/enums/role.enum';
-import { clientRoom, driverRoom, operatorsAllRoom, orderRoom, regionRoom, staffRoom, STAFF_WS_ROLES } from './realtime.constants';
+import {
+  clientRoom,
+  driverRoom,
+  operatorsAllRoom,
+  orderRoom,
+  regionRoom,
+  staffRoom,
+  STAFF_WS_ROLES,
+} from './realtime.constants';
 import { RealtimeBroadcastService } from './realtime-broadcast.service';
 import { WsSubscriptionService } from './ws-subscription.service';
 import { WsAuthService } from './ws-auth.service';
@@ -24,7 +32,14 @@ import { UsersService } from '../users/users.service';
 
 @WebSocketGateway({
   namespace: '/ws',
-  cors: { origin: true, credentials: true },
+  cors: {
+    origin: process.env.CORS_ORIGINS
+      ? process.env.CORS_ORIGINS.split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : true,
+    credentials: true,
+  },
 })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(RealtimeGateway.name);
@@ -119,6 +134,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     await client.join(room);
     await this.subscriptions.add(client.id, room);
 
+    const snapshot = await this.locationBridge.snapshotForOrder(body.orderId);
+    if (snapshot) {
+      client.emit('driver.location', snapshot);
+    }
+
     return { success: true, room };
   }
 
@@ -132,7 +152,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       return { success: false };
     }
 
-    await this.locationBridge.updateAndBroadcast(user.id, body.lat, body.lng);
-    return { success: true };
+    try {
+      await this.locationBridge.updateAndBroadcast(user.id, body.lat, body.lng);
+      return { success: true };
+    } catch {
+      return { success: false };
+    }
   }
 }

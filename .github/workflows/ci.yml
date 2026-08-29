@@ -15,6 +15,17 @@ defaults:
     working-directory: server
 
 jobs:
+  localization-guard:
+    name: RF localization guard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block foreign cloud regions (FZ-01.5)
+        run: node scripts/check-foreign-regions.js
+
   lint-test:
     name: Lint & Test
     runs-on: ubuntu-latest
@@ -111,8 +122,26 @@ jobs:
     environment: staging
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy (placeholder)
-        run: echo "TODO (Фаза 0.4): push образа в реестр и helm upgrade в staging"
+      - name: Deploy to RF registry and cluster
+        env:
+          CR_REGISTRY: ${{ secrets.CR_REGISTRY }}
+          CR_USERNAME: ${{ secrets.CR_USERNAME }}
+          CR_PASSWORD: ${{ secrets.CR_PASSWORD }}
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          if [ -z "$CR_REGISTRY" ]; then
+            echo "CR_REGISTRY не задан — пропускаем публикацию (нужен российский реестр образов)."
+            exit 0
+          fi
+          echo "$CR_PASSWORD" | docker login "$CR_REGISTRY" -u "$CR_USERNAME" --password-stdin
+          docker tag nurtaxi-backend:${{ github.sha }} "$CR_REGISTRY/nurtaxi-backend:${{ github.sha }}"
+          docker push "$CR_REGISTRY/nurtaxi-backend:${{ github.sha }}"
+          mkdir -p ~/.kube
+          echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+          helm upgrade --install nurtaxi infra/helm/nurtaxi-backend \
+            --namespace nurtaxi-staging --create-namespace \
+            --set image.repository="$CR_REGISTRY/nurtaxi-backend" \
+            --set image.tag=${{ github.sha }}
 
   web-admin:
     name: Web Admin

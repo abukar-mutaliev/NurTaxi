@@ -111,10 +111,9 @@ export function SaveAddressSheet({
     onClose();
   }, [onClose]);
 
-  // backdropOpacity/keyboardOffset/translateY — Reanimated shared values: их идентичность
-  // стабильна на весь жизненный цикл компонента, поэтому ниже они нигде не указаны
-  // в массивах зависимостей (аналогично ref'ам; так же рекомендует
-  // `eslint-plugin-react-native-reanimated`).
+  // backdropOpacity/keyboardOffset/translateY — Reanimated shared values: идентичность
+  // стабильна на весь жизненный цикл (как у ref), но `exhaustive-deps` их всё равно
+  // требует в массиве. Включаем явно: лишних пересозданий из-за этого нет.
   const animateClose = useCallback(() => {
     Keyboard.dismiss();
     keyboardOffset.value = withTiming(0, { duration: 180 });
@@ -124,12 +123,12 @@ export function SaveAddressSheet({
         runOnJS(finishClose)();
       }
     });
-  }, [finishClose, height]);
+  }, [backdropOpacity, finishClose, height, keyboardOffset, translateY]);
 
   const resetSheetPosition = useCallback(() => {
     translateY.value = withTiming(0, { duration: 220, easing: Easing.out(Easing.cubic) });
     backdropOpacity.value = withTiming(1, { duration: 220 });
-  }, []);
+  }, [backdropOpacity, translateY]);
 
   const handleSuggestionSelect = useCallback(
     (item: AddressSuggestion) => {
@@ -165,7 +164,7 @@ export function SaveAddressSheet({
       showSubscription.remove();
       hideSubscription.remove();
     };
-  }, [visible]);
+  }, [keyboardOffset, visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -181,7 +180,7 @@ export function SaveAddressSheet({
       duration: 320,
       easing: Easing.out(Easing.cubic),
     });
-  }, [visible]);
+  }, [backdropOpacity, translateY, visible]);
 
   const panResponder = useMemo(
     () =>
@@ -208,7 +207,7 @@ export function SaveAddressSheet({
           resetSheetPosition();
         },
       }),
-    [animateClose, height, resetSheetPosition],
+    [animateClose, backdropOpacity, height, resetSheetPosition, translateY],
   );
 
   const backdropStyle = useAnimatedStyle(() => ({

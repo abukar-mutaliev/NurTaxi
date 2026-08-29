@@ -3,8 +3,15 @@ import { DocumentStatus } from '../../../common/enums/document-status.enum';
 import { DocumentType } from '../../../common/enums/document-type.enum';
 import { DriverOnlineStatus } from '../../../common/enums/driver-online-status.enum';
 import { VerificationStatus } from '../../../common/enums/verification-status.enum';
+import {
+  requiredDocumentTypesFor,
+  resolveDriverRequirements,
+  type DriverRequirements,
+} from '../../../common/enums/driver-requirement.enum';
 import type { DriverDocument } from '../entities/driver-document.entity';
 import type { DriverProfile } from '../entities/driver-profile.entity';
+import { isPermitExpired, type DriverTaxiPermit } from '../entities/driver-taxi-permit.entity';
+import type { Region } from '../../regions/entities/region.entity';
 import type { Vehicle } from '../entities/vehicle.entity';
 import type { WorkSchedule } from '../entities/work-schedule.types';
 
@@ -33,6 +40,9 @@ export class VehicleResponse {
   @ApiPropertyOptional()
   interiorPhotoUrl!: string | null;
 
+  @ApiPropertyOptional()
+  vin!: string | null;
+
   static from(vehicle: Vehicle): VehicleResponse {
     return {
       id: vehicle.id,
@@ -43,6 +53,7 @@ export class VehicleResponse {
       year: vehicle.year,
       photoUrl: vehicle.photoUrl,
       interiorPhotoUrl: vehicle.interiorPhotoUrl,
+      vin: vehicle.vin ?? null,
     };
   }
 }
@@ -74,6 +85,37 @@ export class DriverDocumentResponse {
       rejectionReason: document.rejectionReason,
       verifiedAt: document.verifiedAt?.toISOString() ?? null,
       ...(viewUrl ? { viewUrl } : {}),
+    };
+  }
+}
+
+export class TaxiPermitResponse {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  number!: string;
+
+  @ApiProperty()
+  issuingRegion!: string;
+
+  @ApiProperty()
+  issuedAt!: string;
+
+  @ApiPropertyOptional({ description: 'null — бессрочное разрешение' })
+  expiresAt!: string | null;
+
+  @ApiProperty({ description: 'Срок действия истёк' })
+  isExpired!: boolean;
+
+  static from(permit: DriverTaxiPermit): TaxiPermitResponse {
+    return {
+      id: permit.id,
+      number: permit.number,
+      issuingRegion: permit.issuingRegion,
+      issuedAt: permit.issuedAt,
+      expiresAt: permit.expiresAt,
+      isExpired: isPermitExpired(permit.expiresAt),
     };
   }
 }
@@ -133,6 +175,21 @@ export class DriverProfileResponse {
   @ApiProperty({ type: [DriverDocumentResponse] })
   documents!: DriverDocumentResponse[];
 
+  @ApiPropertyOptional({ type: TaxiPermitResponse })
+  taxiPermit!: TaxiPermitResponse | null;
+
+  @ApiProperty({
+    description: 'Режимы региональных требований к анкете (hidden/optional/required)',
+  })
+  requirements!: DriverRequirements;
+
+  @ApiProperty({
+    enum: DocumentType,
+    isArray: true,
+    description: 'Комплект документов, обязательный в регионе водителя',
+  })
+  requiredDocumentTypes!: DocumentType[];
+
   @ApiProperty()
   canGoOnline!: boolean;
 
@@ -144,6 +201,7 @@ export class DriverProfileResponse {
     documents: DriverDocumentResponse[] = [],
   ): DriverProfileResponse {
     const primaryVehicle = profile.vehicles?.find((v) => v.isPrimary) ?? profile.vehicles?.[0];
+    const requirements = resolveDriverRequirements(profile.region?.driverRequirements);
 
     return {
       id: profile.id,
@@ -164,6 +222,9 @@ export class DriverProfileResponse {
       workSchedule: profile.workSchedule ?? {},
       vehicles: primaryVehicle ? [VehicleResponse.from(primaryVehicle)] : [],
       documents,
+      taxiPermit: profile.taxiPermit ? TaxiPermitResponse.from(profile.taxiPermit) : null,
+      requirements,
+      requiredDocumentTypes: requiredDocumentTypesFor(requirements),
       canGoOnline: profile.verificationStatus === VerificationStatus.Approved,
       accountStatus: profile.user?.status ?? 'active',
     };
@@ -196,4 +257,20 @@ export class RegionResponse {
 
   @ApiProperty()
   currency!: string;
+
+  @ApiProperty({
+    description:
+      'Режимы требований к анкете в этом регионе: анкета строится по ним без релиза приложения',
+  })
+  driverRequirements!: DriverRequirements;
+
+  static from(region: Region): RegionResponse {
+    return {
+      id: region.id,
+      name: region.name,
+      timezone: region.timezone,
+      currency: region.currency,
+      driverRequirements: resolveDriverRequirements(region.driverRequirements),
+    };
+  }
 }

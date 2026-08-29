@@ -16,6 +16,11 @@ import { Roles } from '../../../common/auth/roles.decorator';
 import { CurrentUser } from '../../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../../common/auth/jwt-payload.interface';
 import { Role } from '../../../common/enums/role.enum';
+import {
+  DEFAULT_DRIVER_REQUIREMENTS,
+  DRIVER_REQUIREMENT_CATALOG,
+  RequirementMode,
+} from '../../../common/enums/driver-requirement.enum';
 import { AdminRegionsService } from '../admin-regions.service';
 import { AdminScopeService } from '../admin-scope.service';
 import { CreateCityDto, CreateRegionDto, UpdateCityDto, UpdateRegionDto } from '../dto/admin.dto';
@@ -41,6 +46,19 @@ export class AdminRegionsController {
   @ApiOperation({ summary: 'Создание региона' })
   create(@Body() dto: CreateRegionDto) {
     return this.regionsService.createRegion(dto);
+  }
+
+  @Get('driver-requirements')
+  @Roles(Role.SuperAdmin, Role.RegionalAdmin, Role.Operator)
+  @ApiOperation({
+    summary: 'Справочник требований к анкете водителя (для формы настроек региона)',
+  })
+  listDriverRequirements() {
+    return {
+      modes: Object.values(RequirementMode),
+      defaults: DEFAULT_DRIVER_REQUIREMENTS,
+      requirements: DRIVER_REQUIREMENT_CATALOG,
+    };
   }
 
   @Get(':id')

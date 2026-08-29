@@ -119,7 +119,10 @@ export class AdminDriversController {
     const updated = await this.driversService.setDriverAccountStatus(id, status);
     const docs = await Promise.all(
       (updated.documents ?? []).map(async (doc) => {
-        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(updated.id, doc.id);
+        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(
+          updated.id,
+          doc.id,
+        );
         return DriverDocumentResponse.from(doc, downloadUrl);
       }),
     );
@@ -139,7 +142,10 @@ export class AdminDriversController {
     const updated = await this.driversService.updateDriverForAdmin(id, dto);
     const docs = await Promise.all(
       (updated.documents ?? []).map(async (doc) => {
-        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(updated.id, doc.id);
+        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(
+          updated.id,
+          doc.id,
+        );
         return DriverDocumentResponse.from(doc, downloadUrl);
       }),
     );
@@ -159,7 +165,10 @@ export class AdminDriversController {
     const updated = await this.driversService.approveDriverVerification(moderator.id, id);
     const docs = await Promise.all(
       (updated.documents ?? []).map(async (doc) => {
-        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(updated.id, doc.id);
+        const { downloadUrl } = await this.driversService.getDocumentDownloadUrl(
+          updated.id,
+          doc.id,
+        );
         return DriverDocumentResponse.from(doc, downloadUrl);
       }),
     );

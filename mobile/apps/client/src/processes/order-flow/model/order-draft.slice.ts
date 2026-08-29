@@ -7,7 +7,7 @@
  */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-import { toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
+import { isSameGeoLocation, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import type { GeoLocation, OrderEstimate } from '@nurtaxi/shared-core/shared/model';
 
@@ -54,11 +54,19 @@ export const orderDraftSlice = createSlice({
       state.regionId = action.payload;
     },
     pickupSelected(state, action: PayloadAction<GeoLocation | null>) {
-      state.pickup = normalizeGeoLocation(action.payload);
+      const next = normalizeGeoLocation(action.payload);
+      if (isSameGeoLocation(state.pickup, next)) {
+        return;
+      }
+      state.pickup = next;
       state.estimate = null;
     },
     dropoffSelected(state, action: PayloadAction<GeoLocation | null>) {
-      state.dropoff = normalizeGeoLocation(action.payload);
+      const next = normalizeGeoLocation(action.payload);
+      if (isSameGeoLocation(state.dropoff, next)) {
+        return;
+      }
+      state.dropoff = next;
       state.estimate = null;
     },
     routeReversed(state) {

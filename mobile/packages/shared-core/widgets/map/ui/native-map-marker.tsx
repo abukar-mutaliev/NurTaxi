@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { isValidGeoPoint, normalizeGeoPoint, toMapPoint } from '../model/map-provider';
 import type { MapMarker } from './map-canvas';
-import { MAP_MARKER_BITMAP_SCALE, MAP_MARKER_SOURCES } from './map-marker.assets';
 import { getMarkerAnchor } from './map-marker.constants';
 
 interface NativeMapMarkerProps {
@@ -11,28 +10,16 @@ interface NativeMapMarkerProps {
 }
 
 /**
- * Водитель — PNG через `source`. A/B — компактные View-иконки с фиксированным layout:
- * MapKit на Android стабильнее показывает несколько таких маркеров, чем bitmap `source`.
+ * Пины A/B — компактные View с явным размером. Машинка водителя рисуется
+ * отдельно (`DriverCarOverlay`): MapKit Placemark при зуме масштабируется
+ * вместе с картой и «прилипает» левым краем.
  */
 export function NativeMapMarker({ marker }: NativeMapMarkerProps) {
-  if (!isValidGeoPoint(marker.point)) {
+  if (!isValidGeoPoint(marker.point) || marker.kind === 'driver') {
     return null;
   }
 
   const point = normalizeGeoPoint(marker.point);
-
-  if (marker.kind === 'driver') {
-    return (
-      <Marker
-        anchor={getMarkerAnchor('driver')}
-        identifier={marker.id}
-        point={toMapPoint(point)}
-        scale={MAP_MARKER_BITMAP_SCALE}
-        source={MAP_MARKER_SOURCES.driver}
-      />
-    );
-  }
-
   const isPickup = marker.kind === 'pickup';
 
   return (
@@ -41,8 +28,9 @@ export function NativeMapMarker({ marker }: NativeMapMarkerProps) {
       identifier={marker.id}
       point={toMapPoint(point)}
       tracksViewChanges={false}
+      zIndex={4}
     >
-      <View style={styles.pinRoot}>
+      <View collapsable={false} style={styles.pinRoot}>
         <View style={[styles.pinBadge, isPickup ? styles.pickupBadge : styles.dropoffBadge]}>
           <Text style={[styles.pinLetter, isPickup ? styles.pickupLetter : styles.dropoffLetter]}>
             {isPickup ? 'A' : 'B'}
@@ -79,6 +67,7 @@ const styles = StyleSheet.create({
   },
   pinRoot: {
     alignItems: 'center',
+    alignSelf: 'flex-start',
     height: 36,
     width: 28,
   },

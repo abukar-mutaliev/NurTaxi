@@ -29,13 +29,14 @@ function dropoffPointFromRoute(routePolyline: string | null | undefined): GeoPoi
   return last && isValidGeoPoint(last) ? normalizeGeoPoint(last) : null;
 }
 
-/** Маркеры A/B для главного экрана: нормализация координат, fallback из polyline, разведение при наложении. */
+/** Маркеры A/B (и водитель, если есть): нормализация координат, fallback из polyline, разведение при наложении. */
 export function resolveOrderMapMarkers(options: {
   pickup: GeoLocation | null;
   dropoff: GeoLocation | null;
   routePolyline?: string | null;
+  driver?: GeoPoint | null;
 }): MapMarker[] {
-  const { pickup, dropoff, routePolyline } = options;
+  const { pickup, dropoff, routePolyline, driver } = options;
   const items: MapMarker[] = [];
 
   const pickupPoint = pickup && isValidGeoPoint(pickup) ? normalizeGeoPoint(pickup) : null;
@@ -63,6 +64,14 @@ export function resolveOrderMapMarkers(options: {
       kind: 'dropoff',
       point: dropoffPoint,
       title: dropoff?.address,
+    });
+  }
+
+  if (driver && isValidGeoPoint(driver)) {
+    items.push({
+      id: 'driver',
+      kind: 'driver',
+      point: normalizeGeoPoint(driver),
     });
   }
 

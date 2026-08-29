@@ -9,7 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../../common/auth/jwt-auth.guard';
 import { RolesGuard } from '../../../common/auth/roles.guard';
 import { Roles } from '../../../common/auth/roles.decorator';
@@ -29,7 +29,7 @@ import { AdminAssignDriverDto, AdminOrderStatusDto, AdminRefundDto } from '../dt
 @ApiTags('admin')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.Operator, Role.RegionalAdmin, Role.SuperAdmin)
+@Roles(Role.Operator, Role.RegionalAdmin, Role.SuperAdmin, Role.Regulator)
 @Controller('admin/orders')
 export class AdminOrdersController {
   constructor(private readonly adminOrders: AdminOrdersService) {}
@@ -40,12 +40,18 @@ export class AdminOrdersController {
     @CurrentUser() actor: AuthenticatedUser,
     @Query('regionId') regionId?: string,
     @Query('status') status?: OrderStatus,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('dateField') dateField?: 'created' | 'completed',
     @Query('limit') limit?: number,
     @Query('cursor') cursor?: string,
   ): Promise<OrderListPageResponse> {
     const page = await this.adminOrders.listOrders(actor, {
       regionId,
       status,
+      from,
+      to,
+      dateField,
       limit: limit ? Number(limit) : undefined,
       cursor,
     });
@@ -84,6 +90,7 @@ export class AdminOrdersController {
   }
 
   @Post(':id/assign')
+  @Roles(Role.Operator, Role.RegionalAdmin, Role.SuperAdmin)
   @ApiOperation({ summary: 'Ручное назначение водителя (§7.4)' })
   async assign(
     @CurrentUser() actor: AuthenticatedUser,
@@ -95,6 +102,7 @@ export class AdminOrdersController {
   }
 
   @Patch(':id/status')
+  @Roles(Role.Operator, Role.RegionalAdmin, Role.SuperAdmin)
   @ApiOperation({ summary: 'Изменение статуса заказа оператором' })
   async changeStatus(
     @CurrentUser() actor: AuthenticatedUser,
@@ -106,6 +114,7 @@ export class AdminOrdersController {
   }
 
   @Post(':id/refund')
+  @Roles(Role.Operator, Role.RegionalAdmin, Role.SuperAdmin)
   @ApiOperation({ summary: 'Возврат/компенсация (§7.4)' })
   async refund(
     @CurrentUser() actor: AuthenticatedUser,

@@ -76,15 +76,19 @@ function isHousePart(part: string): boolean {
   return /^\d+[а-яa-z]?([/-]\d+[а-яa-z]?)?$/i.test(trimmed);
 }
 
-function splitAddressParts(address: string): string[] {
-  return address
+function toAddressText(address: string | null | undefined): string {
+  return typeof address === 'string' ? address.trim() : '';
+}
+
+function splitAddressParts(address: string | null | undefined): string[] {
+  return toAddressText(address)
     .split(',')
     .map((part) => part.trim())
     .filter(Boolean);
 }
 
 /** Все сегменты — регион, район, страна и т.п. */
-export function isAdminOnlyAddress(address: string): boolean {
+export function isAdminOnlyAddress(address: string | null | undefined): boolean {
   const parts = splitAddressParts(address);
   if (parts.length === 0) {
     return true;
@@ -94,7 +98,7 @@ export function isAdminOnlyAddress(address: string): boolean {
 }
 
 /** Только населённый пункт — для пошагового ввода улицы и дома. */
-export function extractLocalityFromAddress(address: string): string | null {
+export function extractLocalityFromAddress(address: string | null | undefined): string | null {
   const short = formatShortDisplayAddress(address);
   const parts = splitAddressParts(short);
   if (parts.length === 0) {
@@ -118,10 +122,10 @@ export function extractLocalityFromAddress(address: string): string | null {
 }
 
 /** Убирает регион/район, оставляет город, улицу и дом. */
-export function formatShortDisplayAddress(address: string): string {
-  const source = address.trim();
+export function formatShortDisplayAddress(address: string | null | undefined): string {
+  const source = toAddressText(address);
   if (!source) {
-    return source;
+    return '';
   }
 
   if (/^точка на карте/i.test(source)) {

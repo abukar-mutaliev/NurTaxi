@@ -20,6 +20,16 @@ export interface Vehicle {
   interiorPhotoUrl: string | null;
 }
 
+/** Разрешение на деятельность такси (`§8.2`); требуется не во всех регионах. */
+export interface TaxiPermit {
+  id?: string;
+  number: string;
+  issuingRegion: string;
+  issuedAt: string;
+  expiresAt: string | null;
+  isExpired: boolean;
+}
+
 export interface DriverProfile {
   id: string;
   userId: string;
@@ -38,6 +48,10 @@ export interface DriverProfile {
   rejectionReason: string | null;
   vehicles: Vehicle[];
   documents: DriverDocument[];
+  taxiPermit: TaxiPermit | null;
+  /** Режимы требований региона: по ним карточка решает, показывать ли блок разрешения. */
+  requirements: Record<string, 'hidden' | 'optional' | 'required'>;
+  requiredDocumentTypes: DocumentType[];
   canGoOnline: boolean;
   accountStatus: string;
 }

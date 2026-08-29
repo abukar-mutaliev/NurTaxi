@@ -105,6 +105,9 @@ export class OrderResponse {
   @ApiProperty()
   id!: string;
 
+  @ApiProperty()
+  publicNumber!: string;
+
   @ApiProperty({ enum: OrderStatus })
   status!: OrderStatus;
 
@@ -165,6 +168,7 @@ export class OrderResponse {
 
     return {
       id: order.id,
+      publicNumber: order.publicNumber,
       status: order.status,
       regionId: order.regionId,
       pickupAddress: order.pickupAddress,
@@ -214,6 +218,9 @@ export class OrderStatusLogResponse {
   @ApiProperty()
   createdAt!: string;
 
+  @ApiPropertyOptional()
+  recordChecksum!: string | null;
+
   static from(log: OrderStatusLog, actorLabel?: string): OrderStatusLogResponse {
     return {
       fromStatus: log.fromStatus,
@@ -222,6 +229,7 @@ export class OrderStatusLogResponse {
       actorId: log.actorId,
       actorLabel: actorLabel ?? null,
       createdAt: log.createdAt.toISOString(),
+      recordChecksum: log.recordChecksum ?? null,
     };
   }
 }

@@ -1,3 +1,20 @@
+/** Режим требования к анкете водителя в регионе (`§7.6`). */
+export type RequirementMode = 'hidden' | 'optional' | 'required';
+
+export type DriverRequirements = Record<string, RequirementMode>;
+
+/** Справочник требований с бэкенда: форма настроек строится по нему, без правок фронта. */
+export interface DriverRequirementCatalog {
+  modes: RequirementMode[];
+  defaults: DriverRequirements;
+  requirements: Array<{
+    key: string;
+    label: string;
+    description: string;
+    documentType: string;
+  }>;
+}
+
 export interface Region {
   id: string;
   name: string;
@@ -5,6 +22,15 @@ export interface Region {
   timezone: string;
   currency: string;
   featureFlags: Record<string, boolean>;
+  driverRequirements: DriverRequirements;
+  complianceConfig?: {
+    taxiRegistryRequired: boolean;
+    taxiRegistryStrict: boolean;
+    risTransferEnabled: boolean;
+    risPayloadSchema: string;
+    tripTrackIntervalSec: number;
+    tripTrackRetentionDays: number;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -20,11 +46,15 @@ export interface City {
   updatedAt: string;
 }
 
+export type RegionComplianceConfig = NonNullable<Region['complianceConfig']>;
+
 export interface CreateRegionDto {
   name: string;
   timezone?: string;
   currency?: string;
   featureFlags?: Record<string, boolean>;
+  driverRequirements?: DriverRequirements;
+  complianceConfig?: Partial<RegionComplianceConfig>;
 }
 
 export interface UpdateRegionDto extends Partial<CreateRegionDto> {

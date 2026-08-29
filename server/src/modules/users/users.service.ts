@@ -2,7 +2,6 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Role } from '../../common/enums/role.enum';
-import { UserStatus } from '../../common/enums/user-status.enum';
 import { S3StorageService } from '../storage/s3-storage.service';
 import {
   DEFAULT_NOTIFICATION_SETTINGS,

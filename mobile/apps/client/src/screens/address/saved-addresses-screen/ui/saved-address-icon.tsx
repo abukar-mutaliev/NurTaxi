@@ -30,6 +30,7 @@ export function SavedAddressIcon({ kind, size = 'md' }: SavedAddressIconProps) {
 
   return (
     <View
+      collapsable={false}
       style={[
         styles.iconOuter,
         {

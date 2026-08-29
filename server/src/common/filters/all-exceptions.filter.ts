@@ -7,7 +7,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { Sentry } from '../../observability/sentry';
 
 interface ErrorBody {
   code: string;
@@ -17,8 +16,7 @@ interface ErrorBody {
 
 /**
  * Глобальный обработчик исключений. Приводит все ошибки к единому формату ответа
- * (`code`, `message`, `details`) согласно требованиям к API (Req §14.5) и
- * отправляет 5xx-ошибки в Sentry (Des §13).
+ * (`code`, `message`, `details`) согласно требованиям к API (Req §14.5).
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -36,7 +34,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `${request.method} ${request.url} → ${status}: ${body.message}`,
         exception instanceof Error ? exception.stack : undefined,
       );
-      Sentry.captureException(exception);
     }
 
     response.status(status).json({

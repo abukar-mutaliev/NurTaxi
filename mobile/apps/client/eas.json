@@ -23,7 +23,9 @@
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_ENV": "staging"
+        "EXPO_PUBLIC_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://taxi.rulplus.ru/api/v1",
+        "EXPO_PUBLIC_WS_URL": "https://taxi.rulplus.ru/ws"
       },
       "android": {
         "buildType": "apk"

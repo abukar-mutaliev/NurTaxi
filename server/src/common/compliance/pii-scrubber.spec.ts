@@ -1,4 +1,4 @@
-import { REDACTED, scrubSentryEvent, scrubString, scrubValue } from './pii-scrubber';
+import { REDACTED, scrubErrorEvent, scrubString, scrubValue } from './pii-scrubber';
 
 describe('pii-scrubber', () => {
   it('redacts phones and plates in strings', () => {
@@ -11,8 +11,8 @@ describe('pii-scrubber', () => {
     expect(scrubbed.comment).toBe('ok');
   });
 
-  it('strips request bodies from sentry events', () => {
-    const event = scrubSentryEvent({
+  it('strips request bodies from error events', () => {
+    const event = scrubErrorEvent({
       request: {
         url: '/api/v1/orders?phone=+79280000001',
         data: { pickupAddress: 'secret' },

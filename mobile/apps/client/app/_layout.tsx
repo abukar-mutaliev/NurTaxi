@@ -7,9 +7,7 @@ import { Stack } from 'expo-router';
 import { Loader } from '@nurtaxi/shared-core/shared/ui';
 import { useNotificationHandlers } from '@nurtaxi/shared-core/features/notifications';
 
-import { AppProviders, initSentry, useAuthGuard } from '@/app';
-
-initSentry();
+import { AppProviders, useAuthGuard } from '@/app';
 
 function RootNavigator() {
   const { isResolving } = useAuthGuard();

@@ -1,13 +1,11 @@
 /**
  * Глобальный перехват ошибок рендера (M0.9).
- * Показывает пользователю понятный экран вместо белого поля и отправляет отчёт в Sentry.
+ * Показывает пользователю понятный экран вместо белого поля.
  */
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { View } from 'react-native';
 
 import { Button, Screen, Text } from '@nurtaxi/shared-core/shared/ui';
-
-import { Sentry } from '../sentry';
 
 interface Props {
   children: ReactNode;
@@ -25,7 +23,9 @@ export class AppErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    Sentry.captureException(error, { extra: { componentStack: info.componentStack } });
+    if (__DEV__) {
+      console.error('[AppErrorBoundary]', error, info.componentStack);
+    }
   }
 
   private readonly reset = () => {
@@ -43,7 +43,8 @@ export class AppErrorBoundary extends Component<Props, State> {
         <View style={{ flex: 1, gap: 16, justifyContent: 'center' }}>
           <Text variant="title">Что-то пошло не так</Text>
           <Text tone="muted">
-            Мы уже получили отчёт об ошибке. Попробуйте вернуться на предыдущий экран.
+            Попробуйте вернуться на предыдущий экран. Если ошибка повторяется, перезапустите
+            приложение.
           </Text>
           <Button onPress={this.reset} title="Попробовать снова" />
         </View>

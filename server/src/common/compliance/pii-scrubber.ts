@@ -90,8 +90,8 @@ export function scrubValue(value: unknown, key?: string): unknown {
   return value;
 }
 
-/** Обработчик Sentry beforeSend: вычищает request/user/extra. */
-export function scrubSentryEvent(event: Record<string, unknown>): Record<string, unknown> {
+/** Вычищает request/user/extra из события ошибки перед логированием. */
+export function scrubErrorEvent(event: Record<string, unknown>): Record<string, unknown> {
   const clone = structuredClone(event);
   if (clone.request && typeof clone.request === 'object') {
     const request = clone.request as Record<string, unknown>;

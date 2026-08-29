@@ -16,7 +16,6 @@ export interface AppConfigExtra {
   apiUrl: string;
   /** Полный URL namespace Socket.IO. Если не задан — выводится из `apiUrl`. */
   wsUrl?: string;
-  sentryDsn?: string;
   /** Таймаут одиночного HTTP-запроса, мс. */
   requestTimeoutMs: number;
   /** Включает подробное логирование сети и Redux. Никогда не включать в production. */

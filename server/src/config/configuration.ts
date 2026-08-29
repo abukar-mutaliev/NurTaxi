@@ -20,7 +20,6 @@ export interface AppConfig {
   port: number;
   apiPrefix: string;
   corsOrigins: string;
-  sentryEnabled: boolean;
 }
 
 export interface DatabaseConfig {
@@ -77,8 +76,6 @@ export interface ObservabilityConfig {
   otelEnabled: boolean;
   otelEndpoint: string;
   otelServiceName: string;
-  sentryDsn?: string;
-  sentryTracesSampleRate: number;
 }
 
 export type MapProviderKind = 'stub' | 'yandex';
@@ -127,7 +124,6 @@ export default (): Configuration => ({
     port: toInt(process.env.PORT, 3000),
     apiPrefix: process.env.API_PREFIX ?? 'api/v1',
     corsOrigins: process.env.CORS_ORIGINS ?? '',
-    sentryEnabled: toBool(process.env.SENTRY_ENABLED),
   },
   database: {
     host: process.env.DB_HOST ?? 'localhost',
@@ -177,8 +173,6 @@ export default (): Configuration => ({
     otelEnabled: toBool(process.env.OTEL_ENABLED),
     otelEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? 'http://localhost:4318',
     otelServiceName: process.env.OTEL_SERVICE_NAME ?? 'nurtaxi-backend',
-    sentryDsn: process.env.SENTRY_DSN || undefined,
-    sentryTracesSampleRate: Number.parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE ?? '0.1'),
   },
   maps: {
     provider: (process.env.MAP_PROVIDER as MapsConfig['provider']) ?? 'stub',

@@ -26,7 +26,7 @@ const VARIANTS: Record<
     name: 'Nur Taxi Staging',
     identifier: 'ru.nurtaxi.client.staging',
     scheme: 'nurtaxi-staging',
-    defaultApiUrl: 'https://staging.nurtaxi.ru/api/v1',
+    defaultApiUrl: 'https://taxi.rulplus.ru/api/v1',
   },
   production: {
     name: 'Nur Taxi',
@@ -147,13 +147,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     [
-      '@sentry/react-native/expo',
-      {
-        organization: process.env.SENTRY_ORG ?? 'nurtaxi',
-        project: process.env.SENTRY_PROJECT ?? 'nurtaxi-client',
-      },
-    ],
-    [
       'expo-yandex-mapkit',
       {
         apiKey: yandexMapKitApiKey,
@@ -172,7 +165,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     environment,
     apiUrl: process.env.EXPO_PUBLIC_API_URL ?? variant.defaultApiUrl,
     wsUrl: process.env.EXPO_PUBLIC_WS_URL,
-    sentryDsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
     requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
     debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
     yandexMapKitApiKey,

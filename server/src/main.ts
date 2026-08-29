@@ -1,10 +1,8 @@
-// OpenTelemetry и Sentry инициализируются ДО импорта NestJS и остального кода,
+// OpenTelemetry инициализируется ДО импорта NestJS и остального кода,
 // чтобы авто-инструментация корректно перехватила библиотеки.
 import { initTracing } from './observability/tracing';
-import { initSentry } from './observability/sentry';
 
 initTracing();
-initSentry();
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';

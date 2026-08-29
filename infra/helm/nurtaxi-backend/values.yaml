@@ -43,7 +43,6 @@ config:
   OTEL_SERVICE_NAME: nurtaxi-backend
   DB_RUN_MIGRATIONS: 'false'
   S3_REGION: ru-central-1
-  SENTRY_ENABLED: 'false'
   CORS_ORIGINS: https://admin.staging.nurtaxi.example
   DB_SSL: 'true'
   DB_SSL_REJECT_UNAUTHORIZED: 'true'

@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThanOrEqual, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { OutboxChannel } from '../../common/enums/compliance.enum';
 import { OutboxStatus } from '../payments/enums/payment.enums';
 import { resolveComplianceConfig } from '../../common/compliance/compliance-config';

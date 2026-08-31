@@ -174,7 +174,7 @@ export function ProfileScreen() {
           <MenuCard
             dotTone={permit && !permit.isExpired ? undefined : 'accent'}
             icon="documents"
-            onPress={() => router.push('/(verification)/registration')}
+            onPress={() => router.push('/(verification)/registration?section=permit' as Href)}
             subtitle={permitSubtitle}
             title="Разрешение такси"
           />

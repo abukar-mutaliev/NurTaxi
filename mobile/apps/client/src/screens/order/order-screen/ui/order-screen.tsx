@@ -302,6 +302,10 @@ export function OrderScreen() {
       <Screen edgeToEdge safeBottom={false} scroll={false}>
         <View style={styles.root}>
           <MapCanvas
+            initialPoint={{
+              lat: driverPosition?.lat ?? order.pickupLat,
+              lng: driverPosition?.lng ?? order.pickupLng,
+            }}
             markers={markers}
             ref={mapRef}
             routePoints={liveRoute.points}

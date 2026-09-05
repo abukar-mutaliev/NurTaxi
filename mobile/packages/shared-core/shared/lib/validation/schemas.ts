@@ -125,8 +125,19 @@ export const EMPTY_TAXI_PERMIT_FORM: TaxiPermitForm = {
   expiresAt: '',
 };
 
+/**
+ * Начал ли водитель заполнять блок разрешения.
+ *
+ * `issuingRegion` намеренно не учитывается: анкета подставляет туда регион работы
+ * автоматически, как только водитель выбирает регион. Если считать это «блок начат»,
+ * включается полная проверка разрешения — и водитель не может отправить анкету, хотя
+ * разрешение в его регионе необязательное. Признак намерения — номер и даты.
+ */
 export function isTaxiPermitFilled(permit: TaxiPermitForm | undefined): boolean {
-  return Object.values(permit ?? {}).some((field) => field.trim() !== '');
+  if (!permit) {
+    return false;
+  }
+  return [permit.number, permit.issuedAt, permit.expiresAt].some((field) => field.trim() !== '');
 }
 
 /** Блок → тело запроса: незаполненный блок не отправляем, пустой срок — бессрочное. */

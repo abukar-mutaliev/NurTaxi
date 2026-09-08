@@ -36,10 +36,19 @@ export class Compliance580fz1722800000000 implements MigrationInterface {
         ADD COLUMN "carrier_id" uuid,
         ADD COLUMN "permit_id" uuid;
     `);
+    // Нумеруем по порядку, а не по первым 8 символам UUID: сиды и фикстуры создают заказы
+    // с последовательными идентификаторами (00000000-...-0501, -0502), у которых этот
+    // префикс совпадает, и уникальный индекс ниже падает на любой заполненной dev-базе.
     await queryRunner.query(`
-      UPDATE "orders"
-      SET "public_number" = 'NT-H-' || UPPER(SUBSTR(REPLACE("id"::text, '-', ''), 1, 8))
-      WHERE "public_number" IS NULL;
+      WITH numbered AS (
+        SELECT "id", ROW_NUMBER() OVER (ORDER BY "created_at", "id") AS rn
+        FROM "orders"
+        WHERE "public_number" IS NULL
+      )
+      UPDATE "orders" o
+      SET "public_number" = 'NT-H-' || LPAD(numbered.rn::text, 8, '0')
+      FROM numbered
+      WHERE o."id" = numbered."id";
     `);
     await queryRunner.query(`
       UPDATE "orders"

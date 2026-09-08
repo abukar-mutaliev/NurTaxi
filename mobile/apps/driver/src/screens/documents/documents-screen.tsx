@@ -9,7 +9,7 @@
  * от требований региона, поэтому включение нового документа не требует релиза приложения.
  */
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as FileSystem from 'expo-file-system/legacy';
 
@@ -43,6 +43,12 @@ const DOC_LABELS: Record<string, string> = {
   taxi_permit: 'Разрешение на деятельность такси',
 };
 
+/** Тип файла берём из расширения в ссылке: сервер отдаёт только `viewUrl`, без contentType. */
+function isPdf(url: string): boolean {
+  const [path = ''] = url.split('?');
+  return path.toLowerCase().endsWith('.pdf');
+}
+
 export function DocumentsScreen() {
   const theme = useTheme();
   const router = useRouter();
@@ -75,6 +81,13 @@ export function DocumentsScreen() {
   // Загруженное на прошлом заходе приходит в профиле — иначе экран покажет пустой список.
   const isUploaded = (type: DocumentType): boolean =>
     uploaded[type] || (profile?.documents.some((doc) => doc.type === type) ?? false);
+
+  /**
+   * Ссылка на просмотр живёт минуты и обновляется с каждым запросом профиля, поэтому
+   * берём её из свежих данных, а не запоминаем в состоянии.
+   */
+  const viewUrlFor = (type: DocumentType): string | undefined =>
+    profile?.documents.find((doc) => doc.type === type)?.viewUrl;
 
   const allDone = requiredTypes.every(isUploaded);
 
@@ -159,6 +172,7 @@ export function DocumentsScreen() {
           const done = isUploaded(type);
           const busy = busyType === type;
           const optional = !requiredTypes.includes(type);
+          const viewUrl = viewUrlFor(type);
           return (
             <Pressable key={type} disabled={busy} onPress={() => pickAndUpload(type)}>
               <Card tone={done ? 'success' : 'surface'}>
@@ -192,11 +206,57 @@ export function DocumentsScreen() {
                         {optional ? ' · необязательно' : ''}
                       </Text>
                       <Text tone="muted" variant="caption">
-                        {busy ? 'Загрузка…' : done ? 'Загружено' : 'Нажмите, чтобы загрузить'}
+                        {busy
+                          ? 'Загрузка…'
+                          : viewUrl
+                            ? 'Загружено · нажмите на миниатюру для просмотра'
+                            : done
+                              ? 'Загружено'
+                              : 'Нажмите, чтобы загрузить'}
                       </Text>
                     </View>
                   </View>
-                  {done ? <Badge label="✓" tone="success" /> : <Text tone="primary">＋</Text>}
+                  {viewUrl ? (
+                    <Pressable
+                      accessibilityLabel={`Открыть «${DOC_LABELS[type] ?? type}»`}
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      onPress={() => {
+                        void Linking.openURL(viewUrl);
+                      }}
+                    >
+                      {isPdf(viewUrl) ? (
+                        // PDF в <Image> не отрисуется, поэтому вместо пустого квадрата —
+                        // подпись: иначе загруженный документ выглядит как сломанный.
+                        <View
+                          style={{
+                            alignItems: 'center',
+                            backgroundColor: theme.colors.border,
+                            borderRadius: theme.radius.sm,
+                            height: 44,
+                            justifyContent: 'center',
+                            width: 44,
+                          }}
+                        >
+                          <Text variant="micro">PDF</Text>
+                        </View>
+                      ) : (
+                        <Image
+                          source={{ uri: viewUrl }}
+                          style={{
+                            backgroundColor: theme.colors.border,
+                            borderRadius: theme.radius.sm,
+                            height: 44,
+                            width: 44,
+                          }}
+                        />
+                      )}
+                    </Pressable>
+                  ) : done ? (
+                    <Badge label="✓" tone="success" />
+                  ) : (
+                    <Text tone="primary">＋</Text>
+                  )}
                 </View>
               </Card>
             </Pressable>

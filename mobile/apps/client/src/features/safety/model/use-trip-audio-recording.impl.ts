@@ -9,7 +9,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import * as FileSystem from 'expo-file-system/legacy';
+import { uploadFileToStorage } from '@nurtaxi/shared-core/shared/lib';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
@@ -74,15 +74,8 @@ export function useTripAudioRecording(orderId: string | null, canRecord: boolean
           fileName: 'trip-recording.m4a',
         }).unwrap();
 
-        const upload = await FileSystem.uploadAsync(uploadUrl, uri, {
-          httpMethod: 'PUT',
-          uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-          headers: { 'Content-Type': contentType },
-        });
-
-        if (upload.status < 200 || upload.status >= 300) {
-          throw new Error(`Upload failed (${upload.status})`);
-        }
+        // Запись целой поездки весит куда больше фотографии, поэтому запас времени больше.
+        await uploadFileToStorage(uploadUrl, uri, { contentType, timeoutMs: 120_000 });
 
         await confirmRecording({ orderId, storageKey, durationSec }).unwrap();
         setPhase('saved');

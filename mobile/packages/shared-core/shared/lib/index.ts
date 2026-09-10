@@ -46,5 +46,7 @@ export type {
 } from './media/image-picker-permission';
 export { pickImageFrom, pickImageWithChoice } from './media/pick-image';
 export type { PickedImage, PickImageOutcome } from './media/pick-image';
+export { UPLOAD_TIMEOUT_MS, UploadTimeoutError, uploadFileToStorage } from './media/upload-file';
+export type { UploadFileOptions } from './media/upload-file';
 
 export * from './validation/schemas';

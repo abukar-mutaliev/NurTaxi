@@ -290,7 +290,7 @@ async function seedCarriers(manager: EntityManager): Promise<void> {
     { currentPermitId: permit.id, vin: 'XTA21144050123456' },
   );
 
-  let assignment = await assignments.findOne({ where: { id: SEED_IDS.assignments.driver1 } });
+  const assignment = await assignments.findOne({ where: { id: SEED_IDS.assignments.driver1 } });
   const assignmentData: Partial<DriverAssignment> = {
     id: SEED_IDS.assignments.driver1,
     driverId: SEED_IDS.driverProfiles.driver1,

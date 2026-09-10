@@ -12,9 +12,9 @@
  * настройке выбранного региона (`region.driverRequirements`), которая задаётся в
  * админ-панели: новый регион со своими правилами не требует релиза приложения.
  */
-import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useMemo, useRef, useState } from 'react';
+import { Pressable, ScrollView, View, type LayoutChangeEvent } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -57,6 +57,21 @@ const toOptions = (values: string[], prefix: string): SuggestOption[] =>
 export function RegistrationScreen() {
   const theme = useTheme();
   const router = useRouter();
+
+  // Из профиля на карточку «Разрешение такси» приходим с `section=permit` — тогда после
+  // вёрстки прокручиваем форму сразу к блоку разрешения, а не оставляем вверху (на авто).
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  const scrollRef = useRef<ScrollView>(null);
+  const permitOffsetRef = useRef(0);
+  const didScrollToPermitRef = useRef(false);
+
+  const scrollToPermitIfRequested = () => {
+    if (section !== 'permit' || didScrollToPermitRef.current) {
+      return;
+    }
+    didScrollToPermitRef.current = true;
+    scrollRef.current?.scrollTo({ y: Math.max(permitOffsetRef.current - 16, 0), animated: true });
+  };
 
   const { data: regions = [], isLoading: regionsLoading } = useGetRegionsQuery();
   const [registerDriver, { isLoading: submitting }] = useRegisterDriverMutation();
@@ -155,6 +170,7 @@ export function RegistrationScreen() {
       }
     >
       <ScrollView
+        ref={scrollRef}
         // Запас снизу: у последних полей выпадающий список подсказок раскрывается вниз,
         // и без него он упирается в край формы.
         contentContainerStyle={{ gap: theme.spacing.md, paddingBottom: SUGGEST_LIST_MAX_HEIGHT }}
@@ -393,7 +409,13 @@ export function RegistrationScreen() {
 
         {/* --- Разрешение на деятельность такси (показывается по настройке региона) --- */}
         {permitMode === RequirementMode.Hidden ? null : (
-          <>
+          <View
+            onLayout={(event: LayoutChangeEvent) => {
+              permitOffsetRef.current = event.nativeEvent.layout.y;
+              scrollToPermitIfRequested();
+            }}
+            style={{ gap: theme.spacing.md }}
+          >
             <View style={{ gap: theme.spacing.xs, paddingTop: theme.spacing.sm }}>
               <Text variant="title">Разрешение на деятельность такси</Text>
               <Text tone={permitMissing ? 'danger' : 'muted'} variant="caption">
@@ -479,7 +501,7 @@ export function RegistrationScreen() {
             <Text tone="muted" variant="caption">
               Скан разрешения загрузите на следующем шаге вместе с остальными документами.
             </Text>
-          </>
+          </View>
         )}
 
         {apiError ? (

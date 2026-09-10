@@ -57,6 +57,10 @@ export async function pickImageFrom(
       : await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ['images'],
           quality: QUALITY,
+          // Новый Android Photo Picker приезжает обновлением Google Play, и на бюджетных
+          // устройствах его нет. Тогда AndroidX молча уходит в системный выбор документов,
+          // а тот открывает последнего провайдера — обычно Google Drive вместо галереи.
+          legacy: true,
         });
 
   if (result.canceled || !result.assets?.[0]) {
@@ -66,15 +70,69 @@ export async function pickImageFrom(
   return { image: toPickedImage(result.assets[0], fallbackName), status: 'picked' };
 }
 
-/** Диалог выбора источника. `null` — пользователь передумал. */
-function askSource(title: string): Promise<ImagePickerSource | null> {
+/** Источники выбора: два системных для картинок плюс файловый менеджер. */
+type PickSource = ImagePickerSource | 'files';
+
+/**
+ * Диалог выбора источника. `null` — пользователь передумал.
+ *
+ * Кнопки только три: Android рисует максимум три (positive/negative/neutral), и четвёртая
+ * «Отмена» молча пропадала — выйти из диалога было нечем. Отказ ловим через `onDismiss`
+ * (кнопка «Назад» и тап мимо окна), иначе промис зависал бы навсегда.
+ */
+function askSource(title: string): Promise<PickSource | null> {
   return new Promise((resolve) => {
-    Alert.alert(title, 'Откуда взять изображение?', [
-      { onPress: () => resolve('camera'), text: 'Камера' },
-      { onPress: () => resolve('gallery'), text: 'Галерея' },
-      { onPress: () => resolve(null), style: 'cancel', text: 'Отмена' },
-    ]);
+    let settled = false;
+    const done = (value: PickSource | null) => {
+      if (!settled) {
+        settled = true;
+        resolve(value);
+      }
+    };
+
+    Alert.alert(
+      title,
+      'Откуда взять документ? Чтобы отменить — нажмите «Назад» или коснитесь экрана вне окна.',
+      [
+        { onPress: () => done('camera'), text: 'Камера' },
+        { onPress: () => done('gallery'), text: 'Галерея' },
+        { onPress: () => done('files'), text: 'Файлы' },
+      ],
+      { cancelable: true, onDismiss: () => done(null) },
+    );
   });
+}
+
+/**
+ * Документ из файлового менеджера: сканы часто присылают в PDF или лежат в «Загрузках»,
+ * куда галерея не заглядывает. Своего разрешения не требует — системный выбор файла
+ * сам выдаёт доступ к тому, что человек выбрал.
+ *
+ * Модуль подгружается лениво: он нужен только здесь, и клиентское приложение,
+ * где нативной части нет, его не касается.
+ */
+async function pickFromFiles(fallbackName: string): Promise<PickImageOutcome> {
+  const DocumentPicker = await import('expo-document-picker');
+
+  const result = await DocumentPicker.getDocumentAsync({
+    type: ['image/*', 'application/pdf'],
+    copyToCacheDirectory: true,
+    multiple: false,
+  });
+
+  const asset = result.assets?.[0];
+  if (result.canceled || !asset) {
+    return { status: 'cancelled' };
+  }
+
+  return {
+    image: {
+      contentType: asset.mimeType ?? 'application/octet-stream',
+      fileName: asset.name ?? fallbackName,
+      uri: asset.uri,
+    },
+    status: 'picked',
+  };
 }
 
 /** Подсказка при отказе: без неё кнопка выглядит сломанной. */
@@ -110,7 +168,10 @@ export async function pickImageWithChoice(
     return null;
   }
 
-  const outcome = await pickImageFrom(source, fallbackName);
+  const outcome =
+    source === 'files'
+      ? await pickFromFiles(fallbackName)
+      : await pickImageFrom(source, fallbackName);
 
   if (outcome.status === 'denied') {
     explainDenied(outcome.source, outcome.canAskAgain);

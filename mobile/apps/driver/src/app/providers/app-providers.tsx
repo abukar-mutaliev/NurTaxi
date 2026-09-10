@@ -17,6 +17,8 @@ import { Loader, ThemeProvider } from '@nurtaxi/shared-core/shared/ui';
 import { useSessionBootstrap } from '@nurtaxi/shared-core/features/auth';
 import { useRealtimeConnection } from '@nurtaxi/shared-core/features/realtime';
 
+import { useOfflineOnLaunch } from '@/processes/shift';
+
 import { persistor, store } from '../store/store';
 import { AppErrorBoundary } from './error-boundary';
 
@@ -26,6 +28,8 @@ initI18n();
 function SessionGate({ children }: { children: ReactNode }) {
   useSessionBootstrap();
   useRealtimeConnection();
+  // Линия не переживает перезапуск: выходить на неё водитель должен осознанно.
+  useOfflineOnLaunch();
   return <>{children}</>;
 }
 

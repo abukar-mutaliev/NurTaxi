@@ -8,9 +8,9 @@
  */
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, AppState, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -18,8 +18,13 @@ import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-cor
 import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/model';
 import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
-import { useGetOrderQuery, useGetReceiptQuery } from '@nurtaxi/shared-core/entities/order';
+import {
+  isCancelled,
+  useGetOrderQuery,
+  useGetReceiptQuery,
+} from '@nurtaxi/shared-core/entities/order';
 import { openExternalNavigator } from '@nurtaxi/shared-core/features/navigation';
+import { useOrderRealtime } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppSelector } from '@/app/store/hooks';
 import { useDriverPosition } from '@/features/driver-position';
@@ -85,9 +90,39 @@ export function OrderScreen({ orderId }: { orderId: string }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data: order, isLoading } = useGetOrderQuery(orderId, { skip: !orderId });
+  const { data: order, isLoading, refetch } = useGetOrderQuery(orderId, { skip: !orderId });
   const [updateStatus, { isLoading: updating }] = useUpdateDriverOrderStatusMutation();
   const [error, setError] = useState<string | null>(null);
+
+  // Живая синхронизация заказа: без неё водитель не узнаёт об изменениях со стороны
+  // клиента/сервера — экран берёт заказ разовым запросом. Подписка обновляет кэш
+  // `getOrder` по событиям `order.status` из комнаты заказа.
+  useOrderRealtime(orderId);
+
+  // Пока приложение в фоне (например, водитель открыл другое приложение), сокет на Android
+  // рвётся, и событие отмены уходит мимо. При возврате на передний план перечитываем заказ,
+  // чтобы не остаться на отменённом. Особенно важно, когда клиент и водитель на одном телефоне.
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && orderId) {
+        void refetch();
+      }
+    });
+    return () => subscription.remove();
+  }, [orderId, refetch]);
+
+  // Клиент (или система) отменил заказ, пока водитель ехал — уводим со «живого» экрана
+  // на смену и показываем причину, иначе водитель остаётся на отменённом заказе.
+  const cancelledNoticeShownRef = useRef(false);
+  useEffect(() => {
+    if (!order || !isCancelled(order.status) || cancelledNoticeShownRef.current) {
+      return;
+    }
+    cancelledNoticeShownRef.current = true;
+    Alert.alert('Заказ отменён', 'Клиент отменил заказ.', [
+      { text: 'Понятно', onPress: () => router.replace('/(tabs)') },
+    ]);
+  }, [order, router]);
 
   const orderFinished =
     order?.status === OrderStatus.Completed || order?.status === OrderStatus.Closed;

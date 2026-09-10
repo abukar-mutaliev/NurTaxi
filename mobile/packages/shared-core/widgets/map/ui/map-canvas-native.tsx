@@ -86,11 +86,28 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
       .map(toMapPoint);
   }, [markers, routePoints]);
 
+  /**
+   * Оверлей машинки проецируется от камеры, которую слушает через `onCameraPositionChanged`.
+   * Но программная подгонка кадра случается раньше, чем оверлей успевает смонтироваться и
+   * подписаться, — событие теряется, и машинка навсегда остаётся спроецированной от стартовой
+   * камеры (её центр = позиция водителя, отсюда «машинка ровно посередине экрана»).
+   * Поэтому после подгонки честно дочитываем фактическую камеру у карты и отдаём её оверлею,
+   * не полагаясь только на событие.
+   */
+  const syncOverlayCamera = useCallback(() => {
+    void mapRef.current?.getCameraPosition().then((camera) => {
+      if (camera) {
+        driverOverlayRef.current?.setCamera(camera);
+      }
+    });
+  }, []);
+
   const fitCameraToContent = useCallback(() => {
     if (fitPoints.length > 1) {
       ignoreCameraRejection(
         mapRef.current?.fitMarkers(fitPoints, { edgePadding: MAP_EDGE_PADDING }),
       );
+      syncOverlayCamera();
       return;
     }
 
@@ -105,29 +122,46 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
           { durationSeconds: 0.4 },
         ),
       );
+      syncOverlayCamera();
       return;
     }
 
     ignoreCameraRejection(mapRef.current?.fitAllMarkers?.({ edgePadding: MAP_EDGE_PADDING }));
-  }, [fitPoints]);
+    syncOverlayCamera();
+  }, [fitPoints, syncOverlayCamera]);
 
-  const fittedDestRef = useRef('');
+  /**
+   * Опорные точки кадра — стационарные маркеры (подача и точка Б). Именно по ним решаем,
+   * нужно ли переподгонять камеру: позиция водителя тикает по GPS каждую секунду, и если
+   * завязать подгонку на неё, карта дёргалась бы без конца. Маршрут (`routePoints`) тоже
+   * не годится в ключ — он приходит с задержкой, а кадр нужен сразу после принятия заказа.
+   */
+  const anchorSignature = useMemo(
+    () =>
+      pinMarkers
+        .filter((marker) => isValidGeoPoint(marker.point))
+        .map((marker) => {
+          const p = normalizeGeoPoint(marker.point);
+          return `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`;
+        })
+        .join('|'),
+    [pinMarkers],
+  );
+
+  const fittedSignatureRef = useRef('');
   useEffect(() => {
-    if (routePoints.length < 2) {
+    // Кадр строим, когда есть хотя бы две опорные точки (подача + Б). Раньше подгонка
+    // ждала готовый маршрут (≥2 точек), и пока он строился, камера стояла на старте —
+    // машинка оставалась в центре, а точки A/B уезжали за край экрана.
+    if (fitPoints.length < 2 || !anchorSignature) {
       return;
     }
 
-    const destination = routePoints[routePoints.length - 1];
-    if (!destination) {
+    if (fittedSignatureRef.current === anchorSignature) {
       return;
     }
 
-    const signature = `${destination.lat.toFixed(4)},${destination.lng.toFixed(4)}`;
-    if (fittedDestRef.current === signature) {
-      return;
-    }
-
-    fittedDestRef.current = signature;
+    fittedSignatureRef.current = anchorSignature;
     fitCameraToContent();
     const retry = setTimeout(fitCameraToContent, 400);
     const retryLater = setTimeout(fitCameraToContent, 1200);
@@ -135,7 +169,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
       clearTimeout(retry);
       clearTimeout(retryLater);
     };
-  }, [fitCameraToContent, routePoints]);
+  }, [fitCameraToContent, fitPoints.length, anchorSignature]);
 
   useImperativeHandle(
     ref,

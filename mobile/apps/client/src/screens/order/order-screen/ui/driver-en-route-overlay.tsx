@@ -296,10 +296,8 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   etaBadge: {
-    alignSelf: 'flex-start',
     backgroundColor: colors.etaBadge,
     borderRadius: 15,
-    marginLeft: '32%',
     minWidth: 52,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -315,10 +313,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   etaWrap: {
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: '22%',
+    // Под шапкой «Водитель в пути», по центру — а не абсолютом посреди карты.
+    alignItems: 'center',
+    marginTop: 10,
   },
   glassButton: {
     backgroundColor: colors.glassBg,

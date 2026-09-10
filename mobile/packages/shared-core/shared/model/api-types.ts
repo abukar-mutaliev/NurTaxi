@@ -524,6 +524,8 @@ export interface DriverDocument {
   status: DocumentStatus;
   rejectionReason: string | null;
   createdAt: string;
+  /** Краткоживущая ссылка на просмотр; сервер выдаёт её заново при каждом запросе профиля. */
+  viewUrl?: string;
 }
 
 export interface DriverProfile {

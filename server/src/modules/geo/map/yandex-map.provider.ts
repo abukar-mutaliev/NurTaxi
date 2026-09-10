@@ -97,6 +97,41 @@ export class YandexMapProvider implements MapProvider {
     return this.routing.eta(from, to);
   }
 
+  /**
+   * Обратное геокодирование тем же геокодером: в `geocode` вместо запроса идут координаты
+   * в порядке «долгота,широта» — так их принимает Yandex.
+   *
+   * Молчаливый `null` при ошибке намеренный: заказ важнее адреса, и ронять его создание
+   * из-за недоступного геокодера нельзя — вызывающий код подставит запасной вариант.
+   */
+  async reverse(point: GeoPoint): Promise<string | null> {
+    if (!this.config.yandexGeocoderApiKey) {
+      return null;
+    }
+
+    const params = new URLSearchParams({
+      apikey: this.config.yandexGeocoderApiKey,
+      geocode: `${point.lng},${point.lat}`,
+      format: 'json',
+      lang: this.config.locale,
+      results: '1',
+      kind: 'house',
+    });
+
+    try {
+      const url = `${this.config.geocoderUrl}?${params.toString()}`;
+      const data = await this.fetchJson<YandexGeocoderResponse>(url, 'geocoder');
+      const geoObject = data.response?.GeoObjectCollection?.featureMember?.[0]?.GeoObject;
+      const meta = geoObject?.metaDataProperty?.GeocoderMetaData;
+      return meta?.Address?.formatted ?? meta?.text ?? geoObject?.name ?? null;
+    } catch (error) {
+      this.logger.warn(
+        `Geocoder reverse lookup failed: ${error instanceof Error ? error.message : error}`,
+      );
+      return null;
+    }
+  }
+
   private async searchViaGeosuggest(options: MapSearchOptions): Promise<AddressSuggestion[]> {
     const limit = options.limit ?? 10;
     const near = options.near ?? DEFAULT_NEAR;

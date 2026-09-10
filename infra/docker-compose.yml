@@ -55,11 +55,15 @@ services:
     container_name: nurtaxi-minio
     command: ['server', '/data', '--console-address', ':9001']
     environment:
-      MINIO_ROOT_USER: nurtaxi
-      MINIO_ROOT_PASSWORD: nurtaxi123
+      # Пароль по умолчанию годится только для локальной машины. На любом сервере задайте
+      # свой через переменные окружения — в хранилище лежат паспорта и права водителей.
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nurtaxi}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nurtaxi123}
     ports:
       - '9000:9000' # S3 API
-      - '9001:9001' # веб-консоль
+      # Консоль слушает только саму машину: наружу ей выходить незачем, а с паролем
+      # по умолчанию открытая консоль отдаёт документы всех водителей кому угодно.
+      - '127.0.0.1:9001:9001' # веб-консоль
     volumes:
       - minio-data:/data
     healthcheck:
@@ -75,9 +79,12 @@ services:
     depends_on:
       minio:
         condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nurtaxi}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nurtaxi123}
     entrypoint: >
       /bin/sh -c "
-      mc alias set local http://minio:9000 nurtaxi nurtaxi123 &&
+      mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
       mc mb --ignore-existing local/nurtaxi-documents &&
       mc anonymous set none local/nurtaxi-documents &&
       echo 'MinIO bucket ready';

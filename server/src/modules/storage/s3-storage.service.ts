@@ -23,6 +23,43 @@ export interface PresignedDownload {
 const UPLOAD_TTL_SEC = 900;
 const DOWNLOAD_TTL_SEC = 300;
 
+/** Частные сети: такой адрес недостижим ни для одного телефона за их пределами. */
+const LAN_HOST = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
+/** Сама машина. Локально это верное значение: телефон приходит через `adb reverse`. */
+const LOOPBACK_HOST = /^(localhost$|127\.|0\.0\.0\.0$|::1$)/;
+
+/**
+ * Presigned URL открывает телефон, а не сервер, поэтому публичный адрес обязан быть виден
+ * оттуда. Ошибка здесь не мешает ни запуску, ни разработке и всплывает только при загрузке
+ * файла — минутой ожидания и невнятной ошибкой сети. Один такой случай уже стоил долгих
+ * поисков: адрес указывал в домашнюю сеть разработчика, и загрузка не работала ни у кого.
+ */
+function warnIfUnreachable(logger: Logger, publicEndpoint: string, env: string): void {
+  const host = ((): string => {
+    try {
+      return new URL(publicEndpoint).hostname;
+    } catch {
+      return '';
+    }
+  })();
+
+  if (!host || !(LAN_HOST.test(host) || (env !== 'development' && LOOPBACK_HOST.test(host)))) {
+    return;
+  }
+
+  logger.warn(
+    `S3_PUBLIC_ENDPOINT=${publicEndpoint} — этот адрес виден только внутри своей сети. ` +
+      'Ссылку на загрузку открывает телефон пользователя, поэтому загрузка файлов работать не будет. ' +
+      'Укажите адрес хранилища, доступный извне.',
+  );
+
+  if (env === 'production') {
+    throw new Error(
+      `S3_PUBLIC_ENDPOINT указывает на недоступный извне адрес (${publicEndpoint}) — загрузка файлов работать не будет`,
+    );
+  }
+}
+
 /**
  * S3-совместимое хранилище с presigned URL (Des §9).
  * В dev работает с MinIO из docker-compose.
@@ -63,6 +100,12 @@ export class S3StorageService {
             ...clientConfig,
             endpoint: s3.publicEndpoint,
           });
+
+    warnIfUnreachable(
+      this.logger,
+      s3.publicEndpoint,
+      this.config.get<string>('app.env') ?? 'development',
+    );
   }
 
   async ensureBucket(): Promise<void> {

@@ -9,6 +9,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
   ensureImagePickerPermission,
+  UPLOAD_TIMEOUT_MS,
+  UploadTimeoutError,
+  uploadFileToStorage,
   type ImagePickerSource,
 } from '@nurtaxi/shared-core/shared/lib';
 import {
@@ -33,29 +36,35 @@ async function putFileToPresignedUrl(
   contentType: string,
 ): Promise<void> {
   try {
-    const upload = await FileSystem.uploadAsync(uploadUrl, uri, {
-      httpMethod: 'PUT',
-      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-      headers: { 'Content-Type': contentType },
-    });
-
-    if (upload.status >= 200 && upload.status < 300) {
-      return;
+    await uploadFileToStorage(uploadUrl, uri, { contentType });
+    return;
+  } catch (cause) {
+    // Таймаут означает, что хранилище недоступно, — запасной путь только удвоит ожидание.
+    if (cause instanceof UploadTimeoutError) {
+      throw cause;
     }
-  } catch {
-    // Пробуем fetch-фallback ниже.
+    // Остальные отказы пробуем пережить через fetch: на вебе `uploadAsync` не работает вовсе.
   }
 
-  const localFile = await fetch(uri);
-  const body = await localFile.blob();
-  const response = await fetch(uploadUrl, {
-    method: 'PUT',
-    headers: { 'Content-Type': contentType },
-    body,
-  });
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), UPLOAD_TIMEOUT_MS);
+  try {
+    const localFile = await fetch(uri);
+    const body = await localFile.blob();
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body,
+      signal: abort.signal,
+    });
 
-  if (!response.ok) {
-    throw new Error(`Upload failed (${response.status})`);
+    if (!response.ok) {
+      throw new Error(`Upload failed (${response.status})`);
+    }
+  } catch (cause) {
+    throw abort.signal.aborted ? new UploadTimeoutError() : (cause as Error);
+  } finally {
+    clearTimeout(timer);
   }
 }
 

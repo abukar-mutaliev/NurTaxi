@@ -11,10 +11,9 @@
 import { useMemo, useState } from 'react';
 import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as FileSystem from 'expo-file-system/legacy';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { pickImageWithChoice } from '@nurtaxi/shared-core/shared/lib';
+import { pickImageWithChoice, uploadFileToStorage } from '@nurtaxi/shared-core/shared/lib';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
   DocumentType,
@@ -115,14 +114,7 @@ export function DocumentsScreen() {
       }).unwrap();
 
       // 3. Кладём файл напрямую в S3 (PUT)
-      const upload = await FileSystem.uploadAsync(uploadUrl, uri, {
-        httpMethod: 'PUT',
-        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-        headers: { 'Content-Type': contentType },
-      });
-      if (upload.status < 200 || upload.status >= 300) {
-        throw new Error(`Не удалось загрузить файл (${upload.status})`);
-      }
+      await uploadFileToStorage(uploadUrl, uri, { contentType });
 
       // 4. Регистрируем ключ за приложением
       await registerDoc({ type, storageKey, contentType }).unwrap();

@@ -12,7 +12,7 @@ import { useMemo, useState } from 'react';
 import { Image, Linking, Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { toAppError } from '@nurtaxi/shared-core/shared/api';
+import { toAppError, userErrorMessage } from '@nurtaxi/shared-core/shared/api';
 import { pickImageWithChoice, uploadFileToStorage } from '@nurtaxi/shared-core/shared/lib';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
@@ -59,7 +59,8 @@ export function DocumentsScreen() {
 
   const [uploaded, setUploaded] = useState<Record<string, boolean>>({});
   const [busyType, setBusyType] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<DocumentType, string>>>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   /**
    * Обязательный комплект считает сервер по требованиям региона, поэтому разрешение
@@ -91,7 +92,12 @@ export function DocumentsScreen() {
   const allDone = requiredTypes.every(isUploaded);
 
   const pickAndUpload = async (type: DocumentType) => {
-    setError(null);
+    setFormError(null);
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next[type];
+      return next;
+    });
 
     /**
      * 1. Выбор источника и файла. Документ можно снять на камеру или взять из галереи —
@@ -121,19 +127,22 @@ export function DocumentsScreen() {
       await registerDoc({ type, storageKey, contentType }).unwrap();
       setUploaded((prev) => ({ ...prev, [type]: true }));
     } catch (cause) {
-      setError(toAppError(cause as never).message);
+      setFieldErrors((prev) => ({
+        ...prev,
+        [type]: userErrorMessage(toAppError(cause as never)),
+      }));
     } finally {
       setBusyType(null);
     }
   };
 
   const submit = async () => {
-    setError(null);
+    setFormError(null);
     try {
       await submitDocs().unwrap();
       router.replace('/(verification)/status');
     } catch (cause) {
-      setError(toAppError(cause as never).message);
+      setFormError(userErrorMessage(toAppError(cause as never)));
     }
   };
 
@@ -166,9 +175,10 @@ export function DocumentsScreen() {
           const busy = busyType === type;
           const optional = !requiredTypes.includes(type);
           const viewUrl = viewUrlFor(type);
+          const fieldError = fieldErrors[type];
           return (
             <Pressable key={type} disabled={busy} onPress={() => pickAndUpload(type)}>
-              <Card tone={done ? 'success' : 'surface'}>
+              <Card tone={fieldError ? 'danger' : done ? 'success' : 'surface'}>
                 <View
                   style={{
                     flexDirection: 'row',
@@ -207,6 +217,11 @@ export function DocumentsScreen() {
                               ? 'Загружено'
                               : 'Нажмите, чтобы загрузить'}
                       </Text>
+                      {fieldError ? (
+                        <Text tone="danger" variant="caption">
+                          {fieldError}
+                        </Text>
+                      ) : null}
                     </View>
                   </View>
                   {viewUrl ? (
@@ -260,10 +275,10 @@ export function DocumentsScreen() {
           Файлы хранятся в защищённом хранилище. До проверки заказы недоступны.
         </Text>
 
-        {error ? (
+        {formError ? (
           <Card tone="danger">
             <Text tone="danger" variant="caption">
-              {error}
+              {formError}
             </Text>
           </Card>
         ) : null}

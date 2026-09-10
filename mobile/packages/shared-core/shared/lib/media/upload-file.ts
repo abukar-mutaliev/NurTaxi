@@ -21,6 +21,25 @@ export class UploadTimeoutError extends Error {
   }
 }
 
+function toUploadFailure(cause: unknown): Error {
+  if (cause instanceof Error && cause.name === 'UploadTimeoutError') {
+    return cause;
+  }
+  const raw = cause instanceof Error ? cause.message : String(cause);
+  if (/CLEARTEXT|network security policy/i.test(raw)) {
+    return new Error(
+      'Не удалось отправить файл. Проверьте подключение к сети и попробуйте ещё раз.',
+    );
+  }
+  if (/Network request failed|failed to connect|ECONNREFUSED|timed out/i.test(raw)) {
+    return new Error('Не удалось отправить файл. Проверьте соединение и попробуйте ещё раз.');
+  }
+  if (cause instanceof Error && cause.message && !/status\s*\d+/i.test(cause.message)) {
+    return cause;
+  }
+  return new Error('Не удалось загрузить файл. Попробуйте другое фото или повторите попытку.');
+}
+
 export interface UploadFileOptions {
   contentType: string;
   timeoutMs?: number;
@@ -69,8 +88,13 @@ export async function uploadFileToStorage(
       throw new UploadTimeoutError();
     }
     if (result.status < 200 || result.status >= 300) {
-      throw new Error(`Не удалось загрузить файл (${result.status})`);
+      throw new Error('Не удалось загрузить файл. Попробуйте другое фото или повторите попытку.');
     }
+  } catch (cause) {
+    if (cause instanceof UploadTimeoutError) {
+      throw cause;
+    }
+    throw toUploadFailure(cause);
   } finally {
     clearTimeout(timer);
   }

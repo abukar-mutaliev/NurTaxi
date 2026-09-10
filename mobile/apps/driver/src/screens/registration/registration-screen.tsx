@@ -15,10 +15,10 @@
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, View, type LayoutChangeEvent } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch, type FieldPath } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { toAppError } from '@nurtaxi/shared-core/shared/api';
+import { toAppError, userErrorMessage } from '@nurtaxi/shared-core/shared/api';
 import {
   EMPTY_TAXI_PERMIT_FORM,
   driverRegistrationFormSchema,
@@ -44,6 +44,27 @@ import {
 } from '@/shared/lib/vehicle-catalog';
 import { StepHeader } from '@/shared/ui/step-header';
 import { SuggestInput, type SuggestOption } from '@/shared/ui/suggest-input';
+
+const REGISTRATION_FIELDS = new Set<FieldPath<DriverRegistrationForm>>([
+  'fullName',
+  'birthDate',
+  'residenceAddress',
+  'drivingExperienceYears',
+  'regionId',
+  'vehicle.make',
+  'vehicle.model',
+  'vehicle.plateNumber',
+  'vehicle.color',
+  'vehicle.year',
+  'taxiPermit.number',
+  'taxiPermit.issuingRegion',
+  'taxiPermit.issuedAt',
+  'taxiPermit.expiresAt',
+]);
+
+function isRegistrationField(path: string): path is FieldPath<DriverRegistrationForm> {
+  return REGISTRATION_FIELDS.has(path as FieldPath<DriverRegistrationForm>);
+}
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -84,6 +105,7 @@ export function RegistrationScreen() {
     control,
     handleSubmit,
     setValue,
+    setError,
     formState: { errors, isValid },
   } = useForm<DriverRegistrationForm>({
     resolver: zodResolver(driverRegistrationFormSchema),
@@ -154,7 +176,19 @@ export function RegistrationScreen() {
       }).unwrap();
       router.push('/(verification)/documents');
     } catch (cause) {
-      setApiError(toAppError(cause as never).message);
+      const appError = toAppError(cause as never);
+      let mapped = false;
+      if (appError.fields) {
+        for (const [path, message] of Object.entries(appError.fields)) {
+          if (isRegistrationField(path)) {
+            setError(path, { message, type: 'server' });
+            mapped = true;
+          }
+        }
+      }
+      if (!mapped) {
+        setApiError(userErrorMessage(appError));
+      }
     }
   };
 

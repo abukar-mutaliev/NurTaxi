@@ -3,11 +3,11 @@
  */
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import type { PushPlatform } from '@nurtaxi/shared-core/shared/model';
 
+import { isExpoGo, loadExpoNotifications } from './expo-notifications-runtime';
 import { ensurePushChannels } from './push-channels';
 
 export interface PushTokenResult {
@@ -21,7 +21,12 @@ function resolveProjectId(): string | undefined {
 }
 
 export async function acquirePushToken(): Promise<PushTokenResult | null> {
-  if (!Device.isDevice) {
+  if (!Device.isDevice || Platform.OS === 'web' || isExpoGo()) {
+    return null;
+  }
+
+  const Notifications = await loadExpoNotifications();
+  if (!Notifications) {
     return null;
   }
 

@@ -3,10 +3,16 @@
  * Канал `orders` совпадает с `defaultChannel` в app.config.ts.
  */
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
+
+import { loadExpoNotifications } from './expo-notifications-runtime';
 
 export async function ensurePushChannels(): Promise<void> {
   if (Platform.OS !== 'android') {
+    return;
+  }
+
+  const Notifications = await loadExpoNotifications();
+  if (!Notifications) {
     return;
   }
 

@@ -104,6 +104,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     'expo-secure-store',
     'expo-localization',
+    'expo-font',
+    'expo-web-browser',
     [
       'expo-location',
       {
@@ -119,6 +121,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         microphonePermission: false,
       },
     ],
+    'expo-image',
     [
       'expo-audio',
       {

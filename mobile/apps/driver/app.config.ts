@@ -51,6 +51,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     bundleIdentifier: variant.identifier,
     supportsTablet: false,
     infoPlist: {
+      // Dev API и MinIO по HTTP — разрешаем незащищённый трафик к локальной сети.
+      ...(environment === 'development'
+        ? { NSAppTransportSecurity: { NSAllowsArbitraryLoads: true } }
+        : {}),
       NSLocationWhenInUseUsageDescription:
         'Nur Taxi показывает вашу позицию на карте и строит маршрут к клиенту.',
       NSLocationAlwaysAndWhenInUseUsageDescription:
@@ -102,6 +106,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ],
     'expo-secure-store',
     'expo-localization',
+    'expo-font',
+    'expo-web-browser',
     [
       'expo-location',
       {
@@ -120,6 +126,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         cameraPermission: 'Nur Taxi использует камеру для съёмки документов и автомобиля.',
       },
     ],
+    'expo-image',
     [
       'expo-notifications',
       {
@@ -134,6 +141,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           compileSdkVersion: 36,
           targetSdkVersion: 36,
           minSdkVersion: 26,
+          // Dev API / MinIO на http://192.168.x.x — без этого Android (EAS build)
+          // блокирует PUT файла: «CLEARTEXT communication not permitted».
+          usesCleartextTraffic: environment === 'development',
           manifestQueries: {
             package: ['ru.yandex.yandexnavi', 'ru.yandex.yandexmaps'],
             intent: [

@@ -21,6 +21,10 @@
     "test": "npm run test --workspaces --if-present",
     "prepare": "node ./scripts/install-hooks.mjs"
   },
+  "dependencies": {
+    "expo": "~57.0.21",
+    "expo-router": "~57.0.20"
+  },
   "devDependencies": {
     "@types/jest": "29.5.14",
     "eslint": "^9.39.0",
@@ -33,10 +37,6 @@
     "typescript-eslint": "^8.65.0"
   },
   "overrides": {
-    "handlebars": "4.7.9",
-    "brace-expansion": "2.1.4",
-    "js-yaml": "4.3.2",
-    "nanoid": "3.3.18",
-    "postcss": "8.5.28"
+    "handlebars": "4.7.9"
   }
 }

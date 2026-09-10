@@ -1,6 +1,7 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": ["expo/tsconfig.base", "../../tsconfig.base.json"],
   "compilerOptions": {
+    "types": ["node"],
     "paths": {
       "@nurtaxi/shared-core": ["./index.ts"],
       "@nurtaxi/shared-core/*": ["./*"]

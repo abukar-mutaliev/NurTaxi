@@ -13,6 +13,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import type { AppConfig } from './config/configuration';
 import { assertProductionSecurity, parseCorsOrigins } from './config/production-security';
+import { VALIDATION_PIPE_OPTIONS } from './common/validation/validation-exception';
 
 assertProductionSecurity(process.env);
 
@@ -71,14 +72,7 @@ async function bootstrap(): Promise<void> {
   // Nest не включаем, чтобы не задваивать сегмент версии в пути.
   app.setGlobalPrefix(appConfig.apiPrefix, { exclude: ['metrics'] });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
 
   app.enableShutdownHooks();
 

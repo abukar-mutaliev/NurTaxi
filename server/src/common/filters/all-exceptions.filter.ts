@@ -7,6 +7,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import {
+  VALIDATION_SUMMARY,
+  fieldsFromConstraintMessages,
+} from '../validation/validation-exception';
 
 interface ErrorBody {
   code: string;
@@ -53,14 +57,26 @@ export class AllExceptionsFilter implements ExceptionFilter {
       }
 
       const obj = res as Record<string, unknown>;
+
+      // Старый ValidationPipe отдаёт `message: string[]` на английском — не показываем его как есть.
+      if (Array.isArray(obj.message) && obj.message.every((item) => typeof item === 'string')) {
+        const fields = fieldsFromConstraintMessages(obj.message as string[]);
+        return {
+          status,
+          body: {
+            code: 'VALIDATION_ERROR',
+            message: VALIDATION_SUMMARY,
+            details: Object.keys(fields).length > 0 ? { fields } : { messages: obj.message },
+          },
+        };
+      }
+
       return {
         status,
         body: {
           code: (obj.code as string) ?? this.codeFromStatus(status),
-          message: Array.isArray(obj.message)
-            ? (obj.message as string[]).join('; ')
-            : ((obj.message as string) ?? exception.message),
-          details: obj.details ?? (Array.isArray(obj.message) ? obj.message : undefined),
+          message: (obj.message as string) ?? exception.message,
+          details: obj.details,
         },
       };
     }

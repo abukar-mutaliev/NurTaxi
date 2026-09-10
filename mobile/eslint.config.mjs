@@ -135,6 +135,15 @@ export default [
   },
   {
     /**
+     * `react-native` и Expo-пакеты — peer-зависимости: они стоят в `apps/client` и
+     * `apps/driver`, а не в `packages/shared-core`. Резолвер идёт вверх от файла и не
+     * находит модуль — ложный `import/no-unresolved` на каждый импорт.
+     */
+    files: ['packages/shared-core/**/*.{ts,tsx}'],
+    rules: { 'import/no-unresolved': 'off' },
+  },
+  {
+    /**
      * React Compiler ESLint-правила (`react-hooks/*`) не знают о `react-native-reanimated`
      * без явного флага: без него `useSharedValue().value = ...` считается запрещённой
      * мутацией «неизменяемого» значения — хотя это штатный, документированный API

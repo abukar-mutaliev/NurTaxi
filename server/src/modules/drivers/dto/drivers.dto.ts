@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -17,6 +18,7 @@ import {
 import { Type } from 'class-transformer';
 import { DocumentType } from '../../../common/enums/document-type.enum';
 import type { WorkSchedule } from '../entities/work-schedule.types';
+import { DOCUMENT_CONTENT_TYPES, DOCUMENT_MAX_BYTES } from '../../storage/upload-constraints';
 
 export class VehicleDto {
   @ApiProperty({ example: 'Hyundai' })
@@ -126,10 +128,16 @@ export class PresignDocumentDto {
   @IsEnum(DocumentType)
   type!: DocumentType;
 
-  @ApiProperty({ example: 'image/jpeg' })
-  @IsString()
-  @IsNotEmpty()
+  @ApiProperty({ example: 'image/jpeg', enum: DOCUMENT_CONTENT_TYPES })
+  @IsIn(DOCUMENT_CONTENT_TYPES)
   contentType!: string;
+
+  @ApiProperty({ example: 245_760, description: 'Размер файла в байтах' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(DOCUMENT_MAX_BYTES)
+  contentLength!: number;
 
   @ApiPropertyOptional({ example: 'passport.jpg' })
   @IsOptional()
@@ -148,9 +156,8 @@ export class RegisterDocumentDto {
   @IsNotEmpty()
   storageKey!: string;
 
-  @ApiProperty({ example: 'image/jpeg' })
-  @IsString()
-  @IsNotEmpty()
+  @ApiProperty({ example: 'image/jpeg', enum: DOCUMENT_CONTENT_TYPES })
+  @IsIn(DOCUMENT_CONTENT_TYPES)
   contentType!: string;
 }
 

@@ -102,7 +102,7 @@ export function DocumentsScreen() {
     if (!picked) {
       return;
     }
-    const { contentType, fileName, uri } = picked;
+    const { contentType, fileName, fileSize, uri } = picked;
 
     setBusyType(type);
     try {
@@ -110,6 +110,7 @@ export function DocumentsScreen() {
       const { uploadUrl, storageKey } = await presign({
         type,
         contentType,
+        contentLength: fileSize,
         fileName,
       }).unwrap();
 

@@ -1,6 +1,10 @@
 # Локальное dev-окружение Nur Taxi (Des §3).
 # Запуск ядра:            docker compose up -d
 # С наблюдаемостью:       docker compose --profile observability up -d
+#
+# На машине с белым IP этот файл один нельзя: порты данных уйдут в интернет.
+# Там: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# и свои MINIO_ROOT_USER / MINIO_ROOT_PASSWORD в infra/.env.
 name: nurtaxi
 
 services:
@@ -13,7 +17,8 @@ services:
       POSTGRES_DB: nurtaxi
     ports:
       # Хостовый порт 5433, чтобы не конфликтовать с другими локальными Postgres (5432).
-      - '5433:5432'
+      # Только localhost: на 0.0.0.0 этот порт с паролем из compose открывает всю БД.
+      - '127.0.0.1:5433:5432'
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
@@ -28,7 +33,7 @@ services:
     command: ['redis-server', '--appendonly', 'yes']
     ports:
       # Хостовый порт 6380, чтобы не конфликтовать с другими локальными Redis (6379).
-      - '6380:6379'
+      - '127.0.0.1:6380:6379'
     volumes:
       - redis-data:/data
     healthcheck:
@@ -42,8 +47,8 @@ services:
     container_name: nurtaxi-nats
     command: ['-js', '-m', '8222']
     ports:
-      - '4222:4222' # клиентский протокол
-      - '8222:8222' # мониторинг
+      - '127.0.0.1:4222:4222' # клиентский протокол
+      - '127.0.0.1:8222:8222' # мониторинг
     healthcheck:
       test: ['CMD', 'wget', '--spider', '-q', 'http://localhost:8222/healthz']
       interval: 10s
@@ -60,10 +65,13 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-nurtaxi}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-nurtaxi123}
     ports:
-      - '9000:9000' # S3 API
-      # Консоль слушает только саму машину: наружу ей выходить незачем, а с паролем
-      # по умолчанию открытая консоль отдаёт документы всех водителей кому угодно.
-      - '127.0.0.1:9001:9001' # веб-консоль
+      # S3 API по умолчанию на всех интерфейсах — телефон в той же Wi‑Fi сети должен
+      # до него достучаться. На сервере задайте MINIO_API_BIND=127.0.0.1 и проксируйте
+      # через nginx (infra/nginx/s3-proxy.conf), иначе API с паролем из репозитория
+      # отдаёт документы без консоли.
+      - '${MINIO_API_BIND:-0.0.0.0}:9000:9000'
+      # Консоль слушает только саму машину: наружу ей выходить незачем.
+      - '127.0.0.1:9001:9001'
     volumes:
       - minio-data:/data
     healthcheck:
@@ -98,7 +106,7 @@ services:
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
-      - '9090:9090'
+      - '127.0.0.1:9090:9090'
 
   grafana:
     image: grafana/grafana:latest
@@ -108,7 +116,7 @@ services:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
     ports:
-      - '3001:3000'
+      - '127.0.0.1:3001:3000'
     depends_on:
       - prometheus
 
@@ -120,8 +128,8 @@ services:
     volumes:
       - ./observability/otel-collector-config.yml:/etc/otel-collector-config.yml:ro
     ports:
-      - '4317:4317' # OTLP gRPC
-      - '4318:4318' # OTLP HTTP
+      - '127.0.0.1:4317:4317' # OTLP gRPC
+      - '127.0.0.1:4318:4318' # OTLP HTTP
 
   # OSRM — маршрутизация по дорогам (СКФО, включая Ингушетию).
   # Подготовка данных (один раз): infra/osrm/prepare-data.ps1 или prepare-data.sh
@@ -131,7 +139,7 @@ services:
     container_name: nurtaxi-osrm
     profiles: ['osrm']
     ports:
-      - '5001:5000'
+      - '127.0.0.1:5001:5000'
     volumes:
       - ./osrm/data:/data
     command: osrm-routed --algorithm mld /data/north-caucasus-fed-district-latest.osm.pbf

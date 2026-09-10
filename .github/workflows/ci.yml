@@ -180,3 +180,23 @@ jobs:
           format: table
           exit-code: '0'
           severity: CRITICAL,HIGH
+
+  security:
+    name: Secrets & SAST
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/checkout@v4
+      - name: Gitleaks
+        run: >
+          docker run --rm -v "$PWD:/src"
+          zricethezav/gitleaks:latest detect
+          --source=/src --config=/src/.gitleaks.toml --no-git --verbose --redact
+      - name: Semgrep
+        run: >
+          docker run --rm -v "$PWD:/src" semgrep/semgrep semgrep scan
+          --config p/owasp-top-ten --config p/javascript
+          --severity ERROR --error --metrics off /src
+

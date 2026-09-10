@@ -13,11 +13,13 @@ import { Alert, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
 import { ensureImagePickerPermission, type ImagePickerSource } from './image-picker-permission';
+import { getLocalFileSize } from './upload-file';
 
 export interface PickedImage {
   uri: string;
   contentType: string;
   fileName: string;
+  fileSize: number;
 }
 
 export type PickImageOutcome =
@@ -29,11 +31,27 @@ export type PickImageOutcome =
 
 const QUALITY = 0.7;
 
-function toPickedImage(asset: ImagePicker.ImagePickerAsset, fallbackName: string): PickedImage {
-  const contentType = asset.mimeType ?? 'image/jpeg';
+function mimeFromName(fileName: string, fallback: string): string {
+  const ext = fileName.split('.').at(-1)?.toLowerCase();
+  if (ext === 'pdf') return 'application/pdf';
+  if (ext === 'png') return 'image/png';
+  if (ext === 'webp') return 'image/webp';
+  if (ext === 'heic') return 'image/heic';
+  if (ext === 'heif') return 'image/heif';
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  return fallback;
+}
+
+async function toPickedImage(
+  asset: ImagePicker.ImagePickerAsset,
+  fallbackName: string,
+): Promise<PickedImage> {
+  const fileName = asset.fileName ?? fallbackName;
+  const contentType = asset.mimeType ?? mimeFromName(fileName, 'image/jpeg');
   return {
     contentType,
-    fileName: asset.fileName ?? fallbackName,
+    fileName,
+    fileSize: await getLocalFileSize(asset.uri, asset.fileSize),
     uri: asset.uri,
   };
 }
@@ -67,7 +85,7 @@ export async function pickImageFrom(
     return { status: 'cancelled' };
   }
 
-  return { image: toPickedImage(result.assets[0], fallbackName), status: 'picked' };
+  return { image: await toPickedImage(result.assets[0], fallbackName), status: 'picked' };
 }
 
 /** Источники выбора: два системных для картинок плюс файловый менеджер. */
@@ -125,10 +143,17 @@ async function pickFromFiles(fallbackName: string): Promise<PickImageOutcome> {
     return { status: 'cancelled' };
   }
 
+  const fileName = asset.name ?? fallbackName;
+  const contentType = asset.mimeType ?? mimeFromName(fileName, 'application/octet-stream');
+  if (contentType === 'application/octet-stream') {
+    throw new Error('Выберите JPEG, PNG, WebP, HEIC или PDF');
+  }
+
   return {
     image: {
-      contentType: asset.mimeType ?? 'application/octet-stream',
-      fileName: asset.name ?? fallbackName,
+      contentType,
+      fileName,
+      fileSize: await getLocalFileSize(asset.uri, asset.size),
       uri: asset.uri,
     },
     status: 'picked',

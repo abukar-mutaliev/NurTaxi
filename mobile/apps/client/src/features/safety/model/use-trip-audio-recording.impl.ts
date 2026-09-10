@@ -9,7 +9,7 @@ import {
   useAudioRecorder,
   useAudioRecorderState,
 } from 'expo-audio';
-import { uploadFileToStorage } from '@nurtaxi/shared-core/shared/lib';
+import { uploadFileToStorage, getLocalFileSize } from '@nurtaxi/shared-core/shared/lib';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
@@ -68,9 +68,11 @@ export function useTripAudioRecording(orderId: string | null, canRecord: boolean
 
       try {
         const contentType = 'audio/mp4';
+        const contentLength = await getLocalFileSize(uri);
         const { uploadUrl, storageKey } = await presignRecording({
           orderId,
           contentType,
+          contentLength,
           fileName: 'trip-recording.m4a',
         }).unwrap();
 

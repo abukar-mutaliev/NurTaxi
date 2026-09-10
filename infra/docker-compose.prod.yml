@@ -1,0 +1,56 @@
+# Наложение для машины с белым IP. Локальный docker-compose.yml один здесь
+# поднимать нельзя: Postgres, Redis, NATS и MinIO уйдут в интернет.
+#
+#   cd infra
+#   cp .env.example .env   # задайте свои MINIO_ROOT_* — не из репозитория
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Консоль MinIO выключена. Все порты только на 127.0.0.1.
+# Телефонам S3 нужен через nginx: infra/nginx/s3-proxy.conf.
+# Те же ключи пропишите в server/.env как S3_ACCESS_KEY / S3_SECRET_KEY.
+name: nurtaxi
+
+services:
+  postgres:
+    ports: !override
+      - '127.0.0.1:5433:5432'
+
+  redis:
+    ports: !override
+      - '127.0.0.1:6380:6379'
+
+  nats:
+    ports: !override
+      - '127.0.0.1:4222:4222'
+      - '127.0.0.1:8222:8222'
+
+  minio:
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?задайте MINIO_ROOT_USER в infra/.env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?задайте MINIO_ROOT_PASSWORD в infra/.env}
+      MINIO_BROWSER: 'off'
+    ports: !override
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
+
+  minio-init:
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?задайте MINIO_ROOT_USER в infra/.env}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?задайте MINIO_ROOT_PASSWORD в infra/.env}
+
+  prometheus:
+    ports: !override
+      - '127.0.0.1:9090:9090'
+
+  grafana:
+    ports: !override
+      - '127.0.0.1:3001:3000'
+
+  otel-collector:
+    ports: !override
+      - '127.0.0.1:4317:4317'
+      - '127.0.0.1:4318:4318'
+
+  osrm:
+    ports: !override
+      - '127.0.0.1:5001:5000'

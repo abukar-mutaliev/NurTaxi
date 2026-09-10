@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
   ensureImagePickerPermission,
+  getLocalFileSize,
   UPLOAD_TIMEOUT_MS,
   UploadTimeoutError,
   uploadFileToStorage,
@@ -147,10 +148,19 @@ export function useProfilePhotoUpload() {
       const contentType = asset.mimeType ?? 'image/jpeg';
       const fileName = asset.fileName ?? 'avatar.jpg';
 
+      let contentLength: number;
+      try {
+        contentLength = await getLocalFileSize(asset.uri, asset.fileSize);
+      } catch {
+        setError('Не удалось определить размер файла');
+        return null;
+      }
+
       setIsUploading(true);
       try {
         const { uploadUrl, storageKey } = await presignPhoto({
           contentType,
+          contentLength,
           fileName,
         }).unwrap();
 

@@ -140,6 +140,7 @@ export interface UpdateProfilePayload {
 
 export interface PresignProfilePhotoPayload {
   contentType: string;
+  contentLength: number;
   fileName?: string;
 }
 
@@ -439,6 +440,7 @@ export interface SosResponse {
 
 export interface PresignTripRecordingPayload {
   contentType: string;
+  contentLength: number;
   fileName?: string;
 }
 
@@ -559,6 +561,7 @@ export interface DriverProfile {
 export interface PresignDocumentPayload {
   type: DocumentType;
   contentType: string;
+  contentLength: number;
   fileName?: string;
 }
 

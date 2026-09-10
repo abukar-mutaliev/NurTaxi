@@ -6,16 +6,12 @@ import { S3StorageService } from '../storage/s3-storage.service';
 import { ConfirmTripRecordingDto, PresignTripRecordingDto } from './dto/trip-recording.dto';
 import { TripRecording } from './entities/trip-recording.entity';
 import { OrdersService } from './orders.service';
-
-const RECORDING_CONTENT_TYPE_EXT: Record<string, string> = {
-  'audio/mp4': 'm4a',
-  'audio/x-m4a': 'm4a',
-  'audio/m4a': 'm4a',
-  'audio/aac': 'aac',
-  'audio/mpeg': 'mp3',
-};
-
-const ALLOWED_RECORDING_CONTENT_TYPES = new Set(Object.keys(RECORDING_CONTENT_TYPE_EXT));
+import {
+  assertAllowedUpload,
+  AUDIO_CONTENT_TYPE_EXT,
+  AUDIO_CONTENT_TYPES,
+  AUDIO_MAX_BYTES,
+} from '../storage/upload-constraints';
 
 const RECORDING_ALLOWED_STATUSES: OrderStatus[] = [
   OrderStatus.DriverAssigned,
@@ -46,20 +42,23 @@ export class TripRecordingService {
     const order = await this.ordersService.getOrderForUser(clientId, orderId, 'client');
     this.assertRecordingAllowed(order.status);
 
-    if (!ALLOWED_RECORDING_CONTENT_TYPES.has(dto.contentType)) {
-      throw new BadRequestException({
-        code: 'INVALID_CONTENT_TYPE',
-        message: 'Допустимы только аудиофайлы M4A, AAC и MP3',
-      });
-    }
+    assertAllowedUpload(
+      dto.contentType,
+      dto.contentLength,
+      AUDIO_CONTENT_TYPES,
+      AUDIO_MAX_BYTES,
+      'аудиофайлы M4A, AAC и MP3',
+    );
 
     const extension =
-      this.extensionFromFileName(dto.fileName) ??
-      RECORDING_CONTENT_TYPE_EXT[dto.contentType] ??
-      'm4a';
+      this.extensionFromFileName(dto.fileName) ?? AUDIO_CONTENT_TYPE_EXT[dto.contentType] ?? 'm4a';
     const storageKey = this.storage.buildTripRecordingKey(orderId, clientId, extension);
 
-    return this.storage.createUploadUrl(storageKey, dto.contentType);
+    return this.storage.createUploadUrl({
+      storageKey,
+      contentType: dto.contentType,
+      contentLength: dto.contentLength,
+    });
   }
 
   async confirmUpload(

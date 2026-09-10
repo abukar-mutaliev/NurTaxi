@@ -1,0 +1,18 @@
+title = "NurTaxi"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Документированные локальные заглушки, не боевые секреты"
+paths = [
+  '''(^|/)server/\.env\.example$''',
+  '''(^|/)web-admin/\.env\.example$''',
+  '''(^|/)mobile/.+\.env\.example$''',
+  '''(^|/)infra/\.env\.example$''',
+  '''(^|/)infra/docker-compose\.yml$''',
+  '''(^|/)infra/README\.md$''',
+  '''(^|/)server/src/config/production-security\.ts$''',
+  '''(^|/)server/src/config/production-security\.spec\.ts$''',
+  '''(^|/)package-lock\.json$''',
+]

@@ -20,6 +20,13 @@ export interface PresignedDownload {
   expiresInSec: number;
 }
 
+export interface CreateUploadUrlParams {
+  storageKey: string;
+  contentType: string;
+  contentLength: number;
+  expiresInSec?: number;
+}
+
 const UPLOAD_TTL_SEC = 900;
 const DOWNLOAD_TTL_SEC = 300;
 
@@ -141,17 +148,19 @@ export class S3StorageService {
     return `orders/${orderId}/recordings/${clientId}/${Date.now()}.${safeExt}`;
   }
 
-  async createUploadUrl(
-    storageKey: string,
-    contentType: string,
+  async createUploadUrl({
+    storageKey,
+    contentType,
+    contentLength,
     expiresInSec = UPLOAD_TTL_SEC,
-  ): Promise<PresignedUpload> {
+  }: CreateUploadUrlParams): Promise<PresignedUpload> {
     await this.ensureBucket();
 
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: storageKey,
       ContentType: contentType,
+      ContentLength: contentLength,
     });
 
     const uploadUrl = await getSignedUrl(this.presignClient, command, { expiresIn: expiresInSec });

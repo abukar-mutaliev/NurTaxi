@@ -49,7 +49,48 @@ describe('assertProductionSecurity', () => {
         DB_SSL: 'true',
         CORS_ORIGINS: 'https://admin.nurtaxi.ru',
         S3_REGION: 'ru-central-1',
+        S3_ACCESS_KEY: 'prod-s3-access-key',
+        S3_SECRET_KEY: 'prod-s3-secret-key-not-from-repo',
         FIELD_ENCRYPTION_KEY: 'nurtaxi-prod-field-encryption-key-32ch',
+      }),
+    ).not.toThrow();
+  });
+
+  it('refuses production with published S3 credentials', () => {
+    expect(() =>
+      assertProductionSecurity({
+        NODE_ENV: Environment.Production,
+        JWT_ACCESS_SECRET: 'a-long-enough-access-secret-value',
+        JWT_REFRESH_SECRET: 'a-long-enough-refresh-secret-value',
+        DB_PASSWORD: 'strong-db-password',
+        DB_SSL: 'true',
+        CORS_ORIGINS: 'https://admin.nurtaxi.ru',
+        S3_REGION: 'ru-central-1',
+        S3_ACCESS_KEY: 'nurtaxi',
+        S3_SECRET_KEY: 'nurtaxi123',
+        FIELD_ENCRYPTION_KEY: 'nurtaxi-prod-field-encryption-key-32ch',
+      }),
+    ).toThrow(/S3_ACCESS_KEY/);
+  });
+
+  it('refuses development when a public S3 host still uses published credentials', () => {
+    expect(() =>
+      assertProductionSecurity({
+        NODE_ENV: Environment.Development,
+        S3_PUBLIC_ENDPOINT: 'https://taxi.rulplus.ru:9000',
+        S3_ACCESS_KEY: 'nurtaxi',
+        S3_SECRET_KEY: 'nurtaxi123',
+      }),
+    ).toThrow(/интернета/);
+  });
+
+  it('allows development with published S3 credentials on localhost', () => {
+    expect(() =>
+      assertProductionSecurity({
+        NODE_ENV: Environment.Development,
+        S3_ENDPOINT: 'http://localhost:9000',
+        S3_ACCESS_KEY: 'nurtaxi',
+        S3_SECRET_KEY: 'nurtaxi123',
       }),
     ).not.toThrow();
   });

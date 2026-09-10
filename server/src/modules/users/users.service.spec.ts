@@ -8,6 +8,21 @@ import { UsersService } from './users.service';
 describe('UsersService', () => {
   let service: UsersService;
   const store = new Map<string, User>();
+  const storageMock = {
+    buildUserPhotoKey: jest.fn(
+      (userId: string, extension: string) => `users/${userId}/photo/1.${extension}`,
+    ),
+    createUploadUrl: jest.fn((params: { storageKey: string }) =>
+      Promise.resolve({
+        uploadUrl: 'https://s3/upload',
+        storageKey: params.storageKey,
+        expiresInSec: 900,
+      }),
+    ),
+    createDownloadUrl: jest.fn(() =>
+      Promise.resolve({ downloadUrl: 'https://s3/download', expiresInSec: 300 }),
+    ),
+  };
 
   const repoMock = {
     findOne: jest.fn(({ where }: { where: Partial<User> }) => {
@@ -34,11 +49,7 @@ describe('UsersService', () => {
         { provide: getRepositoryToken(User), useValue: repoMock },
         {
           provide: S3StorageService,
-          useValue: {
-            buildUserPhotoKey: jest.fn(),
-            createUploadUrl: jest.fn(),
-            createDownloadUrl: jest.fn(),
-          },
+          useValue: storageMock,
         },
       ],
     }).compile();
@@ -63,5 +74,40 @@ describe('UsersService', () => {
     const updated = await service.recordConsent(user.id, '1.0');
     expect(updated.pdnConsentAt).toBeInstanceOf(Date);
     expect(updated.pdnConsentVersion).toBe('1.0');
+  });
+
+  it('отклоняет presign фото с недопустимым типом', async () => {
+    const { user } = await service.findOrCreateClient('+79280000000');
+    await expect(
+      service.createPhotoUploadUrl(user.id, {
+        contentType: 'application/zip',
+        contentLength: 100,
+      }),
+    ).rejects.toMatchObject({ response: { code: 'INVALID_CONTENT_TYPE' } });
+  });
+
+  it('отклоняет presign фото больше лимита', async () => {
+    const { user } = await service.findOrCreateClient('+79280000000');
+    await expect(
+      service.createPhotoUploadUrl(user.id, {
+        contentType: 'image/jpeg',
+        contentLength: 9 * 1024 * 1024,
+      }),
+    ).rejects.toMatchObject({ response: { code: 'FILE_TOO_LARGE' } });
+  });
+
+  it('передаёт размер и тип в подпись S3', async () => {
+    const { user } = await service.findOrCreateClient('+79280000000');
+    await service.createPhotoUploadUrl(user.id, {
+      contentType: 'image/jpeg',
+      contentLength: 120_000,
+      fileName: 'avatar.jpg',
+    });
+    expect(storageMock.createUploadUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentType: 'image/jpeg',
+        contentLength: 120_000,
+      }),
+    );
   });
 });

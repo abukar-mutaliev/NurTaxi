@@ -26,6 +26,17 @@ export interface UploadFileOptions {
   timeoutMs?: number;
 }
 
+export async function getLocalFileSize(uri: string, reported?: number | null): Promise<number> {
+  if (typeof reported === 'number' && reported > 0) {
+    return reported;
+  }
+  const info = await FileSystem.getInfoAsync(uri);
+  if (info.exists && 'size' in info && typeof info.size === 'number' && info.size > 0) {
+    return info.size;
+  }
+  throw new Error('Не удалось определить размер файла');
+}
+
 /**
  * Кладёт файл по presigned URL методом PUT.
  * Бросает `UploadTimeoutError` по истечении времени и обычную ошибку на не-2xx ответ.

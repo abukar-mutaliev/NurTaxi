@@ -48,13 +48,12 @@ import type { WorkSchedule } from './entities/work-schedule.types';
 import { LedgerService } from '../payments/ledger.service';
 import { Payout } from '../payments/entities/payout.entity';
 import { TaxiRegistryService } from '../taxi-registry/taxi-registry.service';
-
-const CONTENT_TYPE_EXT: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'application/pdf': 'pdf',
-};
+import {
+  assertAllowedUpload,
+  DOCUMENT_CONTENT_TYPE_EXT,
+  DOCUMENT_CONTENT_TYPES,
+  DOCUMENT_MAX_BYTES,
+} from '../storage/upload-constraints';
 
 @Injectable()
 export class DriversService {
@@ -296,13 +295,26 @@ export class DriversService {
   async createDocumentUploadUrl(userId: string, dto: PresignDocumentDto) {
     const profile = await this.getProfileByUserId(userId);
     this.assertCanUploadDocuments(profile);
+    assertAllowedUpload(
+      dto.contentType,
+      dto.contentLength,
+      DOCUMENT_CONTENT_TYPES,
+      DOCUMENT_MAX_BYTES,
+      'JPEG, PNG, WebP, HEIC и PDF',
+    );
 
     const extension =
-      this.extensionFromFileName(dto.fileName) ?? CONTENT_TYPE_EXT[dto.contentType] ?? 'bin';
+      this.extensionFromFileName(dto.fileName) ??
+      DOCUMENT_CONTENT_TYPE_EXT[dto.contentType] ??
+      'bin';
 
     const storageKey = this.storage.buildDriverDocumentKey(profile.id, dto.type, extension);
 
-    return this.storage.createUploadUrl(storageKey, dto.contentType);
+    return this.storage.createUploadUrl({
+      storageKey,
+      contentType: dto.contentType,
+      contentLength: dto.contentLength,
+    });
   }
 
   /**

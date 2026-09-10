@@ -1,12 +1,29 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import {
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import type { TripRecording } from '../entities/trip-recording.entity';
+import { AUDIO_CONTENT_TYPES, AUDIO_MAX_BYTES } from '../../storage/upload-constraints';
 
 export class PresignTripRecordingDto {
-  @ApiProperty({ example: 'audio/mp4' })
-  @IsString()
-  @IsNotEmpty()
+  @ApiProperty({ example: 'audio/mp4', enum: AUDIO_CONTENT_TYPES })
+  @IsIn(AUDIO_CONTENT_TYPES)
   contentType!: string;
+
+  @ApiProperty({ example: 1_048_576, description: 'Размер файла в байтах' })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(AUDIO_MAX_BYTES)
+  contentLength!: number;
 
   @ApiPropertyOptional({ example: 'trip-recording.m4a' })
   @IsOptional()

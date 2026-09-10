@@ -10,16 +10,14 @@ import {
 } from './entities/user.entity';
 import { ConfirmProfilePhotoDto, PresignProfilePhotoDto } from './dto/profile-photo.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import {
+  assertAllowedUpload,
+  PHOTO_CONTENT_TYPE_EXT,
+  PHOTO_CONTENT_TYPES,
+  PHOTO_MAX_BYTES,
+} from '../storage/upload-constraints';
 
 export const CURRENT_CONSENT_VERSION = '1.0';
-
-const PHOTO_CONTENT_TYPE_EXT: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
-
-const ALLOWED_PHOTO_CONTENT_TYPES = new Set(Object.keys(PHOTO_CONTENT_TYPE_EXT));
 
 @Injectable()
 export class UsersService {
@@ -82,19 +80,23 @@ export class UsersService {
 
   async createPhotoUploadUrl(userId: string, dto: PresignProfilePhotoDto) {
     await this.getByIdOrThrow(userId);
-
-    if (!ALLOWED_PHOTO_CONTENT_TYPES.has(dto.contentType)) {
-      throw new BadRequestException({
-        code: 'INVALID_CONTENT_TYPE',
-        message: 'Допустимы только JPEG, PNG и WebP',
-      });
-    }
+    assertAllowedUpload(
+      dto.contentType,
+      dto.contentLength,
+      PHOTO_CONTENT_TYPES,
+      PHOTO_MAX_BYTES,
+      'JPEG, PNG, WebP и HEIC',
+    );
 
     const extension =
       this.extensionFromFileName(dto.fileName) ?? PHOTO_CONTENT_TYPE_EXT[dto.contentType] ?? 'jpg';
     const storageKey = this.storage.buildUserPhotoKey(userId, extension);
 
-    return this.storage.createUploadUrl(storageKey, dto.contentType);
+    return this.storage.createUploadUrl({
+      storageKey,
+      contentType: dto.contentType,
+      contentLength: dto.contentLength,
+    });
   }
 
   async confirmPhotoUpload(userId: string, dto: ConfirmProfilePhotoDto): Promise<User> {

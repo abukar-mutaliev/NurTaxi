@@ -273,6 +273,17 @@ describe('DriversService', () => {
     expect(status).toBe(VerificationStatus.Pending);
   });
 
+  it('не выдаёт presign на файл неизвестного типа', async () => {
+    await service.register(userId, registerDto);
+    await expect(
+      service.createDocumentUploadUrl(userId, {
+        type: DocumentType.Passport,
+        contentType: 'application/zip',
+        contentLength: 1024,
+      }),
+    ).rejects.toMatchObject({ response: { code: 'INVALID_CONTENT_TYPE' } });
+  });
+
   describe('разрешение на деятельность такси', () => {
     const permit = {
       number: 'АА-06-001234',

@@ -1,6 +1,13 @@
 #!/bin/sh
-# Pre-commit для мобильного трека (M0.2): линт и проверка типов только если изменён mobile/.
+# Pre-commit: секреты во всём репозитории, затем линт мобильного трека (M0.2).
 set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "[pre-commit] gitleaks"
+  gitleaks protect --staged --source "$REPO_ROOT" --config "$REPO_ROOT/.gitleaks.toml" --redact
+fi
 
 CHANGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^mobile/.*\.(ts|tsx)$' || true)
 

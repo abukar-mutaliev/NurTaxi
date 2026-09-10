@@ -10,18 +10,39 @@ docker compose --profile observability up -d      # + Prometheus, Grafana, OTel 
 
 | Сервис | Адрес | Доступ |
 |--------|-------|--------|
-| PostgreSQL + PostGIS | `localhost:5433` | nurtaxi / nurtaxi |
-| Redis | `localhost:6380` | — |
-| NATS | `localhost:4222` (мониторинг `:8222`) | — |
-| MinIO (S3) | API `:9000`, консоль `:9001` | nurtaxi / nurtaxi123 |
-| Prometheus | `localhost:9090` | — |
-| Grafana | `localhost:3001` | admin / admin |
+| PostgreSQL + PostGIS | `127.0.0.1:5433` | локальные заглушки в compose |
+| Redis | `127.0.0.1:6380` | — |
+| NATS | `127.0.0.1:4222` (мониторинг `:8222`) | — |
+| MinIO (S3) | API `:9000`, консоль только `127.0.0.1:9001` | заглушки в compose; на сервере свои `MINIO_ROOT_*` |
+| Prometheus | `127.0.0.1:9090` | — |
+| Grafana | `127.0.0.1:3001` | локальная заглушка |
 
-> Пароли в таблице — только для локальной машины, и этот `docker-compose.yml` рассчитан
-> именно на неё. На сервере задайте `MINIO_ROOT_USER` и `MINIO_ROOT_PASSWORD` своими
-> значениями: в бакете лежат паспорта и водительские удостоверения, а консоль MinIO
-> с паролем по умолчанию отдаёт их любому, кто до неё дотянется. Консоль (`:9001`)
-> намеренно слушает только `127.0.0.1` — наружу её выпускать не нужно никогда.
+> Этот `docker-compose.yml` — только для своей машины. На сервере с белым IP
+> поднимайте вместе с `docker-compose.prod.yml`, иначе Postgres/Redis/NATS/MinIO
+> слушают интернет. Пароли из compose и `.env.example` давно в git: если они
+> ещё стоят на сервере, их нужно сменить, а не «закрыть порт и забыть».
+> Консоль MinIO (`:9001`) наружу не выпускать никогда.
+
+### Сервер с белым IP (сделать сразу)
+
+В бакете лежат паспорта и права водителей. Сейчас снаружи открыты `:9000`/`:9001`
+и порты БД. После `git pull`:
+
+```bash
+cd /var/www/test-app/NurTaxi/infra
+cp .env.example .env          # задайте СВОИ MINIO_ROOT_USER и MINIO_ROOT_PASSWORD
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Docker сам прописывает iptables и часто обходит ufw — закрывает bind 127.0.0.1 выше.
+# ufw deny здесь только страховка на случай старого маппинга 0.0.0.0:
+ufw deny 9000; ufw deny 9001; ufw deny 5433; ufw deny 6380; ufw deny 4222; ufw deny 8222
+```
+
+В `server/.env` те же ключи: `S3_ACCESS_KEY` / `S3_SECRET_KEY`,
+`S3_ENDPOINT=http://127.0.0.1:9000`,
+`S3_PUBLIC_ENDPOINT=https://taxi.rulplus.ru/s3`.
+В nginx сайта подключите `infra/nginx/s3-proxy.conf`, затем `nginx -t && systemctl reload nginx`
+и перезапуск API. Пока ключи из репозитория и публичный адрес хранилища совпадают,
+backend отказывается стартовать.
 
 ### Адрес хранилища для мобильных приложений
 

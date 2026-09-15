@@ -29,6 +29,7 @@ import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
 import { useAppSelector } from '@/app/store/hooks';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { WelcomeGradientBackground } from '../../welcome-screen/ui/welcome-gradient-background';
 import { CodeOtpInput } from './code-otp-input';
@@ -282,7 +283,6 @@ export function CodeScreen() {
               {
                 borderRadius: sx(29),
                 height: sx(58),
-                shadowColor: codeColors.buttonShadow,
               },
             ]}
           >
@@ -301,9 +301,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 9,
+    ...glassShadow({ color: codeColors.buttonShadow, offset: { width: 0, height: 6 }, radius: 9 }),
   },
   buttonText: {
     color: codeColors.buttonText,

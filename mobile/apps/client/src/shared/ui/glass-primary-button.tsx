@@ -3,6 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
 
 export interface GlassPrimaryButtonProps {
@@ -83,7 +84,6 @@ export function GlassPrimaryButton({
           {
             borderRadius: scale * 29,
             height: scale * 58,
-            shadowColor: GLASS_COLORS.buttonShadow,
           },
         ]}
       >
@@ -98,9 +98,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 9,
+    ...glassShadow({
+      color: GLASS_COLORS.buttonShadow,
+      offset: { width: 0, height: 6 },
+      radius: 9,
+    }),
     width: '100%',
   },
   buttonText: {
@@ -113,10 +115,7 @@ const styles = StyleSheet.create({
     backgroundColor: GLASS_COLORS.error,
     elevation: 3,
     justifyContent: 'center',
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 9,
+    ...glassShadow({ color: GLASS_COLORS.shadow, offset: { width: 0, height: 6 }, radius: 9 }),
     width: '100%',
   },
   destructiveText: {
@@ -131,10 +130,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: GLASS_COLORS.shadow }),
     width: '100%',
   },
   secondaryText: {

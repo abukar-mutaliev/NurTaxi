@@ -14,6 +14,7 @@ import { Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { GlassAddIconButton, GlassConfirmDialog, GlassScreenHeader } from '@/shared/ui';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welcome-gradient-background';
 import { PaymentMethodCard, type PaymentCardBrand } from './payment-method-card';
@@ -229,10 +230,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
     justifyContent: 'center',
-    shadowColor: colors.buttonShadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 9,
+    ...glassShadow({ color: colors.buttonShadow, offset: { width: 0, height: 6 }, radius: 9 }),
   },
   addButtonText: {
     color: colors.buttonText,

@@ -21,4 +21,11 @@ export const STAFF_ROLES: Role[] = [
   Role.Regulator,
 ];
 
+/**
+ * Пассажирский сценарий (оценка, заказ, история, SOS).
+ * Роль в БД одна: после анкеты водителя пользователь становится `driver` и иначе
+ * не сможет заказать поездку из клиентского приложения с того же телефона.
+ */
+export const PASSENGER_ROLES: Role[] = [Role.Client, Role.Driver];
+
 export const MUTATING_STAFF_ROLES: Role[] = [Role.Operator, Role.RegionalAdmin, Role.SuperAdmin];

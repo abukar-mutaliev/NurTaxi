@@ -131,7 +131,8 @@ describe('OrdersService', () => {
         {
           provide: DriversService,
           useValue: {
-            getOnlineDriverIds: jest.fn().mockResolvedValue([]),
+            getOnlineDriverIds: jest.fn().mockResolvedValue(new Set()),
+            findProfileByUserId: jest.fn().mockResolvedValue(null),
             getProfileByUserId: jest.fn(),
             markBusy: jest.fn(),
             markOnlineAfterTrip: jest.fn(),
@@ -216,5 +217,23 @@ describe('OrdersService', () => {
       pickupAddress: 'г. Назрань, ул. Московская, 12',
       dropoffAddress: 'Магас',
     });
+  });
+
+  it('водитель видит заказ, в котором он пассажир', async () => {
+    const stored = {
+      id: 'order-3',
+      clientId: 'driver-user-1',
+      pickupLat: 43.2189,
+      pickupLng: 44.771,
+      pickupAddress: 'Назрань',
+      dropoffLat: 43.1667,
+      dropoffLng: 44.8,
+      dropoffAddress: 'Магас',
+    };
+    repoMock.findOneOrFail.mockResolvedValue(stored);
+
+    const order = await service.getOrderForUser('driver-user-1', 'order-3', 'driver');
+
+    expect(order.clientId).toBe('driver-user-1');
   });
 });

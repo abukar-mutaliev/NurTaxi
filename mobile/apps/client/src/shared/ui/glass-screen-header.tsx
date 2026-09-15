@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from './glass-shadow';
+
 const colors = {
   glassBg: 'rgba(255,255,255,0.85)',
   glassBorder: 'rgba(255,255,255,0.9)',
@@ -63,10 +65,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     height: 44,
     justifyContent: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
     width: 44,
   },
   backIcon: {

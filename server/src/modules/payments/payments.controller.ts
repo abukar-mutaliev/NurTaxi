@@ -14,7 +14,7 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/auth/roles.decorator';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
-import { Role } from '../../common/enums/role.enum';
+import { PASSENGER_ROLES, Role } from '../../common/enums/role.enum';
 import { PaymentsService } from './payments.service';
 import { PayoutService } from './payout.service';
 import { PayoutResponse, ReceiptResponse, RequestPayoutDto } from './dto/payments.dto';
@@ -30,7 +30,7 @@ export class PaymentsController {
   ) {}
 
   @Get('orders/:id/receipt')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Электронный чек по поездке (Req §8.13, §22)' })
   async getReceipt(
     @CurrentUser() user: AuthenticatedUser,

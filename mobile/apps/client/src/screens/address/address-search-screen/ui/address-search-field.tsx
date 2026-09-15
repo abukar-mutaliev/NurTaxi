@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 const colors = {
   cardBg: 'rgba(255,255,255,0.82)',
   cardBorder: 'rgba(255,255,255,0.9)',
@@ -117,10 +119,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   fieldActive: {
     borderColor: colors.cardBorderActive,

@@ -81,6 +81,10 @@ export class DriversService {
     return this.regionsService.listActiveRegions();
   }
 
+  findProfileByUserId(userId: string): Promise<DriverProfile | null> {
+    return this.drivers.findOne({ where: { userId }, select: ['id', 'userId'] });
+  }
+
   async getProfileByUserId(userId: string): Promise<DriverProfile> {
     const profile = await this.drivers.findOne({
       where: { userId },

@@ -21,6 +21,8 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
+
+import { glassShadow } from '@/shared/ui/glass-shadow';
 import { useOnboarding } from '@nurtaxi/shared-core/features/auth';
 
 import { WelcomeGradientBackground } from '../../welcome-screen/ui/welcome-gradient-background';
@@ -148,7 +150,6 @@ export function OnboardingScreen() {
                   borderRadius: sx(18),
                   height: sx(58),
                   paddingHorizontal: sx(21),
-                  shadowColor: onboardingColors.inputShadow,
                 },
               ]}
             >
@@ -256,7 +257,6 @@ export function OnboardingScreen() {
               {
                 borderRadius: sx(29),
                 height: sx(58),
-                shadowColor: onboardingColors.buttonShadow,
               },
             ]}
           >
@@ -280,9 +280,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 9,
+    ...glassShadow({
+      color: onboardingColors.buttonShadow,
+      offset: { width: 0, height: 6 },
+      radius: 9,
+    }),
   },
   buttonText: {
     color: onboardingColors.buttonText,
@@ -314,10 +316,7 @@ const styles = StyleSheet.create({
     backgroundColor: onboardingColors.cardBg,
     borderWidth: 1,
     elevation: 2,
-    shadowColor: onboardingColors.cardShadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: onboardingColors.cardShadow }),
   },
   consentText: {
     color: onboardingColors.consentText,
@@ -362,9 +361,7 @@ const styles = StyleSheet.create({
   inputShell: {
     borderWidth: 1,
     elevation: 2,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: onboardingColors.inputShadow }),
     width: '100%',
   },
   layer: {

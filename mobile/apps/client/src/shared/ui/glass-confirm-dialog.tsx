@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
 import { GlassPrimaryButton, type GlassPrimaryButtonProps } from './glass-primary-button';
 
@@ -146,10 +147,7 @@ const styles = StyleSheet.create({
     borderColor: GLASS_COLORS.cardBorder,
     borderWidth: 1,
     elevation: 8,
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 1,
-    shadowRadius: 24,
+    ...glassShadow({ color: GLASS_COLORS.shadow, offset: { width: 0, height: 12 }, radius: 24 }),
     width: '100%',
   },
   dialogWrap: {

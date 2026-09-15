@@ -23,6 +23,8 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 import { WelcomeGradientBackground } from '../../welcome-screen/ui/welcome-gradient-background';
 
 const DESIGN_WIDTH = 390;
@@ -203,7 +205,6 @@ export function PhoneScreen() {
               gap: sx(14),
               height: sx(58),
               paddingHorizontal: sx(21),
-              shadowColor: phoneColors.inputShadow,
             },
           ]}
         >
@@ -285,7 +286,6 @@ export function PhoneScreen() {
               {
                 borderRadius: sx(29),
                 height: sx(58),
-                shadowColor: phoneColors.buttonShadow,
               },
             ]}
           >
@@ -304,9 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 3,
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 9,
+    ...glassShadow({ color: phoneColors.buttonShadow, offset: { width: 0, height: 6 }, radius: 9 }),
   },
   buttonText: {
     color: phoneColors.buttonText,
@@ -348,9 +346,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: phoneColors.inputShadow }),
     width: '100%',
   },
   layer: {

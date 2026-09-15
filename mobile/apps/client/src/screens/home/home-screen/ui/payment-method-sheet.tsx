@@ -6,6 +6,7 @@ import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassCard } from '@/shared/ui';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { PaymentMethodIcon } from './payment-method-icon';
 
@@ -135,10 +136,7 @@ const styles = StyleSheet.create({
     borderColor: GLASS_COLORS.cardBorder,
     borderTopWidth: 1,
     elevation: 8,
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 1,
-    shadowRadius: 24,
+    ...glassShadow({ color: GLASS_COLORS.shadow, offset: { width: 0, height: -8 }, radius: 24 }),
   },
   root: {
     flex: 1,

@@ -14,14 +14,14 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/auth/roles.decorator';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
-import { Role } from '../../common/enums/role.enum';
+import { PASSENGER_ROLES } from '../../common/enums/role.enum';
 import { FamilyService } from './family.service';
 import { AddFamilyMemberDto, ConfirmFamilyDto, FamilyMemberResponse } from './dto/family.dto';
 
 @ApiTags('family')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.Client)
+@Roles(...PASSENGER_ROLES)
 @Controller('me/family')
 export class FamilyController {
   constructor(private readonly familyService: FamilyService) {}

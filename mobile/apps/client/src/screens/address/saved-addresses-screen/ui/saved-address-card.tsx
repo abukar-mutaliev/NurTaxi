@@ -2,6 +2,8 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 import type { SavedAddressLabelKind } from './saved-address-label';
 import { SavedAddressIcon } from './saved-address-icon';
 
@@ -84,10 +86,7 @@ const styles = StyleSheet.create({
     minHeight: 84,
     paddingHorizontal: 19,
     paddingVertical: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   chevron: {
     color: colors.chevron,

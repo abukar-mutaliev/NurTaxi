@@ -4,6 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const colors = {
@@ -94,10 +96,7 @@ const styles = StyleSheet.create({
     gap: 14,
     height: 66,
     paddingHorizontal: 17,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   title: {
     color: colors.title,

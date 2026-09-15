@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 export type PaymentCardBrand = 'visa' | 'mastercard';
 
 const colors = {
@@ -145,10 +147,7 @@ const styles = StyleSheet.create({
     minHeight: 84,
     paddingHorizontal: 18,
     paddingVertical: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   cardPrimary: {
     borderColor: colors.cardBorderPrimary,

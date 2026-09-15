@@ -213,7 +213,11 @@ export class OrdersService {
 
   private async startMatching(orderId: string): Promise<void> {
     const order = await this.getOrderOrThrow(orderId);
-    const onlineIds = await this.driversService.getOnlineDriverIds(order.regionId);
+    const onlineIds = new Set(await this.driversService.getOnlineDriverIds(order.regionId));
+    const selfDriver = await this.driversService.findProfileByUserId(order.clientId);
+    if (selfDriver) {
+      onlineIds.delete(selfDriver.id);
+    }
 
     const candidates = await this.matching.findCandidates(
       order.regionId,
@@ -333,6 +337,13 @@ export class OrdersService {
       throw new ConflictException({
         code: 'ORDER_NOT_AVAILABLE',
         message: 'Заказ недоступен для принятия',
+      });
+    }
+
+    if (order.clientId === driverUserId) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Нельзя принять свой заказ',
       });
     }
 
@@ -532,7 +543,12 @@ export class OrdersService {
   ): Promise<Order> {
     const order = await this.loadFullOrder(orderId);
 
-    if (role === 'client' && order.clientId !== userId) {
+    // Водитель может ехать пассажиром: JWT-роль `driver` не закрывает свой заказ.
+    if (order.clientId === userId) {
+      return order;
+    }
+
+    if (role === 'client') {
       throw new ForbiddenException({ code: 'FORBIDDEN', message: 'Нет доступа к заказу' });
     }
 

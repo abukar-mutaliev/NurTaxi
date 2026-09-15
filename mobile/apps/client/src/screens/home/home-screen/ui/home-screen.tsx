@@ -53,6 +53,7 @@ import { HomeOrderSheet } from './home-order-sheet';
 import { PaymentMethodSheet } from './payment-method-sheet';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const mapColors = {
   etaBadge: 'rgba(46,35,49,0.88)',
@@ -367,10 +368,7 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    shadowColor: 'rgba(89,71,31,0.06)',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: 'rgba(89,71,31,0.06)' }),
   },
   activeOrderSubtitle: {
     color: '#7A6E78',
@@ -389,10 +387,7 @@ const styles = StyleSheet.create({
     minWidth: 52,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    shadowColor: mapColors.etaShadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...glassShadow({ color: mapColors.etaShadow, offset: { width: 0, height: 3 }, radius: 10 }),
   },
   etaBadgeWrap: {
     left: 0,

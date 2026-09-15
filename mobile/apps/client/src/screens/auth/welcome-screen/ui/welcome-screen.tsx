@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 import { WelcomeGradientBackground } from './welcome-gradient-background';
 
 const DESIGN_WIDTH = 390;
@@ -162,7 +164,6 @@ export function WelcomeScreen() {
               borderColor: welcomeColors.buttonBorder,
               height: sx(60),
               opacity: pressed ? 0.92 : 1,
-              shadowColor: welcomeColors.shadow,
             },
           ]}
         >
@@ -220,9 +221,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: welcomeColors.shadow }),
   },
   primaryButtonText: {
     color: welcomeColors.buttonText,

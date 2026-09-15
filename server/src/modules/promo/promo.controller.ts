@@ -6,7 +6,7 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/auth/roles.decorator';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
-import { Role } from '../../common/enums/role.enum';
+import { PASSENGER_ROLES } from '../../common/enums/role.enum';
 import { PromoService } from './promo.service';
 
 class RedeemPromoDto {
@@ -22,7 +22,7 @@ class RedeemPromoDto {
 @ApiTags('promo')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.Client)
+@Roles(...PASSENGER_ROLES)
 @Controller('me/promo')
 export class PromoController {
   constructor(private readonly promoService: PromoService) {}

@@ -4,6 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 const headerColors = {
   glassBg: 'rgba(255,255,255,0.8)',
   glassBorder: 'rgba(255,255,255,0.9)',
@@ -96,10 +98,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
-    shadowColor: headerColors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: headerColors.shadow }),
   },
   iconButton: {
     height: 44,

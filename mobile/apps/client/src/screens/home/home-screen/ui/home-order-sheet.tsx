@@ -5,6 +5,8 @@ import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/m
 import { formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 import { PaymentMethodIcon } from './payment-method-icon';
 import { TariffIcon, resolveTariffIconVariant } from './tariff-icon';
 
@@ -289,10 +291,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     height: 48,
     justifyContent: 'center',
-    shadowColor: sheetColors.buttonShadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
+    ...glassShadow({ color: sheetColors.buttonShadow, offset: { width: 0, height: 4 }, radius: 8 }),
   },
   orderButtonText: {
     color: sheetColors.buttonText,
@@ -347,10 +346,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     paddingBottom: 10,
     paddingTop: 6,
-    shadowColor: sheetColors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
+    ...glassShadow({ color: sheetColors.shadow, radius: 16 }),
   },
   tariffBody: {
     alignItems: 'center',

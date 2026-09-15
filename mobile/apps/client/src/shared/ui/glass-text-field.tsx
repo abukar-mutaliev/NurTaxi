@@ -2,6 +2,7 @@ import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
 
 export interface GlassTextFieldProps extends Omit<TextInputProps, 'style'> {
@@ -79,10 +80,7 @@ const styles = StyleSheet.create({
     borderColor: GLASS_COLORS.inputBorder,
     borderWidth: 1,
     elevation: 2,
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: GLASS_COLORS.shadow }),
     width: '100%',
   },
 });

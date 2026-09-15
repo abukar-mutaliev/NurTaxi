@@ -41,6 +41,7 @@ import { Text } from '@nurtaxi/shared-core/shared/ui';
 import { MIN_GEO_QUERY_LENGTH, useSearchAddressesQuery } from '@nurtaxi/shared-core/entities/geo';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassPrimaryButton } from '@/shared/ui';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { AddressSuggestionsList } from './address-suggestions-list';
 import { geoLocationForSave, suggestionToGeoLocation } from './format-suggestion-address';
@@ -341,10 +342,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     elevation: 8,
     maxHeight: '92%',
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 1,
-    shadowRadius: 24,
+    ...glassShadow({ color: GLASS_COLORS.shadow, offset: { width: 0, height: -8 }, radius: 24 }),
   },
   root: {
     flex: 1,

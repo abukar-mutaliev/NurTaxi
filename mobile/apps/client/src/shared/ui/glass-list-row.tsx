@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
 
 export interface GlassListRowProps {
@@ -88,10 +89,7 @@ const styles = StyleSheet.create({
     minHeight: 72,
     paddingHorizontal: 17,
     paddingVertical: 16,
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: GLASS_COLORS.shadow }),
   },
   subtitle: {
     color: GLASS_COLORS.subtitle,

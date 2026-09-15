@@ -30,6 +30,7 @@ import {
 import { selectActiveOrderId } from '@/processes/order-flow';
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { GlassConfirmDialog, GlassScreenHeader } from '@/shared/ui';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welcome-gradient-background';
 
@@ -377,17 +378,11 @@ const styles = StyleSheet.create({
     elevation: 6,
     justifyContent: 'center',
     position: 'absolute',
-    shadowColor: colors.panicShadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
+    ...glassShadow({ color: colors.panicShadow, radius: 16 }),
   },
   panicCard: {
     overflow: 'hidden',
-    shadowColor: 'rgba(89,71,31,0.08)',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 26,
+    ...glassShadow({ color: 'rgba(89,71,31,0.08)', radius: 26 }),
   },
   panicGlow: {
     backgroundColor: colors.panicGlow,

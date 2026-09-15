@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 const colors = {
   overlay: 'rgba(248,244,239,0.72)',
   glassBg: 'rgba(255,255,255,0.8)',
@@ -219,10 +221,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     height: 44,
     justifyContent: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
     width: 44,
   },
   backIcon: {
@@ -244,10 +243,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 180,
     paddingHorizontal: 24,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   cancelText: {
     color: colors.subtitle,
@@ -272,10 +268,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 3,
     justifyContent: 'center',
-    shadowColor: 'rgba(247,220,168,0.45)',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
+    ...glassShadow({ color: 'rgba(247,220,168,0.45)', radius: 16 }),
     zIndex: 2,
   },
   footer: {

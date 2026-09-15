@@ -5,6 +5,8 @@ import { formatRating } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 const colors = {
   glassBg: 'rgba(255,255,255,0.8)',
   glassBorder: 'rgba(255,255,255,0.9)',
@@ -290,10 +292,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 4,
     paddingBottom: 19,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   etaBadge: {
     backgroundColor: colors.etaBadge,
@@ -301,10 +300,7 @@ const styles = StyleSheet.create({
     minWidth: 52,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    shadowColor: colors.etaShadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...glassShadow({ color: colors.etaShadow, offset: { width: 0, height: 3 }, radius: 10 }),
   },
   etaText: {
     color: '#FFFFFF',
@@ -322,10 +318,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glassBorder,
     borderWidth: 1,
     elevation: 2,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   centerSlot: {
     flex: 1,
@@ -396,10 +389,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 19,
     paddingVertical: 18,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   safetyIconInner: {
     backgroundColor: colors.safetyIconInner,

@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 const colors = {
   cellBg: 'rgba(255,255,255,0.72)',
   cellBorder: 'rgba(255,255,255,0.9)',
@@ -71,7 +73,6 @@ export function CodeOtpInput({
                       : colors.cellBorder,
                   borderRadius: cellRadius,
                   height: cellSize,
-                  shadowColor: colors.shadow,
                   width: cellSize,
                 },
               ]}
@@ -109,9 +110,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   cellText: {
     color: colors.text,

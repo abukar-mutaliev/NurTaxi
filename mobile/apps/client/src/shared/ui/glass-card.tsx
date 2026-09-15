@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
+import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
 
 export interface GlassCardProps {
@@ -30,9 +31,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    shadowColor: GLASS_COLORS.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: GLASS_COLORS.shadow }),
   },
 });

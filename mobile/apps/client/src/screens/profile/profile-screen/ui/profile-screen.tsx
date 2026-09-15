@@ -18,6 +18,7 @@ import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welco
 import { ProfileMenuRow } from './profile-menu-row';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
   background: '#F8F4EF',
@@ -230,10 +231,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     height: 58,
     justifyContent: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   logoutText: {
     color: colors.logoutText,

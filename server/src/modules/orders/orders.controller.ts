@@ -14,7 +14,7 @@ import { RolesGuard } from '../../common/auth/roles.guard';
 import { Roles } from '../../common/auth/roles.decorator';
 import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
-import { Role } from '../../common/enums/role.enum';
+import { PASSENGER_ROLES, Role } from '../../common/enums/role.enum';
 import { CancelOrderDto, CreateOrderDto, GeoLocationDto, OrderEstimateDto } from './dto/orders.dto';
 import {
   ConfirmTripRecordingDto,
@@ -41,14 +41,14 @@ export class OrdersController {
   ) {}
 
   @Post('estimate')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Расчёт маршрута и стоимости (Req §8.10)' })
   estimate(@Body() dto: OrderEstimateDto): Promise<OrderEstimateResponse> {
     return this.ordersService.estimate(dto);
   }
 
   @Post()
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Создание заказа (Req §8.10, §8.11)' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
@@ -59,7 +59,7 @@ export class OrdersController {
   }
 
   @Get('history')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'История поездок клиента (Req §8.13)' })
   async history(
     @CurrentUser() user: AuthenticatedUser,
@@ -93,7 +93,7 @@ export class OrdersController {
   }
 
   @Post(':id/sos')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Активация SOS (Req §8.7)' })
   async activateSos(
     @CurrentUser() user: AuthenticatedUser,
@@ -113,7 +113,7 @@ export class OrdersController {
   }
 
   @Get(':id/recordings')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Список аудиозаписей поездки' })
   async listRecordings(
     @CurrentUser() user: AuthenticatedUser,
@@ -124,7 +124,7 @@ export class OrdersController {
   }
 
   @Post(':id/recordings/presign')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Presigned URL для загрузки аудиозаписи поездки' })
   async presignRecording(
     @CurrentUser() user: AuthenticatedUser,
@@ -135,7 +135,7 @@ export class OrdersController {
   }
 
   @Post(':id/recordings/confirm')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Подтверждение загрузки аудиозаписи поездки' })
   async confirmRecording(
     @CurrentUser() user: AuthenticatedUser,
@@ -147,7 +147,7 @@ export class OrdersController {
   }
 
   @Post(':id/review')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Оценка и отзыв (Req §8.14)' })
   async review(
     @CurrentUser() user: AuthenticatedUser,
@@ -159,7 +159,7 @@ export class OrdersController {
   }
 
   @Post(':id/cancel')
-  @Roles(Role.Client)
+  @Roles(...PASSENGER_ROLES)
   @ApiOperation({ summary: 'Отмена заказа клиентом (Req §8.12)' })
   async cancel(
     @CurrentUser() user: AuthenticatedUser,

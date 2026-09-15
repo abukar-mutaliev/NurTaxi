@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { GlassTabBar } from '@/widgets/tab-bar';
@@ -20,7 +21,10 @@ export default function TabsLayout() {
           borderTopWidth: 0,
           elevation: 0,
           position: 'absolute',
-          shadowOpacity: 0,
+          ...Platform.select({
+            web: { boxShadow: 'none' },
+            default: { shadowOpacity: 0 },
+          }),
         },
       }}
       tabBar={(props) => <GlassTabBar {...props} />}

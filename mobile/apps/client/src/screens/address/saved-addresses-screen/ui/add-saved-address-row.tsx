@@ -2,6 +2,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { glassShadow } from '@/shared/ui/glass-shadow';
+
 const colors = {
   cardBg: 'rgba(255,255,255,0.62)',
   cardBorder: 'rgba(201,154,84,0.35)',
@@ -45,10 +47,7 @@ const styles = StyleSheet.create({
     gap: 16,
     minHeight: 72,
     paddingHorizontal: 20,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...glassShadow({ color: colors.shadow }),
   },
   iconOuter: {
     alignItems: 'center',

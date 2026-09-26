@@ -20,7 +20,11 @@ export {
   selectOrderDraft,
   tariffSelected,
 } from './model/order-draft.slice';
-export { canSubmitOrderExtras, extrasFromDraft } from './model/order-draft.extras';
+export {
+  canSubmitOrderExtras,
+  extrasFromDraft,
+  isUnknownOrderExtrasError,
+} from './model/order-draft.extras';
 export type { OrderDraftState, WithOrderDraftState } from './model/order-draft.slice';
 export {
   buildRecentAddress,

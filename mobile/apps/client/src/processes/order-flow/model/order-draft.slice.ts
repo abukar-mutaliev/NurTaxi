@@ -103,6 +103,10 @@ export const orderDraftSlice = createSlice({
         state.passengerName = '';
         state.passengerPhone = '';
         state.familyMemberId = null;
+        return;
+      }
+      if (!state.passengerPhone.trim()) {
+        state.passengerPhone = '+7 ';
       }
     },
     passengerNameChanged(state, action: PayloadAction<string>) {

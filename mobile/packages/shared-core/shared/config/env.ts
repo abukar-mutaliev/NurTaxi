@@ -18,7 +18,7 @@ export interface AppConfigExtra {
   wsUrl?: string;
   /** Таймаут одиночного HTTP-запроса, мс. */
   requestTimeoutMs: number;
-  /** Включает подробное логирование сети и Redux. Никогда не включать в production. */
+  /** Сохранён в конфиге. Запросы API в консоль не пишутся. */
   debugNetwork: boolean;
   /** Публичный ключ MapKit для runtime-инициализации (`initialize`). */
   yandexMapKitApiKey?: string;

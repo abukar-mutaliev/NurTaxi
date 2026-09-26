@@ -25,6 +25,16 @@ export interface MapCenterButtonProps {
 export function MapCenterButton({ onPress, bottomInset, disabled = false }: MapCenterButtonProps) {
   const { t } = useTranslation();
   const keyboardHeight = useSharedValue(0);
+  const restBottom = useSharedValue(bottomInset);
+  const disabledOpacity = useSharedValue(disabled ? 0.45 : 1);
+
+  useEffect(() => {
+    restBottom.value = bottomInset;
+  }, [bottomInset, restBottom]);
+
+  useEffect(() => {
+    disabledOpacity.value = disabled ? 0.45 : 1;
+  }, [disabled, disabledOpacity]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -48,8 +58,8 @@ export function MapCenterButton({ onPress, bottomInset, disabled = false }: MapC
   }, [keyboardHeight]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    bottom: Math.max(bottomInset, keyboardHeight.value) + FLOAT_GAP,
-    opacity: disabled ? 0.45 : 1,
+    bottom: Math.max(restBottom.value, keyboardHeight.value) + FLOAT_GAP,
+    opacity: disabledOpacity.value,
     right: FLOAT_RIGHT,
   }));
 

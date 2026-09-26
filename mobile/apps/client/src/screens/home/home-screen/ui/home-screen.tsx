@@ -41,6 +41,7 @@ import {
   commentChanged,
   extrasFromDraft,
   familyMemberSelected,
+  isUnknownOrderExtrasError,
   orderForOtherChanged,
   passengerNameChanged,
   passengerPhoneChanged,
@@ -248,14 +249,31 @@ export function HomeScreen() {
       return;
     }
     setCreateError(null);
+    const payload = {
+      regionId: draft.regionId,
+      pickup: await resolveLocationForOrder(draft.pickup),
+      dropoff: await resolveLocationForOrder(draft.dropoff),
+      tariffId: draft.tariffId ?? undefined,
+      paymentMethod: draft.paymentMethod,
+    };
     try {
+      try {
+        const order = await createOrder({
+          ...payload,
+          ...extrasFromDraft(draft),
+        }).unwrap();
+        dispatch(activeOrderChanged(order.id));
+        router.push(`/order/${order.id}`);
+        return;
+      } catch (cause) {
+        const appError = toAppError(cause as never);
+        if (!isUnknownOrderExtrasError(appError)) {
+          throw cause;
+        }
+      }
       const order = await createOrder({
-        regionId: draft.regionId,
-        pickup: await resolveLocationForOrder(draft.pickup),
-        dropoff: await resolveLocationForOrder(draft.dropoff),
-        tariffId: draft.tariffId ?? undefined,
-        paymentMethod: draft.paymentMethod,
-        ...extrasFromDraft(draft),
+        ...payload,
+        ...extrasFromDraft(draft, 'legacy'),
       }).unwrap();
       dispatch(activeOrderChanged(order.id));
       router.push(`/order/${order.id}`);

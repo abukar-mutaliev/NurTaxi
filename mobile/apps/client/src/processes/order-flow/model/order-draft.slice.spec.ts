@@ -60,4 +60,10 @@ describe('order extras', () => {
     expect(cleared.passengerPhone).toBe('');
     expect(cleared.familyMemberId).toBeNull();
   });
+
+  it('подставляет маску телефона при включении «заказать другому»', () => {
+    const next = orderDraftReducer(undefined, orderForOtherChanged(true));
+    expect(next.orderForOther).toBe(true);
+    expect(next.passengerPhone).toBe('+7 ');
+  });
 });

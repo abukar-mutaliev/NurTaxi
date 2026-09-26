@@ -25,8 +25,6 @@ import { createIdempotencyKey } from './idempotency';
 import { sessionTokensRefreshed, sessionUnauthorized } from './session-events';
 import { API_TAGS } from './tags';
 
-const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: appConfig.apiUrl,
   timeout: appConfig.requestTimeoutMs,
@@ -92,13 +90,6 @@ const baseQueryWithReauth: BaseQueryFn<
   FetchBaseQueryMeta
 > = async (args, api, extraOptions) => {
   let result = await rawBaseQuery(args, api, extraOptions);
-
-  const isMutation =
-    typeof args !== 'string' && args.method ? MUTATION_METHODS.has(args.method) : false;
-  if (appConfig.debugNetwork) {
-    const url = typeof args === 'string' ? args : args.url;
-    console.warn(`[api] ${isMutation ? 'mutation' : 'query'} ${url}`, result.error ?? 'ok');
-  }
 
   if (result.error?.status !== 401 || isAuthEndpoint(args)) {
     return result;

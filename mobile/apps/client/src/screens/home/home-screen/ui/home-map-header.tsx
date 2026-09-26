@@ -12,22 +12,15 @@ const headerColors = {
   icon: '#2E2331',
   shadow: 'rgba(89,71,31,0.06)',
   text: '#2E2331',
-  profileDot: '#E8C882',
 } as const;
 
 export interface HomeMapHeaderProps {
   searchLabel: string;
   onMenuPress: () => void;
   onSearchPress: () => void;
-  onLocationPress: () => void;
 }
 
-export function HomeMapHeader({
-  searchLabel,
-  onMenuPress,
-  onSearchPress,
-  onLocationPress,
-}: HomeMapHeaderProps) {
+export function HomeMapHeader({ searchLabel, onMenuPress, onSearchPress }: HomeMapHeaderProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -70,20 +63,7 @@ export function HomeMapHeader({
           </Pressable>
         </View>
 
-        <View style={[styles.sideSlot, styles.sideSlotRight]}>
-          <Pressable
-            accessibilityLabel={t('addresses.myLocation')}
-            accessibilityRole="button"
-            onPress={onLocationPress}
-            style={({ pressed }) => [
-              styles.glassButton,
-              styles.iconButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View style={styles.profileDot} />
-          </Pressable>
-        </View>
+        <View style={styles.sideSlot} />
       </View>
     </View>
   );
@@ -117,12 +97,6 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.88,
   },
-  profileDot: {
-    backgroundColor: headerColors.profileDot,
-    borderRadius: 999,
-    height: 16,
-    width: 16,
-  },
   root: {
     left: 0,
     paddingHorizontal: 22,
@@ -137,9 +111,6 @@ const styles = StyleSheet.create({
   sideSlot: {
     alignItems: 'flex-start',
     width: 44,
-  },
-  sideSlotRight: {
-    alignItems: 'flex-end',
   },
   centerSlot: {
     flex: 1,

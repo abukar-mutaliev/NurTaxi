@@ -94,6 +94,19 @@ export function IncomingOrderCard({
         ) : null}
       </View>
 
+      {offer.childSeat ? (
+        <Text tone="muted" variant="caption">
+          Детское кресло
+        </Text>
+      ) : null}
+
+      {offer.passengerName ? (
+        <Text tone="muted" variant="caption">
+          Пассажир: {offer.passengerName}
+          {offer.passengerPhone ? ` · ${offer.passengerPhone}` : ''}
+        </Text>
+      ) : null}
+
       {offer.comment ? (
         <Text tone="muted" variant="caption">
           Комментарий: {offer.comment}

@@ -177,7 +177,10 @@ export class OrdersService {
       status: OrderStatus.Created,
       priceEstimated: String(price.estimated),
       paymentMethod: dto.paymentMethod,
-      comment: dto.comment ?? null,
+      comment: dto.comment?.trim() || null,
+      childSeat: dto.childSeat ?? false,
+      passengerName: dto.passengerName?.trim() || null,
+      passengerPhone: dto.passengerPhone ?? null,
       familyMemberId: dto.familyMemberId ?? null,
       publicNumber: `NT-${String(next).padStart(8, '0')}`,
     });
@@ -281,6 +284,9 @@ export class OrdersService {
       price: Number(order.priceEstimated),
       paymentMethod: order.paymentMethod,
       comment: order.comment ?? null,
+      childSeat: order.childSeat ?? false,
+      passengerName: order.passengerName ?? null,
+      passengerPhone: order.passengerPhone ?? null,
       distanceM: route?.distanceM ?? null,
       durationS: route?.durationS ?? null,
     };

@@ -14,10 +14,17 @@ import { useCreateOrderMutation } from '@nurtaxi/shared-core/entities/order';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { useResolveLocationForOrder, useResolvedLocationAddress } from '@/features/address';
-import { useActiveOrderGuard, useOrderEstimate } from '@/features/order';
+import { useActiveOrderGuard, useOrderEstimate, OrderExtrasFields } from '@/features/order';
 import {
   activeOrderChanged,
+  canSubmitOrderExtras,
+  childSeatChanged,
   commentChanged,
+  extrasFromDraft,
+  familyMemberSelected,
+  orderForOtherChanged,
+  passengerNameChanged,
+  passengerPhoneChanged,
   paymentMethodSelected,
   selectOrderDraft,
 } from '@/processes/order-flow';
@@ -29,7 +36,6 @@ import {
   GlassPrimaryButton,
   GlassScreenShell,
   GlassSectionLabel,
-  GlassTextField,
 } from '@/shared/ui';
 
 const PAYMENT_METHODS = [PaymentMethod.Cash, PaymentMethod.Card] as const;
@@ -62,7 +68,7 @@ export function NewOrderScreen() {
   }
 
   const submit = async () => {
-    if (!draft.regionId || !draft.pickup || !draft.dropoff) {
+    if (!draft.regionId || !draft.pickup || !draft.dropoff || !canSubmitOrderExtras(draft)) {
       return;
     }
     setCreateError(null);
@@ -73,8 +79,7 @@ export function NewOrderScreen() {
         dropoff: await resolveLocationForOrder(draft.dropoff),
         tariffId: draft.tariffId ?? undefined,
         paymentMethod: draft.paymentMethod,
-        comment: draft.comment.trim() || undefined,
-        familyMemberId: draft.familyMemberId ?? undefined,
+        ...extrasFromDraft(draft),
       }).unwrap();
       dispatch(activeOrderChanged(order.id));
       router.replace(`/order/${order.id}`);
@@ -96,7 +101,7 @@ export function NewOrderScreen() {
     <GlassScreenShell
       footer={
         <GlassPrimaryButton
-          disabled={!estimate || isEstimating}
+          disabled={!estimate || isEstimating || !canSubmitOrderExtras(draft)}
           loading={createState.isLoading}
           loadingTitle={t('common.loading')}
           onPress={submit}
@@ -163,19 +168,43 @@ export function NewOrderScreen() {
         })}
       </View>
 
-      <GlassTextField
-        label={t('order.comment')}
-        multiline
-        numberOfLines={3}
-        onChangeText={(value) => dispatch(commentChanged(value))}
-        placeholder={t('order.commentPlaceholder')}
+      <OrderExtrasFields
+        childSeat={draft.childSeat}
+        comment={draft.comment}
+        familyMemberId={draft.familyMemberId}
+        onChildSeatChange={(value) => dispatch(childSeatChanged(value))}
+        onCommentChange={(value) => dispatch(commentChanged(value))}
+        onFamilyMemberSelect={(id, passenger) => {
+          if (id) {
+            dispatch(passengerNameChanged(passenger.name));
+            dispatch(passengerPhoneChanged(passenger.phone));
+          }
+          dispatch(familyMemberSelected(id));
+        }}
+        onOrderForOtherChange={(value) => dispatch(orderForOtherChanged(value))}
+        onPassengerNameChange={(value) => {
+          dispatch(passengerNameChanged(value));
+          dispatch(familyMemberSelected(null));
+        }}
+        onPassengerPhoneChange={(value) => {
+          dispatch(passengerPhoneChanged(value));
+          dispatch(familyMemberSelected(null));
+        }}
+        orderForOther={draft.orderForOther}
+        passengerName={draft.passengerName}
+        passengerPhone={draft.passengerPhone}
+        regionId={draft.regionId}
         scale={scale}
-        value={draft.comment}
       />
 
       {createError ? (
         <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
           {createError}
+        </Text>
+      ) : null}
+      {!canSubmitOrderExtras(draft) ? (
+        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+          {t('order.orderForOtherInvalid')}
         </Text>
       ) : null}
     </GlassScreenShell>

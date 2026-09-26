@@ -147,6 +147,15 @@ export class OrderResponse {
   @ApiPropertyOptional()
   comment!: string | null;
 
+  @ApiProperty()
+  childSeat!: boolean;
+
+  @ApiPropertyOptional()
+  passengerName!: string | null;
+
+  @ApiPropertyOptional()
+  passengerPhone!: string | null;
+
   @ApiPropertyOptional()
   familyMemberId!: string | null;
 
@@ -182,6 +191,9 @@ export class OrderResponse {
       cancellationFee: order.cancellationFee ? Number(order.cancellationFee) : null,
       paymentMethod: order.paymentMethod,
       comment: order.comment,
+      childSeat: order.childSeat ?? false,
+      passengerName: order.passengerName ?? null,
+      passengerPhone: order.passengerPhone ?? null,
       familyMemberId: order.familyMemberId,
       route: order.route ? RouteResponse.from(order.route) : null,
       tariff: order.tariff ? TariffSummaryResponse.from(order.tariff) : null,

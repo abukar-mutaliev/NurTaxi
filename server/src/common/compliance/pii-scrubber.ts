@@ -12,6 +12,10 @@ const INN_RE = /\b\d{10}(\d{2})?\b/g;
 
 const SENSITIVE_KEYS = new Set([
   'phone',
+  'passengerPhone',
+  'passenger_phone',
+  'passengerName',
+  'passenger_name',
   'fullName',
   'full_name',
   'name',
@@ -130,6 +134,8 @@ export const LOGGER_REDACT_PATHS = [
   'req.body.otp',
   'req.body.code',
   'req.body.phone',
+  'req.body.passengerPhone',
+  'req.body.passengerName',
   'req.body.token',
   'req.body.refreshToken',
   'req.body.fullName',
@@ -151,4 +157,6 @@ export const LOGGER_REDACT_PATHS = [
   '*.inn',
   '*.ogrn',
   '*.phone',
+  '*.passengerPhone',
+  '*.passengerName',
 ];

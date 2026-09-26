@@ -37,6 +37,9 @@ export interface Order {
   cancellationFee: number | null;
   paymentMethod: PaymentMethod;
   comment: string | null;
+  childSeat?: boolean;
+  passengerName?: string | null;
+  passengerPhone?: string | null;
   route: OrderRoute | null;
   driver: OrderDriver | null;
   createdAt: string;

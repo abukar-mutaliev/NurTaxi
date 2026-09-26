@@ -30,7 +30,7 @@ import {
   GlassPrimaryButton,
   GlassScreenHeader,
 } from '@/shared/ui';
-import { MapCanvas, type MapCanvasHandle, type MapMarker } from '@/widgets/map';
+import { MapCanvas, MapCenterButton, type MapCanvasHandle, type MapMarker } from '@/widgets/map';
 
 import { geoLocationForSave } from '../../saved-addresses-screen/ui/format-suggestion-address';
 import { SaveAddressSheet } from '../../saved-addresses-screen/ui/save-address-sheet';
@@ -59,6 +59,7 @@ export function AddressPickScreen() {
   const [saveAddressText, setSaveAddressText] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
+  const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
 
   const markers: MapMarker[] = selectedPoint
     ? [{ id: 'picked', point: selectedPoint, kind: field === 'pickup' ? 'pickup' : 'dropoff' }]
@@ -138,6 +139,13 @@ export function AddressPickScreen() {
     }
   };
 
+  const centerOnMyLocation = () => {
+    if (!position) {
+      return;
+    }
+    mapRef.current?.centerOn(position, 0.01);
+  };
+
   const title =
     mode === 'edit'
       ? t('addresses.pickOnMap')
@@ -168,6 +176,7 @@ export function AddressPickScreen() {
           </View>
 
           <View
+            onLayout={(event) => setBottomPanelHeight(event.nativeEvent.layout.height)}
             style={[
               styles.bottom,
               {
@@ -211,6 +220,12 @@ export function AddressPickScreen() {
               }
             />
           </View>
+
+          <MapCenterButton
+            bottomInset={bottomPanelHeight > 0 ? bottomPanelHeight : insets.bottom + scale * 16}
+            disabled={!position}
+            onPress={centerOnMyLocation}
+          />
         </View>
       </View>
 

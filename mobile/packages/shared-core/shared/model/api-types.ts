@@ -378,6 +378,9 @@ export interface OrderEstimate {
 export interface CreateOrderPayload extends OrderEstimatePayload {
   paymentMethod: PaymentMethod;
   comment?: string;
+  childSeat?: boolean;
+  passengerName?: string;
+  passengerPhone?: string;
   familyMemberId?: string;
 }
 
@@ -413,6 +416,9 @@ export interface Order {
   cancellationFee: number | null;
   paymentMethod: PaymentMethod;
   comment: string | null;
+  childSeat: boolean;
+  passengerName: string | null;
+  passengerPhone: string | null;
   familyMemberId: string | null;
   route: OrderRoute | null;
   tariff: TariffRef | null;
@@ -603,6 +609,9 @@ export interface DriverOrderOffer {
   price: number;
   paymentMethod: PaymentMethod;
   comment: string | null;
+  childSeat: boolean;
+  passengerName: string | null;
+  passengerPhone: string | null;
   distanceM: number | null;
   durationS: number | null;
 }

@@ -1,4 +1,9 @@
-import { orderDraftReducer, pickupSelected } from './order-draft.slice';
+import {
+  childSeatChanged,
+  orderDraftReducer,
+  orderForOtherChanged,
+  pickupSelected,
+} from './order-draft.slice';
 
 describe('pickupSelected', () => {
   const pickup = {
@@ -31,5 +36,28 @@ describe('pickupSelected', () => {
       lng: 44.77,
       address: 'Моё местоположение',
     });
+  });
+});
+
+describe('order extras', () => {
+  it('включает детское кресло', () => {
+    const next = orderDraftReducer(undefined, childSeatChanged(true));
+    expect(next.childSeat).toBe(true);
+  });
+
+  it('очищает пассажира при выключении «заказать другому»', () => {
+    const withPassenger = orderDraftReducer(undefined, orderForOtherChanged(true));
+    const filled = {
+      ...withPassenger,
+      passengerName: 'Амина',
+      passengerPhone: '+7 (928) 123-45-67',
+      familyMemberId: 'member-1',
+    };
+    const cleared = orderDraftReducer(filled, orderForOtherChanged(false));
+
+    expect(cleared.orderForOther).toBe(false);
+    expect(cleared.passengerName).toBe('');
+    expect(cleared.passengerPhone).toBe('');
+    expect(cleared.familyMemberId).toBeNull();
   });
 });

@@ -200,6 +200,15 @@ export function OrderDetailPage() {
               {order.comment ? (
                 <Descriptions.Item label="Комментарий">{order.comment}</Descriptions.Item>
               ) : null}
+              {order.childSeat ? (
+                <Descriptions.Item label="Детское кресло">Да</Descriptions.Item>
+              ) : null}
+              {order.passengerName ? (
+                <Descriptions.Item label="Пассажир">
+                  {order.passengerName}
+                  {order.passengerPhone ? ` · ${order.passengerPhone}` : ''}
+                </Descriptions.Item>
+              ) : null}
             </Descriptions>
           </Card>
         </Col>

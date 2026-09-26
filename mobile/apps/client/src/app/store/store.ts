@@ -83,6 +83,23 @@ const persistMigrations = createMigrate(
         },
       } as PersistedState;
     },
+    4: (state) => {
+      const persisted = state as (PersistedRootState & PersistedState) | undefined;
+      if (!persisted?.orderDraft) {
+        return state;
+      }
+
+      return {
+        ...persisted,
+        orderDraft: {
+          ...persisted.orderDraft,
+          childSeat: persisted.orderDraft.childSeat ?? false,
+          orderForOther: persisted.orderDraft.orderForOther ?? false,
+          passengerName: persisted.orderDraft.passengerName ?? '',
+          passengerPhone: persisted.orderDraft.passengerPhone ?? '',
+        },
+      } as PersistedState;
+    },
   },
   { debug: false },
 );
@@ -90,7 +107,7 @@ const persistMigrations = createMigrate(
 const persistedReducer = persistReducer(
   {
     key: 'nurtaxi.client',
-    version: 3,
+    version: 4,
     storage: persistStorage,
     whitelist: ['orderDraft', 'recentAddresses'],
     migrate: persistMigrations,

@@ -23,7 +23,7 @@ import {
 } from '../model/map-provider';
 import type { MapCanvasHandle, MapCanvasProps } from './map-canvas';
 import { DriverCarOverlay, type DriverCarOverlayHandle } from './driver-car-overlay';
-import { NativeMapMarker } from './native-map-marker';
+import { MapPinsOverlay, type MapPinsOverlayHandle } from './map-pins-overlay';
 
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 const ROUTE_STROKE_COLOR = '#C99A54';
@@ -52,6 +52,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
 ) {
   const mapRef = useRef<YandexMapViewRef>(null);
   const driverOverlayRef = useRef<DriverCarOverlayHandle>(null);
+  const pinsOverlayRef = useRef<MapPinsOverlayHandle>(null);
   const [mapSize, setMapSize] = useState({ height: 0, width: 0 });
 
   /** Камера задаётся один раз — иначе GPS-тики и смена маркеров сбрасывают zoom. */
@@ -98,6 +99,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
     void mapRef.current?.getCameraPosition().then((camera) => {
       if (camera) {
         driverOverlayRef.current?.setCamera(camera);
+        pinsOverlayRef.current?.setCamera(camera);
       }
     });
   }, []);
@@ -202,6 +204,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
         cameraPosition={initialCamera}
         onCameraPositionChanged={({ nativeEvent }) => {
           driverOverlayRef.current?.setCamera(nativeEvent.cameraPosition);
+          pinsOverlayRef.current?.setCamera(nativeEvent.cameraPosition);
         }}
         onMapPress={
           onPress
@@ -224,11 +227,14 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
             zIndex={1}
           />
         ) : null}
-
-        {pinMarkers.map((marker) => (
-          <NativeMapMarker key={marker.id} marker={marker} />
-        ))}
       </YandexMapView>
+
+      <MapPinsOverlay
+        initialCamera={initialCamera}
+        mapSize={mapSize}
+        markers={pinMarkers}
+        ref={pinsOverlayRef}
+      />
 
       {driverMarker ? (
         <DriverCarOverlay

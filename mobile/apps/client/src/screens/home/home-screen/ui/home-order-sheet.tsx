@@ -1,5 +1,14 @@
+import type { ReactNode } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+} from 'react-native';
 
 import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
@@ -60,6 +69,8 @@ export interface HomeOrderSheetProps {
   onTariffPress: (tariffId: string) => void;
   onPaymentPress: () => void;
   onOrder: () => void;
+  extras?: ReactNode;
+  onLayout?: (event: LayoutChangeEvent) => void;
 }
 
 function TariffCard({
@@ -126,6 +137,8 @@ export function HomeOrderSheet({
   onTariffPress,
   onPaymentPress,
   onOrder,
+  extras,
+  onLayout,
 }: HomeOrderSheetProps) {
   const { width: screenWidth } = useWindowDimensions();
   const showEstimate = estimate && selectedTariffId === estimate.tariff.id;
@@ -138,7 +151,11 @@ export function HomeOrderSheet({
       : Math.floor((tariffRowWidth - TARIFF_GAP * (tariffCount - 1)) / tariffCount);
 
   return (
-    <View pointerEvents="box-none" style={[styles.root, { paddingBottom: bottomInset }]}>
+    <View
+      onLayout={onLayout}
+      pointerEvents="box-none"
+      style={[styles.root, { paddingBottom: bottomInset }]}
+    >
       <View style={styles.sheet}>
         <View style={styles.addressBlock}>
           <Pressable onPress={onPickupPress} style={styles.addressRow}>
@@ -196,6 +213,12 @@ export function HomeOrderSheet({
           </Text>
           <Text style={styles.chevron}>›</Text>
         </Pressable>
+
+        {extras ? (
+          <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled style={styles.extras}>
+            {extras}
+          </ScrollView>
+        ) : null}
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -272,6 +295,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 19,
     paddingTop: 4,
     textAlign: 'center',
+  },
+  extras: {
+    maxHeight: 220,
   },
   loaderRow: {
     alignItems: 'center',

@@ -93,6 +93,15 @@ export class Order {
   @Column({ type: 'text', nullable: true })
   comment!: string | null;
 
+  @Column({ name: 'child_seat', type: 'boolean', default: false })
+  childSeat!: boolean;
+
+  @Column({ name: 'passenger_name', type: 'text', nullable: true })
+  passengerName!: string | null;
+
+  @Column({ name: 'passenger_phone', type: 'varchar', length: 16, nullable: true })
+  passengerPhone!: string | null;
+
   @Column({ name: 'family_member_id', type: 'uuid', nullable: true })
   familyMemberId!: string | null;
 

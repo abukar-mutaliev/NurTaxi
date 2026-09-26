@@ -72,6 +72,8 @@ export class RetentionService implements OnModuleInit, OnModuleDestroy {
           pickup_address = '[REDACTED]',
           dropoff_address = '[REDACTED]',
           comment = NULL,
+          passenger_name = NULL,
+          passenger_phone = NULL,
           assignment_snapshot = jsonb_set(
             COALESCE(assignment_snapshot, '{}'::jsonb),
             '{contacts}',

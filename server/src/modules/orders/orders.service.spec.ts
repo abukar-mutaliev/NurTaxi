@@ -190,6 +190,9 @@ describe('OrdersService', () => {
       expect.objectContaining({
         pickupAddress: 'г. Назрань, ул. Московская, 12',
         dropoffAddress: 'Магас',
+        childSeat: false,
+        passengerName: null,
+        passengerPhone: null,
       }),
     );
   });

@@ -26,6 +26,11 @@ export interface OrderDraftState {
   tariffId: string | null;
   paymentMethod: PaymentMethod;
   comment: string;
+  childSeat: boolean;
+  /** Поездка для другого пассажира: имя и телефон, не обязательно член семьи. */
+  orderForOther: boolean;
+  passengerName: string;
+  passengerPhone: string;
   /** Для заказа члену семьи (`M10.4`). */
   familyMemberId: string | null;
   /** Последний расчёт от сервера; сбрасывается при любом изменении маршрута. */
@@ -41,6 +46,10 @@ const initialState: OrderDraftState = {
   tariffId: null,
   paymentMethod: PaymentMethod.Cash,
   comment: '',
+  childSeat: false,
+  orderForOther: false,
+  passengerName: '',
+  passengerPhone: '',
   familyMemberId: null,
   estimate: null,
   activeOrderId: null,
@@ -85,6 +94,23 @@ export const orderDraftSlice = createSlice({
     commentChanged(state, action: PayloadAction<string>) {
       state.comment = action.payload;
     },
+    childSeatChanged(state, action: PayloadAction<boolean>) {
+      state.childSeat = action.payload;
+    },
+    orderForOtherChanged(state, action: PayloadAction<boolean>) {
+      state.orderForOther = action.payload;
+      if (!action.payload) {
+        state.passengerName = '';
+        state.passengerPhone = '';
+        state.familyMemberId = null;
+      }
+    },
+    passengerNameChanged(state, action: PayloadAction<string>) {
+      state.passengerName = action.payload;
+    },
+    passengerPhoneChanged(state, action: PayloadAction<string>) {
+      state.passengerPhone = action.payload;
+    },
     familyMemberSelected(state, action: PayloadAction<string | null>) {
       state.familyMemberId = action.payload;
     },
@@ -110,6 +136,10 @@ export const {
   tariffSelected,
   paymentMethodSelected,
   commentChanged,
+  childSeatChanged,
+  orderForOtherChanged,
+  passengerNameChanged,
+  passengerPhoneChanged,
   familyMemberSelected,
   estimateReceived,
   activeOrderChanged,

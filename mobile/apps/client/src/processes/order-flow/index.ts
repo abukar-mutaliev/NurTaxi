@@ -1,5 +1,6 @@
 export {
   activeOrderChanged,
+  childSeatChanged,
   commentChanged,
   dropoffSelected,
   estimateReceived,
@@ -7,6 +8,9 @@ export {
   orderDraftCleared,
   orderDraftReducer,
   orderDraftSlice,
+  orderForOtherChanged,
+  passengerNameChanged,
+  passengerPhoneChanged,
   paymentMethodSelected,
   pickupSelected,
   regionSelected,
@@ -16,6 +20,7 @@ export {
   selectOrderDraft,
   tariffSelected,
 } from './model/order-draft.slice';
+export { canSubmitOrderExtras, extrasFromDraft } from './model/order-draft.extras';
 export type { OrderDraftState, WithOrderDraftState } from './model/order-draft.slice';
 export {
   buildRecentAddress,

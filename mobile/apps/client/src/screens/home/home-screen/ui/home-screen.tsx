@@ -33,9 +33,17 @@ import {
   useResolveLocationForOrder,
   useResolvedLocationAddress,
 } from '@/features/address';
-import { useActiveOrderGuard, useOrderEstimate } from '@/features/order';
+import { useActiveOrderGuard, useOrderEstimate, OrderExtrasFields } from '@/features/order';
 import {
   activeOrderChanged,
+  canSubmitOrderExtras,
+  childSeatChanged,
+  commentChanged,
+  extrasFromDraft,
+  familyMemberSelected,
+  orderForOtherChanged,
+  passengerNameChanged,
+  passengerPhoneChanged,
   paymentMethodSelected,
   pickupSelected,
   selectActiveOrderId,
@@ -43,6 +51,7 @@ import {
 } from '@/processes/order-flow';
 import {
   MapCanvas,
+  MapCenterButton,
   type MapCanvasHandle,
   type MapMarker,
   resolveOrderMapMarkers,
@@ -84,6 +93,7 @@ export function HomeScreen() {
   const [createOrder, createState] = useCreateOrderMutation();
   const [createError, setCreateError] = useState<string | null>(null);
   const [paymentSheetVisible, setPaymentSheetVisible] = useState(false);
+  const [orderSheetHeight, setOrderSheetHeight] = useState(0);
 
   const { data: activeOrder } = useGetOrderQuery(effectiveActiveId ?? '', {
     skip: !effectiveActiveId,
@@ -228,7 +238,13 @@ export function HomeScreen() {
   };
 
   const submitOrder = async () => {
-    if (!draft.regionId || !draft.pickup || !draft.dropoff || !estimate) {
+    if (
+      !draft.regionId ||
+      !draft.pickup ||
+      !draft.dropoff ||
+      !estimate ||
+      !canSubmitOrderExtras(draft)
+    ) {
       return;
     }
     setCreateError(null);
@@ -239,8 +255,7 @@ export function HomeScreen() {
         dropoff: await resolveLocationForOrder(draft.dropoff),
         tariffId: draft.tariffId ?? undefined,
         paymentMethod: draft.paymentMethod,
-        comment: draft.comment.trim() || undefined,
-        familyMemberId: draft.familyMemberId ?? undefined,
+        ...extrasFromDraft(draft),
       }).unwrap();
       dispatch(activeOrderChanged(order.id));
       router.push(`/order/${order.id}`);
@@ -280,7 +295,6 @@ export function HomeScreen() {
       </View>
 
       <HomeMapHeader
-        onLocationPress={centerOnMyLocation}
         onMenuPress={() => router.push('/notifications')}
         onSearchPress={() => openSearch('dropoff')}
         searchLabel={hasActiveOrder ? t('order.goToActive') : t('order.where')}
@@ -319,10 +333,45 @@ export function HomeScreen() {
       {showOrderSheet ? (
         <HomeOrderSheet
           bottomInset={bottomInset}
-          canOrder={Boolean(estimate && !isEstimating)}
+          canOrder={Boolean(estimate && !isEstimating && canSubmitOrderExtras(draft))}
+          onLayout={(event) => setOrderSheetHeight(event.nativeEvent.layout.height)}
           dropoffAddress={resolvedDropoffAddress ?? dropoff!.address ?? t('common.notSpecified')}
-          error={createError ?? estimateError?.message ?? null}
+          error={
+            createError ??
+            estimateError?.message ??
+            (!canSubmitOrderExtras(draft) ? t('order.orderForOtherInvalid') : null)
+          }
           estimate={estimate}
+          extras={
+            <OrderExtrasFields
+              childSeat={draft.childSeat}
+              comment={draft.comment}
+              familyMemberId={draft.familyMemberId}
+              onChildSeatChange={(value) => dispatch(childSeatChanged(value))}
+              onCommentChange={(value) => dispatch(commentChanged(value))}
+              onFamilyMemberSelect={(id, passenger) => {
+                if (id) {
+                  dispatch(passengerNameChanged(passenger.name));
+                  dispatch(passengerPhoneChanged(passenger.phone));
+                }
+                dispatch(familyMemberSelected(id));
+              }}
+              onOrderForOtherChange={(value) => dispatch(orderForOtherChanged(value))}
+              onPassengerNameChange={(value) => {
+                dispatch(passengerNameChanged(value));
+                dispatch(familyMemberSelected(null));
+              }}
+              onPassengerPhoneChange={(value) => {
+                dispatch(passengerPhoneChanged(value));
+                dispatch(familyMemberSelected(null));
+              }}
+              orderForOther={draft.orderForOther}
+              passengerName={draft.passengerName}
+              passengerPhone={draft.passengerPhone}
+              regionId={draft.regionId}
+              variant="sheet"
+            />
+          }
           fromLabel={t('order.from')}
           isEstimating={isEstimating}
           isOrdering={createState.isLoading}
@@ -342,6 +391,12 @@ export function HomeScreen() {
           toLabel={t('order.to')}
         />
       ) : null}
+
+      <MapCenterButton
+        bottomInset={showOrderSheet && orderSheetHeight > 0 ? orderSheetHeight : bottomInset}
+        disabled={!position}
+        onPress={centerOnMyLocation}
+      />
 
       <PaymentMethodSheet
         onClose={() => setPaymentSheetVisible(false)}

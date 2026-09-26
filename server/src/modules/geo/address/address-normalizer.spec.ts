@@ -16,6 +16,11 @@ describe('address-normalizer', () => {
     expect(normalizeAddressQuery('назран московская')).toBe('назрань московская');
   });
 
+  it('понимает короткие названия соседних регионов', () => {
+    expect(normalizeAddressQuery('КБР')).toBe('нальчик');
+    expect(normalizeAddressQuery('КЧР')).toBe('черкесск');
+  });
+
   it('приводит ё к е', () => {
     expect(normalizeAddressQuery('ул. Овсянникова')).toBe('ул овсянникова');
   });

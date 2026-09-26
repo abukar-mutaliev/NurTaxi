@@ -7,7 +7,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import {
+  formatDistance,
+  formatDuration,
+  formatMoney,
+  applyPhoneMask,
+} from '@nurtaxi/shared-core/shared/lib';
 import { OrderStatus, ReviewTarget } from '@nurtaxi/shared-core/shared/model';
 import { Badge, Button, Input, Screen, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
@@ -38,10 +43,14 @@ import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { ReviewSheet } from '@/features/review';
 import {
   activeOrderChanged,
+  childSeatChanged,
   commentChanged,
   dropoffSelected,
   familyMemberSelected,
   orderDraftCleared,
+  orderForOtherChanged,
+  passengerNameChanged,
+  passengerPhoneChanged,
   paymentMethodSelected,
   pickupSelected,
   regionSelected,
@@ -272,6 +281,12 @@ export function OrderScreen() {
     );
     dispatch(paymentMethodSelected(order.paymentMethod));
     dispatch(commentChanged(order.comment ?? ''));
+    dispatch(childSeatChanged(order.childSeat));
+    dispatch(orderForOtherChanged(Boolean(order.passengerName || order.passengerPhone)));
+    dispatch(passengerNameChanged(order.passengerName ?? ''));
+    dispatch(
+      passengerPhoneChanged(order.passengerPhone ? applyPhoneMask(order.passengerPhone) : ''),
+    );
     dispatch(familyMemberSelected(order.familyMemberId));
     if (order.tariff?.id) {
       dispatch(tariffSelected(order.tariff.id));
@@ -421,6 +436,13 @@ export function OrderScreen() {
                     </View>
                   ) : null}
 
+                  {order.childSeat ? <GlassCaption>{t('order.childSeat')}</GlassCaption> : null}
+                  {order.passengerName ? (
+                    <GlassCaption>
+                      {t('driver.orderForOtherPassenger', { name: order.passengerName })}
+                      {order.passengerPhone ? ` · ${order.passengerPhone}` : ''}
+                    </GlassCaption>
+                  ) : null}
                   {order.comment ? (
                     <GlassCaption>
                       {t('driver.clientComment')}: {order.comment}

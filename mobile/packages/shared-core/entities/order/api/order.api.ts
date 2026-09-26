@@ -38,6 +38,9 @@ function sanitizeCreateOrderPayload(body: CreateOrderPayload): CreateOrderPayloa
     ...sanitizeOrderEstimatePayload(body),
     paymentMethod: body.paymentMethod,
     comment: body.comment,
+    childSeat: body.childSeat,
+    passengerName: body.passengerName,
+    passengerPhone: body.passengerPhone,
     familyMemberId: body.familyMemberId,
   };
 }

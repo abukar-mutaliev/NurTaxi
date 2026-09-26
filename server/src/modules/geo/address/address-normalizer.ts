@@ -9,6 +9,8 @@ const CITY_ALIASES: Record<string, string[]> = {
   малгобек: ['malgobek', 'г малгобек'],
   grozny: ['грозный', 'гrozny'],
   махачкала: ['makhachkala', 'mahachkala'],
+  нальчик: ['nalchik', 'кбр'],
+  черкесск: ['cherkessk', 'кчр'],
 };
 
 const STREET_PREFIXES = ['ул', 'улица', 'пр', 'просп', 'проспект', 'пер', 'переулок', 'ш', 'шоссе'];

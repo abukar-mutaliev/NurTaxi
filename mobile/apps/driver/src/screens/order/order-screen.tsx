@@ -419,6 +419,23 @@ export function OrderScreen({ orderId }: { orderId: string }) {
             </View>
           </View>
 
+          {order.childSeat ? (
+            <View>
+              <Text tone="muted" variant="label">
+                {t('driver.childSeat')}
+              </Text>
+            </View>
+          ) : null}
+
+          {order.passengerName ? (
+            <View>
+              <Text tone="muted" variant="label">
+                {t('driver.orderForOtherPassenger', { name: order.passengerName })}
+              </Text>
+              {order.passengerPhone ? <Text variant="caption">{order.passengerPhone}</Text> : null}
+            </View>
+          ) : null}
+
           {order.comment ? (
             <View>
               <Text tone="muted" variant="label">

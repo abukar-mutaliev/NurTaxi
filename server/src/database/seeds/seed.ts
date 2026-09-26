@@ -334,6 +334,9 @@ async function seedOrders(manager: EntityManager): Promise<void> {
       cancellationFee: def.status.includes('cancelled') ? '0.00' : null,
       paymentMethod: def.paymentMethod,
       comment: def.comment,
+      childSeat: false,
+      passengerName: null,
+      passengerPhone: null,
       familyMemberId: null,
     };
 

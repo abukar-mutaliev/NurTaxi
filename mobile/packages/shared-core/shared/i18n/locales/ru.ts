@@ -361,6 +361,7 @@ export const ru = {
     completeTrip: 'Завершить поездку',
     clientComment: 'Комментарий клиента',
     childSeat: 'Детское кресло',
+    orderForOther: 'Заказ другому',
     orderForOtherPassenger: 'Пассажир: {{name}}',
     passengerPhone: 'Телефон пассажира',
   },

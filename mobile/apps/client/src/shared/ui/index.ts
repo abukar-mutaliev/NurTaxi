@@ -5,6 +5,7 @@ export { GlassCaption, GlassScreenShell, GlassSectionLabel } from './glass-scree
 export { GlassListRow } from './glass-list-row';
 export { GlassConfirmDialog } from './glass-confirm-dialog';
 export { GlassPrimaryButton } from './glass-primary-button';
+export { Chevron } from './chevron';
 export { GlassScreenHeader } from './glass-screen-header';
 export { GlassTextField } from './glass-text-field';
 export { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
@@ -12,5 +13,6 @@ export { ScreenHeader } from './screen-header';
 export { SwitchRow } from './switch-row';
 export type { PlaceholderScreenProps } from './placeholder-screen';
 export type { GlassConfirmDialogProps, GlassDialogAction } from './glass-confirm-dialog';
+export type { ChevronProps } from './chevron';
 export type { GlassScreenHeaderProps } from './glass-screen-header';
 export type { GlassScreenShellProps } from './glass-screen-shell';

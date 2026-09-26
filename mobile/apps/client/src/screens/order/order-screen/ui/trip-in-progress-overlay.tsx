@@ -3,7 +3,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { Chevron } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
+
+import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
   glassBg: 'rgba(255,255,255,0.8)',
@@ -74,10 +77,11 @@ export function TripInProgressOverlay({
   onCancel,
 }: TripInProgressOverlayProps) {
   const insets = useSafeAreaInsets();
+  const headerTopInset = useOrderTopInset();
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
+      <View style={[styles.topBar, { paddingTop: headerTopInset }]}>
         <View style={styles.headerRow}>
           <View style={styles.sideSlot}>
             <Pressable
@@ -89,7 +93,7 @@ export function TripInProgressOverlay({
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={styles.backIcon}>‹</Text>
+              <Chevron color={colors.text} />
             </Pressable>
           </View>
 
@@ -209,14 +213,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 14,
     fontWeight: '500',
-  },
-  backIcon: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: '500',
-    includeFontPadding: false,
-    lineHeight: 28,
-    textAlign: 'center',
   },
   bottom: {
     bottom: 0,

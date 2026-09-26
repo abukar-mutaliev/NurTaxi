@@ -90,6 +90,13 @@ export const en: DeepPartial<TranslationResources> = {
     shareTrip: 'Share',
     shareMessage: 'My Nur trip: {{pickup}} → {{dropoff}}',
   },
+  driver: {
+    childSeat: 'Child seat',
+    orderForOther: 'Order for someone else',
+    orderForOtherPassenger: 'Passenger: {{name}}',
+    passengerPhone: 'Passenger phone',
+    clientComment: 'Client comment',
+  },
   payment: {
     cardMasked: 'Card •••• 4242',
     deleteConfirm: 'Remove card {{brand}} •••• {{last4}}?',

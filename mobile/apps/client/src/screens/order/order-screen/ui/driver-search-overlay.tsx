@@ -13,7 +13,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { Chevron } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
+
+import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
   overlay: 'rgba(248,244,239,0.72)',
@@ -89,6 +92,7 @@ export function DriverSearchOverlay({
   onCancel,
 }: DriverSearchOverlayProps) {
   const insets = useSafeAreaInsets();
+  const headerTopInset = useOrderTopInset();
   const { width } = useWindowDimensions();
   const scale = width / 390;
 
@@ -117,13 +121,13 @@ export function DriverSearchOverlay({
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <View pointerEvents="none" style={[styles.overlay, { backgroundColor: colors.overlay }]} />
 
-      <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
+      <View style={[styles.topBar, { paddingTop: headerTopInset }]}>
         <Pressable
           accessibilityRole="button"
           onPress={onBack}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
         >
-          <Text style={styles.backIcon}>‹</Text>
+          <Chevron color={colors.title} />
         </Pressable>
       </View>
 
@@ -223,14 +227,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...glassShadow({ color: colors.shadow }),
     width: 44,
-  },
-  backIcon: {
-    color: colors.title,
-    fontSize: 28,
-    fontWeight: '500',
-    includeFontPadding: false,
-    lineHeight: 28,
-    textAlign: 'center',
   },
   cancelButton: {
     alignItems: 'center',

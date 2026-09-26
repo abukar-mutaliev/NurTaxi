@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { Chevron } from './chevron';
 import { glassShadow } from './glass-shadow';
 
 const colors = {
@@ -42,7 +43,7 @@ export function GlassScreenHeader({
           onPress={goBack}
           style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
         >
-          <Text style={styles.backIcon}>‹</Text>
+          <Chevron color={colors.title} />
         </Pressable>
       ) : (
         <View style={styles.spacer} />
@@ -67,14 +68,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...glassShadow({ color: colors.shadow }),
     width: 44,
-  },
-  backIcon: {
-    color: colors.title,
-    fontSize: 28,
-    fontWeight: '500',
-    includeFontPadding: false,
-    lineHeight: 28,
-    textAlign: 'center',
   },
   pressed: {
     opacity: 0.92,

@@ -29,6 +29,7 @@ import { useOrderRealtime } from '@nurtaxi/shared-core/features/realtime';
 import { useAppSelector } from '@/app/store/hooks';
 import { useDriverPosition } from '@/features/driver-position';
 import { sendDriverLocationUpdate } from '@/features/location-tracking';
+import { OrderExtrasNotice } from '@/features/order-extras';
 import { useOrderRoute } from '@/features/route';
 import { selectShift } from '@/processes/shift';
 import { GlowIcon } from '@/shared/ui/glow-icon';
@@ -419,31 +420,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
             </View>
           </View>
 
-          {order.childSeat ? (
-            <View>
-              <Text tone="muted" variant="label">
-                {t('driver.childSeat')}
-              </Text>
-            </View>
-          ) : null}
-
-          {order.passengerName ? (
-            <View>
-              <Text tone="muted" variant="label">
-                {t('driver.orderForOtherPassenger', { name: order.passengerName })}
-              </Text>
-              {order.passengerPhone ? <Text variant="caption">{order.passengerPhone}</Text> : null}
-            </View>
-          ) : null}
-
-          {order.comment ? (
-            <View>
-              <Text tone="muted" variant="label">
-                {t('driver.clientComment')}
-              </Text>
-              <Text variant="caption">{order.comment}</Text>
-            </View>
-          ) : null}
+          <OrderExtrasNotice canCallPassenger source={order} />
 
           {/*
             Пока MapKit считает маршрут, показываем оценку сервера: она снята при создании

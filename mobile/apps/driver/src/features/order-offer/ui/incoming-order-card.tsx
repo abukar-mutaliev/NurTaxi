@@ -8,6 +8,7 @@ import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import type { OrderOfferEvent } from '@nurtaxi/shared-core/features/realtime';
 
+import { OrderExtrasNotice } from '@/features/order-extras';
 import { PillButton } from '@/shared/ui/pill-button';
 
 /** Ширина полосы отсчёта: предложение живёт 30 секунд (`OFFER_TTL_SEC` на сервере). */
@@ -94,24 +95,7 @@ export function IncomingOrderCard({
         ) : null}
       </View>
 
-      {offer.childSeat ? (
-        <Text tone="muted" variant="caption">
-          Детское кресло
-        </Text>
-      ) : null}
-
-      {offer.passengerName ? (
-        <Text tone="muted" variant="caption">
-          Пассажир: {offer.passengerName}
-          {offer.passengerPhone ? ` · ${offer.passengerPhone}` : ''}
-        </Text>
-      ) : null}
-
-      {offer.comment ? (
-        <Text tone="muted" variant="caption">
-          Комментарий: {offer.comment}
-        </Text>
-      ) : null}
+      <OrderExtrasNotice source={offer} />
 
       {error ? (
         <Text tone="danger" variant="caption">

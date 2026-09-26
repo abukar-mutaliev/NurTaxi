@@ -7,6 +7,8 @@ import { Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
+import { useOrderTopInset } from './use-order-top-inset';
+
 const colors = {
   glassBg: 'rgba(255,255,255,0.8)',
   glassBorder: 'rgba(255,255,255,0.9)',
@@ -98,6 +100,7 @@ export function DriverEnRouteOverlay({
   onCancel,
 }: DriverEnRouteOverlayProps) {
   const insets = useSafeAreaInsets();
+  const headerTopInset = useOrderTopInset();
   const initial = driver.fullName.trim().charAt(0).toUpperCase() || '?';
   const vehicle = driver.vehicle;
   const vehicleLine = vehicle ? `${vehicle.make} ${vehicle.model} · ${vehicle.color}` : null;
@@ -108,7 +111,7 @@ export function DriverEnRouteOverlay({
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <View style={[styles.topBar, { paddingTop: insets.top + 10 }]}>
+      <View style={[styles.topBar, { paddingTop: headerTopInset }]}>
         <View style={styles.headerRow}>
           <View style={styles.sideSlot}>
             <Pressable

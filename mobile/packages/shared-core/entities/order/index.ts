@@ -32,3 +32,5 @@ export {
   orderStatusTone,
 } from './model/order-status';
 export type { OrderStage } from './model/order-status';
+export { formatPassengerPhone, hasOrderExtras, resolveOrderExtras } from './model/order-extras';
+export type { OrderExtrasSource, OrderExtrasView } from './model/order-extras';

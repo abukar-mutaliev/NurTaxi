@@ -70,6 +70,7 @@ import { MapCanvas, type MapCanvasHandle, resolveOrderMapMarkers } from '@/widge
 import { DriverSearchOverlay } from './driver-search-overlay';
 import { DriverEnRouteOverlay } from './driver-en-route-overlay';
 import { TripInProgressOverlay } from './trip-in-progress-overlay';
+import { useOrderTopInset } from './use-order-top-inset';
 
 export function OrderScreen() {
   const { t } = useTranslation();
@@ -83,6 +84,7 @@ export function OrderScreen() {
   const permission = useLocationPermission();
   const { position } = useCurrentPosition(permission.state === 'granted');
   const draft = useAppSelector(selectOrderDraft);
+  const headerTopInset = useOrderTopInset();
   const cachedStatus = useAppSelector(orderApi.endpoints.getOrder.select(orderId ?? '')).data
     ?.status;
   const stillSearching =
@@ -382,7 +384,7 @@ export function OrderScreen() {
 
           {showLegacyPanel ? (
             <>
-              <View style={[styles.header, { paddingHorizontal: 16, paddingTop: 16 }]}>
+              <View style={[styles.header, { paddingHorizontal: 16, paddingTop: headerTopInset }]}>
                 <GlassScreenHeader onBack={leaveToHome} title={t('order.tripTitle')} />
               </View>
 

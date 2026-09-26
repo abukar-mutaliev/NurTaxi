@@ -17,6 +17,7 @@ import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useGetDriverOrderHistoryQuery } from '@nurtaxi/shared-core/entities/driver';
 import { formatOrderStatusLabel, isActiveOrder } from '@nurtaxi/shared-core/entities/order';
 
+import { OrderExtrasNotice } from '@/features/order-extras';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 
@@ -143,6 +144,8 @@ function OrderCard({ item, onPress }: OrderCardProps) {
           → {order.dropoffAddress}
         </Text>
       </View>
+
+      <OrderExtrasNotice compact source={order} />
 
       <Text style={{ color: theme.colors.accent }} variant="micro">
         {formatOrderStatusLabel(order.status)}

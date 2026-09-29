@@ -156,10 +156,11 @@ describe('YandexMapProvider', () => {
     const url = new URL(String((global.fetch as jest.Mock).mock.calls[0]?.[0]));
 
     expect(url.searchParams.has('bbox')).toBe(false);
+    expect(url.searchParams.has('ll')).toBe(false);
     expect(url.searchParams.has('strict_bounds')).toBe(false);
     expect(url.searchParams.has('spn')).toBe(false);
     expect(url.searchParams.get('text')).toBe('пятигорск');
-    expect(url.searchParams.get('ll')).toBe('44.8133,43.1687');
+    expect(url.searchParams.get('ull')).toBe('44.8133,43.1687');
   });
 
   it('search: Geocoder не ограничивает выдачу bbox или rspn', async () => {

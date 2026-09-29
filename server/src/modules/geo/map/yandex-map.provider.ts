@@ -140,9 +140,10 @@ export class YandexMapProvider implements MapProvider {
       results: String(limit),
       print_address: '1',
       attrs: 'uri',
-      // Только ранжирование по позиции клиента: без bbox/strict_bounds/spn,
-      // иначе Яндекс отсекает Пятигорск, Грузию и любые точки вне рамки региона.
-      ll: `${near.lng},${near.lat}`,
+      // `ll` задаёт окно поиска: без `spn` Яндекс берёт 0.1×0.1° (~10 км) и
+      // отбрасывает Пятигорск, Москву, Грузию. `ull` только поднимает близкие
+      // адреса выше, не ограничивая выдачу.
+      ull: `${near.lng},${near.lat}`,
     });
 
     const url = `${this.config.geosuggestUrl}?${params.toString()}`;

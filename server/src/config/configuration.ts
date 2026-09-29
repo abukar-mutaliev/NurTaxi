@@ -91,6 +91,7 @@ export interface MapsConfig {
   geosuggestUrl: string;
   geocoderUrl: string;
   locale: string;
+  /** Устарело: географическая рамка больше не передаётся в Яндекс. */
   searchBbox?: string;
   requestTimeoutMs: number;
 }

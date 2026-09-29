@@ -22,20 +22,14 @@ describe('projectGeoToScreen', () => {
     expect(screen!.y).toBeCloseTo(400, 0);
   });
 
-  it('переводит физические пиксели MapKit в dp', () => {
+  it('держит смещение в логических пикселях и не сжимает его к центру', () => {
     const screen = projectGeoToScreen(
       { lat: MAGAS.lat, lng: MAGAS.lng + 0.01 },
       { latitude: MAGAS.lat, longitude: MAGAS.lng, zoom: 14 },
       MAP_SIZE,
-      2,
     );
-    const at1x = projectGeoToScreen(
-      { lat: MAGAS.lat, lng: MAGAS.lng + 0.01 },
-      { latitude: MAGAS.lat, longitude: MAGAS.lng, zoom: 14 },
-      MAP_SIZE,
-      1,
-    );
+    const worldWidth = 256 * 2 ** 14;
 
-    expect(screen!.x - 200).toBeCloseTo((at1x!.x - 200) / 2, 5);
+    expect(screen!.x).toBeCloseTo(MAP_SIZE.width / 2 + (0.01 / 360) * worldWidth, 5);
   });
 });

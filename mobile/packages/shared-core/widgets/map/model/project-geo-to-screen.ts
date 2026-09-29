@@ -27,19 +27,30 @@ function mercator(lat: number, lng: number, zoom: number): ScreenOffset {
 }
 
 /**
- * Экранная точка маркера в логических пикселях RN. Считается синхронно по камере,
- * чтобы машинка не отставала от жеста зума (в отличие от async `getScreenPoints`).
+ * Экранная точка маркера в логических пикселях RN — тех же, что `onLayout`.
+ * Считается синхронно по камере, чтобы пин не отставал от жеста (в отличие от
+ * async `getScreenPoints`).
  *
- * MapKit `worldToScreen` работает в физических пикселях окна (`256 * 2^zoom` на экваторе),
- * поэтому смещение делим на `pixelRatio`.
+ * Ширина мира на зуме MapKit — `256 * 2^zoom` логических пикселей, как у JS API
+ * Яндекса и как размер карты в dp. `worldToScreen` — другая система: физические
+ * пиксели окна. Делить меркатор на `PixelRatio` нельзя: смещение сжимается
+ * к центру экрана, и поставленная точка визуально остаётся посередине.
  */
 export function projectGeoToScreen(
   point: GeoPoint,
   camera: CameraPosition,
   mapSize: ScreenSize,
-  pixelRatio = 1,
 ): ScreenOffset | null {
-  if (mapSize.width <= 0 || mapSize.height <= 0 || pixelRatio <= 0) {
+  if (
+    mapSize.width <= 0 ||
+    mapSize.height <= 0 ||
+    !Number.isFinite(camera.zoom) ||
+    camera.zoom <= 0 ||
+    !Number.isFinite(camera.latitude) ||
+    !Number.isFinite(camera.longitude) ||
+    !Number.isFinite(point.lat) ||
+    !Number.isFinite(point.lng)
+  ) {
     return null;
   }
 
@@ -59,7 +70,7 @@ export function projectGeoToScreen(
   }
 
   return {
-    x: mapSize.width / 2 + dx / pixelRatio,
-    y: mapSize.height / 2 + dy / pixelRatio,
+    x: mapSize.width / 2 + dx,
+    y: mapSize.height / 2 + dy,
   };
 }

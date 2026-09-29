@@ -1,24 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 
 import { StubRoutingProvider } from './stub-routing.provider';
-import { DEFAULT_SEARCH_BBOX, YandexMapProvider } from './yandex-map.provider';
-
-const RUSSIA_CITIES: Array<{ name: string; lng: number; lat: number }> = [
-  { name: 'Калининград', lng: 20.5104, lat: 54.7104 },
-  { name: 'Москва', lng: 37.6173, lat: 55.7558 },
-  { name: 'Нальчик (КБР)', lng: 43.6189, lat: 43.4981 },
-  { name: 'Черкесск (КЧР)', lng: 42.0578, lat: 44.2233 },
-  { name: 'Махачкала (Дагестан)', lng: 47.5047, lat: 42.9849 },
-  { name: 'Новосибирск', lng: 82.9346, lat: 55.0084 },
-  { name: 'Владивосток', lng: 131.8855, lat: 43.1155 },
-];
-
-function bboxContains(bbox: string, lng: number, lat: number): boolean {
-  const [southWest, northEast] = bbox.split('~');
-  const [lng1, lat1] = southWest.split(',').map(Number);
-  const [lng2, lat2] = northEast.split(',').map(Number);
-  return lng >= lng1 && lng <= lng2 && lat >= lat1 && lat <= lat2;
-}
+import { YandexMapProvider } from './yandex-map.provider';
 
 describe('YandexMapProvider', () => {
   const routingProvider = new StubRoutingProvider();
@@ -160,7 +143,7 @@ describe('YandexMapProvider', () => {
     });
   });
 
-  it('search: Geosuggest bbox покрывает всю Россию', async () => {
+  it('search: Geosuggest не ограничивает выдачу bbox или spn', async () => {
     const provider = createProvider({ geosuggest: 'test-geosuggest-key' });
 
     jest.spyOn(global, 'fetch').mockResolvedValue({
@@ -168,19 +151,18 @@ describe('YandexMapProvider', () => {
       json: async () => ({ results: [] }),
     } as Response);
 
-    await provider.search({ query: 'москва', near: { lat: 43.1687, lng: 44.8133 } });
+    await provider.search({ query: 'пятигорск', near: { lat: 43.1687, lng: 44.8133 } });
 
     const url = new URL(String((global.fetch as jest.Mock).mock.calls[0]?.[0]));
-    const bbox = url.searchParams.get('bbox');
 
-    expect(bbox).toBe(DEFAULT_SEARCH_BBOX);
-    expect(url.searchParams.get('strict_bounds')).toBe('1');
-    for (const city of RUSSIA_CITIES) {
-      expect(bboxContains(bbox!, city.lng, city.lat)).toBe(true);
-    }
+    expect(url.searchParams.has('bbox')).toBe(false);
+    expect(url.searchParams.has('strict_bounds')).toBe(false);
+    expect(url.searchParams.has('spn')).toBe(false);
+    expect(url.searchParams.get('text')).toBe('пятигорск');
+    expect(url.searchParams.get('ll')).toBe('44.8133,43.1687');
   });
 
-  it('search: Geocoder bbox покрывает всю Россию без узкого spn', async () => {
+  it('search: Geocoder не ограничивает выдачу bbox или rspn', async () => {
     const provider = createProvider({ geocoder: 'test-geocoder-key' });
 
     jest.spyOn(global, 'fetch').mockResolvedValue({
@@ -190,17 +172,14 @@ describe('YandexMapProvider', () => {
       }),
     } as Response);
 
-    await provider.search({ query: 'владивосток' });
+    await provider.search({ query: 'тбилиси' });
 
     const url = new URL(String((global.fetch as jest.Mock).mock.calls[0]?.[0]));
-    const bbox = url.searchParams.get('bbox');
 
-    expect(bbox).toBe(DEFAULT_SEARCH_BBOX);
-    expect(url.searchParams.get('rspn')).toBe('1');
+    expect(url.searchParams.has('bbox')).toBe(false);
+    expect(url.searchParams.has('rspn')).toBe(false);
     expect(url.searchParams.has('spn')).toBe(false);
-    for (const city of RUSSIA_CITIES) {
-      expect(bboxContains(bbox!, city.lng, city.lat)).toBe(true);
-    }
+    expect(url.searchParams.get('geocode')).toBe('тбилиси');
   });
 
   it('route делегирует RoutingProvider', async () => {

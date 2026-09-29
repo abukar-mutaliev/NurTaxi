@@ -35,10 +35,13 @@ import Animated, {
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useDebouncedValue } from '@nurtaxi/shared-core/shared/lib';
 import type { AddressSuggestion, GeoLocation } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
-import { MIN_GEO_QUERY_LENGTH, useSearchAddressesQuery } from '@nurtaxi/shared-core/entities/geo';
+import {
+  MIN_GEO_QUERY_LENGTH,
+  toAddressSuggestion,
+  useAddressSuggestions,
+} from '@nurtaxi/shared-core/entities/geo';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassPrimaryButton } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -92,18 +95,18 @@ export function SaveAddressSheet({
   const keyboardOffset = useSharedValue(0);
   const scrollRef = useRef<ScrollView>(null);
 
-  const debouncedAddress = useDebouncedValue(address.trim(), 400);
-  const canSearch = debouncedAddress.length >= MIN_GEO_QUERY_LENGTH;
+  const canSearch = address.trim().length >= MIN_GEO_QUERY_LENGTH;
 
-  const { data: suggestions = [], isFetching } = useSearchAddressesQuery(
-    {
-      q: debouncedAddress,
-      regionId: regionId ?? undefined,
-      lat: searchLat,
-      lng: searchLng,
-      limit: 8,
-    },
-    { skip: !visible || !canSearch || !regionId },
+  const { isFetching, resolvePoint, suggestions } = useAddressSuggestions(address, {
+    enabled: visible,
+    lat: searchLat,
+    limit: 8,
+    lng: searchLng,
+    regionId,
+  });
+
+  const suggestionItems: AddressSuggestion[] = suggestions.map((item) =>
+    toAddressSuggestion(item, item.point ?? { lat: 0, lng: 0 }),
   );
 
   const canSave = label.trim().length >= 1 && address.trim().length >= 5 && !isSaving;
@@ -132,13 +135,21 @@ export function SaveAddressSheet({
   }, [backdropOpacity, translateY]);
 
   const handleSuggestionSelect = useCallback(
-    (item: AddressSuggestion) => {
-      const location = suggestionToGeoLocation(item, address);
+    async (item: AddressSuggestion) => {
+      const option = suggestions.find((candidate) => candidate.id === item.id);
+      if (!option) {
+        return;
+      }
+      const point = option.point ?? (await resolvePoint(option));
+      if (!point) {
+        return;
+      }
+      const location = suggestionToGeoLocation(toAddressSuggestion(option, point), address);
       onAddressChange(location.address ?? '');
       onLocationChange?.(geoLocationForSave(location));
       Keyboard.dismiss();
     },
-    [address, onAddressChange, onLocationChange],
+    [address, onAddressChange, onLocationChange, resolvePoint, suggestions],
   );
 
   useEffect(() => {
@@ -291,7 +302,7 @@ export function SaveAddressSheet({
                       isFetching={isFetching}
                       onSelect={handleSuggestionSelect}
                       scale={scale}
-                      suggestions={suggestions}
+                      suggestions={suggestionItems}
                     />
                   </View>
                 ) : null}

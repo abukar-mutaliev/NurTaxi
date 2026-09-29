@@ -16,14 +16,15 @@ import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  useDebouncedValue,
-  formatShortDisplayAddress,
-  toApiGeoLocation,
-} from '@nurtaxi/shared-core/shared/lib';
-import type { AddressSuggestion, GeoLocation, GeoPoint } from '@nurtaxi/shared-core/shared/model';
+import { formatShortDisplayAddress, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
+import type { GeoLocation, GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
-import { MIN_GEO_QUERY_LENGTH, useSearchAddressesQuery } from '@nurtaxi/shared-core/entities/geo';
+import {
+  MIN_GEO_QUERY_LENGTH,
+  toAddressSuggestion,
+  useAddressSuggestions,
+  type AddressOption,
+} from '@nurtaxi/shared-core/entities/geo';
 import { useGetSavedAddressesQuery } from '@nurtaxi/shared-core/entities/saved-address';
 import {
   getCachedCurrentPosition,
@@ -92,7 +93,6 @@ export function AddressSearchScreen() {
   const [activeField, setActiveField] = useState<AddressField>(initialField);
   const [isLocating, setIsLocating] = useState(false);
   const [query, setQuery] = useState('');
-  const debouncedQuery = useDebouncedValue(query.trim(), 400);
 
   const [saveSheetVisible, setSaveSheetVisible] = useState(false);
   const [pendingSave, setPendingSave] = useState<GeoLocation | null>(null);
@@ -118,18 +118,14 @@ export function AddressSearchScreen() {
   }
 
   const { data: savedAddresses = [] } = useGetSavedAddressesQuery();
-  const canSearch = debouncedQuery.length >= MIN_GEO_QUERY_LENGTH;
+  const canSearch = query.trim().length >= MIN_GEO_QUERY_LENGTH;
 
-  const { data: suggestions = [], isFetching } = useSearchAddressesQuery(
-    {
-      q: debouncedQuery,
-      regionId: regionId ?? undefined,
-      lat: position?.lat,
-      lng: position?.lng,
-      limit: 10,
-    },
-    { skip: !canSearch || !regionId },
-  );
+  const { isFetching, resolvePoint, suggestions } = useAddressSuggestions(query, {
+    lat: position?.lat,
+    limit: 10,
+    lng: position?.lng,
+    regionId,
+  });
 
   const title =
     mode === 'save'
@@ -307,13 +303,19 @@ export function AddressSearchScreen() {
     selectAddress(activeField, 'order', location, options);
   };
 
-  const handleSelectSuggestion = (item: AddressSuggestion) => {
+  const handleSelectSuggestion = async (item: AddressOption) => {
+    const point = item.point ?? (await resolvePoint(item));
+    if (!point) {
+      return;
+    }
+    const suggestion = toAddressSuggestion(item, point);
+
     if (mode === 'save') {
-      handleSelect(suggestionToGeoLocationForSave(item, query), { label: item.title });
+      handleSelect(suggestionToGeoLocationForSave(suggestion, query), { label: item.title });
       return;
     }
 
-    const location = suggestionToGeoLocation(item, query);
+    const location = suggestionToGeoLocation(suggestion, query);
     setPendingOrderSelection({ ...location, label: item.title });
     setQuery(location.address?.trim() ?? '');
   };
@@ -480,10 +482,14 @@ export function AddressSearchScreen() {
                 ) : null}
                 {suggestions.map((item) => (
                   <SavedAddressCard
-                    address={formatSuggestionDisplayText(item)}
+                    address={formatSuggestionDisplayText(
+                      toAddressSuggestion(item, item.point ?? { lat: 0, lng: 0 }),
+                    )}
                     key={item.id}
                     label={item.title}
-                    onPress={() => handleSelectSuggestion(item)}
+                    onPress={() => {
+                      void handleSelectSuggestion(item);
+                    }}
                   />
                 ))}
               </View>

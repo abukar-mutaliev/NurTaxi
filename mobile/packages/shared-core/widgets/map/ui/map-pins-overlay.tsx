@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useState } from 'react';
-import { PixelRatio, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { isValidGeoPoint, normalizeGeoPoint, type CameraPosition } from '../model/map-provider';
 import { projectGeoToScreen } from '../model/project-geo-to-screen';
@@ -37,7 +37,7 @@ export const MapPinsOverlay = forwardRef<MapPinsOverlayHandle, MapPinsOverlayPro
           }
 
           const point = normalizeGeoPoint(marker.point);
-          const screen = projectGeoToScreen(point, camera, mapSize, PixelRatio.get());
+          const screen = projectGeoToScreen(point, camera, mapSize);
           if (!screen) {
             return null;
           }

@@ -12,11 +12,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { useTranslation } from 'react-i18next';
 
-import { useDebouncedValue } from '@nurtaxi/shared-core/shared/lib';
-
 import type { AddressSuggestion } from '@nurtaxi/shared-core/shared/model';
 
-import { MIN_GEO_QUERY_LENGTH, useSearchAddressesQuery } from '@nurtaxi/shared-core/entities/geo';
+import {
+  MIN_GEO_QUERY_LENGTH,
+  toAddressSuggestion,
+  useAddressSuggestions,
+} from '@nurtaxi/shared-core/entities/geo';
 
 import { useGetSavedAddressesQuery } from '@nurtaxi/shared-core/entities/saved-address';
 
@@ -73,14 +75,16 @@ export function SavedAddressDetailScreen() {
 
   const { regionId } = useOrderRegion();
 
-  const debouncedAddress = useDebouncedValue(addressText.trim(), 400);
+  const canSearch = addressEdited && addressText.trim().length >= MIN_GEO_QUERY_LENGTH;
 
-  const canSearch = addressEdited && debouncedAddress.length >= MIN_GEO_QUERY_LENGTH;
+  const {
+    isFetching: isSearching,
+    resolvePoint,
+    suggestions,
+  } = useAddressSuggestions(addressText, { enabled: addressEdited, limit: 8, regionId });
 
-  const { data: suggestions = [], isFetching: isSearching } = useSearchAddressesQuery(
-    { q: debouncedAddress, regionId: regionId ?? undefined, limit: 8 },
-
-    { skip: !canSearch || !regionId },
+  const suggestionItems = suggestions.map((item) =>
+    toAddressSuggestion(item, item.point ?? { lat: 0, lng: 0 }),
   );
 
   // Форма заполняется из загруженного адреса. Обновляем прямо при рендере, без лишнего
@@ -107,15 +111,22 @@ export function SavedAddressDetailScreen() {
     setAddressEdited(true);
   };
 
-  const handleSuggestionSelect = (item: AddressSuggestion) => {
-    const location = suggestionToGeoLocationForSave(item, addressText);
-
+  const handleSuggestionSelect = async (item: AddressSuggestion) => {
+    const option = suggestions.find((candidate) => candidate.id === item.id);
+    if (!option) {
+      return;
+    }
+    const point = option.point ?? (await resolvePoint(option));
+    if (!point) {
+      return;
+    }
+    const location = suggestionToGeoLocationForSave(
+      toAddressSuggestion(option, point),
+      addressText,
+    );
     setAddressText(location.address ?? '');
-
     setLat(location.lat);
-
     setLng(location.lng);
-
     setAddressEdited(false);
   };
 
@@ -275,7 +286,7 @@ export function SavedAddressDetailScreen() {
                 isFetching={isSearching}
                 onSelect={handleSuggestionSelect}
                 scale={scale}
-                suggestions={suggestions}
+                suggestions={suggestionItems}
               />
             ) : null}
 

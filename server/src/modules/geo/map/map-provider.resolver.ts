@@ -16,7 +16,9 @@ export class MapProviderResolver {
   resolve(): MapProvider {
     const maps = this.config.get<MapsConfig>('maps')!;
 
-    if (maps.provider === 'yandex' && (maps.yandexGeosuggestApiKey || maps.yandexGeocoderApiKey)) {
+    // Ключи важнее MAP_PROVIDER: в .env.example по умолчанию stub, и если ключи
+    // добавили, а флаг забыли — клиент оставался на локальной базе Ингушетии.
+    if (maps.yandexGeosuggestApiKey || maps.yandexGeocoderApiKey) {
       return this.yandexProvider;
     }
 

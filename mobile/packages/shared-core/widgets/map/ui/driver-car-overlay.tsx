@@ -1,5 +1,5 @@
 import { forwardRef, useImperativeHandle, useState } from 'react';
-import { Image, PixelRatio, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
 import type { GeoPoint } from '../../../shared/model';
 import type { CameraPosition } from '../model/map-provider';
@@ -28,7 +28,7 @@ export const DriverCarOverlay = forwardRef<DriverCarOverlayHandle, DriverCarOver
 
     useImperativeHandle(ref, () => ({ setCamera }), []);
 
-    const screen = projectGeoToScreen(point, camera, mapSize, PixelRatio.get());
+    const screen = projectGeoToScreen(point, camera, mapSize);
     if (!screen) {
       return null;
     }

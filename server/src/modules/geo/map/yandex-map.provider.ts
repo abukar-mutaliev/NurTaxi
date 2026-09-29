@@ -11,16 +11,6 @@ import type {
 import { formatDisplayAddress } from '../address/format-display-address';
 import { ROUTING_PROVIDER, type RoutingProvider } from './routing-provider.interface';
 
-/**
- * Bbox поиска адресов для клиентов: вся Россия (lon,lat).
- * Калининград ~19.6°, юг Дагестана ~41.2°, Дальний Восток до 180°, Арктика ~81.9°.
- * `strict_bounds` отсекает зарубежные подсказки, не ограничивая заказ внутри страны.
- */
-export const DEFAULT_SEARCH_BBOX = '19.6,41.18~180,81.9';
-
-/** Окно ранжирования Geosuggest вокруг точки клиента: сначала ближайшие улицы, затем остальные по стране. */
-const SEARCH_SPAN = '4.0,1.8';
-
 /** Запасные координаты, если клиент не передал `near` (центр Магаса). */
 const DEFAULT_NEAR: GeoPoint = { lat: 43.1687, lng: 44.8133 };
 
@@ -150,10 +140,9 @@ export class YandexMapProvider implements MapProvider {
       results: String(limit),
       print_address: '1',
       attrs: 'uri',
-      bbox: this.config.searchBbox ?? DEFAULT_SEARCH_BBOX,
-      strict_bounds: '1',
+      // Только ранжирование по позиции клиента: без bbox/strict_bounds/spn,
+      // иначе Яндекс отсекает Пятигорск, Грузию и любые точки вне рамки региона.
       ll: `${near.lng},${near.lat}`,
-      spn: SEARCH_SPAN,
     });
 
     const url = `${this.config.geosuggestUrl}?${params.toString()}`;
@@ -188,8 +177,6 @@ export class YandexMapProvider implements MapProvider {
       format: 'json',
       lang: this.config.locale,
       results: String(limit),
-      bbox: this.config.searchBbox ?? DEFAULT_SEARCH_BBOX,
-      rspn: '1',
     });
 
     const url = `${this.config.geocoderUrl}?${params.toString()}`;

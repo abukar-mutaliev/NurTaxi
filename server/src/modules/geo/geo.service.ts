@@ -69,6 +69,14 @@ export class GeoService {
       );
 
       await this.cache.set(normalized, params.regionId, results);
+      this.logger.log(
+        `geo search "${normalized}" -> ${
+          results
+            .slice(0, 5)
+            .map((item) => item.title)
+            .join(' | ') || 'пусто'
+        }`,
+      );
       return results;
     } catch (error) {
       // Graceful degradation: поиск адресов некритичен для создания заказа (Des §11).

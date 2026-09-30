@@ -1,7 +1,7 @@
 /**
  * Нативная карта Yandex MapKit — загружается только если `isNativeMapAvailable()`.
  */
-import { Polyline, YandexMapView, type YandexMapViewRef } from 'expo-yandex-mapkit';
+import { Marker, Polyline, YandexMapView, type YandexMapViewRef } from 'expo-yandex-mapkit';
 import {
   forwardRef,
   useCallback,
@@ -20,10 +20,11 @@ import {
   normalizeGeoPoint,
   toCameraPosition,
   toMapPoint,
+  type CameraPosition,
 } from '../model/map-provider';
-import type { MapCanvasHandle, MapCanvasProps } from './map-canvas';
-import { DriverCarOverlay, type DriverCarOverlayHandle } from './driver-car-overlay';
-import { MapPinsOverlay, type MapPinsOverlayHandle } from './map-pins-overlay';
+import type { MapCanvasHandle, MapCanvasProps, MapMarker } from './map-canvas';
+import { MAP_MARKER_BITMAP_SCALE, MAP_MARKER_SOURCES } from './map-marker.assets';
+import { getMarkerAnchor } from './map-marker.constants';
 
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 const ROUTE_STROKE_COLOR = '#C99A54';
@@ -39,6 +40,25 @@ function ignoreCameraRejection(result: Promise<unknown> | undefined): void {
   void result?.catch(() => undefined);
 }
 
+/**
+ * Метка в координатах карты. Экранный оверлей при зуме и сдвиге отставал от камеры
+ * MapKit и уезжал с точки. Якорь крепит кончик пина (или центр машинки) к координате,
+ * `scale` держит размер иконки постоянным — она не растёт вместе с зумом.
+ */
+function MapPlacemark({ marker }: { marker: MapMarker }) {
+  const point = normalizeGeoPoint(marker.point);
+
+  return (
+    <Marker
+      anchor={getMarkerAnchor(marker.kind)}
+      point={toMapPoint(point)}
+      scale={MAP_MARKER_BITMAP_SCALE}
+      source={MAP_MARKER_SOURCES[marker.kind]}
+      zIndex={marker.kind === 'driver' ? 3 : 2}
+    />
+  );
+}
+
 export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(function MapCanvasNative(
   {
     markers = [],
@@ -51,20 +71,21 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   ref,
 ) {
   const mapRef = useRef<YandexMapViewRef>(null);
-  const driverOverlayRef = useRef<DriverCarOverlayHandle>(null);
-  const pinsOverlayRef = useRef<MapPinsOverlayHandle>(null);
-  const [mapSize, setMapSize] = useState({ height: 0, width: 0 });
 
-  /** Камера задаётся один раз — иначе GPS-тики и смена маркеров сбрасывают zoom. */
-  const initialCameraRef = useRef<ReturnType<typeof toCameraPosition> | null>(null);
-  if (!initialCameraRef.current && initialPoint) {
-    initialCameraRef.current = toCameraPosition(initialPoint, 0.02);
+  /**
+   * Камера задаётся один раз — иначе GPS-тики и смена маркеров сбрасывают zoom.
+   * Фиксируем её в state при первом initialPoint: чтение ref во время рендера
+   * запрещено, а этот setState срабатывает один раз и React перезапускает рендер до отрисовки.
+   */
+  const [lockedCamera, setLockedCamera] = useState<CameraPosition | null>(null);
+  if (lockedCamera == null && initialPoint) {
+    setLockedCamera(toCameraPosition(initialPoint, 0.02));
   }
-  const initialCamera = initialCameraRef.current ?? DEFAULT_CAMERA;
+  const initialCamera = lockedCamera ?? DEFAULT_CAMERA;
 
   const pinMarkers = useMemo(() => markers.filter((marker) => marker.kind !== 'driver'), [markers]);
-  const driverMarker = useMemo(
-    () => markers.find((marker) => marker.kind === 'driver' && isValidGeoPoint(marker.point)),
+  const placedMarkers = useMemo(
+    () => markers.filter((marker) => isValidGeoPoint(marker.point)),
     [markers],
   );
 
@@ -81,35 +102,14 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
       return routePoints.map(toMapPoint);
     }
 
-    return markers
-      .filter((marker) => isValidGeoPoint(marker.point))
-      .map((marker) => normalizeGeoPoint(marker.point))
-      .map(toMapPoint);
-  }, [markers, routePoints]);
-
-  /**
-   * Оверлей машинки проецируется от камеры, которую слушает через `onCameraPositionChanged`.
-   * Но программная подгонка кадра случается раньше, чем оверлей успевает смонтироваться и
-   * подписаться, — событие теряется, и машинка навсегда остаётся спроецированной от стартовой
-   * камеры (её центр = позиция водителя, отсюда «машинка ровно посередине экрана»).
-   * Поэтому после подгонки честно дочитываем фактическую камеру у карты и отдаём её оверлею,
-   * не полагаясь только на событие.
-   */
-  const syncOverlayCamera = useCallback(() => {
-    void mapRef.current?.getCameraPosition().then((camera) => {
-      if (camera) {
-        driverOverlayRef.current?.setCamera(camera);
-        pinsOverlayRef.current?.setCamera(camera);
-      }
-    });
-  }, []);
+    return placedMarkers.map((marker) => toMapPoint(normalizeGeoPoint(marker.point)));
+  }, [placedMarkers, routePoints]);
 
   const fitCameraToContent = useCallback(() => {
     if (fitPoints.length > 1) {
       ignoreCameraRejection(
         mapRef.current?.fitMarkers(fitPoints, { edgePadding: MAP_EDGE_PADDING }),
       );
-      syncOverlayCamera();
       return;
     }
 
@@ -124,13 +124,11 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
           { durationSeconds: 0.4 },
         ),
       );
-      syncOverlayCamera();
       return;
     }
 
     ignoreCameraRejection(mapRef.current?.fitAllMarkers?.({ edgePadding: MAP_EDGE_PADDING }));
-    syncOverlayCamera();
-  }, [fitPoints, syncOverlayCamera]);
+  }, [fitPoints]);
 
   /**
    * Опорные точки кадра — стационарные маркеры (подача и точка Б). Именно по ним решаем,
@@ -191,21 +189,9 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   );
 
   return (
-    <View
-      onLayout={({ nativeEvent }) => {
-        const { height, width } = nativeEvent.layout;
-        setMapSize((current) =>
-          current.width === width && current.height === height ? current : { height, width },
-        );
-      }}
-      style={styles.map}
-    >
+    <View style={styles.map}>
       <YandexMapView
         cameraPosition={initialCamera}
-        onCameraPositionChanged={({ nativeEvent }) => {
-          driverOverlayRef.current?.setCamera(nativeEvent.cameraPosition);
-          pinsOverlayRef.current?.setCamera(nativeEvent.cameraPosition);
-        }}
         onMapPress={
           onPress
             ? ({ nativeEvent }) =>
@@ -227,23 +213,10 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
             zIndex={1}
           />
         ) : null}
+        {placedMarkers.map((marker) => (
+          <MapPlacemark key={marker.id} marker={marker} />
+        ))}
       </YandexMapView>
-
-      <MapPinsOverlay
-        initialCamera={initialCamera}
-        mapSize={mapSize}
-        markers={pinMarkers}
-        ref={pinsOverlayRef}
-      />
-
-      {driverMarker ? (
-        <DriverCarOverlay
-          initialCamera={initialCamera}
-          mapSize={mapSize}
-          point={normalizeGeoPoint(driverMarker.point)}
-          ref={driverOverlayRef}
-        />
-      ) : null}
     </View>
   );
 });

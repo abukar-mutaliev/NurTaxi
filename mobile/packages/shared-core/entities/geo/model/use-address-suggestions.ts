@@ -1,9 +1,9 @@
 /**
  * Подсказки адресов (M3.3, `§8.9`).
  *
- * Источников два. Основной — Suggest из Yandex MapKit: без географической рамки,
- * знает Пятигорск, Тбилиси и любые другие точки. Запасной — `GET /geo/search`,
- * когда MapKit собран во `flavor: 'lite'` или модуля нет (Expo Go).
+ * Источников два, и оба запрашиваются сразу. Сервер идёт первым: геокодер
+ * находит Пятигорск, Нальчик и Тбилиси, даже если MapKit рядом с GPS
+ * заполнил список улицами Ингушетии, Чечни и Осетии.
  */
 import { useCallback, useEffect, useState } from 'react';
 
@@ -136,7 +136,7 @@ export function useAddressSuggestions(
       isSearchable,
       resolvePoint,
       source: yandexItems.length > 0 ? 'yandex' : 'server',
-      suggestions: mergeAddressOptions(yandexItems, serverOptions, limit),
+      suggestions: mergeAddressOptions(serverOptions, yandexItems, limit),
     };
   }
 

@@ -105,7 +105,7 @@ export function useAddressSuggestions(
     error: serverError,
   } = useSearchAddressesQuery(
     { lat, limit, lng, q: debounced, regionId: regionId || undefined },
-    { skip: !enabled || !isSearchable || useYandex },
+    { skip: !enabled || !isSearchable },
   );
 
   const resolvePoint = useCallback(
@@ -119,15 +119,24 @@ export function useAddressSuggestions(
     [yandexState],
   );
 
+  const serverOptions: AddressOption[] = serverSuggestions.map((suggestion) => ({
+    address: suggestion.address,
+    id: suggestion.id,
+    point: { lat: suggestion.lat, lng: suggestion.lng },
+    subtitle: suggestion.subtitle,
+    title: suggestion.title,
+  }));
+
   if (useYandex) {
     const isStale = yandexState?.query !== debounced;
+    const yandexItems = isStale ? [] : (yandexState?.items ?? []);
     return {
-      error: null,
-      isFetching: isSearchable && isStale,
+      error: serverError && yandexItems.length === 0 ? toAppError(serverError).message : null,
+      isFetching: isSearchable && isStale && serverFetching,
       isSearchable,
       resolvePoint,
-      source: 'yandex',
-      suggestions: isStale ? [] : (yandexState?.items ?? []),
+      source: yandexItems.length > 0 ? 'yandex' : 'server',
+      suggestions: mergeAddressOptions(yandexItems, serverOptions, limit),
     };
   }
 
@@ -137,12 +146,32 @@ export function useAddressSuggestions(
     isSearchable,
     resolvePoint,
     source: 'server',
-    suggestions: serverSuggestions.map((suggestion) => ({
-      address: suggestion.address,
-      id: suggestion.id,
-      point: { lat: suggestion.lat, lng: suggestion.lng },
-      subtitle: suggestion.subtitle,
-      title: suggestion.title,
-    })),
+    suggestions: serverOptions,
   };
+}
+
+function mergeAddressOptions(
+  primary: AddressOption[],
+  extra: AddressOption[],
+  limit: number,
+): AddressOption[] {
+  const merged: AddressOption[] = [];
+  const seen = new Set<string>();
+
+  for (const item of [...primary, ...extra]) {
+    const point = item.point;
+    const key = point
+      ? `${item.title.trim().toLowerCase()}:${point.lat.toFixed(3)}:${point.lng.toFixed(3)}`
+      : item.id;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push(item);
+    if (merged.length >= limit) {
+      break;
+    }
+  }
+
+  return merged;
 }

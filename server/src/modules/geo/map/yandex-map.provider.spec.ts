@@ -37,6 +37,12 @@ describe('YandexMapProvider', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
+          response: { GeoObjectCollection: { featureMember: [] } },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
           results: [
             {
               title: { text: 'ул. Московская' },
@@ -77,7 +83,7 @@ describe('YandexMapProvider', () => {
       lat: 43.2189,
       lng: 44.771,
     });
-    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(global.fetch).toHaveBeenCalledTimes(3);
   });
 
   it('search: без Geocoder подставляет near из запроса', async () => {
@@ -157,10 +163,10 @@ describe('YandexMapProvider', () => {
 
     expect(url.searchParams.has('bbox')).toBe(false);
     expect(url.searchParams.has('ll')).toBe(false);
+    expect(url.searchParams.has('ull')).toBe(false);
     expect(url.searchParams.has('strict_bounds')).toBe(false);
     expect(url.searchParams.has('spn')).toBe(false);
     expect(url.searchParams.get('text')).toBe('пятигорск');
-    expect(url.searchParams.get('ull')).toBe('44.8133,43.1687');
   });
 
   it('search: Geocoder не ограничивает выдачу bbox или rspn', async () => {
@@ -181,6 +187,72 @@ describe('YandexMapProvider', () => {
     expect(url.searchParams.has('rspn')).toBe(false);
     expect(url.searchParams.has('spn')).toBe(false);
     expect(url.searchParams.get('geocode')).toBe('тбилиси');
+  });
+
+  it('search: геокодер добавляет город вне соседних регионов', async () => {
+    const provider = createProvider({
+      geosuggest: 'test-geosuggest-key',
+      geocoder: 'test-geocoder-key',
+    });
+
+    jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          response: {
+            GeoObjectCollection: {
+              featureMember: [
+                {
+                  GeoObject: {
+                    name: 'Пятигорск',
+                    description: 'Ставропольский край, Россия',
+                    Point: { pos: '43.0594 44.0486' },
+                    metaDataProperty: {
+                      GeocoderMetaData: {
+                        text: 'Россия, Ставропольский край, Пятигорск',
+                        Address: { formatted: 'Россия, Ставропольский край, Пятигорск' },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            {
+              title: { text: 'Грозный' },
+              subtitle: { text: 'Чечня' },
+              uri: 'ymapsbm1://geo?data=grozny',
+            },
+          ],
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          response: {
+            GeoObjectCollection: {
+              featureMember: [{ GeoObject: { Point: { pos: '45.6981 43.3180' } } }],
+            },
+          },
+        }),
+      } as Response);
+
+    const results = await provider.search({
+      query: 'пятигорск',
+      near: { lat: 43.1687, lng: 44.8133 },
+    });
+
+    expect(results.map((item) => item.title)).toEqual(['Пятигорск', 'Грозный']);
+    const suggestUrl = new URL(String((global.fetch as jest.Mock).mock.calls[1]?.[0]));
+    expect(suggestUrl.searchParams.has('ull')).toBe(false);
+    expect(suggestUrl.searchParams.has('ll')).toBe(false);
   });
 
   it('route делегирует RoutingProvider', async () => {

@@ -6,7 +6,8 @@ import { REDIS_CLIENT } from '../../redis/redis.constants';
 const GEO_SEARCH_TTL_SEC = 300;
 const GEO_ROUTE_TTL_SEC = 60;
 const GEO_REVERSE_TTL_SEC = 300;
-const KEY_PREFIX = 'geo:search:';
+/** v2: старый кэш хранил выдачу, обрезанную bbox Ингушетии. */
+const KEY_PREFIX = 'geo:search:v2:';
 const ROUTE_PREFIX = 'geo:route:';
 const REVERSE_PREFIX = 'geo:reverse:';
 

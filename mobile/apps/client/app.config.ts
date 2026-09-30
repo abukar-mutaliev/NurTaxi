@@ -154,7 +154,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         apiKey: yandexMapKitApiKey,
         locale: 'ru_RU',
-        flavor: 'lite',
+        // Подсказки адресов есть только в full. На lite suggest отклоняется,
+        // и клиент остаётся на серверном поиске с окном вокруг Ингушетии.
+        flavor: 'full',
       },
     ],
   ],

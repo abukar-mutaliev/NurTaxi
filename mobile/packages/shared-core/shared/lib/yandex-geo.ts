@@ -119,6 +119,11 @@ export interface SuggestAddressesOptions {
   limit?: number;
 }
 
+const WORLD_SUGGEST_WINDOW = {
+  southWest: { latitude: -85, longitude: -180 },
+  northEast: { latitude: 85, longitude: 180 },
+};
+
 /** Подсказки при наборе. `null` — Yandex недоступен, нужен серверный источник. */
 export async function suggestAddresses(
   query: string,
@@ -132,6 +137,9 @@ export async function suggestAddresses(
   const items = await callYandex((sdk) =>
     sdk.suggest(trimmed, {
       types: ['geo', 'biz'],
+      // Без явного окна MapKit сужает выдачу к GPS и оставляет только
+      // Ингушетию, Чечню и Осетию. Окно — весь мир, позиция лишь для сортировки.
+      boundingBox: WORLD_SUGGEST_WINDOW,
       ...(near ? { userPosition: toMapPoint(near) } : {}),
     }),
   );

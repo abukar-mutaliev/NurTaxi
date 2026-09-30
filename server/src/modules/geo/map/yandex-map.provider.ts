@@ -61,15 +61,23 @@ export class YandexMapProvider implements MapProvider {
   }
 
   async search(options: MapSearchOptions): Promise<AddressSuggestion[]> {
-    if (this.config.yandexGeosuggestApiKey) {
-      return this.searchViaGeosuggest(options);
+    if (!this.config.yandexGeosuggestApiKey && !this.config.yandexGeocoderApiKey) {
+      throw new Error('Yandex map provider: no Geosuggest or Geocoder API key configured');
     }
+
+    const limit = options.limit ?? 10;
+    // Геокодер без окна идёт первым: Geosuggest рядом с GPS клиента заполняет
+    // лимит Чечнёй и Осетией и не оставляет места Пятигорску, Москве, Тбилиси.
+    const batches: AddressSuggestion[][] = [];
 
     if (this.config.yandexGeocoderApiKey) {
-      return this.searchViaGeocoder(options);
+      batches.push(await this.searchSafely(() => this.searchViaGeocoder(options), 'geocoder'));
+    }
+    if (this.config.yandexGeosuggestApiKey) {
+      batches.push(await this.searchSafely(() => this.searchViaGeosuggest(options), 'geosuggest'));
     }
 
-    throw new Error('Yandex map provider: no Geosuggest or Geocoder API key configured');
+    return mergeAddressSuggestions(batches, limit);
   }
 
   async reverseGeocode(point: GeoPoint): Promise<string | null> {
@@ -140,10 +148,6 @@ export class YandexMapProvider implements MapProvider {
       results: String(limit),
       print_address: '1',
       attrs: 'uri',
-      // `ll` задаёт окно поиска: без `spn` Яндекс берёт 0.1×0.1° (~10 км) и
-      // отбрасывает Пятигорск, Москву, Грузию. `ull` только поднимает близкие
-      // адреса выше, не ограничивая выдачу.
-      ull: `${near.lng},${near.lat}`,
     });
 
     const url = `${this.config.geosuggestUrl}?${params.toString()}`;
@@ -168,7 +172,21 @@ export class YandexMapProvider implements MapProvider {
     );
   }
 
-  /** Прямой поиск через Geocoder, если ключ Geosuggest не задан. */
+  private async searchSafely(
+    search: () => Promise<AddressSuggestion[]>,
+    operation: string,
+  ): Promise<AddressSuggestion[]> {
+    try {
+      return await search();
+    } catch (error) {
+      this.logger.warn(
+        `Yandex ${operation} search failed: ${error instanceof Error ? error.message : error}`,
+      );
+      return [];
+    }
+  }
+
+  /** Прямой поиск через Geocoder без географического окна. */
   private async searchViaGeocoder(options: MapSearchOptions): Promise<AddressSuggestion[]> {
     const limit = options.limit ?? 10;
 
@@ -301,4 +319,29 @@ export class YandexMapProvider implements MapProvider {
 
     return (await response.json()) as T;
   }
+}
+
+/** Геокодер первым, затем подсказки. Одинаковые точки не повторяются. */
+function mergeAddressSuggestions(
+  batches: AddressSuggestion[][],
+  limit: number,
+): AddressSuggestion[] {
+  const merged: AddressSuggestion[] = [];
+  const seen = new Set<string>();
+
+  for (const batch of batches) {
+    for (const item of batch) {
+      const key = `${item.title.trim().toLowerCase()}:${item.lat.toFixed(3)}:${item.lng.toFixed(3)}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      merged.push(item);
+      if (merged.length >= limit) {
+        return merged;
+      }
+    }
+  }
+
+  return merged;
 }

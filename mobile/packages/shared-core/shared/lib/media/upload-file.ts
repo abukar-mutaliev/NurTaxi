@@ -45,13 +45,26 @@ export interface UploadFileOptions {
   timeoutMs?: number;
 }
 
+/**
+ * Фактический размер файла, который уйдёт в хранилище.
+ *
+ * Сначала меряем сам файл на диске, и только если это не удалось — берём `reported`
+ * от пикера. Пикер пережимает снимок (`quality`), и его `fileSize` на Android может
+ * описывать исходник, а не результат. Расхождение даже в байт роняет загрузку:
+ * presigned URL подписывает `Content-Length`, и MinIO отвечает 403 SignatureDoesNotMatch,
+ * что в приложении выглядит как «Не удалось загрузить файл» на любом фото.
+ */
 export async function getLocalFileSize(uri: string, reported?: number | null): Promise<number> {
+  try {
+    const info = await FileSystem.getInfoAsync(uri);
+    if (info.exists && 'size' in info && typeof info.size === 'number' && info.size > 0) {
+      return info.size;
+    }
+  } catch {
+    // `content://` без доступа к метаданным — ниже останется размер от пикера.
+  }
   if (typeof reported === 'number' && reported > 0) {
     return reported;
-  }
-  const info = await FileSystem.getInfoAsync(uri);
-  if (info.exists && 'size' in info && typeof info.size === 'number' && info.size > 0) {
-    return info.size;
   }
   throw new Error('Не удалось определить размер файла');
 }

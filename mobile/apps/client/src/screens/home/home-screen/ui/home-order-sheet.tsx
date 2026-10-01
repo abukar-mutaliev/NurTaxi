@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/m
 import { formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { PaymentMethodIcon } from './payment-method-icon';
@@ -141,6 +142,7 @@ export function HomeOrderSheet({
   onLayout,
 }: HomeOrderSheetProps) {
   const { width: screenWidth } = useWindowDimensions();
+  const [sheetHeight, setSheetHeight] = useState(0);
   const showEstimate = estimate && selectedTariffId === estimate.tariff.id;
   const tariffEstimates = showEstimate && estimate ? [estimate] : [];
   const tariffCount = tariffEstimates.length || 1;
@@ -154,92 +156,107 @@ export function HomeOrderSheet({
     <View
       onLayout={onLayout}
       pointerEvents="box-none"
-      style={[styles.root, { paddingBottom: bottomInset }]}
+      style={[
+        styles.root,
+        { paddingBottom: bottomInset },
+        sheetHeight > 0 ? { height: sheetHeight + bottomInset } : null,
+      ]}
     >
-      <View style={styles.sheet}>
-        <View style={styles.addressBlock}>
-          <Pressable onPress={onPickupPress} style={styles.addressRow}>
-            <View style={[styles.addressDot, { backgroundColor: sheetColors.pickupDot }]} />
-            <View style={styles.addressText}>
-              <Text style={styles.addressLabel}>{fromLabel}</Text>
-              <Text numberOfLines={1} style={styles.addressValue}>
-                {pickupAddress}
-              </Text>
+      <View style={styles.sheetFrame}>
+        <CollapsibleSheet onVisibleHeightChange={setSheetHeight} style={styles.sheet}>
+          <View style={styles.body}>
+            <View style={styles.addressBlock}>
+              <Pressable onPress={onPickupPress} style={styles.addressRow}>
+                <View style={[styles.addressDot, { backgroundColor: sheetColors.pickupDot }]} />
+                <View style={styles.addressText}>
+                  <Text style={styles.addressLabel}>{fromLabel}</Text>
+                  <Text numberOfLines={1} style={styles.addressValue}>
+                    {pickupAddress}
+                  </Text>
+                </View>
+              </Pressable>
+
+              <Pressable onPress={onDropoffPress} style={styles.addressRow}>
+                <View style={[styles.addressDot, { backgroundColor: sheetColors.dropoffDot }]} />
+                <View style={styles.addressText}>
+                  <Text style={styles.addressLabel}>{toLabel}</Text>
+                  <Text numberOfLines={1} style={styles.addressValue}>
+                    {dropoffAddress}
+                  </Text>
+                </View>
+              </Pressable>
             </View>
-          </Pressable>
 
-          <Pressable onPress={onDropoffPress} style={styles.addressRow}>
-            <View style={[styles.addressDot, { backgroundColor: sheetColors.dropoffDot }]} />
-            <View style={styles.addressText}>
-              <Text style={styles.addressLabel}>{toLabel}</Text>
-              <Text numberOfLines={1} style={styles.addressValue}>
-                {dropoffAddress}
+            <View style={styles.divider} />
+
+            {isEstimating && !estimate ? (
+              <View style={styles.loaderRow}>
+                <ActivityIndicator color={sheetColors.text} />
+                <Text style={styles.loaderText}>{loadingLabel}</Text>
+              </View>
+            ) : null}
+
+            {showEstimate ? (
+              <View
+                style={[
+                  styles.tariffRow,
+                  tariffEstimates.length <= 1 ? styles.tariffRowSingle : null,
+                ]}
+              >
+                {tariffEstimates.map((item) => (
+                  <TariffCard
+                    estimate={item}
+                    isSelected={selectedTariffId === item.tariff.id}
+                    key={item.tariff.id}
+                    onPress={() => onTariffPress(item.tariff.id)}
+                    priceFromLabel={priceFromLabel}
+                    width={tariffCardWidth}
+                  />
+                ))}
+              </View>
+            ) : null}
+
+            <Pressable onPress={onPaymentPress} style={styles.paymentRow}>
+              <PaymentMethodIcon method={paymentMethod} />
+              <Text numberOfLines={1} style={styles.paymentLine}>
+                <Text style={styles.paymentLabel}>{paymentMethodLabel}</Text>
+                <Text style={styles.paymentValue}> · {paymentLabel}</Text>
               </Text>
-            </View>
-          </Pressable>
-        </View>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
 
-        <View style={styles.divider} />
+            {extras ? (
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                style={styles.extras}
+              >
+                {extras}
+              </ScrollView>
+            ) : null}
 
-        {isEstimating && !estimate ? (
-          <View style={styles.loaderRow}>
-            <ActivityIndicator color={sheetColors.text} />
-            <Text style={styles.loaderText}>{loadingLabel}</Text>
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={!canOrder || isOrdering}
+              onPress={onOrder}
+              style={({ pressed }) => [
+                styles.orderButtonWrap,
+                { opacity: !canOrder ? 0.45 : pressed ? 0.92 : 1 },
+              ]}
+            >
+              <LinearGradient
+                colors={[sheetColors.buttonStart, sheetColors.buttonEnd]}
+                end={{ x: 1, y: 0.5 }}
+                start={{ x: 0, y: 0.5 }}
+                style={styles.orderButton}
+              >
+                <Text style={styles.orderButtonText}>{isOrdering ? loadingLabel : orderLabel}</Text>
+              </LinearGradient>
+            </Pressable>
           </View>
-        ) : null}
-
-        {showEstimate ? (
-          <View
-            style={[styles.tariffRow, tariffEstimates.length <= 1 ? styles.tariffRowSingle : null]}
-          >
-            {tariffEstimates.map((item) => (
-              <TariffCard
-                estimate={item}
-                isSelected={selectedTariffId === item.tariff.id}
-                key={item.tariff.id}
-                onPress={() => onTariffPress(item.tariff.id)}
-                priceFromLabel={priceFromLabel}
-                width={tariffCardWidth}
-              />
-            ))}
-          </View>
-        ) : null}
-
-        <Pressable onPress={onPaymentPress} style={styles.paymentRow}>
-          <PaymentMethodIcon method={paymentMethod} />
-          <Text numberOfLines={1} style={styles.paymentLine}>
-            <Text style={styles.paymentLabel}>{paymentMethodLabel}</Text>
-            <Text style={styles.paymentValue}> · {paymentLabel}</Text>
-          </Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-
-        {extras ? (
-          <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled style={styles.extras}>
-            {extras}
-          </ScrollView>
-        ) : null}
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <Pressable
-          accessibilityRole="button"
-          disabled={!canOrder || isOrdering}
-          onPress={onOrder}
-          style={({ pressed }) => [
-            styles.orderButtonWrap,
-            { opacity: !canOrder ? 0.45 : pressed ? 0.92 : 1 },
-          ]}
-        >
-          <LinearGradient
-            colors={[sheetColors.buttonStart, sheetColors.buttonEnd]}
-            end={{ x: 1, y: 0.5 }}
-            start={{ x: 0, y: 0.5 }}
-            style={styles.orderButton}
-          >
-            <Text style={styles.orderButtonText}>{isOrdering ? loadingLabel : orderLabel}</Text>
-          </LinearGradient>
-        </Pressable>
+        </CollapsibleSheet>
       </View>
     </View>
   );
@@ -277,6 +294,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 16,
+  },
+  body: {
+    paddingBottom: 10,
   },
   chevron: {
     color: sheetColors.label,
@@ -359,6 +379,7 @@ const styles = StyleSheet.create({
   },
   root: {
     bottom: 0,
+    justifyContent: 'flex-end',
     left: 0,
     position: 'absolute',
     right: 0,
@@ -368,10 +389,12 @@ const styles = StyleSheet.create({
     borderColor: sheetColors.border,
     borderRadius: 22,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  sheetFrame: {
+    borderRadius: 22,
     elevation: 8,
     marginHorizontal: 16,
-    paddingBottom: 10,
-    paddingTop: 6,
     ...glassShadow({ color: sheetColors.shadow, radius: 16 }),
   },
   tariffBody: {

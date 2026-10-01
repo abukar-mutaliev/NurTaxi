@@ -23,8 +23,8 @@ import {
   type CameraPosition,
 } from '../model/map-provider';
 import type { MapCanvasHandle, MapCanvasProps, MapMarker } from './map-canvas';
-import { MAP_MARKER_BITMAP_SCALE, MAP_MARKER_SOURCES } from './map-marker.assets';
-import { getMarkerAnchor } from './map-marker.constants';
+import { MAP_MARKER_SOURCES } from './map-marker.assets';
+import { MAP_MARKER_ICON_SCALE, getMarkerAnchor } from './map-marker.constants';
 
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 const ROUTE_STROKE_COLOR = '#C99A54';
@@ -41,9 +41,13 @@ function ignoreCameraRejection(result: Promise<unknown> | undefined): void {
 }
 
 /**
- * Метка в координатах карты. Экранный оверлей при зуме и сдвиге отставал от камеры
- * MapKit и уезжал с точки. Якорь крепит кончик пина (или центр машинки) к координате,
- * `scale` держит размер иконки постоянным — она не растёт вместе с зумом.
+ * Метка в координатах карты — растровая иконка с известной до пикселя геометрией.
+ * Якорь держит точку под кружком (или центр машинки) ровно на координате, постоянный
+ * `scale` не даёт иконке расти вместе с зумом.
+ *
+ * React-дети `<Marker>` намеренно не используются: на Android их снимок в битмап зависит от
+ * раскладки нативного контейнера и после смены координаты уезжал на полэкрана
+ * (подробнее — в `map-marker.assets.ts`).
  */
 function MapPlacemark({ marker }: { marker: MapMarker }) {
   const point = normalizeGeoPoint(marker.point);
@@ -52,7 +56,7 @@ function MapPlacemark({ marker }: { marker: MapMarker }) {
     <Marker
       anchor={getMarkerAnchor(marker.kind)}
       point={toMapPoint(point)}
-      scale={MAP_MARKER_BITMAP_SCALE}
+      scale={MAP_MARKER_ICON_SCALE}
       source={MAP_MARKER_SOURCES[marker.kind]}
       zIndex={marker.kind === 'driver' ? 3 : 2}
     />

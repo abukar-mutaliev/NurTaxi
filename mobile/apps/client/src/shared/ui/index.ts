@@ -6,6 +6,8 @@ export { GlassListRow } from './glass-list-row';
 export { GlassConfirmDialog } from './glass-confirm-dialog';
 export { GlassPrimaryButton } from './glass-primary-button';
 export { Chevron } from './chevron';
+export { CollapsibleSheet } from './collapsible-sheet';
+export type { CollapsibleSheetProps } from './collapsible-sheet';
 export { GlassScreenHeader } from './glass-screen-header';
 export { GlassTextField } from './glass-text-field';
 export { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';

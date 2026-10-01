@@ -5,6 +5,7 @@ import { formatRating } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { useOrderTopInset } from './use-order-top-inset';
@@ -167,50 +168,52 @@ export function DriverEnRouteOverlay({
         pointerEvents="box-none"
         style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 12) }]}
       >
-        <View style={styles.driverSheet}>
-          <View style={styles.driverHeader}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{initial}</Text>
-            </View>
-
-            <View style={styles.driverInfo}>
-              <View style={styles.nameRow}>
-                <Text numberOfLines={1} style={styles.driverName}>
-                  {driver.fullName}
-                </Text>
-                <Text style={styles.rating}>★ {formatRating(driver.rating)}</Text>
+        <CollapsibleSheet variant="floating">
+          <View style={styles.driverSheet}>
+            <View style={styles.driverHeader}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{initial}</Text>
               </View>
-              {vehicleLine ? (
-                <Text numberOfLines={1} style={styles.vehicleLine}>
-                  {vehicleLine}
-                </Text>
-              ) : null}
-              {vehicle?.plateNumber ? (
-                <View style={styles.plateBadge}>
-                  <Text style={styles.plateText}>{vehicle.plateNumber}</Text>
+
+              <View style={styles.driverInfo}>
+                <View style={styles.nameRow}>
+                  <Text numberOfLines={1} style={styles.driverName}>
+                    {driver.fullName}
+                  </Text>
+                  <Text style={styles.rating}>★ {formatRating(driver.rating)}</Text>
                 </View>
-              ) : null}
+                {vehicleLine ? (
+                  <Text numberOfLines={1} style={styles.vehicleLine}>
+                    {vehicleLine}
+                  </Text>
+                ) : null}
+                {vehicle?.plateNumber ? (
+                  <View style={styles.plateBadge}>
+                    <Text style={styles.plateText}>{vehicle.plateNumber}</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.actionsRow}>
+              <ActionButton label={callLabel} onPress={onCall} />
+              <ActionButton label={chatLabel} onPress={openChat} />
+              <ActionButton label={cancelLabel} onPress={onCancel} tone="danger" />
             </View>
           </View>
 
-          <View style={styles.divider} />
-
-          <View style={styles.actionsRow}>
-            <ActionButton label={callLabel} onPress={onCall} />
-            <ActionButton label={chatLabel} onPress={openChat} />
-            <ActionButton label={cancelLabel} onPress={onCancel} tone="danger" />
+          <View style={styles.safetyBanner}>
+            <View style={styles.safetyIconOuter}>
+              <View style={styles.safetyIconInner} />
+            </View>
+            <View style={styles.safetyText}>
+              <Text style={styles.safetyTitle}>{femaleDriverTitle}</Text>
+              <Text style={styles.safetySubtitle}>{femaleDriverSubtitle}</Text>
+            </View>
           </View>
-        </View>
-
-        <View style={styles.safetyBanner}>
-          <View style={styles.safetyIconOuter}>
-            <View style={styles.safetyIconInner} />
-          </View>
-          <View style={styles.safetyText}>
-            <Text style={styles.safetyTitle}>{femaleDriverTitle}</Text>
-            <Text style={styles.safetySubtitle}>{femaleDriverSubtitle}</Text>
-          </View>
-        </View>
+        </CollapsibleSheet>
       </View>
     </View>
   );

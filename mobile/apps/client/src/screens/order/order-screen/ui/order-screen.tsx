@@ -64,6 +64,7 @@ import {
   GlassPrimaryButton,
   GlassScreenHeader,
   GlassScreenShell,
+  CollapsibleSheet,
 } from '@/shared/ui';
 import { MapCanvas, type MapCanvasHandle, resolveOrderMapMarkers } from '@/widgets/map';
 
@@ -388,113 +389,120 @@ export function OrderScreen() {
                 <GlassScreenHeader onBack={leaveToHome} title={t('order.tripTitle')} />
               </View>
 
-              <View style={[styles.panel, { gap: 12, padding: 16 }]}>
-                <GlassCard>
-                  <View style={styles.statusRow}>
-                    <Badge
-                      label={formatOrderStatusLabel(order.status)}
-                      tone={orderStatusTone(order.status)}
-                    />
-                    {!isOnline ? (
-                      <View style={styles.reconnectingWrap}>
-                        <GlassCaption style={styles.reconnectingCaption}>
-                          {t('common.reconnecting')}
-                        </GlassCaption>
+              <View style={[styles.panel, { padding: 16 }]}>
+                <CollapsibleSheet variant="floating">
+                  <View style={{ gap: 12 }}>
+                    <GlassCard>
+                      <View style={styles.statusRow}>
+                        <Badge
+                          label={formatOrderStatusLabel(order.status)}
+                          tone={orderStatusTone(order.status)}
+                        />
+                        {!isOnline ? (
+                          <View style={styles.reconnectingWrap}>
+                            <GlassCaption style={styles.reconnectingCaption}>
+                              {t('common.reconnecting')}
+                            </GlassCaption>
+                          </View>
+                        ) : null}
                       </View>
+
+                      {noDrivers ? (
+                        <View style={styles.noDriversBlock}>
+                          <Text style={styles.noDriversText}>{t('order.noDrivers')}</Text>
+                          <GlassPrimaryButton
+                            onPress={retryOrder}
+                            title={t('order.tryAgain')}
+                            variant="secondary"
+                          />
+                        </View>
+                      ) : null}
+
+                      {order.status === OrderStatus.FailedPayment ? (
+                        <GlassCard tone="warning">
+                          <Text
+                            style={{ color: GLASS_COLORS.title, fontSize: 15, fontWeight: '600' }}
+                          >
+                            {t('payment.failed')}
+                          </Text>
+                          <GlassCaption>{t('payment.failedHint')}</GlassCaption>
+                          <GlassPrimaryButton
+                            onPress={refetch}
+                            title={t('payment.retry')}
+                            variant="secondary"
+                          />
+                        </GlassCard>
+                      ) : null}
+
+                      {stage === 'finishing' || order.status === OrderStatus.Closed ? (
+                        <View style={{ gap: 4, paddingTop: 8 }}>
+                          <Text style={{ color: GLASS_COLORS.title, fontSize: 15 }}>
+                            {formatMoney(order.priceFinal ?? order.priceEstimated, 'RUB')}
+                          </Text>
+                          <GlassCaption>{order.dropoffAddress}</GlassCaption>
+                        </View>
+                      ) : null}
+
+                      {order.childSeat ? <GlassCaption>{t('order.childSeat')}</GlassCaption> : null}
+                      {order.passengerName ? (
+                        <GlassCaption>
+                          {t('driver.orderForOtherPassenger', { name: order.passengerName })}
+                          {order.passengerPhone ? ` · ${order.passengerPhone}` : ''}
+                        </GlassCaption>
+                      ) : null}
+                      {order.comment ? (
+                        <GlassCaption>
+                          {t('driver.clientComment')}: {order.comment}
+                        </GlassCaption>
+                      ) : null}
+                    </GlassCard>
+
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      {isCancellableByClient(order.status) ? (
+                        <View style={{ flex: 1 }}>
+                          <GlassPrimaryButton
+                            onPress={() => setCancelVisible(true)}
+                            title={t('order.cancel')}
+                            variant="secondary"
+                          />
+                        </View>
+                      ) : null}
+                      {isSosAllowed(order.status) ? (
+                        <View style={{ flex: 1 }}>
+                          <GlassPrimaryButton
+                            disabled={sosActivated || sosState.isLoading}
+                            loading={sosState.isLoading}
+                            loadingTitle={t('common.loading')}
+                            onPress={triggerSos}
+                            title={t('sos.button')}
+                          />
+                        </View>
+                      ) : null}
+                    </View>
+
+                    {order.status === OrderStatus.Closed ? (
+                      <GlassPrimaryButton
+                        onPress={() =>
+                          router.push({ pathname: '/trip/[id]/receipt', params: { id: orderId } })
+                        }
+                        title={t('order.receipt')}
+                        variant="secondary"
+                      />
+                    ) : null}
+
+                    {(stage === 'finishing' || order.status === OrderStatus.Closed) &&
+                    !hasReview ? (
+                      <GlassPrimaryButton
+                        onPress={() => setReviewVisible(true)}
+                        title={t('review.title')}
+                      />
+                    ) : null}
+
+                    {isTerminalOrder(order.status) && !noDrivers ? (
+                      <GlassPrimaryButton onPress={leaveToHome} title={t('common.close')} />
                     ) : null}
                   </View>
-
-                  {noDrivers ? (
-                    <View style={styles.noDriversBlock}>
-                      <Text style={styles.noDriversText}>{t('order.noDrivers')}</Text>
-                      <GlassPrimaryButton
-                        onPress={retryOrder}
-                        title={t('order.tryAgain')}
-                        variant="secondary"
-                      />
-                    </View>
-                  ) : null}
-
-                  {order.status === OrderStatus.FailedPayment ? (
-                    <GlassCard tone="warning">
-                      <Text style={{ color: GLASS_COLORS.title, fontSize: 15, fontWeight: '600' }}>
-                        {t('payment.failed')}
-                      </Text>
-                      <GlassCaption>{t('payment.failedHint')}</GlassCaption>
-                      <GlassPrimaryButton
-                        onPress={refetch}
-                        title={t('payment.retry')}
-                        variant="secondary"
-                      />
-                    </GlassCard>
-                  ) : null}
-
-                  {stage === 'finishing' || order.status === OrderStatus.Closed ? (
-                    <View style={{ gap: 4, paddingTop: 8 }}>
-                      <Text style={{ color: GLASS_COLORS.title, fontSize: 15 }}>
-                        {formatMoney(order.priceFinal ?? order.priceEstimated, 'RUB')}
-                      </Text>
-                      <GlassCaption>{order.dropoffAddress}</GlassCaption>
-                    </View>
-                  ) : null}
-
-                  {order.childSeat ? <GlassCaption>{t('order.childSeat')}</GlassCaption> : null}
-                  {order.passengerName ? (
-                    <GlassCaption>
-                      {t('driver.orderForOtherPassenger', { name: order.passengerName })}
-                      {order.passengerPhone ? ` · ${order.passengerPhone}` : ''}
-                    </GlassCaption>
-                  ) : null}
-                  {order.comment ? (
-                    <GlassCaption>
-                      {t('driver.clientComment')}: {order.comment}
-                    </GlassCaption>
-                  ) : null}
-                </GlassCard>
-
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  {isCancellableByClient(order.status) ? (
-                    <View style={{ flex: 1 }}>
-                      <GlassPrimaryButton
-                        onPress={() => setCancelVisible(true)}
-                        title={t('order.cancel')}
-                        variant="secondary"
-                      />
-                    </View>
-                  ) : null}
-                  {isSosAllowed(order.status) ? (
-                    <View style={{ flex: 1 }}>
-                      <GlassPrimaryButton
-                        disabled={sosActivated || sosState.isLoading}
-                        loading={sosState.isLoading}
-                        loadingTitle={t('common.loading')}
-                        onPress={triggerSos}
-                        title={t('sos.button')}
-                      />
-                    </View>
-                  ) : null}
-                </View>
-
-                {order.status === OrderStatus.Closed ? (
-                  <GlassPrimaryButton
-                    onPress={() =>
-                      router.push({ pathname: '/trip/[id]/receipt', params: { id: orderId } })
-                    }
-                    title={t('order.receipt')}
-                    variant="secondary"
-                  />
-                ) : null}
-
-                {(stage === 'finishing' || order.status === OrderStatus.Closed) && !hasReview ? (
-                  <GlassPrimaryButton
-                    onPress={() => setReviewVisible(true)}
-                    title={t('review.title')}
-                  />
-                ) : null}
-
-                {isTerminalOrder(order.status) && !noDrivers ? (
-                  <GlassPrimaryButton onPress={leaveToHome} title={t('common.close')} />
-                ) : null}
+                </CollapsibleSheet>
               </View>
             </>
           ) : null}

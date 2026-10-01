@@ -111,18 +111,30 @@ export function useAddressSelection() {
 
       if (field === 'pickup') {
         dispatch(pickupSelected(normalized));
-        router.replace({
+        /**
+         * Следующий шаг — «Куда». `dismissTo` возвращает к уже открытому экрану адреса
+         * (сворачивая карту, если точку ставили на ней) и переписывает его параметры; если
+         * экрана адреса в стеке нет, текущий заменяется им. Раньше здесь был `replace`: с карты
+         * он подкладывал второй экран адреса поверх первого, и после выбора «Куда» `back()`
+         * возвращал на устаревший экран «Откуда» с пустым полем.
+         *
+         * `sync` меняется при каждом выборе: параметр `field` может совпасть с прежним (пассажир
+         * сам переключился на «Откуда» внутри экрана «Куда»), а сбросить локальное состояние
+         * экрана всё равно нужно.
+         */
+        router.dismissTo({
           pathname: '/address/search',
-          params: { field: 'dropoff', mode: 'order' },
+          params: { field: 'dropoff', mode: 'order', sync: String(Date.now()) },
         });
       } else {
         dispatch(dropoffSelected(normalized));
         ensurePickupFromGps();
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)');
-        }
+        /**
+         * Маршрут собран — возвращаемся на главный экран, сколько бы экранов ни лежало сверху
+         * (экран адреса, карта над ним). `back()` с карты возвращал на экран адреса, где активное
+         * поле показывало пустую строку ввода, и казалось, что адрес не подставился.
+         */
+        router.dismissTo('/(tabs)');
       }
     },
     [dispatch, ensurePickupFromGps, router, t],

@@ -241,6 +241,8 @@ export const ru = {
     cancelReason: 'Причина отмены',
     activeOrderExists: 'У вас уже есть активная поездка',
     goToActive: 'Активная поездка',
+    collapseSheet: 'Свернуть',
+    expandSheet: 'Развернуть',
     cancelTrip: 'Отменить поездку',
     shareTrip: 'Поделиться',
     shareMessage: 'Моя поездка Nur: {{pickup}} → {{dropoff}}',

@@ -2,7 +2,7 @@
  * Недавно выбранные адреса клиента (локально, redux-persist).
  * Пополняется при выборе из поиска или с карты, без «Моё местоположение» и избранного.
  */
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 export interface RecentAddress {
   id: string;
@@ -115,7 +115,14 @@ export interface WithRecentAddressesState {
   recentAddresses: RecentAddressesState;
 }
 
-export const selectRecentAddresses = (state: WithRecentAddressesState): RecentAddress[] =>
-  (state.recentAddresses?.items ?? [])
-    .map(sanitizeRecentAddress)
-    .filter((item): item is RecentAddress => item !== null);
+const EMPTY_RECENT_ADDRESSES: RecentAddress[] = [];
+
+const selectRecentAddressItems = (state: WithRecentAddressesState): RecentAddress[] => {
+  const items = state.recentAddresses?.items;
+  return Array.isArray(items) ? items : EMPTY_RECENT_ADDRESSES;
+};
+
+/** Мемоизация нужна: `.map`/`.filter` иначе дают новый массив на каждый вызов и Redux перерисовывает экран. */
+export const selectRecentAddresses = createSelector([selectRecentAddressItems], (items) =>
+  items.map(sanitizeRecentAddress).filter((item): item is RecentAddress => item !== null),
+);

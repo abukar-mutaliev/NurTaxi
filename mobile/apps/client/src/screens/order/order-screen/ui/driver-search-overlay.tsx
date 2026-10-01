@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
@@ -93,8 +94,10 @@ export function DriverSearchOverlay({
 }: DriverSearchOverlayProps) {
   const insets = useSafeAreaInsets();
   const headerTopInset = useOrderTopInset();
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const scale = width / 390;
+  const [minimized, setMinimized] = useState(false);
 
   const coreBreath = useSharedValue(0);
 
@@ -119,7 +122,9 @@ export function DriverSearchOverlay({
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <View pointerEvents="none" style={[styles.overlay, { backgroundColor: colors.overlay }]} />
+      {minimized ? null : (
+        <View pointerEvents="none" style={[styles.overlay, { backgroundColor: colors.overlay }]} />
+      )}
 
       <View style={[styles.topBar, { paddingTop: headerTopInset }]}>
         <Pressable
@@ -131,85 +136,116 @@ export function DriverSearchOverlay({
         </Pressable>
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.titleBlock}>
-          <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
-            {titleLine1}
-          </Text>
-          <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
-            {titleLine2}
-          </Text>
-        </View>
+      {minimized ? null : (
+        <View style={styles.content}>
+          <View style={styles.titleBlock}>
+            <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
+              {titleLine1}
+            </Text>
+            <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
+              {titleLine2}
+            </Text>
+          </View>
 
-        <View style={[styles.radar, { height: radarSize, width: radarSize }]}>
-          <View
-            pointerEvents="none"
-            style={[
-              styles.staticRing,
-              {
-                backgroundColor: colors.ringMid,
-                height: radarSize * 0.76,
-                width: radarSize * 0.76,
-              },
-            ]}
-          />
-          <View
-            pointerEvents="none"
-            style={[
-              styles.staticRing,
-              {
-                backgroundColor: colors.ringInner,
-                height: radarSize * 0.52,
-                width: radarSize * 0.52,
-              },
-            ]}
-          />
-
-          {Array.from({ length: RING_COUNT }, (_, index) => (
-            <PulseRing baseSize={radarSize} index={index} key={index} />
-          ))}
-
-          <Animated.View
-            style={[
-              styles.core,
-              coreAnimatedStyle,
-              {
-                height: radarSize * 0.347,
-                width: radarSize * 0.347,
-              },
-            ]}
-          >
-            <Animated.View
+          <View style={[styles.radar, { height: radarSize, width: radarSize }]}>
+            <View
+              pointerEvents="none"
               style={[
-                styles.carIcon,
-                carAnimatedStyle,
+                styles.staticRing,
                 {
-                  height: radarSize * 0.067,
-                  width: radarSize * 0.147,
+                  backgroundColor: colors.ringMid,
+                  height: radarSize * 0.76,
+                  width: radarSize * 0.76,
                 },
               ]}
             />
-          </Animated.View>
-        </View>
+            <View
+              pointerEvents="none"
+              style={[
+                styles.staticRing,
+                {
+                  backgroundColor: colors.ringInner,
+                  height: radarSize * 0.52,
+                  width: radarSize * 0.52,
+                },
+              ]}
+            />
 
-        <View style={styles.subtitleBlock}>
-          <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
-            {subtitleLine1}
-          </Text>
-          <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
-            {subtitleLine2}
-          </Text>
-        </View>
-      </View>
+            {Array.from({ length: RING_COUNT }, (_, index) => (
+              <PulseRing baseSize={radarSize} index={index} key={index} />
+            ))}
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onCancel}
-          style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-        >
-          <Text style={styles.cancelText}>{cancelLabel}</Text>
-        </Pressable>
+            <Animated.View
+              style={[
+                styles.core,
+                coreAnimatedStyle,
+                {
+                  height: radarSize * 0.347,
+                  width: radarSize * 0.347,
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.carIcon,
+                  carAnimatedStyle,
+                  {
+                    height: radarSize * 0.067,
+                    width: radarSize * 0.147,
+                  },
+                ]}
+              />
+            </Animated.View>
+          </View>
+
+          <View style={styles.subtitleBlock}>
+            <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
+              {subtitleLine1}
+            </Text>
+            <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
+              {subtitleLine2}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <View
+        style={[
+          styles.footer,
+          minimized ? styles.footerMinimized : null,
+          { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+        ]}
+      >
+        <View style={minimized ? styles.minimizedCard : styles.expandedFooter}>
+          <Pressable
+            accessibilityLabel={minimized ? t('order.expandSheet') : t('order.collapseSheet')}
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => setMinimized((value) => !value)}
+            style={styles.handle}
+          >
+            <View style={styles.grabber} />
+          </Pressable>
+
+          {minimized ? (
+            <View style={styles.minimizedCopy}>
+              <Text style={styles.minimizedTitle}>
+                {titleLine1} {titleLine2}
+              </Text>
+              <Text style={styles.minimizedSubtitle}>
+                {subtitleLine1} {subtitleLine2}
+              </Text>
+            </View>
+          ) : null}
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={onCancel}
+            style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.cancelText}>{cancelLabel}</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -268,6 +304,63 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   footer: {
+    alignItems: 'center',
+  },
+  footerMinimized: {
+    bottom: 0,
+    left: 16,
+    position: 'absolute',
+    right: 16,
+  },
+  grabber: {
+    backgroundColor: '#D9D0C4',
+    borderRadius: 2,
+    height: 4,
+    width: 36,
+  },
+  handle: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: colors.glassBg,
+    borderColor: colors.glassBorder,
+    borderRadius: 14,
+    borderWidth: 1,
+    elevation: 2,
+    height: 28,
+    justifyContent: 'center',
+    marginBottom: 8,
+    width: 72,
+    ...glassShadow({ color: colors.shadow, offset: { width: 0, height: 4 }, radius: 8 }),
+  },
+  minimizedCard: {
+    alignItems: 'center',
+    backgroundColor: colors.glassBg,
+    borderColor: colors.glassBorder,
+    borderRadius: 28,
+    borderWidth: 1,
+    gap: 8,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 4,
+    width: '100%',
+    ...glassShadow({ color: colors.shadow }),
+  },
+  minimizedCopy: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  minimizedSubtitle: {
+    color: colors.subtitle,
+    fontSize: 13,
+    textAlign: 'center',
+  },
+  minimizedTitle: {
+    color: colors.title,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  expandedFooter: {
     alignItems: 'center',
   },
   overlay: {

@@ -89,6 +89,8 @@ export const en: DeepPartial<TranslationResources> = {
     cancelTrip: 'Cancel trip',
     shareTrip: 'Share',
     shareMessage: 'My Nur trip: {{pickup}} → {{dropoff}}',
+    collapseSheet: 'Collapse',
+    expandSheet: 'Expand',
   },
   driver: {
     childSeat: 'Child seat',

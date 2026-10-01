@@ -76,11 +76,18 @@ export function AddressSearchScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const scale = width / 390;
-  const params = useLocalSearchParams<{ field?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ field?: string; mode?: string; sync?: string }>();
 
   const initialField = parseAddressFieldParam(params.field);
   const mode = parseAddressModeParam(params.mode);
   const fieldParam = parseRouteParam(params.field);
+  /**
+   * Ключ сброса локального состояния. `field` из параметров + `sync`, который
+   * `useAddressSelection` меняет при каждом выборе «Откуда»: экран мог остаться в стеке под
+   * картой с активным полем «Откуда», и после выбора точки его нужно перевести на «Куда», даже
+   * если параметр `field` формально не изменился.
+   */
+  const syncKey = `${fieldParam ?? ''}|${parseRouteParam(params.sync) ?? ''}`;
 
   const { regionId } = useOrderRegion();
   const { pickup, dropoff } = useAppSelector(selectOrderDraft);
@@ -103,14 +110,14 @@ export function AddressSearchScreen() {
   const [leavingToOrder, setLeavingToOrder] = useState(false);
 
   /**
-   * Сброс локального состояния при смене `field` в параметрах маршрута (переключение
-   * pickup ↔ dropoff без ухода с экрана). Обновляем прямо во время рендера — без лишнего
-   * холостого рендера, который дал бы эффект (see react.dev: «Adjusting state when a prop
-   * changes»).
+   * Сброс локального состояния при смене параметров маршрута (переключение pickup ↔ dropoff
+   * без ухода с экрана, возврат с карты после выбора точки). Обновляем прямо во время
+   * рендера — без лишнего холостого рендера, который дал бы эффект (see react.dev:
+   * «Adjusting state when a prop changes»).
    */
-  const [syncedField, setSyncedField] = useState(fieldParam);
-  if (fieldParam !== syncedField) {
-    setSyncedField(fieldParam);
+  const [syncedKey, setSyncedKey] = useState(syncKey);
+  if (syncKey !== syncedKey) {
+    setSyncedKey(syncKey);
     setActiveField(parseAddressFieldParam(fieldParam));
     setQuery('');
     setPendingOrderSelection(null);
@@ -212,7 +219,8 @@ export function AddressSearchScreen() {
           commitActiveFieldDraftRef.current(field);
         }
       };
-    }, []),
+      // Сеттер стабилен; указан явно, чтобы React Compiler сохранил ручную мемоизацию.
+    }, [setLeavingToOrder]),
   );
 
   const applyMyLocation = (coords: GeoPoint) => {

@@ -99,10 +99,21 @@ describe('recentAddressesReducer', () => {
 
 describe('selectRecentAddresses', () => {
   it('не падает, если persist отдал items = undefined', () => {
-    expect(
-      selectRecentAddresses({
-        recentAddresses: { items: undefined as unknown as [] },
-      }),
-    ).toEqual([]);
+    const state = {
+      recentAddresses: { items: undefined as unknown as [] },
+    };
+
+    expect(selectRecentAddresses(state)).toEqual([]);
+    expect(selectRecentAddresses(state)).toBe(selectRecentAddresses(state));
+  });
+
+  it('возвращает ту же ссылку, если список адресов не изменился', () => {
+    const state = {
+      recentAddresses: {
+        items: [buildRecentAddress({ lat: 43.2, lng: 44.7, address: 'Первый' })],
+      },
+    };
+
+    expect(selectRecentAddresses(state)).toBe(selectRecentAddresses(state));
   });
 });

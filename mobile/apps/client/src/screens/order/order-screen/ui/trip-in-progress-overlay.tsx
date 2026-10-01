@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
-import { Chevron } from '@/shared/ui';
+import { Chevron, CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { useOrderTopInset } from './use-order-top-inset';
@@ -125,59 +125,61 @@ export function TripInProgressOverlay({
         pointerEvents="box-none"
         style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 12) }]}
       >
-        <View style={styles.tripSheet}>
-          <View style={styles.addressBlock}>
-            <View style={styles.addressRail}>
-              <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
-              <View style={styles.connector} />
-              <View style={[styles.addressDot, { backgroundColor: colors.dropoffDot }]} />
+        <CollapsibleSheet variant="floating">
+          <View style={styles.tripSheet}>
+            <View style={styles.addressBlock}>
+              <View style={styles.addressRail}>
+                <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
+                <View style={styles.connector} />
+                <View style={[styles.addressDot, { backgroundColor: colors.dropoffDot }]} />
+              </View>
+              <View style={styles.addressList}>
+                <Text numberOfLines={2} style={styles.addressText}>
+                  {pickupAddress}
+                </Text>
+                <Text numberOfLines={2} style={styles.addressText}>
+                  {dropoffAddress}
+                </Text>
+              </View>
             </View>
-            <View style={styles.addressList}>
-              <Text numberOfLines={2} style={styles.addressText}>
-                {pickupAddress}
-              </Text>
-              <Text numberOfLines={2} style={styles.addressText}>
-                {dropoffAddress}
-              </Text>
+
+            <View style={styles.divider} />
+
+            <View style={styles.statsRow}>
+              <StatColumn label={durationLabel} value={durationValue} />
+              <StatColumn label={distanceLabel} value={distanceValue} />
+              <StatColumn label={priceLabel} value={priceValue} />
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.actionsRow}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onShare}
+              style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.shareText}>{shareLabel}</Text>
+            </Pressable>
 
-          <View style={styles.statsRow}>
-            <StatColumn label={durationLabel} value={durationValue} />
-            <StatColumn label={distanceLabel} value={distanceValue} />
-            <StatColumn label={priceLabel} value={priceValue} />
+            {canCancel ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onCancel}
+                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.cancelText}>{cancelLabel}</Text>
+              </Pressable>
+            ) : onSos && sosLabel ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onSos}
+                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.cancelText}>{sosLabel}</Text>
+              </Pressable>
+            ) : null}
           </View>
-        </View>
-
-        <View style={styles.actionsRow}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onShare}
-            style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
-          >
-            <Text style={styles.shareText}>{shareLabel}</Text>
-          </Pressable>
-
-          {canCancel ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={onCancel}
-              style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.cancelText}>{cancelLabel}</Text>
-            </Pressable>
-          ) : onSos && sosLabel ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={onSos}
-              style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.cancelText}>{sosLabel}</Text>
-            </Pressable>
-          ) : null}
-        </View>
+        </CollapsibleSheet>
       </View>
     </View>
   );

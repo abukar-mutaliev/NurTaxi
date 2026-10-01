@@ -29,7 +29,7 @@ docker compose --profile observability up -d      # + Prometheus, Grafana, OTel 
 и порты БД. После `git pull`:
 
 ```bash
-cd /var/www/test-app/NurTaxi/infra
+cd /var/www/NurTaxi/infra
 cp .env.example .env          # задайте СВОИ MINIO_ROOT_USER и MINIO_ROOT_PASSWORD
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 # Docker сам прописывает iptables и часто обходит ufw — закрывает bind 127.0.0.1 выше.
@@ -39,7 +39,10 @@ ufw deny 9000; ufw deny 9001; ufw deny 5433; ufw deny 6380; ufw deny 4222; ufw d
 
 В `server/.env` те же ключи: `S3_ACCESS_KEY` / `S3_SECRET_KEY`,
 `S3_ENDPOINT=http://127.0.0.1:9000`,
-`S3_PUBLIC_ENDPOINT=https://taxi.rulplus.ru/s3`.
+`S3_PUBLIC_ENDPOINT=https://taxi.rulplus.ru` — именно домен без пути: presigned URL
+подписан по пути запроса, и любой префикс, который nginx срезает, ломает подпись
+(MinIO отвечает 403 SignatureDoesNotMatch). Телефоны ходят на
+`https://taxi.rulplus.ru/nurtaxi-documents/...`, nginx проксирует путь как есть.
 В nginx сайта подключите `infra/nginx/s3-proxy.conf`, затем `nginx -t && systemctl reload nginx`
 и перезапуск API. Пока ключи из репозитория и публичный адрес хранилища совпадают,
 backend отказывается стартовать.

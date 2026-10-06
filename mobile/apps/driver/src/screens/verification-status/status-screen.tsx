@@ -12,7 +12,7 @@ import { RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions } fro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
-import { useGetDriverProfileQuery } from '@nurtaxi/shared-core/entities/driver';
+import { rejectedDocuments, useGetDriverProfileQuery } from '@nurtaxi/shared-core/entities/driver';
 
 import { GlowIcon } from '@/shared/ui/glow-icon';
 import { PillButton } from '@/shared/ui/pill-button';
@@ -147,6 +147,7 @@ export function VerificationStatusScreen() {
   const isRejected = status === 'rejected';
   const isApproved = status === 'approved';
 
+  const rejectedDocs = rejectedDocuments(profile);
   const documentSummary = profile.documents?.length
     ? profile.documents
         .slice(0, 3)
@@ -177,7 +178,37 @@ export function VerificationStatusScreen() {
           </Text>
         </View>
 
-        {isRejected && profile.rejectionReason ? (
+        {isRejected && rejectedDocs.length > 0 ? (
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: c.dangerBg,
+                borderColor: c.dangerBg,
+                borderRadius: sx(18),
+                marginTop: sy(24),
+                paddingHorizontal: sx(20),
+                paddingVertical: sy(16),
+              },
+            ]}
+          >
+            <Text style={{ color: c.dangerText, fontSize: sx(14), fontWeight: '600' }}>
+              Нужно заменить
+            </Text>
+            {rejectedDocs.map((doc) => (
+              <View key={doc.id} style={{ marginTop: sy(10) }}>
+                <Text style={{ color: c.dangerText, fontSize: sx(13), fontWeight: '600' }}>
+                  {t(`documents.${doc.type}`, { defaultValue: doc.type })}
+                </Text>
+                {doc.rejectionReason ? (
+                  <Text style={{ color: c.dangerText, fontSize: sx(13), marginTop: sy(2) }}>
+                    {doc.rejectionReason}
+                  </Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : isRejected && profile.rejectionReason ? (
           <View
             style={[
               styles.card,
@@ -241,7 +272,7 @@ export function VerificationStatusScreen() {
           <PillButton
             height={sx(58)}
             onPress={() => router.replace('/(verification)/documents')}
-            title="Подать повторно"
+            title="Исправить документы"
           />
         ) : isApproved ? (
           <PillButton

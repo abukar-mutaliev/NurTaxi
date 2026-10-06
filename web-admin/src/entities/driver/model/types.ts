@@ -5,6 +5,7 @@ export interface DriverDocument {
   type: DocumentType;
   status: DocumentStatus;
   rejectionReason: string | null;
+  replacedAfterRejection?: boolean;
   verifiedAt: string | null;
   viewUrl?: string;
 }

@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Role } from '../../common/enums/role.enum';
 import { UserStatus } from '../../common/enums/user-status.enum';
+import { DocumentStatus } from '../../common/enums/document-status.enum';
 import {
   DocumentType,
   REQUIRED_DOCUMENT_TYPES as BASE_DOCUMENT_TYPES,
@@ -345,6 +346,49 @@ describe('DriversService', () => {
 
       await uploadDocuments([DocumentType.TaxiPermit]);
       expect(await service.syncVerificationStatus('driver-1')).toBe(VerificationStatus.Pending);
+    });
+
+    it('после замены отклонённых фото возвращает анкету на проверку', async () => {
+      await service.register(userId, registerDto);
+      for (const type of Object.values(DocumentType)) {
+        await service.registerDocument(userId, {
+          type,
+          storageKey: `drivers/driver-1/${type}/old.jpg`,
+          contentType: 'image/jpeg',
+        });
+      }
+      const selfie = [...documentStore.values()].find((d) => d.type === DocumentType.Selfie)!;
+      selfie.status = DocumentStatus.Rejected;
+      selfie.rejectionReason = 'Лицо не видно';
+      documentStore.set(selfie.id, selfie);
+      driverStore!.verificationStatus = VerificationStatus.Rejected;
+
+      const replaced = await service.registerDocument(userId, {
+        type: DocumentType.Selfie,
+        storageKey: 'drivers/driver-1/selfie/new.jpg',
+        contentType: 'image/jpeg',
+      });
+
+      expect(replaced.status).toBe(DocumentStatus.Pending);
+      expect(replaced.replacedAfterRejection).toBe(true);
+      expect(replaced.rejectionReason).toBe('Лицо не видно');
+      expect(await service.syncVerificationStatus('driver-1')).toBe(VerificationStatus.InReview);
+    });
+
+    it('не одобряет к работе, пока есть отклонённые фото', async () => {
+      await service.register(userId, registerDto);
+      await service.registerDocument(userId, {
+        type: DocumentType.Selfie,
+        storageKey: 'drivers/driver-1/selfie/file.jpg',
+        contentType: 'image/jpeg',
+      });
+      const selfie = [...documentStore.values()].find((d) => d.type === DocumentType.Selfie)!;
+      selfie.status = DocumentStatus.Rejected;
+      documentStore.set(selfie.id, selfie);
+
+      await expect(service.approveDriverVerification('mod-1', 'driver-1')).rejects.toMatchObject({
+        response: { code: 'REJECTED_DOCUMENTS_REMAIN' },
+      });
     });
 
     it('не пускает на линию с истёкшим разрешением', async () => {

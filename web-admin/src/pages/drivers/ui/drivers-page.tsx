@@ -93,7 +93,16 @@ export function DriversPage() {
         title: t('drivers.verificationStatus'),
         dataIndex: 'verificationStatus',
         key: 'verificationStatus',
-        render: (s: DriverProfile['verificationStatus']) => <VerificationStatusTag status={s} />,
+        render: (s: DriverProfile['verificationStatus'], record) => (
+          <Space size={4} wrap>
+            <VerificationStatusTag status={s} />
+            {record.documents.some(
+              (doc) => doc.replacedAfterRejection && doc.status === DocumentStatus.Pending,
+            ) ? (
+              <Tag color="blue">{t('drivers.replacedAfterRejection')}</Tag>
+            ) : null}
+          </Space>
+        ),
       },
       {
         title: t('drivers.account'),
@@ -127,7 +136,9 @@ export function DriversPage() {
         width: 320,
         render: (_, record) => {
           const isBlocked = record.accountStatus === UserStatus.Blocked;
-          const canApprove = hasPendingDocuments(record);
+          const canApprove =
+            hasPendingDocuments(record) &&
+            !record.documents.some((doc) => doc.status === DocumentStatus.Rejected);
 
           return (
             <Space wrap size="small">

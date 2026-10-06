@@ -47,6 +47,13 @@ export class DriverDocument {
   @Column({ name: 'rejection_reason', type: 'text', nullable: true })
   rejectionReason!: string | null;
 
+  /**
+   * Водитель заменил файл после отклонения. Причину оставляем, чтобы модератор
+   * видел, что именно просили исправить, и сравнил новое фото со старым замечанием.
+   */
+  @Column({ name: 'replaced_after_rejection', type: 'boolean', default: false })
+  replacedAfterRejection!: boolean;
+
   @Column({ name: 'verified_at', type: 'timestamptz', nullable: true })
   verifiedAt!: Date | null;
 

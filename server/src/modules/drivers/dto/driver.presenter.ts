@@ -71,6 +71,9 @@ export class DriverDocumentResponse {
   @ApiPropertyOptional()
   rejectionReason!: string | null;
 
+  @ApiProperty({ description: 'Водитель заменил файл после отклонения' })
+  replacedAfterRejection!: boolean;
+
   @ApiPropertyOptional()
   verifiedAt!: string | null;
 
@@ -83,6 +86,7 @@ export class DriverDocumentResponse {
       type: document.type,
       status: document.status,
       rejectionReason: document.rejectionReason,
+      replacedAfterRejection: document.replacedAfterRejection === true,
       verifiedAt: document.verifiedAt?.toISOString() ?? null,
       ...(viewUrl ? { viewUrl } : {}),
     };

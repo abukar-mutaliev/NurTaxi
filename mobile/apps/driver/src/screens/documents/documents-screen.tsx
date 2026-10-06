@@ -16,11 +16,14 @@ import { toAppError, userErrorMessage } from '@nurtaxi/shared-core/shared/api';
 import { pickImageWithChoice, uploadFileToStorage } from '@nurtaxi/shared-core/shared/lib';
 import { Badge, Button, Card, Screen, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
+  DocumentStatus,
   DocumentType,
   DriverRequirementKey,
   RequirementMode,
 } from '@nurtaxi/shared-core/shared/model';
 import {
+  canSubmitForReview,
+  missingDocumentTypes,
   requiredDocumentTypes,
   requirementMode,
   useGetDriverProfileQuery,
@@ -78,9 +81,14 @@ export function DocumentsScreen() {
     return showOptionalPermit ? [...requiredTypes, DocumentType.TaxiPermit] : requiredTypes;
   }, [profile, requiredTypes]);
 
-  // Загруженное на прошлом заходе приходит в профиле — иначе экран покажет пустой список.
-  const isUploaded = (type: DocumentType): boolean =>
-    uploaded[type] || (profile?.documents.some((doc) => doc.type === type) ?? false);
+  const documentFor = (type: DocumentType) => profile?.documents.find((doc) => doc.type === type);
+
+  // Отклонённый файл не считаем загруженным: иначе «Отправить» активно, а замечание не закрыто.
+  const isAccepted = (type: DocumentType): boolean => {
+    if (uploaded[type]) return true;
+    const doc = documentFor(type);
+    return !!doc && doc.status !== DocumentStatus.Rejected;
+  };
 
   /**
    * Ссылка на просмотр живёт минуты и обновляется с каждым запросом профиля, поэтому
@@ -89,7 +97,13 @@ export function DocumentsScreen() {
   const viewUrlFor = (type: DocumentType): string | undefined =>
     profile?.documents.find((doc) => doc.type === type)?.viewUrl;
 
-  const allDone = requiredTypes.every(isUploaded);
+  const allDone = missingDocumentTypes(profile).length === 0 && requiredTypes.every(isAccepted);
+  const canSubmit = canSubmitForReview(profile) && allDone;
+  const waitingReview =
+    profile?.verificationStatus === 'in_review' || profile?.verificationStatus === 'pending';
+  const rejectedCount = requiredTypes.filter(
+    (type) => documentFor(type)?.status === DocumentStatus.Rejected,
+  ).length;
 
   const pickAndUpload = async (type: DocumentType) => {
     setFormError(null);
@@ -146,17 +160,24 @@ export function DocumentsScreen() {
     }
   };
 
-  const doneCount = requiredTypes.filter(isUploaded).length;
+  const doneCount = requiredTypes.filter(isAccepted).length;
 
   return (
     <Screen
       footer={
-        <Button
-          disabled={!allDone || submitting}
-          loading={submitting}
-          onPress={submit}
-          title="Отправить на проверку"
-        />
+        waitingReview && !canSubmit ? (
+          <Button
+            onPress={() => router.replace('/(verification)/status')}
+            title="К статусу проверки"
+          />
+        ) : (
+          <Button
+            disabled={!canSubmit || submitting}
+            loading={submitting}
+            onPress={submit}
+            title="Отправить на проверку"
+          />
+        )
       }
     >
       <ScrollView
@@ -164,21 +185,35 @@ export function DocumentsScreen() {
         contentContainerStyle={{ gap: theme.spacing.sm, paddingBottom: theme.spacing.xl }}
       >
         <StepHeader
-          caption={`Загрузите ${requiredTypes.length} документов (${doneCount}/${requiredTypes.length})`}
+          caption={
+            rejectedCount > 0
+              ? `Замените отклонённые документы (${rejectedCount})`
+              : `Загрузите ${requiredTypes.length} документов (${doneCount}/${requiredTypes.length})`
+          }
           step={2}
           title="Документы"
           totalSteps={2}
         />
 
         {visibleTypes.map((type) => {
-          const done = isUploaded(type);
+          const doc = documentFor(type);
+          const rejected = doc?.status === DocumentStatus.Rejected;
+          const approved = doc?.status === DocumentStatus.Approved;
+          const done = isAccepted(type);
           const busy = busyType === type;
           const optional = !requiredTypes.includes(type);
           const viewUrl = viewUrlFor(type);
           const fieldError = fieldErrors[type];
+          const locked = approved || busy;
           return (
-            <Pressable key={type} disabled={busy} onPress={() => pickAndUpload(type)}>
-              <Card tone={fieldError ? 'danger' : done ? 'success' : 'surface'}>
+            <Pressable
+              key={type}
+              disabled={locked}
+              onPress={() => {
+                if (!approved) void pickAndUpload(type);
+              }}
+            >
+              <Card tone={fieldError || rejected ? 'danger' : done ? 'success' : 'surface'}>
                 <View
                   style={{
                     flexDirection: 'row',
@@ -197,7 +232,11 @@ export function DocumentsScreen() {
                   >
                     <View
                       style={{
-                        backgroundColor: done ? theme.colors.success : theme.colors.primary,
+                        backgroundColor: rejected
+                          ? theme.colors.danger
+                          : done
+                            ? theme.colors.success
+                            : theme.colors.primary,
                         borderRadius: theme.radius.pill,
                         height: 10,
                         width: 10,
@@ -208,15 +247,24 @@ export function DocumentsScreen() {
                         {DOC_LABELS[type] ?? type}
                         {optional ? ' · необязательно' : ''}
                       </Text>
-                      <Text tone="muted" variant="caption">
+                      <Text tone={rejected ? 'danger' : 'muted'} variant="caption">
                         {busy
                           ? 'Загрузка…'
-                          : viewUrl
-                            ? 'Загружено · нажмите на миниатюру для просмотра'
-                            : done
-                              ? 'Загружено'
-                              : 'Нажмите, чтобы загрузить'}
+                          : rejected
+                            ? 'Отклонено · нажмите, чтобы заменить'
+                            : approved
+                              ? 'Принято'
+                              : viewUrl
+                                ? 'Загружено · нажмите на миниатюру для просмотра'
+                                : done
+                                  ? 'Загружено'
+                                  : 'Нажмите, чтобы загрузить'}
                       </Text>
+                      {rejected && doc?.rejectionReason ? (
+                        <Text tone="danger" variant="caption">
+                          {doc.rejectionReason}
+                        </Text>
+                      ) : null}
                       {fieldError ? (
                         <Text tone="danger" variant="caption">
                           {fieldError}

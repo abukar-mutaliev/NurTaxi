@@ -22,6 +22,7 @@ export {
   canSubmitForReview,
   isVerificationPending,
   missingDocumentTypes,
+  rejectedDocuments,
   requiredDocumentTypes,
   requirementMode,
   verificationLabelKey,

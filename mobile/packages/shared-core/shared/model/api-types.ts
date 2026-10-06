@@ -531,6 +531,7 @@ export interface DriverDocument {
   type: DocumentType;
   status: DocumentStatus;
   rejectionReason: string | null;
+  replacedAfterRejection?: boolean;
   createdAt: string;
   /** Краткоживущая ссылка на просмотр; сервер выдаёт её заново при каждом запросе профиля. */
   viewUrl?: string;

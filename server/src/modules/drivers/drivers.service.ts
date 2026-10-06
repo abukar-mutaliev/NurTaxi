@@ -298,7 +298,7 @@ export class DriversService {
 
   async createDocumentUploadUrl(userId: string, dto: PresignDocumentDto) {
     const profile = await this.getProfileByUserId(userId);
-    this.assertCanUploadDocuments(profile);
+    await this.assertCanUploadDocuments(profile, dto.type);
     assertAllowedUpload(
       dto.contentType,
       dto.contentLength,
@@ -326,7 +326,7 @@ export class DriversService {
    */
   async registerDocument(userId: string, dto: RegisterDocumentDto): Promise<DriverDocument> {
     const profile = await this.getProfileByUserId(userId);
-    this.assertCanUploadDocuments(profile);
+    await this.assertCanUploadDocuments(profile, dto.type);
 
     if (!dto.storageKey.startsWith(`drivers/${profile.id}/`)) {
       throw new BadRequestException({
@@ -340,12 +340,17 @@ export class DriversService {
     });
 
     if (document) {
+      const replacingRejected = document.status === DocumentStatus.Rejected;
       document.storageKey = dto.storageKey;
       document.contentType = dto.contentType;
       document.status = DocumentStatus.Pending;
       document.moderatorId = null;
-      document.rejectionReason = null;
       document.verifiedAt = null;
+      document.replacedAfterRejection = replacingRejected || document.replacedAfterRejection;
+      // Причину отклонения не стираем: модератор сверяет новое фото с замечанием.
+      if (!replacingRejected) {
+        document.rejectionReason = null;
+      }
     } else {
       document = this.documents.create({
         driverId: profile.id,
@@ -353,6 +358,7 @@ export class DriversService {
         storageKey: dto.storageKey,
         contentType: dto.contentType,
         status: DocumentStatus.Pending,
+        replacedAfterRejection: false,
       });
     }
 
@@ -394,15 +400,41 @@ export class DriversService {
     await this.vehicles.save(vehicle);
   }
 
-  private assertCanUploadDocuments(profile: DriverProfile): void {
-    if (
-      profile.verificationStatus === VerificationStatus.Approved ||
-      profile.verificationStatus === VerificationStatus.InReview
-    ) {
+  /**
+   * Одобренную анкету трогать нельзя. На проверке можно заменить только отклонённый
+   * тип: иначе водитель не исправит замечание, если часть фото уже ушла в in_review.
+   */
+  private async assertCanUploadDocuments(
+    profile: DriverProfile,
+    type: DocumentType,
+  ): Promise<void> {
+    if (profile.verificationStatus === VerificationStatus.Approved) {
       throw new ConflictException({
         code: 'DOCUMENTS_LOCKED',
-        message: 'Документы уже на проверке или верифицированы',
+        message: 'Документы уже верифицированы',
       });
+    }
+
+    const existing = await this.documents.findOne({
+      where: { driverId: profile.id, type },
+    });
+    if (existing?.status === DocumentStatus.Approved) {
+      throw new ConflictException({
+        code: 'DOCUMENT_ALREADY_APPROVED',
+        message: 'Этот документ уже принят',
+      });
+    }
+
+    if (profile.verificationStatus === VerificationStatus.InReview) {
+      const canReplaceRejected = existing?.status === DocumentStatus.Rejected;
+      const canReplaceResubmitted =
+        existing?.status === DocumentStatus.Pending && existing.replacedAfterRejection;
+      if (!canReplaceRejected && !canReplaceResubmitted) {
+        throw new ConflictException({
+          code: 'DOCUMENTS_LOCKED',
+          message: 'Документы уже на проверке',
+        });
+      }
     }
   }
 
@@ -446,6 +478,10 @@ export class DriversService {
 
     const allApproved = docs.every((d) => d.status === DocumentStatus.Approved);
     const anyRejected = docs.some((d) => d.status === DocumentStatus.Rejected);
+    const anyPending = docs.some((d) => d.status === DocumentStatus.Pending);
+    const replacedForReview = docs.some(
+      (d) => d.status === DocumentStatus.Pending && d.replacedAfterRejection,
+    );
 
     if (allApproved) {
       profile.verificationStatus = VerificationStatus.Approved;
@@ -457,6 +493,12 @@ export class DriversService {
       });
     } else if (anyRejected) {
       profile.verificationStatus = VerificationStatus.Rejected;
+    } else if (replacedForReview) {
+      // Все замечания закрыты новой загрузкой — анкета снова у модератора,
+      // иначе водитель остаётся в фильтре «отклонён» и кнопку одобрения не видно.
+      profile.verificationStatus = VerificationStatus.InReview;
+    } else if (anyPending) {
+      profile.verificationStatus = VerificationStatus.Pending;
     } else {
       profile.verificationStatus = VerificationStatus.Pending;
     }
@@ -671,6 +713,7 @@ export class DriversService {
     document.moderatorId = moderatorId;
     document.rejectionReason = status === 'rejected' ? rejectionReason!.trim() : null;
     document.verifiedAt = status === 'approved' ? new Date() : null;
+    document.replacedAfterRejection = false;
 
     const saved = await this.documents.save(document);
     const profile = await this.getDriverForModeration(driverId);
@@ -748,9 +791,17 @@ export class DriversService {
   }
 
   async approveDriverVerification(moderatorId: string, driverId: string): Promise<DriverProfile> {
-    const pending = await this.documents.find({
-      where: { driverId, status: DocumentStatus.Pending },
-    });
+    const docs = await this.documents.find({ where: { driverId } });
+    const stillRejected = docs.filter((d) => d.status === DocumentStatus.Rejected);
+    if (stillRejected.length > 0) {
+      throw new BadRequestException({
+        code: 'REJECTED_DOCUMENTS_REMAIN',
+        message: 'Сначала дождитесь замены отклонённых документов',
+        details: { types: stillRejected.map((d) => d.type) },
+      });
+    }
+
+    const pending = docs.filter((d) => d.status === DocumentStatus.Pending);
 
     if (pending.length === 0) {
       throw new BadRequestException({

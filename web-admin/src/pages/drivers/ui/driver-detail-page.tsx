@@ -186,7 +186,18 @@ export function DriverDetailPage() {
   if (isLoading || !driver) return <PageLoader />;
 
   const isBlocked = driver.accountStatus === UserStatus.Blocked;
+  const hasRejectedDocuments = driver.documents.some((doc) => doc.status === DocumentStatus.Rejected);
   const hasPendingDocuments = driver.documents.some((doc) => doc.status === DocumentStatus.Pending);
+  const canApproveToWork = hasPendingDocuments && !hasRejectedDocuments;
+  const documents = [...driver.documents].sort((a, b) => {
+    const rank = (doc: DriverDocument) => {
+      if (doc.status === DocumentStatus.Rejected) return 0;
+      if (doc.replacedAfterRejection && doc.status === DocumentStatus.Pending) return 1;
+      if (doc.status === DocumentStatus.Pending) return 2;
+      return 3;
+    };
+    return rank(a) - rank(b);
+  });
   const vehicle = driver.vehicles[0];
   const permitMode = driver.requirements?.taxi_permit ?? 'hidden';
 
@@ -197,7 +208,7 @@ export function DriverDetailPage() {
         subtitle={t('drivers.detailSubtitle')}
         extra={
           <Space wrap>
-            {hasPendingDocuments ? (
+            {canApproveToWork ? (
               <Popconfirm title={t('drivers.approveAllHint')} onConfirm={() => void handleApproveAll()}>
                 <Button type="primary" icon={<CheckOutlined />} loading={approving}>
                   {t('drivers.approveAll')}
@@ -318,13 +329,24 @@ export function DriverDetailPage() {
         </Col>
         <Col xs={24} lg={14}>
           <Card title={t('drivers.documents')} bordered={false}>
+            {documents.some((doc) => doc.replacedAfterRejection && doc.status === DocumentStatus.Pending) ? (
+              <Text style={{ display: 'block', marginBottom: 16 }}>
+                {t('drivers.replacedAfterRejectionHint')}
+              </Text>
+            ) : null}
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
-              {driver.documents.map((doc: DriverDocument) => (
+              {documents.map((doc: DriverDocument) => (
                 <Card key={doc.id} size="small" type="inner">
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <Space wrap>
                       <Tag>{DOC_LABELS[doc.type] ?? doc.type}</Tag>
                       <DocumentStatusTag status={doc.status} />
+                      {doc.replacedAfterRejection && doc.status === DocumentStatus.Pending ? (
+                        <Tag color="blue">{t('drivers.replacedAfterRejection')}</Tag>
+                      ) : null}
+                      {doc.status === DocumentStatus.Rejected ? (
+                        <Tag color="orange">{t('drivers.awaitingReplacement')}</Tag>
+                      ) : null}
                     </Space>
                     {doc.viewUrl && (
                       <Image
@@ -335,7 +357,10 @@ export function DriverDetailPage() {
                     )}
                     {doc.rejectionReason && (
                       <Text type="danger">
-                        {t('drivers.rejectReason')}: {doc.rejectionReason}
+                        {doc.status === DocumentStatus.Pending
+                          ? t('drivers.previousRejection')
+                          : t('drivers.rejectReason')}
+                        : {doc.rejectionReason}
                       </Text>
                     )}
                     {doc.status === DocumentStatus.Pending && (

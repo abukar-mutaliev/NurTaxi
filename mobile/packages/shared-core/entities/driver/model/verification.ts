@@ -58,6 +58,10 @@ export function canSubmitForReview(profile: DriverProfile | undefined): boolean 
   return editable && missingDocumentTypes(profile).length === 0;
 }
 
+export function rejectedDocuments(profile: DriverProfile | undefined): DriverProfile['documents'] {
+  return profile?.documents.filter((doc) => doc.status === 'rejected') ?? [];
+}
+
 export function isVerificationPending(status: VerificationStatus): boolean {
   return status === VerificationStatus.Pending || status === VerificationStatus.InReview;
 }

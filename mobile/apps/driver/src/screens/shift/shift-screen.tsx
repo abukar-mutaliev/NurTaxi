@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { resolveCurrentPosition } from '@nurtaxi/shared-core/features/geolocation';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
@@ -104,6 +105,9 @@ export function ShiftScreen() {
     request: requestLocation,
   } = useDriverPosition(isOnline);
   const mapRef = useRef<MapCanvasHandle>(null);
+  // Высота нижней карточки меняется (ошибки, подсказки геопозиции), поэтому кнопку
+  // поднимаем над ней по замеру, а не по константе.
+  const [sheetHeight, setSheetHeight] = useState(0);
 
   /**
    * Карта подводится к машине один раз за выход на линию. Делать это на каждый GPS-тик
@@ -126,9 +130,14 @@ export function ShiftScreen() {
     mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
   }, [isOnline, position]);
 
-  const centerOnDriver = () => {
-    if (position) {
-      mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
+  /**
+   * Вне линии слежения нет и `position` пуст, поэтому берём разовую точку (кэш или
+   * last known): кнопка нужна и до выхода на смену.
+   */
+  const centerOnDriver = async () => {
+    const point = position ?? (await resolveCurrentPosition());
+    if (point) {
+      mapRef.current?.centerOn(point, DRIVER_ZOOM_DELTA);
     }
   };
 
@@ -171,29 +180,8 @@ export function ShiftScreen() {
           },
         ]}
       >
-        {/*
-          Слот держит «пилюлю» по центру и вне линии остаётся пустым: искать себя на карте
-          есть смысл только на смене. Ширина слота фиксированная, поэтому появление кнопки
-          не сдвигает «пилюлю».
-        */}
-        <View style={styles.topBarSlot}>
-          {isOnline ? (
-            <RoundButton
-              accessibilityLabel="Показать, где я"
-              onPress={centerOnDriver}
-              variant="surface"
-            >
-              <SymbolView
-                name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
-                resizeMode="scaleAspectFit"
-                size={22}
-                tintColor={position ? theme.colors.primary : theme.colors.textMuted}
-                type="monochrome"
-                weight={{ android: medium, ios: 'medium' }}
-              />
-            </RoundButton>
-          ) : null}
-        </View>
+        {/* Пустой слот той же ширины, что и кнопка профиля справа, держит «пилюлю» по центру. */}
+        <View style={styles.topBarSlot} />
 
         <View style={styles.topBarCenter}>
           <View
@@ -257,8 +245,35 @@ export function ShiftScreen() {
         </View>
       ) : null}
 
+      {/*
+        Кнопка «Показать, где я» — справа снизу, над нижней карточкой, в видимой части
+        карты. Пока висит входящий заказ, карточка скрыта и кнопка не нужна.
+      */}
+      {!offer ? (
+        <View
+          pointerEvents="box-none"
+          style={[styles.centerButton, { bottom: sheetHeight + theme.spacing.md }]}
+        >
+          <RoundButton
+            accessibilityLabel="Показать, где я"
+            onPress={() => void centerOnDriver()}
+            variant="surface"
+          >
+            <SymbolView
+              name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
+              resizeMode="scaleAspectFit"
+              size={22}
+              tintColor={position ? theme.colors.primary : theme.colors.textMuted}
+              type="monochrome"
+              weight={{ android: medium, ios: 'medium' }}
+            />
+          </RoundButton>
+        </View>
+      ) : null}
+
       {/* Нижняя карточка: переключатель линии и сводка */}
       <View
+        onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
         style={[
           styles.sheet,
           offer && styles.hidden,
@@ -344,6 +359,11 @@ export function ShiftScreen() {
 }
 
 const styles = StyleSheet.create({
+  centerButton: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 5,
+  },
   hidden: {
     display: 'none',
   },

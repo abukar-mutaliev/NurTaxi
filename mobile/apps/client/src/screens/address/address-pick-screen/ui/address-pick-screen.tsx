@@ -20,6 +20,7 @@ import {
   parseAddressModeParam,
   parseRouteParam,
   useAddressSelection,
+  useExactMapAddress,
   useSavedAddressUpdate,
 } from '@/features/address';
 import {
@@ -53,6 +54,12 @@ export function AddressPickScreen() {
   const { updateAddress, isUpdating } = useSavedAddressUpdate();
 
   const [selectedPoint, setSelectedPoint] = useState<GeoPoint | null>(null);
+  const [exactAddress, setExactAddress] = useState<string | null>(null);
+  const [resolvingAddress, setResolvingAddress] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const resolveExactAddress = useExactMapAddress();
+  const resolveRequest = useRef<{ key: string; promise: Promise<string | null> } | null>(null);
+  const confirmingRef = useRef(false);
   const [saveSheetVisible, setSaveSheetVisible] = useState(false);
   const [pendingSave, setPendingSave] = useState<GeoLocation | null>(null);
   const [saveLabel, setSaveLabel] = useState('');
@@ -65,56 +72,90 @@ export function AddressPickScreen() {
     ? [{ id: 'picked', point: selectedPoint, kind: field === 'pickup' ? 'pickup' : 'dropoff' }]
     : [];
 
+  const mapPointAddress = (point: GeoPoint) =>
+    t('addresses.mapPoint', {
+      lat: point.lat.toFixed(5),
+      lng: point.lng.toFixed(5),
+    });
+
+  const rememberPoint = (point: GeoPoint) => {
+    const key = `${point.lat},${point.lng}`;
+    setSelectedPoint(point);
+    setExactAddress(null);
+    setResolvingAddress(true);
+    const promise = resolveExactAddress(point);
+    resolveRequest.current = { key, promise };
+    void promise.then((address) => {
+      if (resolveRequest.current?.key !== key) {
+        return;
+      }
+      setExactAddress(address);
+      setResolvingAddress(false);
+    });
+  };
+
+  const locationForPoint = async (point: GeoPoint): Promise<GeoLocation> => {
+    const key = `${point.lat},${point.lng}`;
+    const pending = resolveRequest.current?.key === key ? resolveRequest.current.promise : null;
+    const exact = pending ? await pending : exactAddress;
+    return {
+      lat: point.lat,
+      lng: point.lng,
+      address: exact ?? mapPointAddress(point),
+    };
+  };
+
   const selectedLocation: GeoLocation | null = selectedPoint
     ? {
         lat: selectedPoint.lat,
         lng: selectedPoint.lng,
-        address: t('addresses.mapPoint', {
-          lat: selectedPoint.lat.toFixed(5),
-          lng: selectedPoint.lng.toFixed(5),
-        }),
+        address: exactAddress ?? mapPointAddress(selectedPoint),
       }
     : null;
 
   const confirmSelection = async () => {
-    if (!selectedLocation) {
+    if (!selectedPoint || confirmingRef.current) {
       return;
     }
 
-    if (mode === 'save') {
-      const saveLocation = geoLocationForSave(selectedLocation);
-      setPendingSave(saveLocation);
-      setSaveLabel('');
-      setSaveAddressText(saveLocation.address?.trim() ?? '');
-      setSaveError(null);
-      setSaveSheetVisible(true);
-      return;
-    }
+    confirmingRef.current = true;
+    setConfirming(true);
+    try {
+      const confirmed = await locationForPoint(selectedPoint);
 
-    if (mode === 'edit' && addressId) {
-      setPickError(null);
-      try {
-        await updateAddress(addressId, {
-          address:
-            selectedLocation.address ??
-            t('addresses.mapPoint', {
-              lat: selectedLocation.lat.toFixed(5),
-              lng: selectedLocation.lng.toFixed(5),
-            }),
-          lat: selectedLocation.lat,
-          lng: selectedLocation.lng,
-        });
-        router.back();
-      } catch {
-        setPickError(t('errors.generic'));
+      if (mode === 'save') {
+        const saveLocation = geoLocationForSave(confirmed);
+        setPendingSave(saveLocation);
+        setSaveLabel('');
+        setSaveAddressText(saveLocation.address?.trim() ?? '');
+        setSaveError(null);
+        setSaveSheetVisible(true);
+        return;
       }
-      return;
-    }
 
-    if (!regionId) {
-      return;
+      if (mode === 'edit' && addressId) {
+        setPickError(null);
+        try {
+          await updateAddress(addressId, {
+            address: confirmed.address ?? mapPointAddress(confirmed),
+            lat: confirmed.lat,
+            lng: confirmed.lng,
+          });
+          router.back();
+        } catch {
+          setPickError(t('errors.generic'));
+        }
+        return;
+      }
+
+      if (!regionId) {
+        return;
+      }
+      selectAddress(field, 'order', confirmed);
+    } finally {
+      confirmingRef.current = false;
+      setConfirming(false);
     }
-    selectAddress(field, 'order', selectedLocation);
   };
 
   const confirmSave = async () => {
@@ -161,7 +202,11 @@ export function AddressPickScreen() {
           <MapCanvas
             initialPoint={position}
             markers={markers}
-            onPress={(point) => setSelectedPoint(point)}
+            onPress={(point) => {
+              if (!confirming) {
+                rememberPoint(point);
+              }
+            }}
             ref={mapRef}
           />
 
@@ -190,7 +235,9 @@ export function AddressPickScreen() {
               <GlassCaption>{t('addresses.pickHint')}</GlassCaption>
               {selectedLocation ? (
                 <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
-                  {selectedLocation.address}
+                  {resolvingAddress && !exactAddress
+                    ? t('common.loading')
+                    : selectedLocation.address}
                 </Text>
               ) : (
                 <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 15 }}>
@@ -206,8 +253,8 @@ export function AddressPickScreen() {
               ) : null}
             </GlassCard>
             <GlassPrimaryButton
-              disabled={!selectedLocation || (mode === 'order' && !regionId)}
-              loading={mode === 'edit' && isUpdating}
+              disabled={!selectedLocation || confirming || (mode === 'order' && !regionId)}
+              loading={confirming || (mode === 'edit' && isUpdating)}
               loadingTitle={t('common.loading')}
               onPress={confirmSelection}
               scale={scale}

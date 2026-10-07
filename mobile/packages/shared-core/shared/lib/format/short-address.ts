@@ -177,3 +177,31 @@ export function formatShortDisplayAddress(address: string | null | undefined): s
 
   return meaningful.slice(-3).join(', ');
 }
+
+/** Улица с названием, а не номер дома, который тоже попадает в «похожую на улицу» проверку. */
+function isNamedStreetPart(part: string): boolean {
+  const trimmed = part.trim();
+  if (!trimmed || isHousePart(trimmed)) {
+    return false;
+  }
+
+  if (isStreetPart(trimmed)) {
+    return true;
+  }
+
+  return /\b(улица|проспект|переулок|шоссе|бульвар|набережная)\b/i.test(trimmed);
+}
+
+/**
+ * Точный адрес точки: есть и улица, и дом.
+ * Город, район или «Точка на карте» сюда не попадают.
+ */
+export function isExactStreetAddress(address: string | null | undefined): boolean {
+  const short = formatShortDisplayAddress(address);
+  if (!short) {
+    return false;
+  }
+
+  const parts = splitAddressParts(short);
+  return parts.some(isNamedStreetPart) && parts.some(isHousePart);
+}

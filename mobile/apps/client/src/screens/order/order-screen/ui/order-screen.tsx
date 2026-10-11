@@ -143,17 +143,24 @@ export function OrderScreen() {
   }, [dispatch, order]);
 
   const nearbyDrivers = useNearbyDrivers({
-    enabled: Boolean(order),
+    enabled: order != null && orderStage(order.status) !== 'waiting-driver',
     point: position ?? (order ? { lat: order.pickupLat, lng: order.pickupLng } : null),
     regionId: order?.regionId,
   });
+
+  const reportedDriverPoint =
+    order?.driver?.lat != null && order.driver.lng != null
+      ? { lat: order.driver.lat, lng: order.driver.lng }
+      : null;
+  const carPoint = driverPosition ?? reportedDriverPoint;
+  const driverIsComing = order != null && orderStage(order.status) === 'waiting-driver';
 
   const markers = useMemo(
     () =>
       order
         ? resolveOrderMapMarkers({
             assignedDriverId: order.driver?.id,
-            driver: driverPosition ?? null,
+            driver: carPoint,
             dropoff: {
               address: order.dropoffAddress,
               lat: order.dropoffLat,
@@ -168,13 +175,9 @@ export function OrderScreen() {
             routePolyline: order.route?.polyline,
           })
         : [],
-    [driverPosition, nearbyDrivers, order],
+    [carPoint, nearbyDrivers, order],
   );
 
-  const reportedDriverPoint =
-    order?.driver?.lat != null && order.driver.lng != null
-      ? { lat: order.driver.lat, lng: order.driver.lng }
-      : null;
   const liveRoute = useLiveOrderRoute({
     buildLocalRoute: buildDrivingRoute,
     dropoff: { lat: order?.dropoffLat ?? 0, lng: order?.dropoffLng ?? 0 },
@@ -183,7 +186,7 @@ export function OrderScreen() {
       (orderStage(order.status) === 'waiting-driver' || orderStage(order.status) === 'riding'),
     ),
     // Сокет точнее, но пока его нет — берём последнюю точку из заказа, а не заглушку «7 мин».
-    origin: driverPosition ?? reportedDriverPoint,
+    origin: carPoint,
     pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
     status: order?.status ?? '',
   });
@@ -198,8 +201,22 @@ export function OrderScreen() {
     ];
   }, [order]);
   const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
-  const tripRoad = useRoadRoute(liveRoad ? null : tripWaypoints);
-  const routePoints = liveRoad ?? tripRoad;
+  const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
+  // Пока машина едет на подачу, кадр — путь к клиенту, а не поездка А→Б:
+  // иначе камера обрезает водителя за краем маршрута заказа. Точку машины
+  // округляем, чтобы каждый GPS-тик не пересобирал кадр.
+  const approachLat = carPoint ? Math.round(carPoint.lat * 1_000) / 1_000 : null;
+  const approachLng = carPoint ? Math.round(carPoint.lng * 1_000) / 1_000 : null;
+  const approachFallback = useMemo((): GeoPoint[] | null => {
+    if (!driverIsComing || approachLat == null || approachLng == null || !order) {
+      return null;
+    }
+    return [
+      { lat: approachLat, lng: approachLng },
+      { lat: order.pickupLat, lng: order.pickupLng },
+    ];
+  }, [approachLat, approachLng, driverIsComing, order]);
+  const routePoints = driverIsComing ? (liveRoad ?? approachFallback) : (liveRoad ?? tripRoad);
   const routePolyline = routePoints ? null : roadPolylineOrNull(order?.route?.polyline);
 
   useEffect(() => {

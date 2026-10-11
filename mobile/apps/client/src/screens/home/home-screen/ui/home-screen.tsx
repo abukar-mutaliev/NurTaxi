@@ -104,6 +104,12 @@ export function HomeScreen() {
     skip: !effectiveActiveId,
   });
   const driverPosition = useAppSelector(selectDriverPosition(effectiveActiveId ?? ''));
+  const reportedDriverPoint =
+    activeOrder?.driver?.lat != null && activeOrder.driver.lng != null
+      ? { lat: activeOrder.driver.lat, lng: activeOrder.driver.lng }
+      : null;
+  const carPoint = driverPosition ?? reportedDriverPoint;
+  const driverIsComing = activeOrder != null && orderStage(activeOrder.status) === 'waiting-driver';
   const liveRoute = useLiveOrderRoute({
     buildLocalRoute: buildDrivingRoute,
     dropoff: { lat: activeOrder?.dropoffLat ?? 0, lng: activeOrder?.dropoffLng ?? 0 },
@@ -112,7 +118,7 @@ export function HomeScreen() {
       (orderStage(activeOrder.status) === 'waiting-driver' ||
         orderStage(activeOrder.status) === 'riding'),
     ),
-    origin: driverPosition ?? null,
+    origin: carPoint,
     pickup: { lat: activeOrder?.pickupLat ?? 0, lng: activeOrder?.pickupLng ?? 0 },
     status: activeOrder?.status ?? '',
   });
@@ -154,7 +160,7 @@ export function HomeScreen() {
 
   const nearbyCenter = pickup ?? (position ? { lat: position.lat, lng: position.lng } : null);
   const nearbyDrivers = useNearbyDrivers({
-    enabled: isHomeFocused,
+    enabled: isHomeFocused && !driverIsComing,
     point: nearbyCenter,
     regionId: draft.regionId,
   });
@@ -163,7 +169,7 @@ export function HomeScreen() {
     if (activeOrder) {
       return resolveOrderMapMarkers({
         assignedDriverId: activeOrder.driver?.id,
-        driver: driverPosition ?? null,
+        driver: carPoint,
         dropoff: {
           address: activeOrder.dropoffAddress,
           lat: activeOrder.dropoffLat,
@@ -185,7 +191,7 @@ export function HomeScreen() {
       pickup,
       routePolyline: estimate?.route.polyline,
     });
-  }, [activeOrder, driverPosition, dropoff, estimate?.route.polyline, nearbyDrivers, pickup]);
+  }, [activeOrder, carPoint, dropoff, estimate?.route.polyline, nearbyDrivers, pickup]);
 
   const tripWaypoints = useMemo((): GeoPoint[] | null => {
     if (activeOrder) {
@@ -200,8 +206,19 @@ export function HomeScreen() {
     return null;
   }, [activeOrder, dropoff, pickup]);
   const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
-  const tripRoad = useRoadRoute(liveRoad ? null : tripWaypoints);
-  const routePoints = liveRoad ?? tripRoad;
+  const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
+  const approachLat = carPoint ? Math.round(carPoint.lat * 1_000) / 1_000 : null;
+  const approachLng = carPoint ? Math.round(carPoint.lng * 1_000) / 1_000 : null;
+  const approachFallback = useMemo((): GeoPoint[] | null => {
+    if (!driverIsComing || approachLat == null || approachLng == null || !activeOrder) {
+      return null;
+    }
+    return [
+      { lat: approachLat, lng: approachLng },
+      { lat: activeOrder.pickupLat, lng: activeOrder.pickupLng },
+    ];
+  }, [activeOrder, approachLat, approachLng, driverIsComing]);
+  const routePoints = driverIsComing ? (liveRoad ?? approachFallback) : (liveRoad ?? tripRoad);
   const routePolyline = routePoints
     ? null
     : roadPolylineOrNull(activeOrder?.route?.polyline ?? estimate?.route.polyline);

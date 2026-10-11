@@ -178,10 +178,7 @@ export class OrderResponse {
   @ApiProperty()
   createdAt!: string;
 
-  static from(
-    order: Order,
-    driverPoint?: { lat: number; lng: number } | null,
-  ): OrderResponse {
+  static from(order: Order, driverPoint?: { lat: number; lng: number } | null): OrderResponse {
     const primaryVehicle =
       order.driver?.vehicles?.find((v) => v.isPrimary) ?? order.driver?.vehicles?.[0];
 

@@ -187,10 +187,6 @@ export function OrderScreen() {
     pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
     status: order?.status ?? '',
   });
-  const tripStats =
-    liveRoute.leg === 'to-dropoff' && liveRoute.duration
-      ? { distanceM: liveRoute.distanceM, duration: liveRoute.duration }
-      : null;
   const etaLabel = liveRoute.leg === 'to-pickup' && liveRoute.duration ? liveRoute.duration : null;
   const tripWaypoints = useMemo((): GeoPoint[] | null => {
     if (!order) {
@@ -347,14 +343,10 @@ export function OrderScreen() {
     }
   };
 
-  const tripDuration =
-    tripStats?.duration ?? (order.route?.durationS ? formatDuration(order.route.durationS) : '—');
-  const tripDistance =
-    tripStats?.distanceM != null
-      ? formatDistance(tripStats.distanceM)
-      : order.route?.distanceM
-        ? formatDistance(order.route.distanceM)
-        : '—';
+  // А→Б — снимок маршрута заказа. Живой участок от машины сюда не подставляем:
+  // у водителя в карточке те же цифры, и они не должны сжиматься по ходу поездки.
+  const tripDuration = order.route?.durationS ? formatDuration(order.route.durationS) : '—';
+  const tripDistance = order.route?.distanceM ? formatDistance(order.route.distanceM) : '—';
   const tripPrice = formatMoney(order.priceFinal ?? order.priceEstimated, 'RUB');
 
   return (

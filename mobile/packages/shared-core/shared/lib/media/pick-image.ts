@@ -98,7 +98,7 @@ type PickSource = ImagePickerSource | 'files';
  * «Отмена» молча пропадала — выйти из диалога было нечем. Отказ ловим через `onDismiss`
  * (кнопка «Назад» и тап мимо окна), иначе промис зависал бы навсегда.
  */
-function askSource(title: string): Promise<PickSource | null> {
+function askSource(title: string, message: string, withFiles: boolean): Promise<PickSource | null> {
   return new Promise((resolve) => {
     let settled = false;
     const done = (value: PickSource | null) => {
@@ -110,11 +110,11 @@ function askSource(title: string): Promise<PickSource | null> {
 
     Alert.alert(
       title,
-      'Откуда взять документ? Чтобы отменить — нажмите «Назад» или коснитесь экрана вне окна.',
+      `${message} Чтобы отменить — нажмите «Назад» или коснитесь экрана вне окна.`,
       [
         { onPress: () => done('camera'), text: 'Камера' },
         { onPress: () => done('gallery'), text: 'Галерея' },
-        { onPress: () => done('files'), text: 'Файлы' },
+        ...(withFiles ? [{ onPress: () => done('files'), text: 'Файлы' }] : []),
       ],
       { cancelable: true, onDismiss: () => done(null) },
     );
@@ -180,6 +180,16 @@ function explainDenied(source: ImagePickerSource, canAskAgain: boolean): void {
   ]);
 }
 
+export interface PickImageWithChoiceOptions {
+  /** Вопрос под заголовком диалога. По умолчанию — про документ. */
+  message?: string;
+  /**
+   * Кнопка «Файлы» с PDF. Нужна для документов, а для фото профиля лишняя: сервер примет
+   * только картинку, и PDF упал бы уже после выбора.
+   */
+  allowFiles?: boolean;
+}
+
 /**
  * Полный путь «нажал — выбрал источник — дал разрешение — получил файл».
  * `null` — пользователь отказался или не дал доступ; о причине он уже уведомлён.
@@ -187,8 +197,9 @@ function explainDenied(source: ImagePickerSource, canAskAgain: boolean): void {
 export async function pickImageWithChoice(
   title: string,
   fallbackName: string,
+  { message = 'Откуда взять документ?', allowFiles = true }: PickImageWithChoiceOptions = {},
 ): Promise<PickedImage | null> {
-  const source = await askSource(title);
+  const source = await askSource(title, message, allowFiles);
   if (!source) {
     return null;
   }

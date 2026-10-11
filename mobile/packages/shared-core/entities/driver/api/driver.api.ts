@@ -6,6 +6,7 @@
  * `storageKey` к профилю. См. `uploadDriverDocument` в `features/driver-documents`.
  */
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
+import { DriverOrderAction } from '@nurtaxi/shared-core/shared/model';
 import type {
   CancelOrderPayload,
   CreateReviewPayload,
@@ -27,6 +28,13 @@ import type {
   UpdateDriverStatusPayload,
   UpdateWorkSchedulePayload,
 } from '@nurtaxi/shared-core/shared/model';
+
+/**
+ * Что меняется у водителя, когда поездка закрыта (завершена или отменена): статус на линии,
+ * число поездок и рейтинг, доход и история. Без сброса этих тегов экраны смены, доходов
+ * и истории показывали данные до поездки — пока водитель не перезапускал приложение.
+ */
+const TRIP_SETTLED_TAGS = ['DriverProfile', 'DriverEarnings', 'OrderHistory'] as const;
 
 export const driverApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -97,9 +105,13 @@ export const driverApi = baseApi.injectEndpoints({
       providesTags: ['OrderHistory'],
     }),
 
+    /** Принятый заказ переводит водителя из `online` в `busy` — профиль надо перечитать. */
     acceptDriverOrder: build.mutation<Order, string>({
       query: (orderId) => ({ url: `/driver/orders/${orderId}/accept`, method: 'POST' }),
-      invalidatesTags: (_result, _error, orderId) => [{ type: 'Order', id: orderId }],
+      invalidatesTags: (_result, _error, orderId) => [
+        { type: 'Order', id: orderId },
+        'DriverProfile',
+      ],
     }),
 
     updateDriverOrderStatus: build.mutation<Order, { orderId: string } & DriverOrderActionPayload>({
@@ -108,7 +120,10 @@ export const driverApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { orderId }) => [{ type: 'Order', id: orderId }],
+      invalidatesTags: (_result, error, { orderId, action }) => [
+        { type: 'Order', id: orderId },
+        ...(!error && action === DriverOrderAction.Complete ? TRIP_SETTLED_TAGS : []),
+      ],
     }),
 
     cancelDriverOrder: build.mutation<Order, { orderId: string } & CancelOrderPayload>({
@@ -117,7 +132,10 @@ export const driverApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: (_result, _error, { orderId }) => [{ type: 'Order', id: orderId }],
+      invalidatesTags: (_result, error, { orderId }) => [
+        { type: 'Order', id: orderId },
+        ...(error ? [] : TRIP_SETTLED_TAGS),
+      ],
     }),
 
     /** Оценка клиента после поездки (`M8.8`, `§8.14`). */

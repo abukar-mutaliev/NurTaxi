@@ -14,11 +14,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { resolveCurrentPosition } from '@nurtaxi/shared-core/features/geolocation';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
-  useAcceptDriverOrderMutation,
   useGetDriverEarningsQuery,
   useGetDriverProfileQuery,
   useUpdateDriverStatusMutation,
@@ -27,7 +27,6 @@ import {
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { useDriverPosition } from '@/features/driver-position';
 import { useDriverLocationTracking } from '@/features/location-tracking';
-import { IncomingOrderCard, useOrderOffer } from '@/features/order-offer';
 import { onlineIntentChanged, selectWantsOnline } from '@/processes/shift';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { RoundButton } from '@/shared/ui/round-button';
@@ -54,29 +53,8 @@ export function ShiftScreen() {
 
   const [error, setError] = useState<string | null>(null);
 
-  // --- Входящий заказ (M8.3) ---
-  const { offer, secondsLeft, dismiss } = useOrderOffer();
-  const [acceptOrder, { isLoading: accepting }] = useAcceptDriverOrderMutation();
-  const [offerError, setOfferError] = useState<string | null>(null);
-
-  const handleAccept = async () => {
-    if (!offer) {
-      return;
-    }
-    setOfferError(null);
-    try {
-      await acceptOrder(offer.orderId).unwrap();
-      dismiss();
-      router.push(`/order/${offer.orderId}`);
-    } catch (cause) {
-      setOfferError(toAppError(cause as never).message);
-    }
-  };
-
-  const handleDecline = () => {
-    setOfferError(null);
-    dismiss();
-  };
+  // Входящий заказ (M8.3) показывает `IncomingOrderOverlay` в корневом layout — над любым
+  // экраном, а не только над этим.
 
   const isOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
   const canGoOnline = profile?.canGoOnline ?? false;
@@ -104,6 +82,9 @@ export function ShiftScreen() {
     request: requestLocation,
   } = useDriverPosition(isOnline);
   const mapRef = useRef<MapCanvasHandle>(null);
+  // Высота нижней карточки меняется (ошибки, подсказки геопозиции), поэтому кнопку
+  // поднимаем над ней по замеру, а не по константе.
+  const [sheetHeight, setSheetHeight] = useState(0);
 
   /**
    * Карта подводится к машине один раз за выход на линию. Делать это на каждый GPS-тик
@@ -126,9 +107,14 @@ export function ShiftScreen() {
     mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
   }, [isOnline, position]);
 
-  const centerOnDriver = () => {
-    if (position) {
-      mapRef.current?.centerOn(position, DRIVER_ZOOM_DELTA);
+  /**
+   * Вне линии слежения нет и `position` пуст, поэтому берём разовую точку (кэш или
+   * last known): кнопка нужна и до выхода на смену.
+   */
+  const centerOnDriver = async () => {
+    const point = position ?? (await resolveCurrentPosition());
+    if (point) {
+      mapRef.current?.centerOn(point, DRIVER_ZOOM_DELTA);
     }
   };
 
@@ -171,29 +157,8 @@ export function ShiftScreen() {
           },
         ]}
       >
-        {/*
-          Слот держит «пилюлю» по центру и вне линии остаётся пустым: искать себя на карте
-          есть смысл только на смене. Ширина слота фиксированная, поэтому появление кнопки
-          не сдвигает «пилюлю».
-        */}
-        <View style={styles.topBarSlot}>
-          {isOnline ? (
-            <RoundButton
-              accessibilityLabel="Показать, где я"
-              onPress={centerOnDriver}
-              variant="surface"
-            >
-              <SymbolView
-                name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
-                resizeMode="scaleAspectFit"
-                size={22}
-                tintColor={position ? theme.colors.primary : theme.colors.textMuted}
-                type="monochrome"
-                weight={{ android: medium, ios: 'medium' }}
-              />
-            </RoundButton>
-          ) : null}
-        </View>
+        {/* Пустой слот той же ширины, что и кнопка профиля справа, держит «пилюлю» по центру. */}
+        <View style={styles.topBarSlot} />
 
         <View style={styles.topBarCenter}>
           <View
@@ -231,37 +196,33 @@ export function ShiftScreen() {
       </View>
 
       {/*
-        Входящий заказ занимает место сводки: пока предложение живёт (30 секунд),
-        это единственное, что водителю нужно на экране.
+        Кнопка «Показать, где я» — справа снизу, над нижней карточкой, в видимой части карты.
       */}
-      {offer ? (
-        <View
-          style={[
-            styles.offerWrap,
-            {
-              paddingBottom: getGlassTabBarBottomInset(insets.bottom),
-              paddingHorizontal: theme.spacing.md,
-            },
-          ]}
+      <View
+        pointerEvents="box-none"
+        style={[styles.centerButton, { bottom: sheetHeight + theme.spacing.md }]}
+      >
+        <RoundButton
+          accessibilityLabel="Показать, где я"
+          onPress={() => void centerOnDriver()}
+          variant="surface"
         >
-          <IncomingOrderCard
-            accepting={accepting}
-            error={offerError}
-            offer={offer}
-            onAccept={() => {
-              void handleAccept();
-            }}
-            onDecline={handleDecline}
-            secondsLeft={secondsLeft}
+          <SymbolView
+            name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
+            resizeMode="scaleAspectFit"
+            size={22}
+            tintColor={position ? theme.colors.primary : theme.colors.textMuted}
+            type="monochrome"
+            weight={{ android: medium, ios: 'medium' }}
           />
-        </View>
-      ) : null}
+        </RoundButton>
+      </View>
 
       {/* Нижняя карточка: переключатель линии и сводка */}
       <View
+        onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
         style={[
           styles.sheet,
-          offer && styles.hidden,
           {
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,
@@ -344,14 +305,10 @@ export function ShiftScreen() {
 }
 
 const styles = StyleSheet.create({
-  hidden: {
-    display: 'none',
-  },
-  offerWrap: {
-    bottom: 0,
-    left: 0,
+  centerButton: {
     position: 'absolute',
-    right: 0,
+    right: 16,
+    zIndex: 5,
   },
   root: {
     backgroundColor: '#F8F4EF',

@@ -39,9 +39,35 @@ interface YandexGeoObject {
   metaDataProperty?: {
     GeocoderMetaData?: {
       text?: string;
+      kind?: string;
       Address?: { formatted?: string };
     };
   };
+}
+
+/**
+ * Типы объектов, пригодные как адрес проживания или точка поездки.
+ *
+ * Геокодер разбирает запрос по словам и ищет объекты с таким названием: на «малгобек улица»
+ * он находит реку с именем «Улица» (`kind: hydro`) и одноимённые сёла.
+ */
+const ADDRESS_KINDS = new Set(['house', 'street', 'locality', 'district', 'metro', 'area']);
+
+/**
+ * Номера автодорог: «26Н-043», «А-147», «М-4», «58К-123».
+ *
+ * Яндекс отдаёт их с `kind: street`, поэтому по типу они неотличимы от настоящих улиц,
+ * а в выдаче идут первыми и вытесняют их — на запрос «малгобек улица» геокодер возвращал
+ * только три таких номера. Как адрес проживания они бессмысленны.
+ */
+const ROAD_CODE = /^(\d+[А-Я]-\d+|[АМРК]-\d+)$/iu;
+
+function isAddressKind(geoObject?: YandexGeoObject): boolean {
+  const kind = geoObject?.metaDataProperty?.GeocoderMetaData?.kind;
+  if (kind && !ADDRESS_KINDS.has(kind)) {
+    return false;
+  }
+  return !ROAD_CODE.test(geoObject?.name?.trim() ?? '');
 }
 
 /**
@@ -202,6 +228,7 @@ export class YandexMapProvider implements MapProvider {
     const data = await this.fetchJson<YandexGeocoderResponse>(url, 'geocoder');
 
     return (data.response?.GeoObjectCollection?.featureMember ?? [])
+      .filter((member) => isAddressKind(member.GeoObject))
       .map((member, index) => this.geoObjectToSuggestion(member.GeoObject, index))
       .filter((item): item is AddressSuggestion => item !== null);
   }

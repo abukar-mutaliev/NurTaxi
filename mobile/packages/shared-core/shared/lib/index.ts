@@ -45,7 +45,7 @@ export type {
   ImagePickerSource,
 } from './media/image-picker-permission';
 export { pickImageFrom, pickImageWithChoice } from './media/pick-image';
-export type { PickedImage, PickImageOutcome } from './media/pick-image';
+export type { PickedImage, PickImageOutcome, PickImageWithChoiceOptions } from './media/pick-image';
 export {
   getLocalFileSize,
   UPLOAD_TIMEOUT_MS,

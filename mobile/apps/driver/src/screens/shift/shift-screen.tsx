@@ -19,7 +19,6 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
-  useAcceptDriverOrderMutation,
   useGetDriverEarningsQuery,
   useGetDriverProfileQuery,
   useUpdateDriverStatusMutation,
@@ -28,7 +27,6 @@ import {
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { useDriverPosition } from '@/features/driver-position';
 import { useDriverLocationTracking } from '@/features/location-tracking';
-import { IncomingOrderCard, useOrderOffer } from '@/features/order-offer';
 import { onlineIntentChanged, selectWantsOnline } from '@/processes/shift';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { RoundButton } from '@/shared/ui/round-button';
@@ -55,29 +53,8 @@ export function ShiftScreen() {
 
   const [error, setError] = useState<string | null>(null);
 
-  // --- Входящий заказ (M8.3) ---
-  const { offer, secondsLeft, dismiss } = useOrderOffer();
-  const [acceptOrder, { isLoading: accepting }] = useAcceptDriverOrderMutation();
-  const [offerError, setOfferError] = useState<string | null>(null);
-
-  const handleAccept = async () => {
-    if (!offer) {
-      return;
-    }
-    setOfferError(null);
-    try {
-      await acceptOrder(offer.orderId).unwrap();
-      dismiss();
-      router.push(`/order/${offer.orderId}`);
-    } catch (cause) {
-      setOfferError(toAppError(cause as never).message);
-    }
-  };
-
-  const handleDecline = () => {
-    setOfferError(null);
-    dismiss();
-  };
+  // Входящий заказ (M8.3) показывает `IncomingOrderOverlay` в корневом layout — над любым
+  // экраном, а не только над этим.
 
   const isOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
   const canGoOnline = profile?.canGoOnline ?? false;
@@ -219,64 +196,33 @@ export function ShiftScreen() {
       </View>
 
       {/*
-        Входящий заказ занимает место сводки: пока предложение живёт (30 секунд),
-        это единственное, что водителю нужно на экране.
+        Кнопка «Показать, где я» — справа снизу, над нижней карточкой, в видимой части карты.
       */}
-      {offer ? (
-        <View
-          style={[
-            styles.offerWrap,
-            {
-              paddingBottom: getGlassTabBarBottomInset(insets.bottom),
-              paddingHorizontal: theme.spacing.md,
-            },
-          ]}
+      <View
+        pointerEvents="box-none"
+        style={[styles.centerButton, { bottom: sheetHeight + theme.spacing.md }]}
+      >
+        <RoundButton
+          accessibilityLabel="Показать, где я"
+          onPress={() => void centerOnDriver()}
+          variant="surface"
         >
-          <IncomingOrderCard
-            accepting={accepting}
-            error={offerError}
-            offer={offer}
-            onAccept={() => {
-              void handleAccept();
-            }}
-            onDecline={handleDecline}
-            secondsLeft={secondsLeft}
+          <SymbolView
+            name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
+            resizeMode="scaleAspectFit"
+            size={22}
+            tintColor={position ? theme.colors.primary : theme.colors.textMuted}
+            type="monochrome"
+            weight={{ android: medium, ios: 'medium' }}
           />
-        </View>
-      ) : null}
-
-      {/*
-        Кнопка «Показать, где я» — справа снизу, над нижней карточкой, в видимой части
-        карты. Пока висит входящий заказ, карточка скрыта и кнопка не нужна.
-      */}
-      {!offer ? (
-        <View
-          pointerEvents="box-none"
-          style={[styles.centerButton, { bottom: sheetHeight + theme.spacing.md }]}
-        >
-          <RoundButton
-            accessibilityLabel="Показать, где я"
-            onPress={() => void centerOnDriver()}
-            variant="surface"
-          >
-            <SymbolView
-              name={{ android: 'my_location', ios: 'location.fill', web: 'my_location' }}
-              resizeMode="scaleAspectFit"
-              size={22}
-              tintColor={position ? theme.colors.primary : theme.colors.textMuted}
-              type="monochrome"
-              weight={{ android: medium, ios: 'medium' }}
-            />
-          </RoundButton>
-        </View>
-      ) : null}
+        </RoundButton>
+      </View>
 
       {/* Нижняя карточка: переключатель линии и сводка */}
       <View
         onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
         style={[
           styles.sheet,
-          offer && styles.hidden,
           {
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,
@@ -363,15 +309,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     zIndex: 5,
-  },
-  hidden: {
-    display: 'none',
-  },
-  offerWrap: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
   },
   root: {
     backgroundColor: '#F8F4EF',

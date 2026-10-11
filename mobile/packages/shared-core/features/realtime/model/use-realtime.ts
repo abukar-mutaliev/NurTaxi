@@ -13,7 +13,8 @@ import { AppState } from 'react-native';
 import { useSelector } from 'react-redux';
 
 import { useSharedDispatch, type SharedDispatch } from '@nurtaxi/shared-core/shared/lib';
-import { orderApi } from '@nurtaxi/shared-core/entities/order';
+import { OrderStatus } from '@nurtaxi/shared-core/shared/model';
+import { isTerminalOrder, orderApi } from '@nurtaxi/shared-core/entities/order';
 import {
   selectIsAuthenticated,
   type WithSessionState,
@@ -41,6 +42,15 @@ function applyOrderStatusToCache(dispatch: SharedDispatch, event: OrderStatusEve
   );
   // Полная карточка меняется вместе со статусом (водитель, цена, чек).
   dispatch(orderApi.util.invalidateTags([{ type: 'Order', id: event.orderId }]));
+
+  /**
+   * Закрытая поездка меняет историю, доход и статус водителя. Свои действия водитель
+   * сбрасывает тегами мутаций, а здесь ловим чужие: отмену клиентом и закрытие сервером
+   * после оплаты. В приложении клиента теги водителя ни на что не подписаны — сброс пустой.
+   */
+  if (event.toStatus === OrderStatus.Completed || isTerminalOrder(event.toStatus)) {
+    dispatch(orderApi.util.invalidateTags(['OrderHistory', 'DriverEarnings', 'DriverProfile']));
+  }
 }
 
 /** Подключает сокет на время авторизованной сессии. Вызывается один раз в слое `app`. */

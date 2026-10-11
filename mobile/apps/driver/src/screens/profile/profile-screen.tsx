@@ -1,13 +1,24 @@
 /**
- * Профиль водителя (M7.5): сводка по доходу, автомобиль, документы, поддержка, выход.
+ * Профиль водителя (M7.5): фото, сводка по доходу, автомобиль, документы, поддержка, выход.
  *
  * Данные берутся из `GET /driver/profile` и `GET /driver/earnings`; счётчик одобренных
  * документов считается по `profile.documents`, чтобы не дублировать логику на сервере.
  */
+import { Image } from 'expo-image';
 import { useRouter, type Href } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SymbolView } from 'expo-symbols';
+import medium from 'expo-symbols/androidWeights/medium';
 import { useTranslation } from 'react-i18next';
-import { Alert, Linking, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
@@ -18,8 +29,10 @@ import {
   useGetDriverEarningsQuery,
   useGetDriverProfileQuery,
 } from '@nurtaxi/shared-core/entities/driver';
+import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
+import { useProfilePhotoUpload } from '@/features/profile-photo';
 import { getGlassTabBarBottomInset } from '@/shared/constants/glass-tab-bar';
 import { MenuCard } from '@/shared/ui/menu-card';
 import { PillButton } from '@/shared/ui/pill-button';
@@ -42,6 +55,9 @@ export function ProfileScreen() {
 
   const { data: profile, isLoading } = useGetDriverProfileQuery();
   const { data: earnings } = useGetDriverEarningsQuery();
+  // Фото берём из `/me`: там готовая ссылка, а в `/driver/profile` — ключ объекта в хранилище.
+  const { data: me } = useGetMeQuery();
+  const { changePhoto, isUploading } = useProfilePhotoUpload();
   const { logout } = useAuth();
 
   const openSupport = () => {
@@ -65,6 +81,7 @@ export function ProfileScreen() {
     );
   }
 
+  const photoUrl = me?.photoUrl ?? null;
   const vehicle = profile?.vehicles?.[0];
   const documents = profile?.documents ?? [];
   const approvedDocs = documents.filter((doc) => doc.status === 'approved').length;
@@ -105,11 +122,47 @@ export function ProfileScreen() {
 
         {/* Водитель */}
         <View style={[styles.identity, { gap: theme.spacing.md }]}>
-          <View
-            style={[styles.avatar, { backgroundColor: theme.colors.primary, borderRadius: 999 }]}
+          <Pressable
+            accessibilityLabel={photoUrl ? 'Изменить фото профиля' : 'Добавить фото профиля'}
+            accessibilityRole="button"
+            disabled={isUploading}
+            hitSlop={8}
+            onPress={() => void changePhoto()}
           >
-            <Text style={styles.avatarText}>{initial(profile?.fullName)}</Text>
-          </View>
+            <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
+              {photoUrl ? (
+                <Image
+                  contentFit="cover"
+                  source={{ uri: photoUrl }}
+                  style={StyleSheet.absoluteFill}
+                  transition={150}
+                />
+              ) : (
+                <Text style={styles.avatarText}>{initial(profile?.fullName)}</Text>
+              )}
+              {isUploading ? (
+                <View style={[StyleSheet.absoluteFill, styles.avatarBusy]}>
+                  <ActivityIndicator color="#FFFFFF" />
+                </View>
+              ) : null}
+            </View>
+            {/* Значок камеры подсказывает, что аватар нажимается: без него фото не найти. */}
+            <View
+              style={[
+                styles.avatarBadge,
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+              ]}
+            >
+              <SymbolView
+                name={{ android: 'photo_camera', ios: 'camera.fill', web: 'photo_camera' }}
+                resizeMode="scaleAspectFit"
+                size={14}
+                tintColor={theme.colors.primary}
+                type="monochrome"
+                weight={{ android: medium, ios: 'medium' }}
+              />
+            </View>
+          </Pressable>
 
           <View style={{ flex: 1, gap: theme.spacing.xs }}>
             <Text variant="subtitle">{profile?.fullName ?? '—'}</Text>
@@ -215,9 +268,27 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
+    borderRadius: 31,
     height: 62,
     justifyContent: 'center',
+    overflow: 'hidden',
     width: 62,
+  },
+  avatarBadge: {
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    bottom: -2,
+    height: 24,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -2,
+    width: 24,
+  },
+  avatarBusy: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
   },
   avatarText: {
     color: '#FFFFFF',

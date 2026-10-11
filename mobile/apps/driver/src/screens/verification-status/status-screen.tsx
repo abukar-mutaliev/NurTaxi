@@ -8,7 +8,14 @@
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
-import { RefreshControl, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import {
+  Linking,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
@@ -20,6 +27,13 @@ import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background
 
 const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
+
+/**
+ * Поддержка отвечает в WhatsApp: +7 928 697-06-97.
+ * `wa.me` требует номер без плюса и разделителей; без установленного WhatsApp ссылка
+ * откроется в браузере и предложит продолжить в приложении — запасной путь не нужен.
+ */
+const SUPPORT_WHATSAPP_URL = 'https://wa.me/79286970697';
 
 const c = {
   title: '#2E2331',
@@ -46,6 +60,18 @@ type StatusView = {
 };
 
 const STATUS_VIEW: Record<string, StatusView> = {
+  /**
+   * Анкета заведена, но на проверку не отправлена. Без этой ветки срабатывала заглушка
+   * «Документы на проверке», и водитель видел, что всё отправлено, не загрузив и половины.
+   */
+  draft: {
+    glyph: '📄',
+    title: 'Документы не отправлены',
+    subtitle: 'Загрузите оставшиеся документы и отправьте анкету на проверку.',
+    badge: 'Черновик',
+    badgeBg: c.pendingBg,
+    badgeText: c.pendingText,
+  },
   pending: {
     glyph: '⏳',
     title: 'Документы отправлены',
@@ -80,11 +106,15 @@ const STATUS_VIEW: Record<string, StatusView> = {
   },
 };
 
+/**
+ * Неизвестный статус нельзя выдавать за «на проверке»: если сервер заведёт новый, водитель
+ * решит, что от него ничего не требуется, и будет ждать решения, которого никто не выносит.
+ */
 const FALLBACK_VIEW: StatusView = {
-  glyph: '⏳',
-  title: 'Документы на проверке',
-  subtitle: 'Обычно занимает до 24 часов. Мы пришлём push-уведомление о решении модератора.',
-  badge: 'На проверке',
+  glyph: '📄',
+  title: 'Проверьте документы',
+  subtitle: 'Откройте список документов и убедитесь, что всё загружено и отправлено.',
+  badge: 'Требует внимания',
   badgeBg: c.pendingBg,
   badgeText: c.pendingText,
 };
@@ -99,6 +129,10 @@ export function VerificationStatusScreen() {
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
   const sy = (value: number) => (value / DESIGN_HEIGHT) * height;
+
+  const openSupportChat = () => {
+    void Linking.openURL(SUPPORT_WHATSAPP_URL);
+  };
 
   if (isLoading) {
     return (
@@ -146,6 +180,8 @@ export function VerificationStatusScreen() {
   const view = STATUS_VIEW[status] ?? FALLBACK_VIEW;
   const isRejected = status === 'rejected';
   const isApproved = status === 'approved';
+  // Пока модератор смотрит анкету, документы менять нельзя — только открыть и посмотреть.
+  const isLocked = status === 'in_review' || isApproved;
 
   const rejectedDocs = rejectedDocuments(profile);
   const documentSummary = profile.documents?.length
@@ -268,21 +304,36 @@ export function VerificationStatusScreen() {
 
         <View style={styles.spacer} />
 
-        {isRejected ? (
-          <PillButton
-            height={sx(58)}
-            onPress={() => router.replace('/(verification)/documents')}
-            title="Исправить документы"
-          />
-        ) : isApproved ? (
-          <PillButton
-            height={sx(58)}
-            onPress={() => router.replace('/(tabs)')}
-            title="Выйти на линию"
-          />
-        ) : (
-          <PillButton height={sx(58)} title="Связаться с поддержкой" variant="surface" />
-        )}
+        <View style={{ gap: sy(12) }}>
+          {isApproved ? (
+            <PillButton
+              height={sx(58)}
+              onPress={() => router.replace('/(tabs)')}
+              title="Выйти на линию"
+            />
+          ) : (
+            <PillButton
+              height={sx(58)}
+              onPress={() => router.push('/(verification)/documents')}
+              title={
+                isRejected
+                  ? 'Исправить документы'
+                  : isLocked
+                    ? 'Мои документы'
+                    : 'Продолжить загрузку'
+              }
+            />
+          )}
+
+          {isApproved ? null : (
+            <PillButton
+              height={sx(58)}
+              onPress={openSupportChat}
+              title="Связаться с поддержкой"
+              variant="surface"
+            />
+          )}
+        </View>
       </ScrollView>
     </View>
   );

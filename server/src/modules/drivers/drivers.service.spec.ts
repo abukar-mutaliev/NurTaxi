@@ -402,4 +402,36 @@ describe('DriversService', () => {
       });
     });
   });
+
+  it('отдаёт клиенту только свободных водителей рядом', async () => {
+    driverStore = {
+      id: 'online-1',
+      regionId,
+      onlineStatus: DriverOnlineStatus.Online,
+      verificationStatus: VerificationStatus.Approved,
+    } as DriverProfile;
+    driverLocationMock.findNearby.mockResolvedValue([
+      {
+        driverId: 'online-1',
+        userId: 'secret-user',
+        lat: 43.22,
+        lng: 44.77,
+        rating: 4.9,
+        distanceM: 120,
+      },
+      {
+        driverId: 'offline-1',
+        userId: 'other',
+        lat: 43.23,
+        lng: 44.78,
+        rating: 5,
+        distanceM: 400,
+      },
+    ]);
+
+    await expect(service.listNearbyOnline(regionId, 43.21, 44.76)).resolves.toEqual([
+      { id: 'online-1', lat: 43.22, lng: 44.77 },
+    ]);
+    expect(driverLocationMock.findNearby).toHaveBeenCalledWith(regionId, 43.21, 44.76, 10, 50);
+  });
 });

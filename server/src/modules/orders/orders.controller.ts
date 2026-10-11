@@ -89,7 +89,8 @@ export class OrdersController {
   ): Promise<OrderResponse> {
     const role = user.role === Role.Driver ? 'driver' : 'client';
     const order = await this.ordersService.getOrderForUser(user.id, id, role);
-    return OrderResponse.from(order);
+    const driverPoint = await this.ordersService.getAssignedDriverPoint(order);
+    return OrderResponse.from(order, driverPoint);
   }
 
   @Post(':id/sos')

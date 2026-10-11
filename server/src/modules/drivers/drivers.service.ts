@@ -55,6 +55,12 @@ import {
   DOCUMENT_MAX_BYTES,
 } from '../storage/upload-constraints';
 
+/** Совпадает с радиусом подбора заказа: клиент видит тех же свободных водителей. */
+const NEARBY_MAP_RADIUS_KM = 10;
+/** Запас сырых точек Redis: часть из них уже офлайн и отсеется. */
+const NEARBY_MAP_QUERY_LIMIT = 50;
+const NEARBY_MAP_RESULT_LIMIT = 15;
+
 @Injectable()
 export class DriversService {
   constructor(
@@ -885,6 +891,37 @@ export class DriversService {
     const profile = await this.getProfileByDriverId(driverId);
     profile.rating = String(Math.round(rating * 100) / 100);
     await this.drivers.save(profile);
+  }
+
+  /**
+   * Свободные машины рядом с точкой — для карты клиента.
+   * В выборку попадают только водители на линии: занятые уже в заказе и не должны
+   * выглядеть как свободные. Личные данные не отдаём, только позицию.
+   */
+  async listNearbyOnline(
+    regionId: string,
+    lat: number,
+    lng: number,
+  ): Promise<Array<{ id: string; lat: number; lng: number }>> {
+    const [onlineIds, nearby] = await Promise.all([
+      this.getOnlineDriverIds(regionId),
+      this.driverLocation.findNearby(
+        regionId,
+        lat,
+        lng,
+        NEARBY_MAP_RADIUS_KM,
+        NEARBY_MAP_QUERY_LIMIT,
+      ),
+    ]);
+
+    return nearby
+      .filter((entry) => onlineIds.has(entry.driverId))
+      .slice(0, NEARBY_MAP_RESULT_LIMIT)
+      .map((entry) => ({
+        id: entry.driverId,
+        lat: entry.lat,
+        lng: entry.lng,
+      }));
   }
 
   /** ID водителей со статусом ONLINE в регионе (для матчинга, Des §6). */

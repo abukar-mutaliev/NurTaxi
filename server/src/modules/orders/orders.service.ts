@@ -574,6 +574,15 @@ export class OrdersService {
     return order;
   }
 
+  /** Точка назначенного водителя из Redis. Без неё клиент не может посчитать подачу. */
+  async getAssignedDriverPoint(order: Order): Promise<{ lat: number; lng: number } | null> {
+    if (!order.driverId) {
+      return null;
+    }
+
+    return this.driversService.getCachedLocation(order.regionId, order.driverId);
+  }
+
   async getClientHistory(clientId: string, limit = 20) {
     const orders = await this.orders.find({
       where: { clientId },

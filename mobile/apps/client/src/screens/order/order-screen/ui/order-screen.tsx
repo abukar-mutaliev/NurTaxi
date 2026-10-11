@@ -6,6 +6,7 @@ import { Alert, Linking, Share, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
   formatDistance,
@@ -13,7 +14,8 @@ import {
   formatMoney,
   applyPhoneMask,
 } from '@nurtaxi/shared-core/shared/lib';
-import { OrderStatus, ReviewTarget } from '@nurtaxi/shared-core/shared/model';
+import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
+import { OrderStatus, ReviewTarget, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { Badge, Button, Input, Screen, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   isCancellableByClient,
@@ -40,6 +42,7 @@ import {
 } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { isRoadGeometry, roadPolylineOrNull, useRoadRoute } from '@/features/route';
 import { ReviewSheet } from '@/features/review';
 import {
   activeOrderChanged,
@@ -54,7 +57,6 @@ import {
   paymentMethodSelected,
   pickupSelected,
   regionSelected,
-  selectOrderDraft,
   tariffSelected,
 } from '@/processes/order-flow';
 import {
@@ -84,7 +86,6 @@ export function OrderScreen() {
   const driverPosition = useAppSelector(selectDriverPosition(orderId ?? ''));
   const permission = useLocationPermission();
   const { position } = useCurrentPosition(permission.state === 'granted');
-  const draft = useAppSelector(selectOrderDraft);
   const headerTopInset = useOrderTopInset();
   const cachedStatus = useAppSelector(orderApi.endpoints.getOrder.select(orderId ?? '')).data
     ?.status;
@@ -92,6 +93,11 @@ export function OrderScreen() {
     cachedStatus == null ||
     cachedStatus === OrderStatus.Created ||
     cachedStatus === OrderStatus.SearchingDriver;
+  const followDriver =
+    cachedStatus === OrderStatus.DriverAssigned ||
+    cachedStatus === OrderStatus.DriverEnRoute ||
+    cachedStatus === OrderStatus.DriverArrived ||
+    cachedStatus === OrderStatus.InProgress;
 
   const {
     data: order,
@@ -101,9 +107,9 @@ export function OrderScreen() {
     refetch,
   } = useGetOrderQuery(orderId ?? '', {
     skip: !orderId,
-    // Пока ищем водителя, опрос нужен даже при «живом» сокете: событие о назначении
-    // легко потерять, и клиент иначе так и останется на «Ищем для вас».
-    pollingInterval: isOnline && !stillSearching ? 0 : 5000,
+    // Пока ищем водителя или он уже едет, опрос нужен даже при «живом» сокете:
+    // событие о назначении и точку машины легко потерять, когда приложение водителя в фоне.
+    pollingInterval: isOnline && !stillSearching && !followDriver ? 0 : 5000,
   });
 
   useOrderRealtime(orderId ?? null);
@@ -136,16 +142,24 @@ export function OrderScreen() {
     }
   }, [dispatch, order]);
 
+  const nearbyDrivers = useNearbyDrivers({
+    enabled: Boolean(order),
+    point: position ?? (order ? { lat: order.pickupLat, lng: order.pickupLng } : null),
+    regionId: order?.regionId,
+  });
+
   const markers = useMemo(
     () =>
       order
         ? resolveOrderMapMarkers({
+            assignedDriverId: order.driver?.id,
             driver: driverPosition ?? null,
             dropoff: {
               address: order.dropoffAddress,
               lat: order.dropoffLat,
               lng: order.dropoffLng,
             },
+            nearbyDrivers,
             pickup: {
               address: order.pickupAddress,
               lat: order.pickupLat,
@@ -154,26 +168,50 @@ export function OrderScreen() {
             routePolyline: order.route?.polyline,
           })
         : [],
-    [driverPosition, order],
+    [driverPosition, nearbyDrivers, order],
   );
 
+  const reportedDriverPoint =
+    order?.driver?.lat != null && order.driver.lng != null
+      ? { lat: order.driver.lat, lng: order.driver.lng }
+      : null;
   const liveRoute = useLiveOrderRoute({
+    buildLocalRoute: buildDrivingRoute,
     dropoff: { lat: order?.dropoffLat ?? 0, lng: order?.dropoffLng ?? 0 },
     enabled: Boolean(
       order &&
       (orderStage(order.status) === 'waiting-driver' || orderStage(order.status) === 'riding'),
     ),
-    origin: driverPosition,
+    // Сокет точнее, но пока его нет — берём последнюю точку из заказа, а не заглушку «7 мин».
+    origin: driverPosition ?? reportedDriverPoint,
     pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
     status: order?.status ?? '',
   });
+  const tripStats =
+    liveRoute.leg === 'to-dropoff' && liveRoute.duration
+      ? { distanceM: liveRoute.distanceM, duration: liveRoute.duration }
+      : null;
+  const etaLabel = liveRoute.leg === 'to-pickup' && liveRoute.duration ? liveRoute.duration : null;
+  const tripWaypoints = useMemo((): GeoPoint[] | null => {
+    if (!order) {
+      return null;
+    }
+    return [
+      { lat: order.pickupLat, lng: order.pickupLng },
+      { lat: order.dropoffLat, lng: order.dropoffLng },
+    ];
+  }, [order]);
+  const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
+  const tripRoad = useRoadRoute(liveRoad ? null : tripWaypoints);
+  const routePoints = liveRoad ?? tripRoad;
+  const routePolyline = routePoints ? null : roadPolylineOrNull(order?.route?.polyline);
 
   useEffect(() => {
     if (!order?.id) {
       return;
     }
     mapRef.current?.fitToRoute();
-  }, [liveRoute.leg, order?.id, order?.status]);
+  }, [liveRoute.leg, order?.id, order?.status, routePoints]);
 
   if (!orderId) {
     return (
@@ -201,8 +239,6 @@ export function OrderScreen() {
   const showDriverEnRoute = stage === 'waiting-driver' && Boolean(order.driver) && !noDrivers;
   const showTripInProgress = stage === 'riding';
   const showLegacyPanel = !showDriverSearch && !showDriverEnRoute && !showTripInProgress;
-
-  const etaLabel = draft.estimate?.pickupEtaS ? formatDuration(draft.estimate.pickupEtaS) : null;
 
   const confirmCancel = async () => {
     try {
@@ -311,8 +347,14 @@ export function OrderScreen() {
     }
   };
 
-  const tripDuration = order.route?.durationS ? formatDuration(order.route.durationS) : '—';
-  const tripDistance = order.route?.distanceM ? formatDistance(order.route.distanceM) : '—';
+  const tripDuration =
+    tripStats?.duration ?? (order.route?.durationS ? formatDuration(order.route.durationS) : '—');
+  const tripDistance =
+    tripStats?.distanceM != null
+      ? formatDistance(tripStats.distanceM)
+      : order.route?.distanceM
+        ? formatDistance(order.route.distanceM)
+        : '—';
   const tripPrice = formatMoney(order.priceFinal ?? order.priceEstimated, 'RUB');
 
   return (
@@ -326,8 +368,8 @@ export function OrderScreen() {
             }}
             markers={markers}
             ref={mapRef}
-            routePoints={liveRoute.points}
-            routePolyline={liveRoute.points?.length ? null : (order.route?.polyline ?? null)}
+            routePoints={routePoints}
+            routePolyline={routePolyline}
           />
 
           {showDriverSearch ? (

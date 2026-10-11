@@ -99,6 +99,13 @@ export class AssignedDriverResponse {
 
   @ApiPropertyOptional({ type: VehicleResponse })
   vehicle!: VehicleResponse | null;
+
+  /** Последняя известная точка машины. Её нет, пока водитель не присылал геопозицию. */
+  @ApiPropertyOptional()
+  lat!: number | null;
+
+  @ApiPropertyOptional()
+  lng!: number | null;
 }
 
 export class OrderResponse {
@@ -171,7 +178,10 @@ export class OrderResponse {
   @ApiProperty()
   createdAt!: string;
 
-  static from(order: Order): OrderResponse {
+  static from(
+    order: Order,
+    driverPoint?: { lat: number; lng: number } | null,
+  ): OrderResponse {
     const primaryVehicle =
       order.driver?.vehicles?.find((v) => v.isPrimary) ?? order.driver?.vehicles?.[0];
 
@@ -204,6 +214,8 @@ export class OrderResponse {
             rating: Number(order.driver.rating),
             phone: order.driver.user?.phone ?? null,
             vehicle: primaryVehicle ? VehicleResponse.from(primaryVehicle) : null,
+            lat: driverPoint?.lat ?? null,
+            lng: driverPoint?.lng ?? null,
           }
         : null,
       createdAt: order.createdAt.toISOString(),

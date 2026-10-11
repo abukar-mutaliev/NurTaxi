@@ -8,9 +8,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDuration } from '@nurtaxi/shared-core/shared/lib';
-import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
+import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
+import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   formatOrderStatusLabel,
@@ -34,6 +36,7 @@ import {
   useResolvedLocationAddress,
 } from '@/features/address';
 import { useActiveOrderGuard, useOrderEstimate, OrderExtrasFields } from '@/features/order';
+import { isRoadGeometry, roadPolylineOrNull, useRoadRoute } from '@/features/route';
 import {
   activeOrderChanged,
   canSubmitOrderExtras,
@@ -95,12 +98,14 @@ export function HomeScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [paymentSheetVisible, setPaymentSheetVisible] = useState(false);
   const [orderSheetHeight, setOrderSheetHeight] = useState(0);
+  const [isHomeFocused, setIsHomeFocused] = useState(true);
 
   const { data: activeOrder } = useGetOrderQuery(effectiveActiveId ?? '', {
     skip: !effectiveActiveId,
   });
   const driverPosition = useAppSelector(selectDriverPosition(effectiveActiveId ?? ''));
   const liveRoute = useLiveOrderRoute({
+    buildLocalRoute: buildDrivingRoute,
     dropoff: { lat: activeOrder?.dropoffLat ?? 0, lng: activeOrder?.dropoffLng ?? 0 },
     enabled: Boolean(
       activeOrder &&
@@ -147,15 +152,24 @@ export function HomeScreen() {
     dispatch(pickupSelected(nextPickup));
   }, [dispatch, hasActiveOrder, myLocationLabel, pickup, position]);
 
+  const nearbyCenter = pickup ?? (position ? { lat: position.lat, lng: position.lng } : null);
+  const nearbyDrivers = useNearbyDrivers({
+    enabled: isHomeFocused,
+    point: nearbyCenter,
+    regionId: draft.regionId,
+  });
+
   const markers = useMemo((): MapMarker[] => {
     if (activeOrder) {
       return resolveOrderMapMarkers({
+        assignedDriverId: activeOrder.driver?.id,
         driver: driverPosition ?? null,
         dropoff: {
           address: activeOrder.dropoffAddress,
           lat: activeOrder.dropoffLat,
           lng: activeOrder.dropoffLng,
         },
+        nearbyDrivers,
         pickup: {
           address: activeOrder.pickupAddress,
           lat: activeOrder.pickupLat,
@@ -167,15 +181,30 @@ export function HomeScreen() {
 
     return resolveOrderMapMarkers({
       dropoff,
+      nearbyDrivers,
       pickup,
       routePolyline: estimate?.route.polyline,
     });
-  }, [activeOrder, driverPosition, dropoff, estimate?.route.polyline, pickup]);
+  }, [activeOrder, driverPosition, dropoff, estimate?.route.polyline, nearbyDrivers, pickup]);
 
-  const routePoints = liveRoute.points?.length ? liveRoute.points : null;
+  const tripWaypoints = useMemo((): GeoPoint[] | null => {
+    if (activeOrder) {
+      return [
+        { lat: activeOrder.pickupLat, lng: activeOrder.pickupLng },
+        { lat: activeOrder.dropoffLat, lng: activeOrder.dropoffLng },
+      ];
+    }
+    if (pickup && dropoff) {
+      return [pickup, dropoff];
+    }
+    return null;
+  }, [activeOrder, dropoff, pickup]);
+  const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
+  const tripRoad = useRoadRoute(liveRoad ? null : tripWaypoints);
+  const routePoints = liveRoad ?? tripRoad;
   const routePolyline = routePoints
     ? null
-    : (activeOrder?.route?.polyline ?? estimate?.route.polyline ?? null);
+    : roadPolylineOrNull(activeOrder?.route?.polyline ?? estimate?.route.polyline);
 
   const markersRef = useRef(markers);
   const routePolylineRef = useRef(routePolyline);
@@ -192,7 +221,6 @@ export function HomeScreen() {
     routePoints,
     routePolyline,
   });
-  const [isHomeFocused, setIsHomeFocused] = useState(true);
   useFocusEffect(
     useCallback(() => {
       setIsHomeFocused(true);
@@ -221,7 +249,15 @@ export function HomeScreen() {
     } else if (position) {
       mapRef.current?.centerOn(position, 0.01);
     }
-  }, [activeOrder?.id, dropoff, estimate?.route.polyline, isHomeFocused, pickup, position]);
+  }, [
+    activeOrder?.id,
+    dropoff,
+    estimate?.route.polyline,
+    isHomeFocused,
+    pickup,
+    position,
+    routePoints,
+  ]);
 
   const centerOnMyLocation = () => {
     if (!position) {

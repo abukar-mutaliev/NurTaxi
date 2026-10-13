@@ -7,15 +7,8 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +22,7 @@ import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
 import { useAppSelector } from '@/app/store/hooks';
+import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { WelcomeGradientBackground } from '../../welcome-screen/ui/welcome-gradient-background';
@@ -73,6 +67,8 @@ export function CodeScreen() {
 
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Поле и кнопка — над клавиатурой, заголовок — не выше статус-бара (`useKeyboardLift`).
+  const { anchorRef, ceilingRef, liftStyle } = useKeyboardLift();
 
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
@@ -123,10 +119,7 @@ export function CodeScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.root}
-    >
+    <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
 
@@ -145,154 +138,161 @@ export function CodeScreen() {
         ]}
       />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={markGlowAsset}
-        style={[
-          styles.layer,
-          {
-            height: glowSize,
-            left: glowLeft,
-            top: logoTop - sy(122),
-            width: glowSize,
-          },
-        ]}
-      />
-
-      <View
-        pointerEvents="none"
-        style={[
-          styles.logoClip,
-          { height: logoHeight, left: logoLeft, top: logoTop, width: logoWidth },
-        ]}
-      >
+      {/* Передний план поднимается над клавиатурой целиком, фон остаётся на месте. */}
+      <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, liftStyle]}>
         <Image
-          contentFit="fill"
-          source={logoAsset}
-          style={{
-            height: logoRenderHeight,
-            marginLeft: -logoCropOffsetX,
-            width: logoRenderWidth,
-          }}
-        />
-      </View>
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={iconGlowAsset}
-        style={[
-          styles.layer,
-          {
-            height: glowSize,
-            left: glowLeft,
-            top: logoTop - sy(54),
-            width: glowSize,
-          },
-        ]}
-      />
-
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingBottom: insets.bottom + sy(24),
-            paddingHorizontal: sx(40),
-            paddingTop: logoTop + logoHeight + sy(24),
-          },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
-            {t('auth.codeTitle')}
-          </Text>
-          <Text
-            style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
-          >
-            {t('auth.codeSubtitle', { phone: phone ? formatPhone(phone) : '' })}
-          </Text>
-        </View>
-
-        <View style={{ gap: sy(16), marginTop: sy(40) }}>
-          <CodeOtpInput
-            autoFocus
-            error={error ?? undefined}
-            length={OTP_LENGTH}
-            onChange={setCode}
-            onComplete={submit}
-            scale={scale}
-            value={code}
-          />
-
-          {isFinished ? (
-            <Pressable disabled={isRequestingOtp} onPress={resend}>
-              <Text style={[styles.link, { fontSize: sx(14), opacity: isRequestingOtp ? 0.5 : 1 }]}>
-                {t('auth.resend')}
-              </Text>
-            </Pressable>
-          ) : (
-            <Text style={[styles.hint, { fontSize: sx(13) }]}>
-              {t('auth.resendIn', { time: formatCountdown(secondsLeft) })}
-            </Text>
-          )}
-
-          <Pressable onPress={() => router.replace('/(auth)/phone')}>
-            <Text style={[styles.hint, { fontSize: sx(13) }]}>{t('auth.changeNumber')}</Text>
-          </Pressable>
-
-          {!isProdEnvironment && devCode ? (
-            <View
-              style={[
-                styles.devCard,
-                {
-                  borderRadius: sx(16),
-                  marginTop: sy(8),
-                  paddingHorizontal: sx(16),
-                  paddingVertical: sy(12),
-                },
-              ]}
-            >
-              <Text style={[styles.devCardText, { fontSize: sx(13) }]}>
-                {t('auth.devCodeHint', { code: devCode })}
-              </Text>
-            </View>
-          ) : null}
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
-          disabled={!canSubmit}
-          onPress={() => submit(code)}
-          style={({ pressed }) => [
-            styles.buttonWrap,
+          contentFit="cover"
+          pointerEvents="none"
+          source={markGlowAsset}
+          style={[
+            styles.layer,
             {
-              marginTop: sy(48),
-              opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
+              height: glowSize,
+              left: glowLeft,
+              top: logoTop - sy(122),
+              width: glowSize,
             },
           ]}
+        />
+
+        <View
+          pointerEvents="none"
+          style={[
+            styles.logoClip,
+            { height: logoHeight, left: logoLeft, top: logoTop, width: logoWidth },
+          ]}
         >
-          <LinearGradient
-            colors={[codeColors.buttonStart, codeColors.buttonEnd]}
-            end={{ x: 1, y: 0.5 }}
-            start={{ x: 0, y: 0.5 }}
-            style={[
-              styles.button,
+          <Image
+            contentFit="fill"
+            source={logoAsset}
+            style={{
+              height: logoRenderHeight,
+              marginLeft: -logoCropOffsetX,
+              width: logoRenderWidth,
+            }}
+          />
+        </View>
+
+        <Image
+          contentFit="cover"
+          pointerEvents="none"
+          source={iconGlowAsset}
+          style={[
+            styles.layer,
+            {
+              height: glowSize,
+              left: glowLeft,
+              top: logoTop - sy(54),
+              width: glowSize,
+            },
+          ]}
+        />
+
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingBottom: insets.bottom + sy(24),
+              paddingHorizontal: sx(40),
+              paddingTop: logoTop + logoHeight + sy(24),
+            },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View collapsable={false} ref={ceilingRef} style={styles.header}>
+            <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
+              {t('auth.codeTitle')}
+            </Text>
+            <Text
+              style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
+            >
+              {t('auth.codeSubtitle', { phone: phone ? formatPhone(phone) : '' })}
+            </Text>
+          </View>
+
+          <View style={{ gap: sy(16), marginTop: sy(40) }}>
+            <CodeOtpInput
+              autoFocus
+              error={error ?? undefined}
+              length={OTP_LENGTH}
+              onChange={setCode}
+              onComplete={submit}
+              scale={scale}
+              value={code}
+            />
+
+            {isFinished ? (
+              <Pressable disabled={isRequestingOtp} onPress={resend}>
+                <Text
+                  style={[styles.link, { fontSize: sx(14), opacity: isRequestingOtp ? 0.5 : 1 }]}
+                >
+                  {t('auth.resend')}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={[styles.hint, { fontSize: sx(13) }]}>
+                {t('auth.resendIn', { time: formatCountdown(secondsLeft) })}
+              </Text>
+            )}
+
+            <Pressable onPress={() => router.replace('/(auth)/phone')}>
+              <Text style={[styles.hint, { fontSize: sx(13) }]}>{t('auth.changeNumber')}</Text>
+            </Pressable>
+
+            {!isProdEnvironment && devCode ? (
+              <View
+                style={[
+                  styles.devCard,
+                  {
+                    borderRadius: sx(16),
+                    marginTop: sy(8),
+                    paddingHorizontal: sx(16),
+                    paddingVertical: sy(12),
+                  },
+                ]}
+              >
+                <Text style={[styles.devCardText, { fontSize: sx(13) }]}>
+                  {t('auth.devCodeHint', { code: devCode })}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            collapsable={false}
+            disabled={!canSubmit}
+            onPress={() => submit(code)}
+            ref={anchorRef}
+            style={({ pressed }) => [
+              styles.buttonWrap,
               {
-                borderRadius: sx(29),
-                height: sx(58),
+                marginTop: sy(48),
+                opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
               },
             ]}
           >
-            <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
-              {isVerifyingOtp ? t('common.loading') : t('common.confirm')}
-            </Text>
-          </LinearGradient>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <LinearGradient
+              colors={[codeColors.buttonStart, codeColors.buttonEnd]}
+              end={{ x: 1, y: 0.5 }}
+              start={{ x: 0, y: 0.5 }}
+              style={[
+                styles.button,
+                {
+                  borderRadius: sx(29),
+                  height: sx(58),
+                },
+              ]}
+            >
+              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+                {isVerifyingOtp ? t('common.loading') : t('common.confirm')}
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </ScrollView>
+      </Animated.View>
+    </View>
   );
 }
 

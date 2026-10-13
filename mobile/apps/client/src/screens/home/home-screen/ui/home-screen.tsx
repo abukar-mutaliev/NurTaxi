@@ -84,6 +84,21 @@ export function HomeScreen() {
   const permission = useLocationPermission();
   const { position } = useCurrentPosition(permission.state === 'granted');
 
+  /**
+   * Без геопозиции на главной нет ни метки «я здесь», ни адреса подачи по умолчанию. Раньше
+   * разрешение спрашивал только поиск адреса, и после установки карта оставалась «ничьей».
+   * Спрашиваем один раз, когда проверка завершилась и решения ещё нет: отказ не повторяем.
+   */
+  const askedLocationRef = useRef(false);
+  const { isChecking: isCheckingLocation, request: requestLocation } = permission;
+  useEffect(() => {
+    if (isCheckingLocation || permission.state !== 'undetermined' || askedLocationRef.current) {
+      return;
+    }
+    askedLocationRef.current = true;
+    void requestLocation();
+  }, [isCheckingLocation, permission.state, requestLocation]);
+
   const draft = useAppSelector(selectOrderDraft);
   const { pickup, dropoff } = draft;
   const activeOrderId = useAppSelector(selectActiveOrderId);
@@ -224,6 +239,11 @@ export function HomeScreen() {
   }, [activeOrder?.id, dropoff, estimate?.route.polyline, isHomeFocused, pickup, position]);
 
   const centerOnMyLocation = () => {
+    // Без разрешения кнопка не должна молчать: спрашиваем, а после отказа навсегда — в настройки.
+    if (permission.state !== 'granted') {
+      void (permission.canAskAgain ? permission.request() : permission.openSettings());
+      return;
+    }
     if (!position) {
       return;
     }
@@ -309,6 +329,8 @@ export function HomeScreen() {
           ref={mapRef}
           routePoints={mapRoutePoints}
           routePolyline={mapPolyline}
+          // Метка «я здесь», как у водителя. Без разрешения слою MapKit нечего показать.
+          showsUserLocation={permission.state === 'granted'}
         />
       </View>
 
@@ -412,7 +434,8 @@ export function HomeScreen() {
 
       <MapCenterButton
         bottomInset={showOrderSheet && orderSheetHeight > 0 ? orderSheetHeight : bottomInset}
-        disabled={!position}
+        // Без разрешения кнопка активна — по нажатию оно и запрашивается.
+        disabled={permission.state === 'granted' && !position}
         onPress={centerOnMyLocation}
       />
 

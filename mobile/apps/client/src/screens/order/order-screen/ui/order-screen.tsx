@@ -328,6 +328,8 @@ export function OrderScreen() {
             ref={mapRef}
             routePoints={liveRoute.points}
             routePolyline={liveRoute.points?.length ? null : (order.route?.polyline ?? null)}
+            // В пути клиент сидит в машине — его метка легла бы поверх метки водителя.
+            showsUserLocation={permission.state === 'granted' && !showTripInProgress}
           />
 
           {showDriverSearch ? (

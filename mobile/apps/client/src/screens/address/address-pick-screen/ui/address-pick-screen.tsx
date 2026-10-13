@@ -163,6 +163,7 @@ export function AddressPickScreen() {
             markers={markers}
             onPress={(point) => setSelectedPoint(point)}
             ref={mapRef}
+            showsUserLocation={permission.state === 'granted'}
           />
 
           <View

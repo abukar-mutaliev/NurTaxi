@@ -153,7 +153,13 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
 
     try {
-      await this.locationBridge.updateAndBroadcast(user.id, body.lat, body.lng, body.eta, body.route);
+      await this.locationBridge.updateAndBroadcast(
+        user.id,
+        body.lat,
+        body.lng,
+        body.eta,
+        body.route,
+      );
       return { success: true };
     } catch {
       return { success: false };

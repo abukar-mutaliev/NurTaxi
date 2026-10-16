@@ -18,11 +18,6 @@ const MAX_RATING = 5;
 /** Зона касания одной звезды: не меньше 48 pt по гайдлайнам платформ. */
 const STAR_SLOT = 56;
 const STAR_SIZE = 40;
-/** Тот же золотой акцент, что у рейтинга водителя на экране заказа. */
-const starColors = {
-  filled: '#C99A54',
-  empty: '#E0CFAE',
-} as const;
 
 export interface StarRatingProps {
   /** 0 — оценка ещё не выбрана. */
@@ -90,7 +85,11 @@ export function StarRating({ value, onChange }: StarRatingProps) {
           // Звёзды не принимают касания сами: так `locationX` всегда считается от начала ряда.
           <View key={index} pointerEvents="none" style={styles.slot}>
             <Text
-              style={[styles.star, { color: index < value ? starColors.filled : starColors.empty }]}
+              // Цвет кнопки отправки, а не золото: окно отзыва держится в одной гамме.
+              style={[
+                styles.star,
+                { color: index < value ? theme.colors.primary : theme.colors.border },
+              ]}
             >
               ★
             </Text>

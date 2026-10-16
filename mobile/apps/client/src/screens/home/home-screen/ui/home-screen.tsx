@@ -10,7 +10,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDuration } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
@@ -67,11 +66,6 @@ import { PaymentMethodSheet } from './payment-method-sheet';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { glassShadow } from '@/shared/ui/glass-shadow';
-
-const mapColors = {
-  etaBadge: 'rgba(46,35,49,0.88)',
-  etaShadow: 'rgba(89,71,31,0.16)',
-} as const;
 
 export function HomeScreen() {
   const { t } = useTranslation();
@@ -397,14 +391,6 @@ export function HomeScreen() {
         searchLabel={hasActiveOrder ? t('order.goToActive') : t('order.where')}
       />
 
-      {estimate && showOrderSheet ? (
-        <View pointerEvents="none" style={styles.etaBadgeWrap}>
-          <View style={styles.etaBadge}>
-            <Text style={styles.etaText}>~{formatDuration(estimate.pickupEtaS)}</Text>
-          </View>
-        </View>
-      ) : null}
-
       {activeOrder ? (
         <Pressable
           onPress={() => router.push(`/order/${activeOrder.id}`)}
@@ -531,28 +517,6 @@ const styles = StyleSheet.create({
     color: '#2E2331',
     fontSize: 14,
     fontWeight: '600',
-  },
-  etaBadge: {
-    alignSelf: 'center',
-    backgroundColor: mapColors.etaBadge,
-    borderRadius: 15,
-    elevation: 2,
-    minWidth: 52,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    ...glassShadow({ color: mapColors.etaShadow, offset: { width: 0, height: 3 }, radius: 10 }),
-  },
-  etaBadgeWrap: {
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: '28%',
-  },
-  etaText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   permissionBanner: {
     backgroundColor: 'rgba(255,255,255,0.92)',

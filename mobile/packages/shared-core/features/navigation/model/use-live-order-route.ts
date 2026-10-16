@@ -18,6 +18,18 @@ import { orderRouteLeg, orderRouteWaypoints, type OrderRouteLeg } from './order-
 const REBUILD_THRESHOLD_M = 150;
 /** MapKit Transport иногда не отвечает — не блокируем серверный маршрут. */
 const LOCAL_ROUTE_TIMEOUT_MS = 8000;
+/** Дорога состоит хотя бы из трёх точек; две — прямая по воздуху. */
+const ROAD_MIN_POINTS = 3;
+/**
+ * Сервер без OSRM отдаёт прямую из двух точек, а MapKit мог просто не успеть.
+ * Пока дороги нет, пробуем снова, не дожидаясь смещения машины на 150 м.
+ */
+const ROAD_RETRY_MS = 6000;
+const ROAD_RETRY_LIMIT = 5;
+
+function roadPoints(points: GeoPoint[] | null | undefined): GeoPoint[] | null {
+  return points && points.length >= ROAD_MIN_POINTS ? points : null;
+}
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
   return new Promise((resolve) => {
@@ -103,6 +115,9 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     distanceM: number | null;
     duration: string | null;
   } | null>(null);
+  /** Повторные попытки получить дорогу считаются для конкретной пары точек. */
+  const [roadRetry, setRoadRetry] = useState({ attempt: 0, key: routeKey });
+  const roadAttempt = roadRetry.key === routeKey ? roadRetry.attempt : 0;
 
   useEffect(() => {
     if (
@@ -117,12 +132,35 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     }
 
     let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
     const from = { lat: originLat, lng: originLng };
     const to = { lat: destinationLat, lng: destinationLng };
 
+    const apply = (next: {
+      points: GeoPoint[];
+      distanceM: number | null;
+      duration: string | null;
+    }) => {
+      if (cancelled) {
+        return;
+      }
+      setBuilt({ ...next, key: routeKey, leg, scope });
+    };
+
+    const scheduleRetry = () => {
+      if (roadAttempt >= ROAD_RETRY_LIMIT) {
+        return;
+      }
+      retryTimer = setTimeout(() => {
+        if (!cancelled) {
+          setRoadRetry({ attempt: roadAttempt + 1, key: routeKey });
+        }
+      }, ROAD_RETRY_MS);
+    };
+
     const build = async () => {
-      const localPromise = buildLocalRoute
-        ? withTimeout(buildLocalRoute([from, to]), LOCAL_ROUTE_TIMEOUT_MS)
+      const localPromise: Promise<LocalDrivingRoute | null> = buildLocalRoute
+        ? buildLocalRoute([from, to]).catch(() => null)
         : Promise.resolve(null);
 
       const serverPromise = fetchServerRoute({
@@ -145,22 +183,19 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
         })
         .catch(() => null);
 
-      const local = await localPromise;
+      const local = await withTimeout(localPromise, LOCAL_ROUTE_TIMEOUT_MS);
       if (cancelled) {
         return;
       }
 
       const localDuration = local?.durationWithTraffic ?? local?.duration ?? null;
-      const localRoad = local && local.points.length >= 3 ? local.points : null;
+      const localRoad = roadPoints(local?.points);
       // MapKit уже посчитал время — не подменяем его серверной оценкой.
       if (localRoad) {
-        setBuilt({
+        apply({
           distanceM: local?.distanceM ?? null,
           duration: localDuration,
-          key: routeKey,
-          leg,
           points: localRoad,
-          scope,
         });
         return;
       }
@@ -170,27 +205,38 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
         return;
       }
 
-      const serverRoad = server && server.points.length >= 3 ? server.points : null;
+      const serverRoad = roadPoints(server?.points);
       const duration = localDuration ?? server?.duration ?? null;
       const distanceM = local?.distanceM ?? server?.distanceM ?? null;
-      if (!serverRoad && !duration && distanceM == null) {
-        return;
+      if (serverRoad || duration || distanceM != null) {
+        apply({ distanceM, duration, points: serverRoad ?? [] });
       }
 
-      setBuilt({
-        distanceM,
-        duration,
-        key: routeKey,
-        leg,
-        points: serverRoad ?? [],
-        scope,
+      // MapKit ответил после таймаута — его дорога точнее серверной прямой.
+      void localPromise.then((late) => {
+        const lateRoad = roadPoints(late?.points);
+        if (!lateRoad) {
+          return;
+        }
+        apply({
+          distanceM: late?.distanceM ?? null,
+          duration: late?.durationWithTraffic ?? late?.duration ?? null,
+          points: lateRoad,
+        });
       });
+
+      if (!serverRoad) {
+        scheduleRetry();
+      }
     };
 
     void build();
 
     return () => {
       cancelled = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
     };
   }, [
     buildLocalRoute,
@@ -201,6 +247,7 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     leg,
     originLat,
     originLng,
+    roadAttempt,
     routeKey,
     scope,
   ]);

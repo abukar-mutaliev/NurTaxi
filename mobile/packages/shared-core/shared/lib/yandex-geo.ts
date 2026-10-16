@@ -94,6 +94,9 @@ async function callYandex<T>(action: (sdk: YandexMapKit) => Promise<T>): Promise
   } catch (cause) {
     if (isFullFlavorRejection(cause)) {
       fullFlavorUnavailable = true;
+      console.warn(
+        '[yandex-geo] сборка MapKit lite: маршруты и подсказки Яндекса недоступны, нужна пересборка приложения с flavor "full"',
+      );
       return null;
     }
     // Сетевые сбои и пустые ответы MapKit не должны ронять экран.

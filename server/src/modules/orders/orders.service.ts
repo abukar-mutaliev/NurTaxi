@@ -877,14 +877,24 @@ export class OrdersService {
    */
   async resolveDriverPhotoUrl(order: Order): Promise<string | null> {
     const user = order.driver?.user;
-    if (!user?.photoUrl || user.privacySettings?.showProfilePhoto === false) {
+    if (user?.privacySettings?.showProfilePhoto === false) {
       return null;
     }
-    if (!this.usersService) {
-      return user.photoUrl.startsWith('http') ? user.photoUrl : null;
+
+    if (user?.photoUrl) {
+      if (!this.usersService || user.photoUrl.startsWith('http')) {
+        return user.photoUrl.startsWith('http') ? user.photoUrl : null;
+      }
+      const resolved = await this.usersService.withResolvedPhotoUrl(user, DRIVER_PHOTO_TTL_SEC);
+      if (resolved.photoUrl) {
+        return resolved.photoUrl;
+      }
     }
 
-    const resolved = await this.usersService.withResolvedPhotoUrl(user, DRIVER_PHOTO_TTL_SEC);
-    return resolved.photoUrl;
+    if (!order.driver) {
+      return null;
+    }
+
+    return this.driversService.getApprovedSelfieUrl(order.driver.id, DRIVER_PHOTO_TTL_SEC);
   }
 }

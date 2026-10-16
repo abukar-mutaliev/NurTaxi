@@ -25,7 +25,6 @@ const colors = {
   shareBg: 'rgba(255,255,255,0.82)',
   cancelBg: 'rgba(253,239,236,0.9)',
   cancelText: '#E0705F',
-  profileDot: '#E8C882',
 } as const;
 
 export interface TripInProgressOverlayProps {
@@ -119,7 +118,9 @@ export function TripInProgressOverlay({
                 pressed && styles.pressed,
               ]}
             >
-              <View style={styles.profileDot} />
+              {driver ? (
+                <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} size={44} />
+              ) : null}
             </Pressable>
           </View>
         </View>
@@ -307,16 +308,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     height: 44,
     justifyContent: 'center',
+    overflow: 'hidden',
     width: 44,
   },
   pressed: {
     opacity: 0.88,
-  },
-  profileDot: {
-    backgroundColor: colors.profileDot,
-    borderRadius: 999,
-    height: 16,
-    width: 16,
   },
   shareButton: {
     alignItems: 'center',

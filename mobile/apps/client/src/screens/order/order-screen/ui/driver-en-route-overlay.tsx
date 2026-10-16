@@ -29,7 +29,6 @@ const colors = {
   safetyBg: 'rgba(255,255,255,0.82)',
   safetyIconOuter: 'rgba(231,238,227,0.95)',
   safetyIconInner: '#6B9B6E',
-  profileDot: '#E8C882',
   etaBadge: 'rgba(46,35,49,0.88)',
   etaShadow: 'rgba(89,71,31,0.16)',
 } as const;
@@ -148,19 +147,19 @@ export function DriverEnRouteOverlay({
                 pressed && styles.pressed,
               ]}
             >
-              <View style={styles.profileDot} />
+              <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} size={44} />
             </Pressable>
           </View>
         </View>
-      </View>
 
-      {etaLabel ? (
-        <View pointerEvents="none" style={styles.etaWrap}>
-          <View style={styles.etaBadge}>
-            <Text style={styles.etaText}>{etaLabel}</Text>
+        {etaLabel ? (
+          <View pointerEvents="none" style={styles.etaWrap}>
+            <View style={styles.etaBadge}>
+              <Text style={styles.etaText}>{etaLabel}</Text>
+            </View>
           </View>
-        </View>
-      ) : null}
+        ) : null}
+      </View>
 
       <View
         pointerEvents="box-none"
@@ -298,9 +297,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   etaWrap: {
-    // Под шапкой «Водитель в пути», по центру — а не абсолютом посреди карты.
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
   },
   glassButton: {
     backgroundColor: colors.glassBg,
@@ -322,6 +320,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     height: 44,
     justifyContent: 'center',
+    overflow: 'hidden',
     width: 44,
   },
   menuIcon: {
@@ -354,12 +353,6 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.88,
-  },
-  profileDot: {
-    backgroundColor: colors.profileDot,
-    borderRadius: 999,
-    height: 16,
-    width: 16,
   },
   rating: {
     color: colors.rating,

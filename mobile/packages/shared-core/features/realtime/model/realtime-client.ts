@@ -214,12 +214,19 @@ export const realtimeClient = {
     };
   },
 
-  /** Передача позиции водителя (`M8.2`). Если сокета нет, вызывающий код шлёт REST-фоллбэк. */
-  sendDriverLocation(lat: number, lng: number): boolean {
+  /**
+   * Передача позиции водителя (`M8.2`). Если сокета нет, вызывающий код шлёт REST-фоллбэк.
+   * `eta` — та же строка, что на плитке «До клиента». Без поля сервер оставляет прошлое значение.
+   */
+  sendDriverLocation(lat: number, lng: number, eta?: string | null): boolean {
     if (!socket?.connected) {
       return false;
     }
-    socket.emit(RealtimeEvent.DriverLocation, { lat, lng });
+    const payload: { lat: number; lng: number; eta?: string | null } = { lat, lng };
+    if (eta !== undefined) {
+      payload.eta = eta;
+    }
+    socket.emit(RealtimeEvent.DriverLocation, payload);
     return true;
   },
 

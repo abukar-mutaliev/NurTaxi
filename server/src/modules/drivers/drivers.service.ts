@@ -866,6 +866,23 @@ export class DriversService {
     }
   }
 
+  /**
+   * Лицо водителя для пассажира, если в профиле нет своего фото.
+   * Берём одобренное селфи из анкеты и отдаём временную ссылку.
+   */
+  async getApprovedSelfieUrl(driverId: string, expiresInSec?: number): Promise<string | null> {
+    const selfie = await this.documents.findOne({
+      where: { driverId, type: DocumentType.Selfie, status: DocumentStatus.Approved },
+      order: { updatedAt: 'DESC' },
+    });
+    if (!selfie?.storageKey) {
+      return null;
+    }
+
+    const { downloadUrl } = await this.storage.createDownloadUrl(selfie.storageKey, expiresInSec);
+    return downloadUrl;
+  }
+
   async getDocumentDownloadUrl(driverId: string, documentId: string) {
     const document = await this.documents.findOne({
       where: { id: documentId, driverId },

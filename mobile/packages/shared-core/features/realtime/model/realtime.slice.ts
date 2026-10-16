@@ -11,6 +11,8 @@ export interface DriverPosition {
   lat: number;
   lng: number;
   at: string;
+  /** Та же строка, что на плитке «До клиента» у водителя. */
+  eta?: string | null;
 }
 
 export interface RealtimeState {
@@ -34,8 +36,14 @@ export const realtimeSlice = createSlice({
       state.status = action.payload;
     },
     driverPositionReceived(state, action: PayloadAction<DriverLocationEvent>) {
-      const { orderId, lat, lng, at } = action.payload;
-      state.driverPositions[orderId] = { lat, lng, at };
+      const { orderId, lat, lng, at, eta } = action.payload;
+      const previous = state.driverPositions[orderId];
+      state.driverPositions[orderId] = {
+        at,
+        eta: eta === undefined ? previous?.eta : eta,
+        lat,
+        lng,
+      };
     },
     sosReceived(state, action: PayloadAction<SosActivatedEvent>) {
       state.lastSos = action.payload;

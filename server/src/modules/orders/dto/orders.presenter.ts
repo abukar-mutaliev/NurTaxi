@@ -94,6 +94,9 @@ export class AssignedDriverResponse {
   @ApiProperty()
   rating!: number;
 
+  @ApiPropertyOptional({ nullable: true, description: 'Подписанная ссылка на фото профиля' })
+  photoUrl!: string | null;
+
   @ApiPropertyOptional()
   phone!: string | null;
 
@@ -178,7 +181,11 @@ export class OrderResponse {
   @ApiProperty()
   createdAt!: string;
 
-  static from(order: Order, driverPoint?: { lat: number; lng: number } | null): OrderResponse {
+  static from(
+    order: Order,
+    driverPoint?: { lat: number; lng: number } | null,
+    driverPhotoUrl?: string | null,
+  ): OrderResponse {
     const primaryVehicle =
       order.driver?.vehicles?.find((v) => v.isPrimary) ?? order.driver?.vehicles?.[0];
 
@@ -209,6 +216,7 @@ export class OrderResponse {
             id: order.driver.id,
             fullName: order.driver.fullName,
             rating: Number(order.driver.rating),
+            photoUrl: driverPhotoUrl ?? null,
             phone: order.driver.user?.phone ?? null,
             vehicle: primaryVehicle ? VehicleResponse.from(primaryVehicle) : null,
             lat: driverPoint?.lat ?? null,
@@ -304,13 +312,18 @@ export class OrderListPageResponse {
   @ApiProperty()
   hasMore!: boolean;
 
-  static from(page: {
-    items: Order[];
-    nextCursor: string | null;
-    hasMore: boolean;
-  }): OrderListPageResponse {
+  static from(
+    page: {
+      items: Order[];
+      nextCursor: string | null;
+      hasMore: boolean;
+    },
+    driverPhotoUrls?: Map<string, string | null>,
+  ): OrderListPageResponse {
     return {
-      items: page.items.map((order) => OrderResponse.from(order)),
+      items: page.items.map((order) =>
+        OrderResponse.from(order, null, driverPhotoUrls?.get(order.id) ?? null),
+      ),
       nextCursor: page.nextCursor,
       hasMore: page.hasMore,
     };
@@ -332,11 +345,12 @@ export class OrderHistoryResponse {
 
   static from(params: {
     order: Order;
+    driverPhotoUrl?: string | null;
     receipt?: { receiptNumber: string; amount: string } | null;
     reviews: Array<{ id: string; rating: number; target: string; text: string | null }>;
   }): OrderHistoryResponse {
     return {
-      order: OrderResponse.from(params.order),
+      order: OrderResponse.from(params.order, null, params.driverPhotoUrl),
       receiptNumber: params.receipt?.receiptNumber ?? null,
       receiptAmount: params.receipt ? Number(params.receipt.amount) : null,
       reviews: params.reviews,

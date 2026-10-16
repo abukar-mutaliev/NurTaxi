@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron, CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
+import { DriverAvatar } from './driver-avatar';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
@@ -28,6 +30,7 @@ const colors = {
 
 export interface TripInProgressOverlayProps {
   title: string;
+  driver?: OrderDriver | null;
   pickupAddress: string;
   dropoffAddress: string;
   durationLabel: string;
@@ -58,6 +61,7 @@ function StatColumn({ label, value }: { label: string; value: string }) {
 
 export function TripInProgressOverlay({
   title,
+  driver,
   pickupAddress,
   dropoffAddress,
   durationLabel,
@@ -127,6 +131,18 @@ export function TripInProgressOverlay({
       >
         <CollapsibleSheet variant="floating">
           <View style={styles.tripSheet}>
+            {driver ? (
+              <>
+                <View style={styles.driverRow}>
+                  <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} size={44} />
+                  <Text numberOfLines={1} style={styles.driverName}>
+                    {driver.fullName}
+                  </Text>
+                </View>
+                <View style={styles.driverDivider} />
+              </>
+            ) : null}
+
             <View style={styles.addressBlock}>
               <View style={styles.addressRail}>
                 <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
@@ -245,6 +261,25 @@ const styles = StyleSheet.create({
     flex: 1,
     marginVertical: 4,
     width: 2,
+  },
+  driverDivider: {
+    backgroundColor: colors.divider,
+    height: 1,
+    marginHorizontal: 19,
+    marginTop: 16,
+  },
+  driverName: {
+    color: colors.text,
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  driverRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 21,
+    paddingTop: 18,
   },
   divider: {
     backgroundColor: colors.divider,

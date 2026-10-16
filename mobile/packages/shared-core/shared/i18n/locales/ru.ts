@@ -84,7 +84,6 @@ export const ru = {
     notifications: 'Уведомления',
     privacy: 'Приватность',
     pushNotifications: 'Push-уведомления',
-    smsNotifications: 'SMS',
     emailNotifications: 'E-mail',
     shareTripWithFamily: 'Делиться поездкой с семьёй',
     showProfilePhoto: 'Показывать фото профиля',

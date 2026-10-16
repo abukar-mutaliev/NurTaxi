@@ -50,15 +50,12 @@ import {
   RouteResponse,
   PriceBreakdownResponse,
   TariffSummaryResponse,
+  OrderResponse,
 } from './dto/orders.presenter';
 
 const DEFAULT_PICKUP_ETA_S = 420;
-
-/**
- * Сколько держать заказ в поиске, если свободных водителей ещё нет.
- * Экран клиента говорит «несколько минут» — по истечении отменяем с `NO_DRIVERS_FOUND`.
- */
-const DRIVER_SEARCH_TIMEOUT_MS = 3 * 60 * 1000;
+/** Дольше обычных 5 минут: экран заказа не перезапрашивает фото, пока едет поездка. */
+const DRIVER_PHOTO_TTL_SEC = 3 * 60 * 60;
 
 const DRIVER_ACTION_TARGET: Record<'en_route' | 'arrived' | 'start' | 'complete', OrderStatus> = {
   en_route: OrderStatus.DriverEnRoute,
@@ -286,8 +283,7 @@ export class OrdersService {
 
     this.orderMatchLocks.add(order.id);
     try {
-      const startedAt = order.createdAt?.getTime() ?? Date.now();
-      if (Date.now() - startedAt >= DRIVER_SEARCH_TIMEOUT_MS) {
+      if (await this.matching.isSearchExpired(order.id)) {
         await this.cancelUnmatchedOrder(order.id);
         return;
       }
@@ -364,6 +360,7 @@ export class OrdersService {
       await this.offerJournal?.expireStalePending(orderId);
     }
     await this.matching.clearOffer(orderId);
+    await this.matching.clearSearchDeadline(orderId);
 
     const fresh = await this.orders.findOne({ where: { id: orderId } });
     if (!fresh || fresh.status !== OrderStatus.SearchingDriver) {
@@ -864,5 +861,30 @@ export class OrdersService {
       relations: ['route', 'tariff', 'region', 'driver', 'driver.vehicles', 'driver.user'],
     });
     return this.repairOrderAddresses(order);
+  }
+
+  /** Карточка заказа с подписанной ссылкой на фото водителя. */
+  async presentOrder(
+    order: Order,
+    driverPoint?: { lat: number; lng: number } | null,
+  ): Promise<OrderResponse> {
+    return OrderResponse.from(order, driverPoint, await this.resolveDriverPhotoUrl(order));
+  }
+
+  /**
+   * Клиенту отдаём presigned URL, не storage key.
+   * Скрытое в настройках фото не подписываем.
+   */
+  async resolveDriverPhotoUrl(order: Order): Promise<string | null> {
+    const user = order.driver?.user;
+    if (!user?.photoUrl || user.privacySettings?.showProfilePhoto === false) {
+      return null;
+    }
+    if (!this.usersService) {
+      return user.photoUrl.startsWith('http') ? user.photoUrl : null;
+    }
+
+    const resolved = await this.usersService.withResolvedPhotoUrl(user, DRIVER_PHOTO_TTL_SEC);
+    return resolved.photoUrl;
   }
 }

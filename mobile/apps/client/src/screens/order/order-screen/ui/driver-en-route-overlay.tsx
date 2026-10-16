@@ -8,6 +8,7 @@ import { Text } from '@nurtaxi/shared-core/shared/ui';
 import { CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
+import { DriverAvatar } from './driver-avatar';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
@@ -18,8 +19,6 @@ const colors = {
   text: '#2E2331',
   muted: '#7A6E78',
   rating: '#C99A54',
-  avatarBg: '#3A1D3F',
-  avatarText: '#F7F3EE',
   plateBg: '#FCF4E4',
   divider: '#EFE9DC',
   actionBg: 'rgba(252,244,228,0.85)',
@@ -102,7 +101,6 @@ export function DriverEnRouteOverlay({
 }: DriverEnRouteOverlayProps) {
   const insets = useSafeAreaInsets();
   const headerTopInset = useOrderTopInset();
-  const initial = driver.fullName.trim().charAt(0).toUpperCase() || '?';
   const vehicle = driver.vehicle;
   const vehicleLine = vehicle ? `${vehicle.make} ${vehicle.model} · ${vehicle.color}` : null;
 
@@ -171,9 +169,7 @@ export function DriverEnRouteOverlay({
         <CollapsibleSheet variant="floating">
           <View style={styles.driverSheet}>
             <View style={styles.driverHeader}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initial}</Text>
-              </View>
+              <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} />
 
               <View style={styles.driverInfo}>
                 <View style={styles.nameRow}>
@@ -248,19 +244,6 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 19,
     paddingTop: 14,
-  },
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: colors.avatarBg,
-    borderRadius: 999,
-    height: 58,
-    justifyContent: 'center',
-    width: 58,
-  },
-  avatarText: {
-    color: colors.avatarText,
-    fontSize: 22,
-    fontWeight: '600',
   },
   bottom: {
     bottom: 0,

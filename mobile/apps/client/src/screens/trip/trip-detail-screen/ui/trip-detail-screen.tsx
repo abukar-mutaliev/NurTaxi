@@ -138,7 +138,7 @@ export function TripDetailScreen() {
                 paddingTop: scale * 8,
               }}
             >
-              <Avatar name={order.driver.fullName} size={48} />
+              <Avatar name={order.driver.fullName} size={48} uri={order.driver.photoUrl} />
               <View style={{ flex: 1, gap: scale * 4 }}>
                 <Text
                   style={{ color: GLASS_COLORS.title, fontSize: scale * 15, fontWeight: '600' }}

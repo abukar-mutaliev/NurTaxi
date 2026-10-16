@@ -1,1 +1,6 @@
-export { isRoadGeometry, roadPolylineOrNull, useRoadRoute } from './model/use-road-route';
+export {
+  isRoadGeometry,
+  roadFromPolyline,
+  roadPolylineOrNull,
+  useRoadRoute,
+} from './model/use-road-route';

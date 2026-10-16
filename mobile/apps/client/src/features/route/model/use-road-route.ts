@@ -13,6 +13,16 @@ export function isRoadGeometry(points: GeoPoint[] | null | undefined): points is
   return Boolean(points && points.length >= 3);
 }
 
+/** Точки уличного маршрута. Прямая из двух точек сюда не попадает. */
+export function roadFromPolyline(encoded: string | null | undefined): GeoPoint[] | null {
+  if (!encoded) {
+    return null;
+  }
+
+  const points = decodePolyline(encoded);
+  return isRoadGeometry(points) ? points : null;
+}
+
 /** `null`, если в полилинии нет изгиба дороги. */
 export function roadPolylineOrNull(encoded: string | null | undefined): string | null {
   if (!encoded) {

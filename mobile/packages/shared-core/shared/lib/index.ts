@@ -27,7 +27,13 @@ export { exactAddressFromMapHit, exactAddressFromText } from './geo/exact-map-ad
 export type { MapAddressComponent, MapGeocodeHit } from './geo/exact-map-address';
 export { PLATE_PATTERN, formatIsoDateInput, formatPlateInput } from './format/input-masks';
 
-export { boundsOf, decodePolyline, haversineDistance } from './geo/polyline';
+export {
+  boundsOf,
+  decodePolyline,
+  encodePolyline,
+  encodeRoadPolyline,
+  haversineDistance,
+} from './geo/polyline';
 export { isSameGeoLocation, toApiGeoLocation, toStoredGeoLocation } from './geo/location';
 export { isPlaceholderAddress } from './geo/is-placeholder-address';
 

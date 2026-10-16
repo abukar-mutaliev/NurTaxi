@@ -42,7 +42,12 @@ import {
 } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
-import { isRoadGeometry, roadPolylineOrNull, useRoadRoute } from '@/features/route';
+import {
+  isRoadGeometry,
+  roadFromPolyline,
+  roadPolylineOrNull,
+  useRoadRoute,
+} from '@/features/route';
 import { ReviewSheet } from '@/features/review';
 import {
   activeOrderChanged,
@@ -201,6 +206,7 @@ export function OrderScreen() {
       { lat: order.dropoffLat, lng: order.dropoffLng },
     ];
   }, [order]);
+  const driverRoad = roadFromPolyline(driverPosition?.route);
   const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
   const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
   // Пока машина едет на подачу, кадр — путь к клиенту, а не поездка А→Б:
@@ -217,7 +223,9 @@ export function OrderScreen() {
       { lat: order.pickupLat, lng: order.pickupLng },
     ];
   }, [approachLat, approachLng, driverIsComing, order]);
-  const routePoints = driverIsComing ? (liveRoad ?? approachFallback) : (liveRoad ?? tripRoad);
+  const routePoints = driverIsComing
+    ? (driverRoad ?? liveRoad ?? approachFallback)
+    : (liveRoad ?? tripRoad);
   const routePolyline = routePoints ? null : roadPolylineOrNull(order?.route?.polyline);
 
   useEffect(() => {

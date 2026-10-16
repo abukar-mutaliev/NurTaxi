@@ -4,6 +4,65 @@
  */
 import type { GeoPoint } from '../../model/api-types';
 
+const MAX_SHARED_ROUTE_POINTS = 120;
+
+function encodeSignedNumber(value: number): string {
+  let signed = value < 0 ? ~(value << 1) : value << 1;
+  let result = '';
+
+  while (signed >= 0x20) {
+    result += String.fromCharCode((0x20 | (signed & 0x1f)) + 63);
+    signed >>= 5;
+  }
+  result += String.fromCharCode(signed + 63);
+
+  return result;
+}
+
+/** Google Encoded Polyline — тот же формат, что отдаёт сервер в `OrderRoute.polyline`. */
+export function encodePolyline(points: GeoPoint[]): string {
+  let lastLat = 0;
+  let lastLng = 0;
+  let result = '';
+
+  for (const point of points) {
+    const lat = Math.round(point.lat * 1e5);
+    const lng = Math.round(point.lng * 1e5);
+    result += encodeSignedNumber(lat - lastLat);
+    result += encodeSignedNumber(lng - lastLng);
+    lastLat = lat;
+    lastLng = lng;
+  }
+
+  return result;
+}
+
+/**
+ * Дорога для передачи клиенту. Прямую из двух точек не кодируем.
+ * Длинную геометрию MapKit прореживаем, чтобы сокет не возил лишние точки.
+ */
+export function encodeRoadPolyline(points: GeoPoint[] | null | undefined): string | null {
+  if (!points || points.length < 3) {
+    return null;
+  }
+
+  const step = Math.max(1, Math.ceil((points.length - 1) / (MAX_SHARED_ROUTE_POINTS - 1)));
+  const thinned: GeoPoint[] = [];
+  for (let index = 0; index < points.length - 1; index += step) {
+    const point = points[index];
+    if (point) {
+      thinned.push(point);
+    }
+  }
+  const last = points[points.length - 1];
+  if (last) {
+    thinned.push(last);
+  }
+
+  const encoded = encodePolyline(thinned);
+  return encoded.length > 0 ? encoded : null;
+}
+
 export function decodePolyline(encoded: string): GeoPoint[] {
   if (!encoded) {
     return [];

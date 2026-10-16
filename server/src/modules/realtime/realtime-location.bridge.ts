@@ -5,6 +5,7 @@ import { OrdersService } from '../orders/orders.service';
 import { RealtimeBroadcastService } from './realtime-broadcast.service';
 
 const PICKUP_ETA_MAX_LENGTH = 24;
+const PICKUP_ROUTE_MAX_LENGTH = 16_000;
 
 /** Строка с экрана водителя. Пустое и не-строка не затирают прошлое значение. */
 function normalizePickupEta(value: unknown): string | null | undefined {
@@ -21,6 +22,27 @@ function normalizePickupEta(value: unknown): string | null | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+/** Полилиния с экрана водителя. Пустое и не-строка не затирают прошлый маршрут. */
+function normalizePickupRoute(value: unknown): string | null | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (value === null) {
+    return null;
+  }
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > PICKUP_ROUTE_MAX_LENGTH) {
+    return undefined;
+  }
+  if (/[^\x20-\x7e]/.test(trimmed)) {
+    return undefined;
+  }
+  return trimmed;
+}
+
 /**
  * Связка обновления геопозиции водителя и WS-трансляции (Req §15.1, Des §6.2).
  */
@@ -28,6 +50,8 @@ function normalizePickupEta(value: unknown): string | null | undefined {
 export class RealtimeLocationBridge {
   /** Последняя строка «до клиента» по заказу — её же видит клиент. */
   private readonly pickupEtaByOrder = new Map<string, string>();
+  /** Уличный маршрут подачи, который построил водитель. */
+  private readonly pickupRouteByOrder = new Map<string, string>();
 
   constructor(
     private readonly broadcast: RealtimeBroadcastService,
@@ -43,6 +67,7 @@ export class RealtimeLocationBridge {
     lat: number,
     lng: number,
     eta?: string | null,
+    route?: string | null,
   ): Promise<void> {
     await this.driversService.updateLocation(driverUserId, lat, lng);
 
@@ -50,12 +75,14 @@ export class RealtimeLocationBridge {
     if (!order) return;
 
     const pickupEta = this.rememberPickupEta(order.id, normalizePickupEta(eta));
+    const pickupRoute = this.rememberPickupRoute(order.id, normalizePickupRoute(route));
     await this.broadcast.publishDriverLocation(order.id, order.clientId, {
       lat,
       lng,
       orderId: order.id,
       at: new Date().toISOString(),
       ...(pickupEta !== undefined ? { eta: pickupEta } : {}),
+      ...(pickupRoute !== undefined ? { route: pickupRoute } : {}),
     });
 
     this.eventBus.publish('driver.location_updated', { orderId: order.id, lat, lng });
@@ -69,6 +96,7 @@ export class RealtimeLocationBridge {
     lng: number;
     at: string;
     eta?: string;
+    route?: string;
   } | null> {
     const order = await this.ordersService.getActiveOrderLocationContext(orderId);
     if (!order?.driverId) {
@@ -81,6 +109,7 @@ export class RealtimeLocationBridge {
     }
 
     const eta = this.pickupEtaByOrder.get(order.id);
+    const route = this.pickupRouteByOrder.get(order.id);
 
     return {
       at: new Date().toISOString(),
@@ -88,6 +117,7 @@ export class RealtimeLocationBridge {
       lng: point.lng,
       orderId: order.id,
       ...(eta ? { eta } : {}),
+      ...(route ? { route } : {}),
     };
   }
 
@@ -108,5 +138,20 @@ export class RealtimeLocationBridge {
     }
     this.pickupEtaByOrder.set(orderId, eta);
     return eta;
+  }
+
+  private rememberPickupRoute(
+    orderId: string,
+    route: string | null | undefined,
+  ): string | null | undefined {
+    if (route === undefined) {
+      return this.pickupRouteByOrder.get(orderId);
+    }
+    if (route === null) {
+      this.pickupRouteByOrder.delete(orderId);
+      return null;
+    }
+    this.pickupRouteByOrder.set(orderId, route);
+    return route;
   }
 }

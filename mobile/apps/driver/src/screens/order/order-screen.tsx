@@ -14,7 +14,12 @@ import { Alert, AppState, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import {
+  encodeRoadPolyline,
+  formatDistance,
+  formatDuration,
+  formatMoney,
+} from '@nurtaxi/shared-core/shared/lib';
 import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/model';
 import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
@@ -145,6 +150,8 @@ export function OrderScreen({ orderId }: { orderId: string }) {
   });
 
   const pickupEta = route.leg === 'to-pickup' ? (route.duration ?? undefined) : null;
+  const pickupRoute =
+    route.leg === 'to-pickup' ? (encodeRoadPolyline(route.points) ?? undefined) : null;
 
   useEffect(() => {
     const lat = driverPosition?.lat;
@@ -152,8 +159,8 @@ export function OrderScreen({ orderId }: { orderId: string }) {
     if (!routeActive || lat == null || lng == null) {
       return;
     }
-    sendDriverLocationUpdate(lat, lng, pickupEta);
-  }, [driverPosition?.lat, driverPosition?.lng, pickupEta, routeActive]);
+    sendDriverLocationUpdate(lat, lng, pickupEta, pickupRoute);
+  }, [driverPosition?.lat, driverPosition?.lng, pickupEta, pickupRoute, routeActive]);
 
   if (isLoading || !order) {
     return (

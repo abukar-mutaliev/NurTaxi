@@ -36,7 +36,12 @@ import {
   useResolvedLocationAddress,
 } from '@/features/address';
 import { useActiveOrderGuard, useOrderEstimate, OrderExtrasFields } from '@/features/order';
-import { isRoadGeometry, roadPolylineOrNull, useRoadRoute } from '@/features/route';
+import {
+  isRoadGeometry,
+  roadFromPolyline,
+  roadPolylineOrNull,
+  useRoadRoute,
+} from '@/features/route';
 import {
   activeOrderChanged,
   canSubmitOrderExtras,
@@ -209,6 +214,7 @@ export function HomeScreen() {
     }
     return null;
   }, [activeOrder, dropoff, pickup]);
+  const driverRoad = roadFromPolyline(driverPosition?.route);
   const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
   const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
   const approachLat = carPoint ? Math.round(carPoint.lat * 1_000) / 1_000 : null;
@@ -222,7 +228,9 @@ export function HomeScreen() {
       { lat: activeOrder.pickupLat, lng: activeOrder.pickupLng },
     ];
   }, [activeOrder, approachLat, approachLng, driverIsComing]);
-  const routePoints = driverIsComing ? (liveRoad ?? approachFallback) : (liveRoad ?? tripRoad);
+  const routePoints = driverIsComing
+    ? (driverRoad ?? liveRoad ?? approachFallback)
+    : (liveRoad ?? tripRoad);
   const routePolyline = routePoints
     ? null
     : roadPolylineOrNull(activeOrder?.route?.polyline ?? estimate?.route.polyline);

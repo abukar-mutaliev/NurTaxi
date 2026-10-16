@@ -145,7 +145,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   @SubscribeMessage('driver.location')
   async onDriverLocation(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { lat: number; lng: number; eta?: string | null },
+    @MessageBody() body: { lat: number; lng: number; eta?: string | null; route?: string | null },
   ): Promise<{ success: boolean }> {
     const user = client.data.user;
     if (user.role !== Role.Driver) {
@@ -153,7 +153,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
 
     try {
-      await this.locationBridge.updateAndBroadcast(user.id, body.lat, body.lng, body.eta);
+      await this.locationBridge.updateAndBroadcast(user.id, body.lat, body.lng, body.eta, body.route);
       return { success: true };
     } catch {
       return { success: false };

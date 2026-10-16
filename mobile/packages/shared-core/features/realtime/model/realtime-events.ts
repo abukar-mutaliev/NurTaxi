@@ -33,6 +33,8 @@ export interface DriverLocationEvent {
    * `null` — подача закончилась, время больше не актуально.
    */
   eta?: string | null;
+  /** Уличный маршрут водителя до клиента, Google Encoded Polyline. `null` — линия больше не нужна. */
+  route?: string | null;
 }
 
 export interface SosActivatedEvent {
@@ -73,7 +75,7 @@ export interface ClientToServerEvents {
     ack?: (response: { success: boolean; room?: string }) => void,
   ) => void;
   'driver.location': (
-    payload: { lat: number; lng: number },
+    payload: { lat: number; lng: number; eta?: string | null; route?: string | null },
     ack?: (response: { success: boolean }) => void,
   ) => void;
 }

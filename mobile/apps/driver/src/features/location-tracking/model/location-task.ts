@@ -23,8 +23,13 @@ export const DRIVER_LOCATION_TASK = 'nurtaxi-driver-location-task';
  * уходим через REST `PATCH /driver/location` — тот же эндпоинт, что и раньше существовал
  * как декларированный, но не вызываемый фоллбэк.
  */
-export function sendDriverLocationUpdate(lat: number, lng: number, eta?: string | null): void {
-  const sentViaSocket = realtimeClient.sendDriverLocation(lat, lng, eta);
+export function sendDriverLocationUpdate(
+  lat: number,
+  lng: number,
+  eta?: string | null,
+  route?: string | null,
+): void {
+  const sentViaSocket = realtimeClient.sendDriverLocation(lat, lng, eta, route);
   if (!sentViaSocket) {
     void store.dispatch(driverApi.endpoints.updateDriverLocation.initiate({ lat, lng }));
   }

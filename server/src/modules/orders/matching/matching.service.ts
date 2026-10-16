@@ -19,6 +19,9 @@ const DRIVER_OFFER_KEY_PREFIX = 'driver:offer:';
 const OFFER_TTL_SEC = 30;
 const SEARCH_RADIUS_KM = 10;
 const MAX_CANDIDATES = 20;
+/** Заказ ждёт свободного водителя, даже если в момент создания на линии никого нет. */
+const SEARCH_DEADLINE_PREFIX = 'order:search-deadline:';
+const DRIVER_SEARCH_TIMEOUT_MS = 3 * 60 * 1000;
 
 export interface MatchOffer {
   orderId: string;
@@ -162,6 +165,52 @@ export class MatchingService {
     await this.persistOffer(offer);
     await this.offerJournal?.recordOffered(orderId, offer.driverId, OFFER_TTL_SEC);
     return offer;
+  }
+
+  /**
+   * Окно поиска отсчитывается здесь, в момент первого подбора, а не по `created_at` из БД:
+   * расхождение часов с Postgres закрывало заказ сразу, как будто водителей не ждали.
+   * `true` — окно вышло, заказ можно закрыть с `NO_DRIVERS_FOUND`.
+   */
+  async isSearchExpired(orderId: string, now = Date.now()): Promise<boolean> {
+    try {
+      const key = `${SEARCH_DEADLINE_PREFIX}${orderId}`;
+      const existing = await this.redis.get(key);
+      if (existing == null) {
+        const deadline = now + DRIVER_SEARCH_TIMEOUT_MS;
+        const created = await this.redis.set(
+          key,
+          String(deadline),
+          'PX',
+          DRIVER_SEARCH_TIMEOUT_MS + 60_000,
+          'NX',
+        );
+        if (created) {
+          return false;
+        }
+        const raced = await this.redis.get(key);
+        if (raced == null) {
+          return false;
+        }
+        return now >= Number(raced);
+      }
+
+      const deadline = Number(existing);
+      if (!Number.isFinite(deadline)) {
+        return false;
+      }
+      return now >= deadline;
+    } catch (error) {
+      this.logger.warn(
+        `Не удалось проверить окно поиска заказа ${orderId}: ` +
+          `${error instanceof Error ? error.message : String(error)}`,
+      );
+      return false;
+    }
+  }
+
+  async clearSearchDeadline(orderId: string): Promise<void> {
+    await this.redis.del(`${SEARCH_DEADLINE_PREFIX}${orderId}`);
   }
 
   canAcceptOffer(offer: MatchOffer | null, driverId: string): boolean {

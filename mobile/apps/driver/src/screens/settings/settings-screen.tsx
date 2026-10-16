@@ -175,11 +175,6 @@ export function SettingsScreen() {
             value={notifications.push}
           />
           <SwitchRow
-            onValueChange={(value) => toggleNotification('sms', value)}
-            title={t('profile.smsNotifications')}
-            value={notifications.sms}
-          />
-          <SwitchRow
             onValueChange={(value) => toggleNotification('email', value)}
             title={t('profile.emailNotifications')}
             value={notifications.email}

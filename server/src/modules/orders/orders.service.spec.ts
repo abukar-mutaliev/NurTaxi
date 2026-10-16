@@ -135,6 +135,8 @@ describe('OrdersService', () => {
               },
             ),
             clearOffer: jest.fn(),
+            isSearchExpired: jest.fn().mockResolvedValue(false),
+            clearSearchDeadline: jest.fn(),
           },
         },
         {
@@ -333,13 +335,16 @@ describe('OrdersService', () => {
       {
         id: 'order-1',
         status: OrderStatus.SearchingDriver,
-        createdAt: new Date(Date.now() - 4 * 60 * 1000),
+        createdAt: new Date(),
       },
     ]);
     repoMock.findOne.mockResolvedValue({
       id: 'order-1',
       status: OrderStatus.SearchingDriver,
     });
+
+    const matching = moduleRef.get(MatchingService);
+    jest.spyOn(matching, 'isSearchExpired').mockResolvedValue(true);
 
     await service.rematchSearchingOrders();
 

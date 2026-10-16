@@ -415,6 +415,7 @@ export function OrderScreen() {
             <TripInProgressOverlay
               cancelLabel={t('order.cancelTrip')}
               canCancel={isCancellableByClient(order.status)}
+              driver={order.driver}
               distanceLabel={t('order.distance')}
               distanceValue={tripDistance}
               dropoffAddress={order.dropoffAddress}

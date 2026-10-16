@@ -50,9 +50,12 @@ import {
   RouteResponse,
   PriceBreakdownResponse,
   TariffSummaryResponse,
+  OrderResponse,
 } from './dto/orders.presenter';
 
 const DEFAULT_PICKUP_ETA_S = 420;
+/** Дольше обычных 5 минут: экран заказа не перезапрашивает фото, пока едет поездка. */
+const DRIVER_PHOTO_TTL_SEC = 3 * 60 * 60;
 
 const DRIVER_ACTION_TARGET: Record<'en_route' | 'arrived' | 'start' | 'complete', OrderStatus> = {
   en_route: OrderStatus.DriverEnRoute,
@@ -858,5 +861,30 @@ export class OrdersService {
       relations: ['route', 'tariff', 'region', 'driver', 'driver.vehicles', 'driver.user'],
     });
     return this.repairOrderAddresses(order);
+  }
+
+  /** Карточка заказа с подписанной ссылкой на фото водителя. */
+  async presentOrder(
+    order: Order,
+    driverPoint?: { lat: number; lng: number } | null,
+  ): Promise<OrderResponse> {
+    return OrderResponse.from(order, driverPoint, await this.resolveDriverPhotoUrl(order));
+  }
+
+  /**
+   * Клиенту отдаём presigned URL, не storage key.
+   * Скрытое в настройках фото не подписываем.
+   */
+  async resolveDriverPhotoUrl(order: Order): Promise<string | null> {
+    const user = order.driver?.user;
+    if (!user?.photoUrl || user.privacySettings?.showProfilePhoto === false) {
+      return null;
+    }
+    if (!this.usersService) {
+      return user.photoUrl.startsWith('http') ? user.photoUrl : null;
+    }
+
+    const resolved = await this.usersService.withResolvedPhotoUrl(user, DRIVER_PHOTO_TTL_SEC);
+    return resolved.photoUrl;
   }
 }

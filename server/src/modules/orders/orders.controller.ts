@@ -55,7 +55,7 @@ export class OrdersController {
     @Body() dto: CreateOrderDto,
   ): Promise<OrderResponse> {
     const order = await this.ordersService.create(user.id, dto);
-    return OrderResponse.from(order);
+    return this.ordersService.presentOrder(order);
   }
 
   @Get('history')
@@ -66,17 +66,20 @@ export class OrdersController {
     @Query('limit') limit?: number,
   ): Promise<OrderHistoryResponse[]> {
     const items = await this.ordersService.getClientHistory(user.id, limit ? Number(limit) : 20);
-    return items.map((item) =>
-      OrderHistoryResponse.from({
-        order: item.order,
-        receipt: item.receipt,
-        reviews: item.reviews.map((r) => ({
-          id: r.id,
-          rating: r.rating,
-          target: r.target,
-          text: r.text,
-        })),
-      }),
+    return Promise.all(
+      items.map(async (item) =>
+        OrderHistoryResponse.from({
+          order: item.order,
+          driverPhotoUrl: await this.ordersService.resolveDriverPhotoUrl(item.order),
+          receipt: item.receipt,
+          reviews: item.reviews.map((r) => ({
+            id: r.id,
+            rating: r.rating,
+            target: r.target,
+            text: r.text,
+          })),
+        }),
+      ),
     );
   }
 
@@ -90,7 +93,7 @@ export class OrdersController {
     const role = user.role === Role.Driver ? 'driver' : 'client';
     const order = await this.ordersService.getOrderForUser(user.id, id, role);
     const driverPoint = await this.ordersService.getAssignedDriverPoint(order);
-    return OrderResponse.from(order, driverPoint);
+    return this.ordersService.presentOrder(order, driverPoint);
   }
 
   @Post(':id/sos')
@@ -168,6 +171,6 @@ export class OrdersController {
     @Body() dto: CancelOrderDto,
   ): Promise<OrderResponse> {
     const order = await this.ordersService.cancelByClient(user.id, id, dto.reason);
-    return OrderResponse.from(order);
+    return this.ordersService.presentOrder(order);
   }
 }

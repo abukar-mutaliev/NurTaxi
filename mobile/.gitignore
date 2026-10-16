@@ -25,3 +25,4 @@ coverage/
 # Служебное
 .DS_Store
 *.tsbuildinfo
+.eslintcache

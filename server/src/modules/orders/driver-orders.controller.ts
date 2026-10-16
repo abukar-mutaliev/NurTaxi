@@ -39,17 +39,20 @@ export class DriverOrdersController {
     @Query('limit') limit?: number,
   ): Promise<OrderHistoryResponse[]> {
     const items = await this.ordersService.getDriverHistory(user.id, limit ? Number(limit) : 20);
-    return items.map((item) =>
-      OrderHistoryResponse.from({
-        order: item.order,
-        receipt: item.receipt,
-        reviews: item.reviews.map((r) => ({
-          id: r.id,
-          rating: r.rating,
-          target: r.target,
-          text: r.text,
-        })),
-      }),
+    return Promise.all(
+      items.map(async (item) =>
+        OrderHistoryResponse.from({
+          order: item.order,
+          driverPhotoUrl: await this.ordersService.resolveDriverPhotoUrl(item.order),
+          receipt: item.receipt,
+          reviews: item.reviews.map((r) => ({
+            id: r.id,
+            rating: r.rating,
+            target: r.target,
+            text: r.text,
+          })),
+        }),
+      ),
     );
   }
 
@@ -74,7 +77,7 @@ export class DriverOrdersController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<OrderResponse> {
     const order = await this.ordersService.acceptOrder(user.id, id);
-    return OrderResponse.from(order);
+    return this.ordersService.presentOrder(order);
   }
 
   @Post(':id/status')
@@ -85,7 +88,7 @@ export class DriverOrdersController {
     @Body() dto: DriverOrderActionDto,
   ): Promise<OrderResponse> {
     const order = await this.ordersService.advanceDriverStatus(user.id, id, dto.action);
-    return OrderResponse.from(order);
+    return this.ordersService.presentOrder(order);
   }
 
   @Post(':id/cancel')
@@ -96,7 +99,7 @@ export class DriverOrdersController {
     @Body() dto: CancelOrderDto,
   ): Promise<OrderResponse> {
     const order = await this.ordersService.cancelByDriver(user.id, id, dto.reason);
-    return OrderResponse.from(order);
+    return this.ordersService.presentOrder(order);
   }
 
   @Post(':id/review')

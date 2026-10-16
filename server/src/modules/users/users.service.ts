@@ -116,12 +116,12 @@ export class UsersService {
   }
 
   /** В БД храним storageKey; клиенту отдаём свежий presigned download URL. */
-  async withResolvedPhotoUrl(user: User): Promise<User> {
+  async withResolvedPhotoUrl(user: User, expiresInSec?: number): Promise<User> {
     if (!user.photoUrl || user.photoUrl.startsWith('http')) {
       return user;
     }
 
-    const { downloadUrl } = await this.storage.createDownloadUrl(user.photoUrl);
+    const { downloadUrl } = await this.storage.createDownloadUrl(user.photoUrl, expiresInSec);
     return Object.assign(Object.create(Object.getPrototypeOf(user)), user, {
       photoUrl: downloadUrl,
     });

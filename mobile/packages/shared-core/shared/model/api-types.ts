@@ -398,6 +398,8 @@ export interface OrderDriver {
   fullName: string;
   rating: number;
   phone: string;
+  /** Подписанная ссылка на фото. Нет, если водитель скрыл аватар или не загрузил его. */
+  photoUrl?: string | null;
   vehicle: Vehicle | null;
   /** Последняя точка машины с сервера, если сокет ещё не прислал живую. */
   lat?: number | null;

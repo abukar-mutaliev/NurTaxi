@@ -1,5 +1,5 @@
 #!/bin/sh
-# Pre-commit: секреты во всём репозитории, затем линт мобильного трека (M0.2).
+# Pre-commit: секреты во всём репозитории, затем проверки только затронутого мобильного кода.
 set -e
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
@@ -15,14 +15,54 @@ if [ -z "$CHANGED" ]; then
   exit 0
 fi
 
-echo "[pre-commit] mobile: prettier + eslint + tsc"
-cd mobile
+cd "$REPO_ROOT/mobile"
 
 # Пакетами — иначе на Windows «Слишком длинная командная строка» при большом коммите.
-echo "$CHANGED" | sed 's|^mobile/||' | xargs -n 30 npx prettier --check || {
+echo "[pre-commit] prettier"
+echo "$CHANGED" | sed 's|^mobile/||' | xargs -n 30 node ./node_modules/prettier/bin/prettier.cjs --check || {
   echo "[pre-commit] Форматирование не соответствует Prettier. Запустите: npm run format"
   exit 1
 }
 
-npm run lint --silent
-npm run typecheck --silent
+echo "[pre-commit] eslint"
+echo "$CHANGED" | sed 's|^mobile/||' | xargs -n 30 node ./node_modules/eslint/bin/eslint.js --cache --cache-location .eslintcache
+
+need_client=0
+need_driver=0
+need_shared=0
+
+if echo "$CHANGED" | grep -q '^mobile/apps/client/'; then
+  need_client=1
+fi
+if echo "$CHANGED" | grep -q '^mobile/apps/driver/'; then
+  need_driver=1
+fi
+# shared-core импортируют оба приложения — при его изменении проверяем и их.
+if echo "$CHANGED" | grep -q '^mobile/packages/'; then
+  need_shared=1
+  need_client=1
+  need_driver=1
+fi
+# Файлы вне apps/ и packages/ (скрипты, конфиги) — полный typecheck.
+if [ "$need_client" -eq 0 ] && [ "$need_driver" -eq 0 ] && [ "$need_shared" -eq 0 ]; then
+  need_client=1
+  need_driver=1
+  need_shared=1
+fi
+
+run_tsc() {
+  label="$1"
+  project="$2"
+  echo "[pre-commit] tsc ($label)"
+  node ./node_modules/typescript/bin/tsc --noEmit --incremental --pretty false -p "$project"
+}
+
+if [ "$need_shared" -eq 1 ]; then
+  run_tsc "shared-core" "packages/shared-core"
+fi
+if [ "$need_client" -eq 1 ]; then
+  run_tsc "client" "apps/client"
+fi
+if [ "$need_driver" -eq 1 ]; then
+  run_tsc "driver" "apps/driver"
+fi

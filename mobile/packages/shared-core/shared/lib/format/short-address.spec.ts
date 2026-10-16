@@ -2,6 +2,7 @@ import {
   extractLocalityFromAddress,
   formatShortDisplayAddress,
   isAdminOnlyAddress,
+  isExactStreetAddress,
 } from './short-address';
 
 describe('formatShortDisplayAddress', () => {
@@ -56,6 +57,12 @@ describe('formatShortDisplayAddress', () => {
         'Россия, Республика Ингушетия, Сунженский район, г. Назрань, Московская улица, 12',
       ),
     ).toBe('г. Назрань, Московская улица, 12');
+  });
+
+  it('считает точным только адрес с улицей и домом', () => {
+    expect(isExactStreetAddress('г. Назрань, ул. Московская, 12')).toBe(true);
+    expect(isExactStreetAddress('г. Назрань')).toBe(false);
+    expect(isExactStreetAddress('Точка на карте (43.21890, 44.77100)')).toBe(false);
   });
 
   it('не падает на пустом и нестроковом значении', () => {

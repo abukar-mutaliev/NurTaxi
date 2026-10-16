@@ -44,17 +44,20 @@ export function useOrderOffer(): OrderOfferState {
   const [fetchPendingOffer] = useLazyGetPendingOfferQuery();
 
   /**
-   * Отклонённое предложение не должно всплывать снова: запрос при возврате из фона
-   * получил бы его от сервера ещё раз, пока не истёк срок.
+   * Отклонённое предложение не должно всплывать снова, пока сервер не пришлёт новое
+   * (другой `expiresAt`): запрос при возврате из фона получил бы то же самое ещё раз.
    */
-  const dismissedRef = useRef<string | null>(null);
+  const dismissedRef = useRef<{ orderId: string; expiresAt: string } | null>(null);
 
   // Статус сокета в зависимостях: `realtimeClient.on` вешает обработчик на текущий
   // сокет, поэтому после переподключения подписку нужно оформить заново.
   const status = useSelector((state: WithRealtimeState) => selectRealtimeStatus(state));
 
   const showOffer = useCallback((next: OrderOfferEvent) => {
-    if (dismissedRef.current === next.orderId || secondsLeft(next.expiresAt) === 0) {
+    const dismissed = dismissedRef.current;
+    const sameDismissed =
+      dismissed?.orderId === next.orderId && dismissed.expiresAt === next.expiresAt;
+    if (sameDismissed || secondsLeft(next.expiresAt) === 0) {
       return;
     }
     setOffer(next);
@@ -106,6 +109,16 @@ export function useOrderOffer(): OrderOfferState {
     }
   }, [status, syncPendingOffer]);
 
+  // Сокет на Android рвётся в фоне, а заказ мог появиться уже после выхода на линию.
+  // Пока карточки нет, спрашиваем сервер сами — не только в момент возврата на передний план.
+  useEffect(() => {
+    if (offer) {
+      return;
+    }
+    const timer = setInterval(syncPendingOffer, 5_000);
+    return () => clearInterval(timer);
+  }, [offer, syncPendingOffer]);
+
   useEffect(() => {
     if (!offer) {
       return;
@@ -127,7 +140,7 @@ export function useOrderOffer(): OrderOfferState {
   const dismiss = useCallback(() => {
     setOffer((current) => {
       if (current) {
-        dismissedRef.current = current.orderId;
+        dismissedRef.current = { orderId: current.orderId, expiresAt: current.expiresAt };
       }
       return null;
     });

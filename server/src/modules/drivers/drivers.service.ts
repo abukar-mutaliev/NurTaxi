@@ -55,6 +55,14 @@ import {
   DOCUMENT_MAX_BYTES,
 } from '../storage/upload-constraints';
 
+/** Совпадает с радиусом подбора заказа: клиент видит тех же свободных водителей. */
+const NEARBY_MAP_RADIUS_KM = 10;
+/** Запас сырых точек Redis: часть из них уже офлайн и отсеется. */
+const NEARBY_MAP_QUERY_LIMIT = 50;
+const NEARBY_MAP_RESULT_LIMIT = 15;
+/** Не дёргать подбор на каждом GPS-тике, пока водитель уже на линии. */
+const LOCATION_MATCH_INTERVAL_MS = 3_000;
+
 @Injectable()
 export class DriversService {
   constructor(
@@ -76,6 +84,8 @@ export class DriversService {
     private readonly ledgerService: LedgerService,
     @Optional() private readonly taxiRegistry?: TaxiRegistryService,
   ) {}
+
+  private readonly locationMatchAt = new Map<string, number>();
 
   listActiveRegions() {
     return this.regionsService.listActiveRegions();
@@ -593,7 +603,10 @@ export class DriversService {
     // Уход в офлайн должен убирать водителя из Redis GEO, иначе подбор продолжит
     // предлагать заказы по последней известной точке (`§15.3`).
     if (status === 'offline') {
+      this.locationMatchAt.delete(profile.id);
       await this.driverLocation.removeLocation(profile.regionId, profile.id);
+    } else {
+      this.publishDriverAvailable(profile.id, profile.regionId);
     }
 
     return this.getProfileByUserId(userId);
@@ -887,6 +900,37 @@ export class DriversService {
     await this.drivers.save(profile);
   }
 
+  /**
+   * Свободные машины рядом с точкой — для карты клиента.
+   * В выборку попадают только водители на линии: занятые уже в заказе и не должны
+   * выглядеть как свободные. Личные данные не отдаём, только позицию.
+   */
+  async listNearbyOnline(
+    regionId: string,
+    lat: number,
+    lng: number,
+  ): Promise<Array<{ id: string; lat: number; lng: number }>> {
+    const [onlineIds, nearby] = await Promise.all([
+      this.getOnlineDriverIds(regionId),
+      this.driverLocation.findNearby(
+        regionId,
+        lat,
+        lng,
+        NEARBY_MAP_RADIUS_KM,
+        NEARBY_MAP_QUERY_LIMIT,
+      ),
+    ]);
+
+    return nearby
+      .filter((entry) => onlineIds.has(entry.driverId))
+      .slice(0, NEARBY_MAP_RESULT_LIMIT)
+      .map((entry) => ({
+        id: entry.driverId,
+        lat: entry.lat,
+        lng: entry.lng,
+      }));
+  }
+
   /** ID водителей со статусом ONLINE в регионе (для матчинга, Des §6). */
   async getOnlineDriverIds(regionId: string): Promise<Set<string>> {
     const online = await this.drivers.find({
@@ -920,6 +964,10 @@ export class DriversService {
       lng,
       Number(profile.rating),
     );
+
+    if (profile.onlineStatus === DriverOnlineStatus.Online) {
+      this.publishDriverAvailableFromLocation(profile.id, profile.regionId);
+    }
   }
 
   async getCachedLocation(
@@ -940,7 +988,23 @@ export class DriversService {
     if (profile.verificationStatus === VerificationStatus.Approved) {
       profile.onlineStatus = DriverOnlineStatus.Online;
       await this.drivers.save(profile);
+      this.publishDriverAvailable(profile.id, profile.regionId);
     }
+  }
+
+  /** Водитель снова свободен: заказы, которые ждут в поиске, можно предложить сразу. */
+  private publishDriverAvailable(driverId: string, regionId: string): void {
+    this.eventBus.publish('driver.available', { driverId, regionId });
+  }
+
+  private publishDriverAvailableFromLocation(driverId: string, regionId: string): void {
+    const now = Date.now();
+    const last = this.locationMatchAt.get(driverId) ?? 0;
+    if (now - last < LOCATION_MATCH_INTERVAL_MS) {
+      return;
+    }
+    this.locationMatchAt.set(driverId, now);
+    this.publishDriverAvailable(driverId, regionId);
   }
 
   async incrementTripsCount(driverId: string): Promise<void> {

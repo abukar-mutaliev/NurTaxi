@@ -64,4 +64,25 @@ export class OfferJournalService {
   listByOrder(orderId: string): Promise<OrderOfferLog[]> {
     return this.logs.find({ where: { orderId }, order: { offeredAt: 'ASC' } });
   }
+
+  /** Водители, которым этот заказ уже предлагали — чтобы сначала звать остальных. */
+  async driverIdsOffered(orderId: string): Promise<Set<string>> {
+    const rows = await this.logs.find({ where: { orderId }, select: ['driverId'] });
+    return new Set(rows.map((row) => row.driverId));
+  }
+
+  /** Предложение в Redis уже истекло, а строка журнала всё ещё `pending`. */
+  async expireStalePending(orderId: string, now = new Date()): Promise<void> {
+    const pending = await this.logs.find({
+      where: { orderId, outcome: OfferOutcome.Pending },
+    });
+    for (const row of pending) {
+      if (row.expiresAt.getTime() > now.getTime()) {
+        continue;
+      }
+      row.outcome = OfferOutcome.Timeout;
+      row.outcomeAt = now;
+      await this.logs.save(row);
+    }
+  }
 }

@@ -21,7 +21,10 @@ export {
   extractLocalityFromAddress,
   formatShortDisplayAddress,
   isAdminOnlyAddress,
+  isExactStreetAddress,
 } from './format/short-address';
+export { exactAddressFromMapHit, exactAddressFromText } from './geo/exact-map-address';
+export type { MapAddressComponent, MapGeocodeHit } from './geo/exact-map-address';
 export { PLATE_PATTERN, formatIsoDateInput, formatPlateInput } from './format/input-masks';
 
 export { boundsOf, decodePolyline, haversineDistance } from './geo/polyline';

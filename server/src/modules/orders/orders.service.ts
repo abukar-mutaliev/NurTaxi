@@ -29,7 +29,11 @@ import { OrderRoute } from './entities/order-route.entity';
 import { OrderStatusLog } from './entities/order-status-log.entity';
 import { OrderTransitionService } from './order-transition.service';
 import { appendOrderStatusLog } from './append-order-status-log';
-import { MatchingService, type MatchOffer } from './matching/matching.service';
+import {
+  MatchingService,
+  type MatchOffer,
+  type RankedCandidate,
+} from './matching/matching.service';
 import { RealtimeBroadcastService } from '../realtime/realtime-broadcast.service';
 import { PaymentsService } from '../payments/payments.service';
 import { FamilyService } from '../users/family.service';
@@ -49,6 +53,12 @@ import {
 } from './dto/orders.presenter';
 
 const DEFAULT_PICKUP_ETA_S = 420;
+
+/**
+ * Сколько держать заказ в поиске, если свободных водителей ещё нет.
+ * Экран клиента говорит «несколько минут» — по истечении отменяем с `NO_DRIVERS_FOUND`.
+ */
+const DRIVER_SEARCH_TIMEOUT_MS = 3 * 60 * 1000;
 
 const DRIVER_ACTION_TARGET: Record<'en_route' | 'arrived' | 'start' | 'complete', OrderStatus> = {
   en_route: OrderStatus.DriverEnRoute,
@@ -96,6 +106,9 @@ export class OrdersService {
   ) {}
 
   private readonly logger = new Logger(OrdersService.name);
+  private readonly orderMatchLocks = new Set<string>();
+  private rematchRunning = false;
+  private rematchQueued = false;
 
   async recordTrackPoint(
     orderId: string,
@@ -214,8 +227,90 @@ export class OrdersService {
     return this.loadFullOrder(saved.id);
   }
 
+  /**
+   * Повторный подбор по заказам в `searching_driver`.
+   *
+   * Первый проход в `create` видит только тех, кто уже на линии. Если в этот момент
+   * никого нет, заказ раньше отменялся сразу — вышедший следом водитель его уже не
+   * получал, и у клиента поиск висел. Теперь предложение уходит, как только рядом
+   * появляется свободный водитель, либо заказ закрывается по таймауту поиска.
+   */
+  async rematchSearchingOrders(): Promise<void> {
+    if (this.rematchRunning) {
+      this.rematchQueued = true;
+      return;
+    }
+
+    this.rematchRunning = true;
+    try {
+      do {
+        this.rematchQueued = false;
+        await this.runRematch();
+      } while (this.rematchQueued);
+    } finally {
+      this.rematchRunning = false;
+    }
+  }
+
+  private async runRematch(): Promise<void> {
+    const waiting = await this.orders.find({
+      where: { status: OrderStatus.SearchingDriver },
+      order: { createdAt: 'ASC' },
+      take: 50,
+    });
+
+    for (const order of waiting) {
+      try {
+        await this.matchSearchingOrder(order);
+      } catch (error) {
+        this.logger.warn(
+          `Не удалось продолжить поиск водителя для заказа ${order.id}: ` +
+            `${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
+
   private async startMatching(orderId: string): Promise<void> {
     const order = await this.getOrderOrThrow(orderId);
+    await this.matchSearchingOrder(order);
+  }
+
+  private async matchSearchingOrder(order: Order): Promise<void> {
+    if (order.status !== OrderStatus.SearchingDriver) {
+      return;
+    }
+    if (this.orderMatchLocks.has(order.id)) {
+      return;
+    }
+
+    this.orderMatchLocks.add(order.id);
+    try {
+      const startedAt = order.createdAt?.getTime() ?? Date.now();
+      if (Date.now() - startedAt >= DRIVER_SEARCH_TIMEOUT_MS) {
+        await this.cancelUnmatchedOrder(order.id);
+        return;
+      }
+
+      const current = await this.matching.getOffer(order.id);
+      if (current && this.matching.canAcceptOffer(current, current.driverId)) {
+        return;
+      }
+
+      if (current) {
+        await this.offerJournal?.resolvePending(order.id, current.driverId, OfferOutcome.Timeout);
+        await this.matching.clearOffer(order.id);
+      } else {
+        await this.offerJournal?.expireStalePending(order.id);
+      }
+
+      await this.offerToBestDriver(order);
+    } finally {
+      this.orderMatchLocks.delete(order.id);
+    }
+  }
+
+  private async offerToBestDriver(order: Order): Promise<void> {
     const onlineIds = new Set(await this.driversService.getOnlineDriverIds(order.regionId));
     const selfDriver = await this.driversService.findProfileByUserId(order.clientId);
     if (selfDriver) {
@@ -228,26 +323,58 @@ export class OrdersService {
       order.pickupLng,
       onlineIds,
     );
-
     if (candidates.length === 0) {
-      await this.transitions.transition({
-        orderId,
-        toStatus: OrderStatus.CancelledSystem,
-        reason: 'NO_DRIVERS_FOUND',
-      });
       return;
     }
 
-    const offer = await this.matching.createOffer(orderId, candidates);
+    const alreadyOffered =
+      (await this.offerJournal?.driverIdsOffered(order.id)) ?? new Set<string>();
+    const notYetOffered = candidates.filter((candidate) => !alreadyOffered.has(candidate.driverId));
+    const pool = notYetOffered.length > 0 ? notYetOffered : candidates;
+
+    const free: RankedCandidate[] = [];
+    for (const candidate of pool) {
+      const existing = await this.matching.getOfferForDriver(candidate.driverId);
+      if (existing && existing.orderId !== order.id) {
+        continue;
+      }
+      free.push(candidate);
+    }
+    if (free.length === 0) {
+      return;
+    }
+
+    const offer = await this.matching.createOffer(order.id, free);
     this.eventBus.publish('order.searching_driver', {
-      orderId,
+      orderId: order.id,
       offeredDriverId: offer?.driverId,
-      candidatesCount: candidates.length,
+      candidatesCount: free.length,
     });
 
     if (offer) {
       await this.sendOfferToDriver(order, offer);
     }
+  }
+
+  private async cancelUnmatchedOrder(orderId: string): Promise<void> {
+    const current = await this.matching.getOffer(orderId);
+    if (current) {
+      await this.offerJournal?.resolvePending(orderId, current.driverId, OfferOutcome.Timeout);
+    } else {
+      await this.offerJournal?.expireStalePending(orderId);
+    }
+    await this.matching.clearOffer(orderId);
+
+    const fresh = await this.orders.findOne({ where: { id: orderId } });
+    if (!fresh || fresh.status !== OrderStatus.SearchingDriver) {
+      return;
+    }
+
+    await this.transitions.transition({
+      orderId,
+      toStatus: OrderStatus.CancelledSystem,
+      reason: 'NO_DRIVERS_FOUND',
+    });
   }
 
   /**
@@ -572,6 +699,15 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  /** Точка назначенного водителя из Redis. Без неё клиент не может посчитать подачу. */
+  async getAssignedDriverPoint(order: Order): Promise<{ lat: number; lng: number } | null> {
+    if (!order.driverId) {
+      return null;
+    }
+
+    return this.driversService.getCachedLocation(order.regionId, order.driverId);
   }
 
   async getClientHistory(clientId: string, limit = 20) {

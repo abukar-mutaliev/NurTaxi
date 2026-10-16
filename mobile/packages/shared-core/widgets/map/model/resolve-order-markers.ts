@@ -29,14 +29,23 @@ function dropoffPointFromRoute(routePolyline: string | null | undefined): GeoPoi
   return last && isValidGeoPoint(last) ? normalizeGeoPoint(last) : null;
 }
 
-/** Маркеры A/B (и водитель, если есть): нормализация координат, fallback из polyline, разведение при наложении. */
+export interface NearbyMapDriver {
+  id: string;
+  lat: number;
+  lng: number;
+}
+
+/** Маркеры A/B, назначенный водитель и свободные машины рядом. */
 export function resolveOrderMapMarkers(options: {
   pickup: GeoLocation | null;
   dropoff: GeoLocation | null;
   routePolyline?: string | null;
   driver?: GeoPoint | null;
+  /** Свободные машины вокруг точки. Назначенного водителя сюда не кладём — он приходит отдельно. */
+  nearbyDrivers?: NearbyMapDriver[] | null;
+  assignedDriverId?: string | null;
 }): MapMarker[] {
-  const { pickup, dropoff, routePolyline, driver } = options;
+  const { pickup, dropoff, routePolyline, driver, nearbyDrivers, assignedDriverId } = options;
   const items: MapMarker[] = [];
 
   const pickupPoint = pickup && isValidGeoPoint(pickup) ? normalizeGeoPoint(pickup) : null;
@@ -67,11 +76,33 @@ export function resolveOrderMapMarkers(options: {
     });
   }
 
-  if (driver && isValidGeoPoint(driver)) {
+  const driverPoint = driver && isValidGeoPoint(driver) ? normalizeGeoPoint(driver) : null;
+
+  if (driverPoint) {
     items.push({
       id: 'driver',
       kind: 'driver',
-      point: normalizeGeoPoint(driver),
+      point: driverPoint,
+    });
+  }
+
+  for (const nearby of nearbyDrivers ?? []) {
+    if (assignedDriverId && nearby.id === assignedDriverId) {
+      continue;
+    }
+    if (!isValidGeoPoint(nearby)) {
+      continue;
+    }
+
+    const point = normalizeGeoPoint(nearby);
+    if (driverPoint && haversineDistance(driverPoint, point) < OVERLAP_THRESHOLD_M) {
+      continue;
+    }
+
+    items.push({
+      id: `nearby-${nearby.id}`,
+      kind: 'driver',
+      point,
     });
   }
 

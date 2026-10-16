@@ -399,6 +399,9 @@ export interface OrderDriver {
   rating: number;
   phone: string;
   vehicle: Vehicle | null;
+  /** Последняя точка машины с сервера, если сокет ещё не прислал живую. */
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface Order {

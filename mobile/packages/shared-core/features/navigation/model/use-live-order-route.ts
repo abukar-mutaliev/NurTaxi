@@ -17,7 +17,7 @@ import { orderRouteLeg, orderRouteWaypoints, type OrderRouteLeg } from './order-
 /** Насколько машина должна сместиться, чтобы имело смысл перестраивать путь. */
 const REBUILD_THRESHOLD_M = 150;
 /** MapKit Transport иногда не отвечает — не блокируем серверный маршрут. */
-const LOCAL_ROUTE_TIMEOUT_MS = 2500;
+const LOCAL_ROUTE_TIMEOUT_MS = 8000;
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | null> {
   return new Promise((resolve) => {
@@ -91,9 +91,14 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     originLat != null && originLng != null && destinationLat != null && destinationLng != null
       ? `${originLat},${originLng}>${destinationLat},${destinationLng}`
       : '';
+  const leg = orderRouteLeg(input.status);
+  // Подача и назначение не двигаются вместе с машиной: смена пары — уже другой заказ.
+  const scope = `${input.pickup.lat},${input.pickup.lng}>${input.dropoff.lat},${input.dropoff.lng}`;
 
   const [built, setBuilt] = useState<{
     key: string;
+    leg: OrderRouteLeg;
+    scope: string;
     points: GeoPoint[];
     distanceM: number | null;
     duration: string | null;
@@ -144,25 +149,41 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
       if (cancelled) {
         return;
       }
-      if (local && local.points.length > 1) {
+
+      const localDuration = local?.durationWithTraffic ?? local?.duration ?? null;
+      const localRoad = local && local.points.length >= 3 ? local.points : null;
+      // MapKit уже посчитал время — не подменяем его серверной оценкой.
+      if (localRoad) {
         setBuilt({
-          distanceM: local.distanceM,
-          duration: local.durationWithTraffic ?? local.duration,
+          distanceM: local?.distanceM ?? null,
+          duration: localDuration,
           key: routeKey,
-          points: local.points,
+          leg,
+          points: localRoad,
+          scope,
         });
         return;
       }
 
       const server = await serverPromise;
-      if (cancelled || !server) {
+      if (cancelled) {
         return;
       }
+
+      const serverRoad = server && server.points.length >= 3 ? server.points : null;
+      const duration = localDuration ?? server?.duration ?? null;
+      const distanceM = local?.distanceM ?? server?.distanceM ?? null;
+      if (!serverRoad && !duration && distanceM == null) {
+        return;
+      }
+
       setBuilt({
-        distanceM: server.distanceM,
-        duration: server.duration,
+        distanceM,
+        duration,
         key: routeKey,
-        points: server.points,
+        leg,
+        points: serverRoad ?? [],
+        scope,
       });
     };
 
@@ -177,20 +198,25 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     destinationLng,
     enabled,
     fetchServerRoute,
+    leg,
     originLat,
     originLng,
     routeKey,
+    scope,
   ]);
 
   /**
-   * Пока считается новый участок, на карте остаётся предыдущий: моргание линии
-   * на каждом перестроении читается как сбой, хотя маршрут просто обновляется.
+   * Пока тот же участок пересчитывается, на карте и в цифрах остаётся предыдущий
+   * готовый маршрут: моргание линии читается как сбой. Цифры другого участка
+   * (путь до клиента после посадки) не отдаём — иначе экран мигает на снимок заказа.
    */
+  const visible = built != null && built.leg === leg && built.scope === scope ? built : null;
+
   return {
-    distanceM: built?.distanceM ?? null,
-    duration: built?.duration ?? null,
-    isBuilding: enabled && Boolean(routeKey) && built?.key !== routeKey,
-    leg: orderRouteLeg(input.status),
-    points: built?.points ?? null,
+    distanceM: visible?.distanceM ?? null,
+    duration: visible?.duration ?? null,
+    isBuilding: enabled && Boolean(routeKey) && visible?.key !== routeKey,
+    leg,
+    points: visible?.points ?? null,
   };
 }

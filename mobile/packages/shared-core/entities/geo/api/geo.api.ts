@@ -1,6 +1,7 @@
 /**
- * Геосервис: поиск адресов (`GET /geo/search`), маршрут (`GET /geo/route`)
- * и адрес по координатам (`GET /geo/reverse`).
+ * Геосервис: поиск адресов (`GET /geo/search`), маршрут (`GET /geo/route`),
+ * адрес по координатам (`GET /geo/reverse`) и свободные машины рядом
+ * (`GET /geo/nearby-drivers`).
  */
 import { baseApi } from '@nurtaxi/shared-core/shared/api';
 import type {
@@ -11,6 +12,19 @@ import type {
   GeoSearchQuery,
   OrderRoute,
 } from '@nurtaxi/shared-core/shared/model';
+
+/** Свободная машина на карте клиента: только позиция, без имени и телефона. */
+export interface NearbyDriver {
+  id: string;
+  lat: number;
+  lng: number;
+}
+
+export interface NearbyDriversQuery {
+  regionId: string;
+  lat: number;
+  lng: number;
+}
 
 export const geoApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -29,6 +43,13 @@ export const geoApi = baseApi.injectEndpoints({
       }),
       keepUnusedDataFor: 60,
     }),
+    getNearbyDrivers: build.query<NearbyDriver[], NearbyDriversQuery>({
+      query: ({ regionId, lat, lng }) => ({
+        url: '/geo/nearby-drivers',
+        params: { regionId, lat, lng },
+      }),
+      keepUnusedDataFor: 30,
+    }),
     reverseGeocode: build.query<GeoReverseResult, GeoReverseQuery>({
       query: ({ lat, lng }) => ({
         url: '/geo/reverse',
@@ -41,6 +62,7 @@ export const geoApi = baseApi.injectEndpoints({
 
 export const {
   useGetDrivingRouteQuery,
+  useGetNearbyDriversQuery,
   useLazyGetDrivingRouteQuery,
   useLazyReverseGeocodeQuery,
   useLazySearchAddressesQuery,

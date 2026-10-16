@@ -8,6 +8,7 @@
  * `/geo/search`, а не падает.
  */
 import type { GeoPoint } from '../model';
+import { exactAddressFromMapHit } from './geo/exact-map-address';
 
 type YandexMapKit = typeof import('expo-yandex-mapkit');
 type SuggestItem = Awaited<ReturnType<YandexMapKit['suggest']>>[number];
@@ -179,6 +180,19 @@ export async function reverseGeocode(point: GeoPoint): Promise<string | null> {
   );
   const first = results?.[0];
   return first?.formattedAddress ?? first?.name ?? null;
+}
+
+/**
+ * Улица и дом по точке. Zoom 17 просит у MapKit дом, а не город.
+ * `null` — карта не назвала точный адрес или Yandex недоступен.
+ */
+const HOUSE_REVERSE_ZOOM = 17;
+
+export async function reverseGeocodeExact(point: GeoPoint): Promise<string | null> {
+  const results = await callYandex((sdk) =>
+    sdk.geocodePoint(toMapPoint(point), { resultPageSize: 1, zoom: HOUSE_REVERSE_ZOOM }),
+  );
+  return exactAddressFromMapHit(results?.[0]);
 }
 
 /**

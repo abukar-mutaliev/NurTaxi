@@ -423,28 +423,22 @@ export function OrderScreen({ orderId }: { orderId: string }) {
           <OrderExtrasNotice canCallPassenger source={order} />
 
           {/*
-            Пока MapKit считает маршрут, показываем оценку сервера: она снята при создании
-            заказа и для водителя грубее, но лучше прочерка.
+            «В пути» и «Расстояние» — маршрут заказа от точки А до точки Б, тот же снимок,
+            что видит клиент. Живые минуты «до клиента» — отдельная плитка, пока машина едет
+            на подачу: их нельзя подменять длиной поездки.
           */}
           <StatTiles
             tiles={[
+              ...(route.leg === 'to-pickup' && route.duration
+                ? [{ label: 'До клиента', value: route.duration }]
+                : []),
               {
-                label: route.points
-                  ? route.leg === 'to-pickup'
-                    ? 'До клиента'
-                    : 'До точки Б'
-                  : 'В пути',
-                value:
-                  route.duration ?? (order.route ? formatDuration(order.route.durationS) : '—'),
+                label: 'В пути',
+                value: order.route ? formatDuration(order.route.durationS) : '—',
               },
               {
                 label: 'Расстояние',
-                value:
-                  route.distanceM !== null
-                    ? formatDistance(route.distanceM)
-                    : order.route
-                      ? formatDistance(order.route.distanceM)
-                      : '—',
+                value: order.route ? formatDistance(order.route.distanceM) : '—',
               },
               {
                 label: 'Стоимость',

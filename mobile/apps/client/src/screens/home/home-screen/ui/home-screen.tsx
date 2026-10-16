@@ -8,9 +8,11 @@ import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDuration } from '@nurtaxi/shared-core/shared/lib';
-import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
+import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
+import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   formatOrderStatusLabel,
@@ -34,6 +36,7 @@ import {
   useResolvedLocationAddress,
 } from '@/features/address';
 import { useActiveOrderGuard, useOrderEstimate, OrderExtrasFields } from '@/features/order';
+import { isRoadGeometry, roadPolylineOrNull, useRoadRoute } from '@/features/route';
 import {
   activeOrderChanged,
   canSubmitOrderExtras,
@@ -110,19 +113,27 @@ export function HomeScreen() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [paymentSheetVisible, setPaymentSheetVisible] = useState(false);
   const [orderSheetHeight, setOrderSheetHeight] = useState(0);
+  const [isHomeFocused, setIsHomeFocused] = useState(true);
 
   const { data: activeOrder } = useGetOrderQuery(effectiveActiveId ?? '', {
     skip: !effectiveActiveId,
   });
   const driverPosition = useAppSelector(selectDriverPosition(effectiveActiveId ?? ''));
+  const reportedDriverPoint =
+    activeOrder?.driver?.lat != null && activeOrder.driver.lng != null
+      ? { lat: activeOrder.driver.lat, lng: activeOrder.driver.lng }
+      : null;
+  const carPoint = driverPosition ?? reportedDriverPoint;
+  const driverIsComing = activeOrder != null && orderStage(activeOrder.status) === 'waiting-driver';
   const liveRoute = useLiveOrderRoute({
+    buildLocalRoute: buildDrivingRoute,
     dropoff: { lat: activeOrder?.dropoffLat ?? 0, lng: activeOrder?.dropoffLng ?? 0 },
     enabled: Boolean(
       activeOrder &&
       (orderStage(activeOrder.status) === 'waiting-driver' ||
         orderStage(activeOrder.status) === 'riding'),
     ),
-    origin: driverPosition ?? null,
+    origin: carPoint,
     pickup: { lat: activeOrder?.pickupLat ?? 0, lng: activeOrder?.pickupLng ?? 0 },
     status: activeOrder?.status ?? '',
   });
@@ -136,7 +147,11 @@ export function HomeScreen() {
   const resolveLocationForOrder = useResolveLocationForOrder(myLocationLabel);
 
   useEffect(() => {
-    if (!position || hasActiveOrder) {
+    // Только видимый экран ведёт точку подачи. После закрытия заказа `replace('/(tabs)')`
+    // может оставить под новым главным экраном старый: у каждого своя `position`, и если
+    // они расходятся больше порога, экраны бесконечно переписывают `pickup` друг за другом
+    // («Maximum update depth exceeded»).
+    if (!isHomeFocused || !position || hasActiveOrder) {
       return;
     }
 
@@ -160,17 +175,26 @@ export function HomeScreen() {
     }
 
     dispatch(pickupSelected(nextPickup));
-  }, [dispatch, hasActiveOrder, myLocationLabel, pickup, position]);
+  }, [dispatch, hasActiveOrder, isHomeFocused, myLocationLabel, pickup, position]);
+
+  const nearbyCenter = pickup ?? (position ? { lat: position.lat, lng: position.lng } : null);
+  const nearbyDrivers = useNearbyDrivers({
+    enabled: isHomeFocused && !driverIsComing,
+    point: nearbyCenter,
+    regionId: draft.regionId,
+  });
 
   const markers = useMemo((): MapMarker[] => {
     if (activeOrder) {
       return resolveOrderMapMarkers({
-        driver: driverPosition ?? null,
+        assignedDriverId: activeOrder.driver?.id,
+        driver: carPoint,
         dropoff: {
           address: activeOrder.dropoffAddress,
           lat: activeOrder.dropoffLat,
           lng: activeOrder.dropoffLng,
         },
+        nearbyDrivers,
         pickup: {
           address: activeOrder.pickupAddress,
           lat: activeOrder.pickupLat,
@@ -182,15 +206,41 @@ export function HomeScreen() {
 
     return resolveOrderMapMarkers({
       dropoff,
+      nearbyDrivers,
       pickup,
       routePolyline: estimate?.route.polyline,
     });
-  }, [activeOrder, driverPosition, dropoff, estimate?.route.polyline, pickup]);
+  }, [activeOrder, carPoint, dropoff, estimate?.route.polyline, nearbyDrivers, pickup]);
 
-  const routePoints = liveRoute.points?.length ? liveRoute.points : null;
+  const tripWaypoints = useMemo((): GeoPoint[] | null => {
+    if (activeOrder) {
+      return [
+        { lat: activeOrder.pickupLat, lng: activeOrder.pickupLng },
+        { lat: activeOrder.dropoffLat, lng: activeOrder.dropoffLng },
+      ];
+    }
+    if (pickup && dropoff) {
+      return [pickup, dropoff];
+    }
+    return null;
+  }, [activeOrder, dropoff, pickup]);
+  const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
+  const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
+  const approachLat = carPoint ? Math.round(carPoint.lat * 1_000) / 1_000 : null;
+  const approachLng = carPoint ? Math.round(carPoint.lng * 1_000) / 1_000 : null;
+  const approachFallback = useMemo((): GeoPoint[] | null => {
+    if (!driverIsComing || approachLat == null || approachLng == null || !activeOrder) {
+      return null;
+    }
+    return [
+      { lat: approachLat, lng: approachLng },
+      { lat: activeOrder.pickupLat, lng: activeOrder.pickupLng },
+    ];
+  }, [activeOrder, approachLat, approachLng, driverIsComing]);
+  const routePoints = driverIsComing ? (liveRoad ?? approachFallback) : (liveRoad ?? tripRoad);
   const routePolyline = routePoints
     ? null
-    : (activeOrder?.route?.polyline ?? estimate?.route.polyline ?? null);
+    : roadPolylineOrNull(activeOrder?.route?.polyline ?? estimate?.route.polyline);
 
   const markersRef = useRef(markers);
   const routePolylineRef = useRef(routePolyline);
@@ -207,7 +257,6 @@ export function HomeScreen() {
     routePoints,
     routePolyline,
   });
-  const [isHomeFocused, setIsHomeFocused] = useState(true);
   useFocusEffect(
     useCallback(() => {
       setIsHomeFocused(true);
@@ -236,7 +285,15 @@ export function HomeScreen() {
     } else if (position) {
       mapRef.current?.centerOn(position, 0.01);
     }
-  }, [activeOrder?.id, dropoff, estimate?.route.polyline, isHomeFocused, pickup, position]);
+  }, [
+    activeOrder?.id,
+    dropoff,
+    estimate?.route.polyline,
+    isHomeFocused,
+    pickup,
+    position,
+    routePoints,
+  ]);
 
   const centerOnMyLocation = () => {
     // Без разрешения кнопка не должна молчать: спрашиваем, а после отказа навсегда — в настройки.

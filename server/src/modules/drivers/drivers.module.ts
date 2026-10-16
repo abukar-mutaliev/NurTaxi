@@ -10,6 +10,7 @@ import { DriverTaxiPermit } from './entities/driver-taxi-permit.entity';
 import { Vehicle } from './entities/vehicle.entity';
 import { DriversService } from './drivers.service';
 import { DriversController } from './drivers.controller';
+import { NearbyDriversController } from './nearby-drivers.controller';
 import { DOCUMENT_AUTO_VERIFIER } from './verification/document-auto-verifier.interface';
 import { RegistryDocumentAutoVerifier } from './verification/registry-document-auto-verifier';
 import { DriverLocationService } from './location/driver-location.service';
@@ -31,7 +32,7 @@ import { TaxiRegistryModule } from '../taxi-registry/taxi-registry.module';
     forwardRef(() => PaymentsModule),
     forwardRef(() => TaxiRegistryModule),
   ],
-  controllers: [DriversController],
+  controllers: [DriversController, NearbyDriversController],
   providers: [
     DriversService,
     DriverLocationService,

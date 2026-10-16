@@ -19,6 +19,12 @@ export interface ScreenProps {
   edgeToEdge?: boolean;
   /** Учитывать нижний системный отступ (жесты/навбар). */
   safeBottom?: boolean;
+  /**
+   * Сдвигать экран над клавиатурой.
+   * На карте выключите: поле ввода живёт в отдельной панели, а сжатие карты
+   * при открытии клавиатуры роняет нативный MapKit.
+   */
+  avoidKeyboard?: boolean;
   style?: StyleProp<ViewStyle>;
   footer?: ReactNode;
 }
@@ -29,6 +35,7 @@ export function Screen({
   scroll = false,
   edgeToEdge = false,
   safeBottom = true,
+  avoidKeyboard = true,
   style,
   footer,
 }: ScreenProps) {
@@ -52,6 +59,32 @@ export function Screen({
     <View style={[styles.grow, padding, style]}>{children}</View>
   );
 
+  const footerNode = footer ? (
+    <View
+      style={[
+        styles.footer,
+        {
+          backgroundColor: theme.colors.background,
+          borderTopColor: theme.colors.border,
+          paddingBottom: insets.bottom + theme.spacing.md,
+          paddingHorizontal: theme.spacing.lg,
+          paddingTop: theme.spacing.md,
+        },
+      ]}
+    >
+      {footer}
+    </View>
+  ) : null;
+
+  if (!avoidKeyboard) {
+    return (
+      <View style={[styles.grow, { backgroundColor: theme.colors.background }]}>
+        {content}
+        {footerNode}
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       /**
@@ -64,22 +97,7 @@ export function Screen({
       style={[styles.grow, { backgroundColor: theme.colors.background }]}
     >
       {content}
-      {footer ? (
-        <View
-          style={[
-            styles.footer,
-            {
-              backgroundColor: theme.colors.background,
-              borderTopColor: theme.colors.border,
-              paddingBottom: insets.bottom + theme.spacing.md,
-              paddingHorizontal: theme.spacing.lg,
-              paddingTop: theme.spacing.md,
-            },
-          ]}
-        >
-          {footer}
-        </View>
-      ) : null}
+      {footerNode}
     </KeyboardAvoidingView>
   );
 }

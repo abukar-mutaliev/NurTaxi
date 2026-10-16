@@ -1,11 +1,12 @@
 /**
  * Оформление заказа (M4.2–M4.4): расчёт, тариф, оплата, комментарий, создание.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
+import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
@@ -29,6 +30,7 @@ import {
   paymentMethodSelected,
   selectOrderDraft,
 } from '@/processes/order-flow';
+import { MapCanvas, resolveOrderMapMarkers } from '@/widgets/map';
 import {
   GLASS_COLORS,
   GLASS_DESIGN_WIDTH,
@@ -57,6 +59,20 @@ export function NewOrderScreen() {
   const { estimate, isEstimating, error, refetch } = useOrderEstimate();
   const [createOrder, createState] = useCreateOrderMutation();
   const [createError, setCreateError] = useState<string | null>(null);
+  const nearbyDrivers = useNearbyDrivers({
+    point: draft.pickup,
+    regionId: draft.regionId,
+  });
+  const mapMarkers = useMemo(
+    () =>
+      resolveOrderMapMarkers({
+        dropoff: draft.dropoff,
+        nearbyDrivers,
+        pickup: draft.pickup,
+        routePolyline: estimate?.route.polyline,
+      }),
+    [draft.dropoff, draft.pickup, estimate?.route.polyline, nearbyDrivers],
+  );
 
   useEffect(() => {
     if (!hasActiveOrder && !isChecking && (!draft.pickup || !draft.dropoff || !draft.regionId)) {
@@ -129,6 +145,17 @@ export function NewOrderScreen() {
       }
       title={t('order.create')}
     >
+      <View
+        pointerEvents="none"
+        style={{ borderRadius: scale * 20, height: scale * 220, overflow: 'hidden' }}
+      >
+        <MapCanvas
+          initialPoint={draft.pickup}
+          markers={mapMarkers}
+          routePolyline={estimate?.route.polyline ?? null}
+        />
+      </View>
+
       <GlassCard>
         <GlassSectionLabel>{t('order.from')}</GlassSectionLabel>
         <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>

@@ -368,7 +368,7 @@ export function OrderScreen() {
 
   return (
     <>
-      <Screen edgeToEdge safeBottom={false} scroll={false}>
+      <Screen avoidKeyboard={false} edgeToEdge safeBottom={false} scroll={false}>
         <View style={styles.root}>
           <MapCanvas
             initialPoint={{

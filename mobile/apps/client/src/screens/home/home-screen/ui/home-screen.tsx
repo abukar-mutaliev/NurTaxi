@@ -132,7 +132,11 @@ export function HomeScreen() {
   const resolveLocationForOrder = useResolveLocationForOrder(myLocationLabel);
 
   useEffect(() => {
-    if (!position || hasActiveOrder) {
+    // Только видимый экран ведёт точку подачи. После закрытия заказа `replace('/(tabs)')`
+    // может оставить под новым главным экраном старый: у каждого своя `position`, и если
+    // они расходятся больше порога, экраны бесконечно переписывают `pickup` друг за другом
+    // («Maximum update depth exceeded»).
+    if (!isHomeFocused || !position || hasActiveOrder) {
       return;
     }
 
@@ -156,7 +160,7 @@ export function HomeScreen() {
     }
 
     dispatch(pickupSelected(nextPickup));
-  }, [dispatch, hasActiveOrder, myLocationLabel, pickup, position]);
+  }, [dispatch, hasActiveOrder, isHomeFocused, myLocationLabel, pickup, position]);
 
   const nearbyCenter = pickup ?? (position ? { lat: position.lat, lng: position.lng } : null);
   const nearbyDrivers = useNearbyDrivers({

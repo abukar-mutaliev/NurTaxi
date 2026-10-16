@@ -1,4 +1,4 @@
-import { Test } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { RegionsService } from '../regions/regions.service';
 import { TariffsService } from '../tariffs/tariffs.service';
@@ -20,12 +20,13 @@ import { FamilyService } from '../users/family.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { Receipt } from '../payments/entities/receipt.entity';
 import { GeoService } from '../geo/geo.service';
-import { PaymentMethod } from '../../common/enums/order-status.enum';
+import { OrderStatus, PaymentMethod } from '../../common/enums/order-status.enum';
 import type { Region } from '../regions/entities/region.entity';
 import type { Tariff } from '../tariffs/entities/tariff.entity';
 
 describe('OrdersService', () => {
   let service: OrdersService;
+  let moduleRef: TestingModule;
 
   const region: Region = {
     id: '00000000-0000-4000-8000-000000000001',
@@ -81,7 +82,7 @@ describe('OrdersService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    const moduleRef = await Test.createTestingModule({
+    const compiled = await Test.createTestingModule({
       providers: [
         OrdersService,
         PricingService,
@@ -124,7 +125,15 @@ describe('OrdersService', () => {
           useValue: {
             findCandidates: jest.fn().mockResolvedValue([]),
             createOffer: jest.fn(),
-            getOffer: jest.fn(),
+            getOffer: jest.fn().mockResolvedValue(null),
+            getOfferForDriver: jest.fn().mockResolvedValue(null),
+            canAcceptOffer: jest.fn(
+              (offer: { driverId: string; expiresAt: string } | null, driverId: string) => {
+                if (!offer) return false;
+                if (new Date(offer.expiresAt) < new Date()) return false;
+                return offer.driverId === driverId;
+              },
+            ),
             clearOffer: jest.fn(),
           },
         },
@@ -147,6 +156,7 @@ describe('OrdersService', () => {
       ],
     }).compile();
 
+    moduleRef = compiled;
     service = moduleRef.get(OrdersService);
   });
 
@@ -238,5 +248,108 @@ describe('OrdersService', () => {
     const order = await service.getOrderForUser('driver-user-1', 'order-3', 'driver');
 
     expect(order.clientId).toBe('driver-user-1');
+  });
+
+  it('не отменяет заказ, пока на линии никого нет', async () => {
+    repoMock.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null).mockResolvedValue({
+      id: 'order-1',
+      clientId: 'client-1',
+      regionId: region.id,
+      pickupLat: 43.2167,
+      pickupLng: 44.7667,
+      status: OrderStatus.SearchingDriver,
+      createdAt: new Date(),
+    });
+    repoMock.findOneOrFail.mockResolvedValue({
+      id: 'order-1',
+      status: OrderStatus.SearchingDriver,
+    });
+
+    await service.create('client-1', {
+      regionId: region.id,
+      pickup: { lat: 43.2167, lng: 44.7667, address: 'Назрань' },
+      dropoff: { lat: 43.1667, lng: 44.8, address: 'Магас' },
+      paymentMethod: PaymentMethod.Cash,
+    });
+
+    const transitions = moduleRef.get(OrderTransitionService);
+    expect(transitions.transition).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        toStatus: OrderStatus.CancelledSystem,
+        reason: 'NO_DRIVERS_FOUND',
+      }),
+    );
+  });
+
+  it('предлагает ждущий заказ водителю, который вышел на линию позже', async () => {
+    const waiting = {
+      id: 'order-1',
+      clientId: 'client-1',
+      regionId: region.id,
+      pickupLat: 43.2167,
+      pickupLng: 44.7667,
+      pickupAddress: 'Назрань',
+      dropoffLat: 43.1667,
+      dropoffLng: 44.8,
+      dropoffAddress: 'Магас',
+      status: OrderStatus.SearchingDriver,
+      createdAt: new Date(),
+    };
+    repoMock.find.mockResolvedValue([waiting]);
+
+    const matching = moduleRef.get(MatchingService);
+    jest.spyOn(matching, 'findCandidates').mockResolvedValue([
+      {
+        driverId: 'driver-1',
+        userId: 'driver-user',
+        lat: 43.22,
+        lng: 44.77,
+        rating: 5,
+        distanceM: 200,
+        score: 90,
+      },
+    ]);
+    jest.spyOn(matching, 'createOffer').mockResolvedValue({
+      orderId: 'order-1',
+      driverId: 'driver-1',
+      candidateIndex: 0,
+      candidates: ['driver-1'],
+      expiresAt: new Date(Date.now() + 30_000).toISOString(),
+    });
+
+    const drivers = moduleRef.get(DriversService);
+    jest.spyOn(drivers, 'getOnlineDriverIds').mockResolvedValue(new Set(['driver-1']));
+
+    await service.rematchSearchingOrders();
+
+    expect(matching.createOffer).toHaveBeenCalledWith(
+      'order-1',
+      expect.arrayContaining([expect.objectContaining({ driverId: 'driver-1' })]),
+    );
+  });
+
+  it('отменяет поиск, если водитель так и не появился', async () => {
+    repoMock.find.mockResolvedValue([
+      {
+        id: 'order-1',
+        status: OrderStatus.SearchingDriver,
+        createdAt: new Date(Date.now() - 4 * 60 * 1000),
+      },
+    ]);
+    repoMock.findOne.mockResolvedValue({
+      id: 'order-1',
+      status: OrderStatus.SearchingDriver,
+    });
+
+    await service.rematchSearchingOrders();
+
+    const transitions = moduleRef.get(OrderTransitionService);
+    expect(transitions.transition).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 'order-1',
+        toStatus: OrderStatus.CancelledSystem,
+        reason: 'NO_DRIVERS_FOUND',
+      }),
+    );
   });
 });

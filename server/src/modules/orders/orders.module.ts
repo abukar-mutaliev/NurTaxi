@@ -22,6 +22,7 @@ import { OrderTransitionService } from './order-transition.service';
 import { OrderTrackingService } from './order-tracking.service';
 import { TripRecordingService } from './trip-recording.service';
 import { MatchingService } from './matching/matching.service';
+import { MatchingScheduler } from './matching/matching-scheduler.service';
 import { OfferJournalService } from './offer-journal.service';
 import { TripTrackService } from './trip-track.service';
 import { OrdersController } from './orders.controller';
@@ -62,6 +63,7 @@ import { RisModule } from '../ris/ris.module';
     OrderTransitionService,
     OrderTrackingService,
     MatchingService,
+    MatchingScheduler,
     TripRecordingService,
     OfferJournalService,
     TripTrackService,

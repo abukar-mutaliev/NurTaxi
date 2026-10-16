@@ -310,7 +310,7 @@ export class OrderListPageResponse {
     hasMore: boolean;
   }): OrderListPageResponse {
     return {
-      items: page.items.map(OrderResponse.from),
+      items: page.items.map((order) => OrderResponse.from(order)),
       nextCursor: page.nextCursor,
       hasMore: page.hasMore,
     };

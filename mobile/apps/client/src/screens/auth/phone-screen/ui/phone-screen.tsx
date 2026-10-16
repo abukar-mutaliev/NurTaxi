@@ -7,15 +7,8 @@ import medium from 'expo-symbols/androidWeights/medium';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
@@ -23,6 +16,7 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { WelcomeGradientBackground } from '../../welcome-screen/ui/welcome-gradient-background';
@@ -67,6 +61,8 @@ export function PhoneScreen() {
 
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Поле и кнопка должны оставаться над клавиатурой — см. `useKeyboardLift`.
+  const { anchorRef, liftStyle } = useKeyboardLift();
 
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
@@ -98,10 +94,7 @@ export function PhoneScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.root}
-    >
+    <View style={styles.root}>
       <StatusBar style="dark" />
 
       <WelcomeGradientBackground />
@@ -121,181 +114,188 @@ export function PhoneScreen() {
         ]}
       />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={markGlowAsset}
-        style={[
-          styles.layer,
-          {
-            height: glowSize,
-            left: glowLeft,
-            top: logoTop - sy(122),
-            width: glowSize,
-          },
-        ]}
-      />
-
-      <View
-        pointerEvents="none"
-        style={[
-          styles.logoClip,
-          { height: logoHeight, left: logoLeft, top: logoTop, width: logoWidth },
-        ]}
-      >
+      {/* Передний план поднимается над клавиатурой целиком, фон остаётся на месте. */}
+      <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, liftStyle]}>
         <Image
-          contentFit="fill"
-          source={logoAsset}
-          style={{
-            height: logoRenderHeight,
-            marginLeft: -logoCropOffsetX,
-            width: logoRenderWidth,
-          }}
-        />
-      </View>
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={iconGlowAsset}
-        style={[
-          styles.layer,
-          {
-            height: glowSize,
-            left: glowLeft,
-            top: logoTop - sy(54),
-            width: glowSize,
-          },
-        ]}
-      />
-
-      <View
-        pointerEvents="none"
-        style={[
-          styles.header,
-          {
-            paddingTop: logoTop + logoHeight + sy(24),
-          },
-        ]}
-      >
-        <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
-          {t('auth.phoneTitle')}
-        </Text>
-        <Text style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(2) }]}>
-          {t('auth.phoneSubtitle')}
-        </Text>
-      </View>
-
-      <View
-        style={[
-          styles.form,
-          {
-            paddingHorizontal: sx(40),
-            top: sy(364),
-          },
-        ]}
-      >
-        <View
+          contentFit="cover"
+          pointerEvents="none"
+          source={markGlowAsset}
           style={[
-            styles.inputShell,
+            styles.layer,
             {
-              backgroundColor: phoneColors.inputBg,
-              borderColor: phoneColors.inputBorder,
-              borderRadius: sx(18),
-              gap: sx(14),
-              height: sx(58),
-              paddingHorizontal: sx(21),
+              height: glowSize,
+              left: glowLeft,
+              top: logoTop - sy(122),
+              width: glowSize,
+            },
+          ]}
+        />
+
+        <View
+          pointerEvents="none"
+          style={[
+            styles.logoClip,
+            { height: logoHeight, left: logoLeft, top: logoTop, width: logoWidth },
+          ]}
+        >
+          <Image
+            contentFit="fill"
+            source={logoAsset}
+            style={{
+              height: logoRenderHeight,
+              marginLeft: -logoCropOffsetX,
+              width: logoRenderWidth,
+            }}
+          />
+        </View>
+
+        <Image
+          contentFit="cover"
+          pointerEvents="none"
+          source={iconGlowAsset}
+          style={[
+            styles.layer,
+            {
+              height: glowSize,
+              left: glowLeft,
+              top: logoTop - sy(54),
+              width: glowSize,
+            },
+          ]}
+        />
+
+        <View
+          pointerEvents="none"
+          style={[
+            styles.header,
+            {
+              paddingTop: logoTop + logoHeight + sy(24),
+            },
+          ]}
+        >
+          <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
+            {t('auth.phoneTitle')}
+          </Text>
+          <Text
+            style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(2) }]}
+          >
+            {t('auth.phoneSubtitle')}
+          </Text>
+        </View>
+
+        <View
+          collapsable={false}
+          ref={anchorRef}
+          style={[
+            styles.form,
+            {
+              paddingHorizontal: sx(40),
+              top: sy(364),
             },
           ]}
         >
           <View
             style={[
-              styles.inputIconOuter,
+              styles.inputShell,
               {
-                height: sx(36),
-                width: sx(36),
+                backgroundColor: phoneColors.inputBg,
+                borderColor: phoneColors.inputBorder,
+                borderRadius: sx(18),
+                gap: sx(14),
+                height: sx(58),
+                paddingHorizontal: sx(21),
               },
             ]}
           >
-            <SymbolView
-              name={{ ios: 'phone.fill', android: 'phone', web: 'phone' }}
-              resizeMode="scaleAspectFit"
-              size={sx(18)}
-              tintColor={phoneColors.iconAccent}
-              type="monochrome"
-              weight={{ ios: 'medium', android: medium }}
-            />
-          </View>
-          <View style={styles.inputField}>
-            <TextInput
-              autoFocus
-              keyboardType="phone-pad"
-              onChangeText={(value) => {
-                setPhone(normalizePhoneInput(value));
-                setError(null);
-              }}
-              onSubmitEditing={canSubmit ? submit : undefined}
-              placeholder={t('auth.phonePlaceholder')}
-              placeholderTextColor={phoneColors.inputPlaceholder}
-              returnKeyType="done"
+            <View
               style={[
-                styles.input,
+                styles.inputIconOuter,
                 {
-                  color: phoneColors.inputText,
-                  fontSize: sx(16),
+                  height: sx(36),
+                  width: sx(36),
                 },
               ]}
-              textContentType="telephoneNumber"
-              value={phone}
-            />
+            >
+              <SymbolView
+                name={{ ios: 'phone.fill', android: 'phone', web: 'phone' }}
+                resizeMode="scaleAspectFit"
+                size={sx(18)}
+                tintColor={phoneColors.iconAccent}
+                type="monochrome"
+                weight={{ ios: 'medium', android: medium }}
+              />
+            </View>
+            <View style={styles.inputField}>
+              <TextInput
+                autoFocus
+                keyboardType="phone-pad"
+                onChangeText={(value) => {
+                  setPhone(normalizePhoneInput(value));
+                  setError(null);
+                }}
+                onSubmitEditing={canSubmit ? submit : undefined}
+                placeholder={t('auth.phonePlaceholder')}
+                placeholderTextColor={phoneColors.inputPlaceholder}
+                returnKeyType="done"
+                style={[
+                  styles.input,
+                  {
+                    color: phoneColors.inputText,
+                    fontSize: sx(16),
+                  },
+                ]}
+                textContentType="telephoneNumber"
+                value={phone}
+              />
+            </View>
           </View>
-        </View>
 
-        {error ? (
-          <Text
-            style={[
-              styles.error,
-              {
-                fontSize: sx(13),
-                marginTop: sy(8),
-              },
-            ]}
-          >
-            {error}
-          </Text>
-        ) : null}
-
-        <Pressable
-          accessibilityRole="button"
-          disabled={!canSubmit}
-          onPress={submit}
-          style={({ pressed }) => [
-            styles.buttonWrap,
-            {
-              marginTop: sy(error ? 24 : 112),
-              opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
-            },
-          ]}
-        >
-          <LinearGradient
-            colors={[phoneColors.buttonStart, phoneColors.buttonEnd]}
-            end={{ x: 1, y: 0.5 }}
-            start={{ x: 0, y: 0.5 }}
-            style={[
-              styles.button,
-              {
-                borderRadius: sx(29),
-                height: sx(58),
-              },
-            ]}
-          >
-            <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
-              {isRequestingOtp ? t('common.loading') : t('auth.getCode')}
+          {error ? (
+            <Text
+              style={[
+                styles.error,
+                {
+                  fontSize: sx(13),
+                  marginTop: sy(8),
+                },
+              ]}
+            >
+              {error}
             </Text>
-          </LinearGradient>
-        </Pressable>
-      </View>
-    </KeyboardAvoidingView>
+          ) : null}
+
+          <Pressable
+            accessibilityRole="button"
+            disabled={!canSubmit}
+            onPress={submit}
+            style={({ pressed }) => [
+              styles.buttonWrap,
+              {
+                marginTop: sy(error ? 24 : 112),
+                opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={[phoneColors.buttonStart, phoneColors.buttonEnd]}
+              end={{ x: 1, y: 0.5 }}
+              start={{ x: 0, y: 0.5 }}
+              style={[
+                styles.button,
+                {
+                  borderRadius: sx(29),
+                  height: sx(58),
+                },
+              ]}
+            >
+              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+                {isRequestingOtp ? t('common.loading') : t('auth.getCode')}
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 

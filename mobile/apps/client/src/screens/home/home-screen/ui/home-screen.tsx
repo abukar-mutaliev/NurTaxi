@@ -10,7 +10,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDuration } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
@@ -73,11 +72,6 @@ import { PaymentMethodSheet } from './payment-method-sheet';
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
-const mapColors = {
-  etaBadge: 'rgba(46,35,49,0.88)',
-  etaShadow: 'rgba(89,71,31,0.16)',
-} as const;
-
 export function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -91,6 +85,21 @@ export function HomeScreen() {
 
   const permission = useLocationPermission();
   const { position } = useCurrentPosition(permission.state === 'granted');
+
+  /**
+   * Без геопозиции на главной нет ни метки «я здесь», ни адреса подачи по умолчанию. Раньше
+   * разрешение спрашивал только поиск адреса, и после установки карта оставалась «ничьей».
+   * Спрашиваем один раз, когда проверка завершилась и решения ещё нет: отказ не повторяем.
+   */
+  const askedLocationRef = useRef(false);
+  const { isChecking: isCheckingLocation, request: requestLocation } = permission;
+  useEffect(() => {
+    if (isCheckingLocation || permission.state !== 'undetermined' || askedLocationRef.current) {
+      return;
+    }
+    askedLocationRef.current = true;
+    void requestLocation();
+  }, [isCheckingLocation, permission.state, requestLocation]);
 
   const draft = useAppSelector(selectOrderDraft);
   const { pickup, dropoff } = draft;
@@ -289,6 +298,11 @@ export function HomeScreen() {
   ]);
 
   const centerOnMyLocation = () => {
+    // Без разрешения кнопка не должна молчать: спрашиваем, а после отказа навсегда — в настройки.
+    if (permission.state !== 'granted') {
+      void (permission.canAskAgain ? permission.request() : permission.openSettings());
+      return;
+    }
     if (!position) {
       return;
     }
@@ -374,6 +388,8 @@ export function HomeScreen() {
           ref={mapRef}
           routePoints={mapRoutePoints}
           routePolyline={mapPolyline}
+          // Метка «я здесь», как у водителя. Без разрешения слою MapKit нечего показать.
+          showsUserLocation={permission.state === 'granted'}
         />
       </View>
 
@@ -382,14 +398,6 @@ export function HomeScreen() {
         onSearchPress={() => openSearch('dropoff')}
         searchLabel={hasActiveOrder ? t('order.goToActive') : t('order.where')}
       />
-
-      {estimate && showOrderSheet ? (
-        <View pointerEvents="none" style={styles.etaBadgeWrap}>
-          <View style={styles.etaBadge}>
-            <Text style={styles.etaText}>~{formatDuration(estimate.pickupEtaS)}</Text>
-          </View>
-        </View>
-      ) : null}
 
       {activeOrder ? (
         <Pressable
@@ -477,7 +485,8 @@ export function HomeScreen() {
 
       <MapCenterButton
         bottomInset={showOrderSheet && orderSheetHeight > 0 ? orderSheetHeight : bottomInset}
-        disabled={!position}
+        // Без разрешения кнопка активна — по нажатию оно и запрашивается.
+        disabled={permission.state === 'granted' && !position}
         onPress={centerOnMyLocation}
       />
 
@@ -516,28 +525,6 @@ const styles = StyleSheet.create({
     color: '#2E2331',
     fontSize: 14,
     fontWeight: '600',
-  },
-  etaBadge: {
-    alignSelf: 'center',
-    backgroundColor: mapColors.etaBadge,
-    borderRadius: 15,
-    elevation: 2,
-    minWidth: 52,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    ...glassShadow({ color: mapColors.etaShadow, offset: { width: 0, height: 3 }, radius: 10 }),
-  },
-  etaBadgeWrap: {
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: '28%',
-  },
-  etaText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   permissionBanner: {
     backgroundColor: 'rgba(255,255,255,0.92)',

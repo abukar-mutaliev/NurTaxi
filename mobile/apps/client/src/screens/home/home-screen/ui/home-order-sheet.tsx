@@ -9,11 +9,13 @@ import {
   useWindowDimensions,
   type LayoutChangeEvent,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -143,6 +145,11 @@ export function HomeOrderSheet({
 }: HomeOrderSheetProps) {
   const { width: screenWidth } = useWindowDimensions();
   const [sheetHeight, setSheetHeight] = useState(0);
+  /**
+   * Поля «заказ другому» и комментарий лежат внутри листа, прижатого к низу экрана, — без
+   * подъёма клавиатура закрывала их целиком. Лист поднимается над ней, но не выше статус-бара.
+   */
+  const { anchorRef, liftStyle } = useKeyboardLift({ gap: 8 });
   const showEstimate = estimate && selectedTariffId === estimate.tariff.id;
   const tariffEstimates = showEstimate && estimate ? [estimate] : [];
   const tariffCount = tariffEstimates.length || 1;
@@ -153,16 +160,17 @@ export function HomeOrderSheet({
       : Math.floor((tariffRowWidth - TARIFF_GAP * (tariffCount - 1)) / tariffCount);
 
   return (
-    <View
+    <Animated.View
       onLayout={onLayout}
       pointerEvents="box-none"
       style={[
         styles.root,
         { paddingBottom: bottomInset },
         sheetHeight > 0 ? { height: sheetHeight + bottomInset } : null,
+        liftStyle,
       ]}
     >
-      <View style={styles.sheetFrame}>
+      <View collapsable={false} ref={anchorRef} style={styles.sheetFrame}>
         <CollapsibleSheet onVisibleHeightChange={setSheetHeight} style={styles.sheet}>
           <View style={styles.body}>
             <View style={styles.addressBlock}>
@@ -258,7 +266,7 @@ export function HomeOrderSheet({
           </View>
         </CollapsibleSheet>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

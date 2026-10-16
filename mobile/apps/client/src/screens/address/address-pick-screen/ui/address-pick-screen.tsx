@@ -208,6 +208,7 @@ export function AddressPickScreen() {
               }
             }}
             ref={mapRef}
+            showsUserLocation={permission.state === 'granted'}
           />
 
           <View

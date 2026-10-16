@@ -7,8 +7,6 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,12 +14,14 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
+import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 import { useOnboarding } from '@nurtaxi/shared-core/features/auth';
 
@@ -68,6 +68,8 @@ export function OnboardingScreen() {
 
   const [name, setName] = useState('');
   const [consent, setConsent] = useState(false);
+  // Поле и кнопка — над клавиатурой, заголовок — не выше статус-бара (`useKeyboardLift`).
+  const { anchorRef, ceilingRef, liftStyle } = useKeyboardLift();
 
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
@@ -77,10 +79,7 @@ export function OnboardingScreen() {
   const showPlaceholder = name.trim().length === 0;
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.root}
-    >
+    <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
 
@@ -99,174 +98,185 @@ export function OnboardingScreen() {
         ]}
       />
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingBottom: insets.bottom + sy(24),
-            paddingHorizontal: sx(40),
-            paddingTop: Math.max(insets.top, sy(20)) + sy(76),
-          },
-        ]}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View
-            style={[
-              styles.dot,
-              {
-                backgroundColor: onboardingColors.dot,
-                height: sx(16),
-                marginBottom: sy(6),
-                width: sx(16),
-              },
-            ]}
-          />
-          <Text style={[styles.brand, { fontSize: sx(40), lineHeight: sx(50) }]}>
-            {t('auth.brandName')}
-          </Text>
-          <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28), marginTop: sy(24) }]}>
-            {t('onboarding.title')}
-          </Text>
-          <Text
-            style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
-          >
-            {t('onboarding.subtitle')}
-          </Text>
-        </View>
-
-        <View style={{ gap: sy(20), marginTop: sy(40) }}>
-          <View style={{ gap: sy(8) }}>
-            <Text style={[styles.fieldLabel, { fontSize: sx(13) }]}>
-              {t('onboarding.nameLabel')}
-            </Text>
-            <View
-              style={[
-                styles.inputShell,
-                {
-                  backgroundColor: onboardingColors.inputBg,
-                  borderColor: onboardingColors.inputBorder,
-                  borderRadius: sx(18),
-                  height: sx(58),
-                  paddingHorizontal: sx(21),
-                },
-              ]}
-            >
-              <View style={styles.inputField}>
-                {showPlaceholder ? (
-                  <Text
-                    pointerEvents="none"
-                    style={[styles.inputPlaceholder, { fontSize: sx(16) }]}
-                  >
-                    {t('onboarding.namePlaceholder')}
-                  </Text>
-                ) : null}
-                <TextInput
-                  autoFocus
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                  onChangeText={setName}
-                  returnKeyType="done"
-                  style={[
-                    styles.input,
-                    {
-                      color: onboardingColors.inputText,
-                      fontSize: sx(16),
-                    },
-                  ]}
-                  textContentType="name"
-                  value={name}
-                />
-              </View>
-            </View>
-          </View>
-
-          {/* TODO(M2.2): загрузка фото профиля через expo-image-picker. */}
-
-          <Pressable
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: consent }}
-            onPress={() => setConsent((value) => !value)}
-          >
-            <View
-              style={[
-                styles.consentCard,
-                {
-                  borderColor: consent
-                    ? onboardingColors.cardBorderChecked
-                    : onboardingColors.cardBorder,
-                  borderRadius: sx(20),
-                  gap: sy(10),
-                  paddingHorizontal: sx(18),
-                  paddingVertical: sy(16),
-                },
-              ]}
-            >
-              <Text style={[styles.consentTitle, { fontSize: sx(15) }]}>
-                {t('onboarding.consentTitle')}
-              </Text>
-              <Text style={[styles.consentText, { fontSize: sx(13), lineHeight: sx(18) }]}>
-                {t('onboarding.consentText')}
-              </Text>
-              <View style={[styles.consentActionRow, { gap: sx(10), marginTop: sy(4) }]}>
-                <View
-                  style={[
-                    styles.checkBox,
-                    {
-                      backgroundColor: consent ? onboardingColors.checkBg : 'transparent',
-                      borderColor: consent
-                        ? onboardingColors.checkMark
-                        : onboardingColors.inputPlaceholder,
-                      borderRadius: sx(8),
-                      height: sx(22),
-                      width: sx(22),
-                    },
-                  ]}
-                >
-                  {consent ? <Text style={[styles.checkMark, { fontSize: sx(14) }]}>✓</Text> : null}
-                </View>
-                <Text style={[styles.consentAction, { fontSize: sx(14) }]}>
-                  {t('common.confirm')}
-                </Text>
-              </View>
-            </View>
-          </Pressable>
-
-          {error ? <Text style={[styles.error, { fontSize: sx(13) }]}>{error.message}</Text> : null}
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
-          disabled={!canSubmit}
-          onPress={() => completeOnboarding({ name: name.trim() })}
-          style={({ pressed }) => [
-            styles.buttonWrap,
+      {/* Передний план поднимается над клавиатурой целиком, фон остаётся на месте. */}
+      <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, liftStyle]}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
             {
-              marginTop: sy(48),
-              opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
+              paddingBottom: insets.bottom + sy(24),
+              paddingHorizontal: sx(40),
+              paddingTop: Math.max(insets.top, sy(20)) + sy(76),
             },
           ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <LinearGradient
-            colors={[onboardingColors.buttonStart, onboardingColors.buttonEnd]}
-            end={{ x: 1, y: 0.5 }}
-            start={{ x: 0, y: 0.5 }}
-            style={[
-              styles.button,
+          <View collapsable={false} ref={ceilingRef} style={styles.header}>
+            <View
+              style={[
+                styles.dot,
+                {
+                  backgroundColor: onboardingColors.dot,
+                  height: sx(16),
+                  marginBottom: sy(6),
+                  width: sx(16),
+                },
+              ]}
+            />
+            <Text style={[styles.brand, { fontSize: sx(40), lineHeight: sx(50) }]}>
+              {t('auth.brandName')}
+            </Text>
+            <Text
+              style={[styles.title, { fontSize: sx(22), lineHeight: sx(28), marginTop: sy(24) }]}
+            >
+              {t('onboarding.title')}
+            </Text>
+            <Text
+              style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
+            >
+              {t('onboarding.subtitle')}
+            </Text>
+          </View>
+
+          <View style={{ gap: sy(20), marginTop: sy(40) }}>
+            <View style={{ gap: sy(8) }}>
+              <Text style={[styles.fieldLabel, { fontSize: sx(13) }]}>
+                {t('onboarding.nameLabel')}
+              </Text>
+              <View
+                style={[
+                  styles.inputShell,
+                  {
+                    backgroundColor: onboardingColors.inputBg,
+                    borderColor: onboardingColors.inputBorder,
+                    borderRadius: sx(18),
+                    height: sx(58),
+                    paddingHorizontal: sx(21),
+                  },
+                ]}
+              >
+                <View style={styles.inputField}>
+                  {showPlaceholder ? (
+                    <Text
+                      pointerEvents="none"
+                      style={[styles.inputPlaceholder, { fontSize: sx(16) }]}
+                    >
+                      {t('onboarding.namePlaceholder')}
+                    </Text>
+                  ) : null}
+                  <TextInput
+                    autoFocus
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                    onChangeText={setName}
+                    returnKeyType="done"
+                    style={[
+                      styles.input,
+                      {
+                        color: onboardingColors.inputText,
+                        fontSize: sx(16),
+                      },
+                    ]}
+                    textContentType="name"
+                    value={name}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* TODO(M2.2): загрузка фото профиля через expo-image-picker. */}
+
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: consent }}
+              onPress={() => setConsent((value) => !value)}
+            >
+              <View
+                style={[
+                  styles.consentCard,
+                  {
+                    borderColor: consent
+                      ? onboardingColors.cardBorderChecked
+                      : onboardingColors.cardBorder,
+                    borderRadius: sx(20),
+                    gap: sy(10),
+                    paddingHorizontal: sx(18),
+                    paddingVertical: sy(16),
+                  },
+                ]}
+              >
+                <Text style={[styles.consentTitle, { fontSize: sx(15) }]}>
+                  {t('onboarding.consentTitle')}
+                </Text>
+                <Text style={[styles.consentText, { fontSize: sx(13), lineHeight: sx(18) }]}>
+                  {t('onboarding.consentText')}
+                </Text>
+                <View style={[styles.consentActionRow, { gap: sx(10), marginTop: sy(4) }]}>
+                  <View
+                    style={[
+                      styles.checkBox,
+                      {
+                        backgroundColor: consent ? onboardingColors.checkBg : 'transparent',
+                        borderColor: consent
+                          ? onboardingColors.checkMark
+                          : onboardingColors.inputPlaceholder,
+                        borderRadius: sx(8),
+                        height: sx(22),
+                        width: sx(22),
+                      },
+                    ]}
+                  >
+                    {consent ? (
+                      <Text style={[styles.checkMark, { fontSize: sx(14) }]}>✓</Text>
+                    ) : null}
+                  </View>
+                  <Text style={[styles.consentAction, { fontSize: sx(14) }]}>
+                    {t('common.confirm')}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+
+            {error ? (
+              <Text style={[styles.error, { fontSize: sx(13) }]}>{error.message}</Text>
+            ) : null}
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            collapsable={false}
+            disabled={!canSubmit}
+            onPress={() => completeOnboarding({ name: name.trim() })}
+            ref={anchorRef}
+            style={({ pressed }) => [
+              styles.buttonWrap,
               {
-                borderRadius: sx(29),
-                height: sx(58),
+                marginTop: sy(48),
+                opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
               },
             ]}
           >
-            <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
-              {isSubmitting ? t('common.loading') : t('onboarding.finish')}
-            </Text>
-          </LinearGradient>
-        </Pressable>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <LinearGradient
+              colors={[onboardingColors.buttonStart, onboardingColors.buttonEnd]}
+              end={{ x: 1, y: 0.5 }}
+              start={{ x: 0, y: 0.5 }}
+              style={[
+                styles.button,
+                {
+                  borderRadius: sx(29),
+                  height: sx(58),
+                },
+              ]}
+            >
+              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+                {isSubmitting ? t('common.loading') : t('onboarding.finish')}
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </ScrollView>
+      </Animated.View>
+    </View>
   );
 }
 

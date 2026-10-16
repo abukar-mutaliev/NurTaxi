@@ -144,14 +144,16 @@ export function OrderScreen({ orderId }: { orderId: string }) {
     status: order?.status ?? '',
   });
 
+  const pickupEta = route.leg === 'to-pickup' ? (route.duration ?? undefined) : null;
+
   useEffect(() => {
     const lat = driverPosition?.lat;
     const lng = driverPosition?.lng;
     if (!routeActive || lat == null || lng == null) {
       return;
     }
-    sendDriverLocationUpdate(lat, lng);
-  }, [driverPosition?.lat, driverPosition?.lng, routeActive]);
+    sendDriverLocationUpdate(lat, lng, pickupEta);
+  }, [driverPosition?.lat, driverPosition?.lng, pickupEta, routeActive]);
 
   if (isLoading || !order) {
     return (

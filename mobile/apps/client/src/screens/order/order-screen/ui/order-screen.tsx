@@ -190,7 +190,8 @@ export function OrderScreen() {
     pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
     status: order?.status ?? '',
   });
-  const etaLabel = liveRoute.leg === 'to-pickup' && liveRoute.duration ? liveRoute.duration : null;
+  const etaLabel =
+    liveRoute.leg === 'to-pickup' ? driverPosition?.eta || liveRoute.duration || null : null;
   const tripWaypoints = useMemo((): GeoPoint[] | null => {
     if (!order) {
       return null;

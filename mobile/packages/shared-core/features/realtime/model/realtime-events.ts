@@ -28,6 +28,11 @@ export interface DriverLocationEvent {
   lat: number;
   lng: number;
   at: string;
+  /**
+   * Строка «до клиента», которую показывает водитель.
+   * `null` — подача закончилась, время больше не актуально.
+   */
+  eta?: string | null;
 }
 
 export interface SosActivatedEvent {

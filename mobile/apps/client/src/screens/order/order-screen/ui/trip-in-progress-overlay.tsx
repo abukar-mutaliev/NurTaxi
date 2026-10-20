@@ -19,10 +19,12 @@ const colors = {
   muted: '#A99FA6',
   label: '#A99FA6',
   pickupDot: '#E8C882',
+  stopDot: '#C99A54',
   dropoffDot: '#2E2331',
   connector: '#EFE9DC',
   divider: '#EFE9DC',
   shareBg: 'rgba(255,255,255,0.82)',
+  contactBg: 'rgba(252,244,228,0.85)',
   cancelBg: 'rgba(253,239,236,0.9)',
   cancelText: '#E0705F',
 } as const;
@@ -31,6 +33,8 @@ export interface TripInProgressOverlayProps {
   title: string;
   driver?: OrderDriver | null;
   pickupAddress: string;
+  /** Промежуточные остановки по порядку, между подачей и точкой Б. */
+  stopAddresses?: string[];
   dropoffAddress: string;
   durationLabel: string;
   durationValue: string;
@@ -41,12 +45,17 @@ export interface TripInProgressOverlayProps {
   shareLabel: string;
   cancelLabel: string;
   canCancel: boolean;
+  /** Полная подпись для скринридера: «Связаться с водителем». */
+  contactLabel: string;
+  /** Видимая подпись компактной кнопки в строке водителя. */
+  contactShortLabel: string;
   sosLabel?: string;
   onSos?: () => void;
   onBack: () => void;
   onProfilePress: () => void;
   onShare: () => void;
   onCancel: () => void;
+  onContact: () => void;
 }
 
 function StatColumn({ label, value }: { label: string; value: string }) {
@@ -62,6 +71,7 @@ export function TripInProgressOverlay({
   title,
   driver,
   pickupAddress,
+  stopAddresses = [],
   dropoffAddress,
   durationLabel,
   durationValue,
@@ -72,12 +82,15 @@ export function TripInProgressOverlay({
   shareLabel,
   cancelLabel,
   canCancel,
+  contactLabel,
+  contactShortLabel,
   sosLabel,
   onSos,
   onBack,
   onProfilePress,
   onShare,
   onCancel,
+  onContact,
 }: TripInProgressOverlayProps) {
   const insets = useSafeAreaInsets();
   const headerTopInset = useOrderTopInset();
@@ -139,6 +152,15 @@ export function TripInProgressOverlay({
                   <Text numberOfLines={1} style={styles.driverName}>
                     {driver.fullName}
                   </Text>
+                  <Pressable
+                    accessibilityLabel={contactLabel}
+                    accessibilityRole="button"
+                    hitSlop={6}
+                    onPress={onContact}
+                    style={({ pressed }) => [styles.contactButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.contactText}>{contactShortLabel}</Text>
+                  </Pressable>
                 </View>
                 <View style={styles.driverDivider} />
               </>
@@ -147,6 +169,12 @@ export function TripInProgressOverlay({
             <View style={styles.addressBlock}>
               <View style={styles.addressRail}>
                 <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
+                {stopAddresses.map((address, index) => (
+                  <View key={`${index}:${address}`} style={styles.railStop}>
+                    <View style={styles.connector} />
+                    <View style={[styles.addressDot, { backgroundColor: colors.stopDot }]} />
+                  </View>
+                ))}
                 <View style={styles.connector} />
                 <View style={[styles.addressDot, { backgroundColor: colors.dropoffDot }]} />
               </View>
@@ -154,6 +182,15 @@ export function TripInProgressOverlay({
                 <Text numberOfLines={2} style={styles.addressText}>
                   {pickupAddress}
                 </Text>
+                {stopAddresses.map((address, index) => (
+                  <Text
+                    key={`${index}:${address}`}
+                    numberOfLines={2}
+                    style={[styles.addressText, styles.stopText]}
+                  >
+                    {address}
+                  </Text>
+                ))}
                 <Text numberOfLines={2} style={styles.addressText}>
                   {dropoffAddress}
                 </Text>
@@ -257,6 +294,18 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+  contactButton: {
+    backgroundColor: colors.contactBg,
+    borderRadius: 16,
+    justifyContent: 'center',
+    minHeight: 36,
+    paddingHorizontal: 14,
+  },
+  contactText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
   connector: {
     backgroundColor: colors.connector,
     flex: 1,
@@ -313,6 +362,14 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.88,
+  },
+  railStop: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  stopText: {
+    color: colors.muted,
+    fontSize: 13,
   },
   shareButton: {
     alignItems: 'center',

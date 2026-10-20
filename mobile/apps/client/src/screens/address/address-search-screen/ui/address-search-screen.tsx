@@ -44,7 +44,13 @@ import {
   useAddressSelection,
   useOrderRegion,
 } from '@/features/address';
-import { pickupSelected, selectOrderDraft, dropoffSelected } from '@/processes/order-flow';
+import {
+  dropoffSelected,
+  pickupSelected,
+  selectOrderDraft,
+  selectOrderStop,
+  stopSelected,
+} from '@/processes/order-flow';
 import { GlassPrimaryButton, GlassScreenHeader } from '@/shared/ui';
 
 import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welcome-gradient-background';
@@ -69,6 +75,17 @@ const colors = {
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
+/**
+ * Координаты принадлежат выбранной подсказке. Дописать к её адресу подъезд или квартиру
+ * можно, а изменить сам адрес — уже нет: старые координаты с новым текстом ставили точку
+ * не там, где написано, и пассажир этого не видел.
+ */
+function keepsSelectedAddress(text: string, selectedAddress: string | undefined): boolean {
+  const selected = selectedAddress?.trim() ?? '';
+  const typed = text.trim();
+  return typed.length > 0 && typed.startsWith(selected);
+}
+
 export function AddressSearchScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -91,6 +108,7 @@ export function AddressSearchScreen() {
 
   const { regionId } = useOrderRegion();
   const { pickup, dropoff } = useAppSelector(selectOrderDraft);
+  const stop = useAppSelector(selectOrderStop);
   const recentAddresses = useAppSelector(selectRecentAddresses);
   const { selectAddress, saveAddress, isSaving, ensurePickupFromGps } = useAddressSelection();
 
@@ -139,7 +157,9 @@ export function AddressSearchScreen() {
       ? t('addresses.add')
       : activeField === 'pickup'
         ? t('order.from')
-        : t('order.where');
+        : activeField === 'stop'
+          ? t('order.stop')
+          : t('order.where');
 
   useEffect(() => {
     if (mode === 'order') {
@@ -189,6 +209,8 @@ export function AddressSearchScreen() {
 
     if (field === 'pickup') {
       dispatch(pickupSelected(normalized));
+    } else if (field === 'stop') {
+      dispatch(stopSelected(normalized));
     } else {
       dispatch(dropoffSelected(normalized));
     }
@@ -265,14 +287,14 @@ export function AddressSearchScreen() {
 
   const handleQueryChange = (value: string) => {
     setQuery(value);
-    if (pendingSave && value.trim().length === 0) {
+    if (pendingSave && !keepsSelectedAddress(value, pendingSave.address)) {
       setPendingSave(null);
     }
   };
 
   const handleOrderQueryChange = (value: string) => {
     setQuery(value);
-    if (pendingOrderSelection && value.trim().length === 0) {
+    if (pendingOrderSelection && !keepsSelectedAddress(value, pendingOrderSelection.address)) {
       setPendingOrderSelection(null);
     }
   };
@@ -319,11 +341,11 @@ export function AddressSearchScreen() {
     const suggestion = toAddressSuggestion(item, point);
 
     if (mode === 'save') {
-      handleSelect(suggestionToGeoLocationForSave(suggestion, query), { label: item.title });
+      handleSelect(suggestionToGeoLocationForSave(suggestion), { label: item.title });
       return;
     }
 
-    const location = suggestionToGeoLocation(suggestion, query);
+    const location = suggestionToGeoLocation(suggestion);
     setPendingOrderSelection({ ...location, label: item.title });
     setQuery(location.address?.trim() ?? '');
   };
@@ -436,6 +458,19 @@ export function AddressSearchScreen() {
                   }
                   variant="pickup"
                 />
+                {/* Остановка — только когда её добавляют или она уже есть в маршруте. */}
+                {activeField === 'stop' || stop ? (
+                  <AddressSearchField
+                    active={activeField === 'stop'}
+                    autoFocus={activeField === 'stop'}
+                    onActivate={() => switchField('stop')}
+                    onChangeText={handleOrderQueryChange}
+                    placeholder={t('order.stop')}
+                    scale={scale}
+                    value={activeField === 'stop' ? query : (stop?.address ?? '')}
+                    variant="stop"
+                  />
+                ) : null}
                 <AddressSearchField
                   active={activeField === 'dropoff'}
                   autoFocus={activeField === 'dropoff'}

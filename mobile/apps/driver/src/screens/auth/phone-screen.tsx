@@ -21,7 +21,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { applyPhoneMask, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
+import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
@@ -64,6 +64,7 @@ export function PhoneScreen() {
 
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [formatError, setFormatError] = useState(false);
 
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
@@ -72,10 +73,25 @@ export function PhoneScreen() {
   const logoWidth = sx(LOGO_DESIGN_WIDTH);
   const logoHeight = sx(LOGO_DESIGN_HEIGHT);
 
-  const canSubmit = isValidPhone(phone) && !isRequestingOtp;
+  // Кнопка доступна с первой цифры: так нажатие на неполный номер объясняет, что не так,
+  // а не выглядит как неработающая кнопка.
+  const canSubmit = phone !== '' && !isRequestingOtp;
+  const message = formatError ? t('auth.phoneInvalid') : error;
+
+  const changePhone = (value: string) => {
+    const next = normalizePhoneInput(value);
+    setPhone(next);
+    setError(null);
+    // Пока номер набирается, не ругаемся; набран целиком, но не мобильный — говорим сразу.
+    setFormatError(normalizePhone(next).length === 12 && !isMobilePhone(next));
+  };
 
   const submit = async () => {
     if (!canSubmit) {
+      return;
+    }
+    if (!isMobilePhone(phone)) {
+      setFormatError(true);
       return;
     }
     setError(null);
@@ -128,6 +144,7 @@ export function PhoneScreen() {
           <View
             style={[
               styles.inputShell,
+              formatError && styles.inputShellInvalid,
               {
                 borderRadius: sx(18),
                 gap: sx(12),
@@ -143,13 +160,11 @@ export function PhoneScreen() {
               style={{ height: sx(26), width: sx(24) }}
             />
             <TextInput
+              accessibilityHint={formatError ? t('auth.phoneInvalid') : undefined}
               autoFocus
               keyboardType="phone-pad"
-              onChangeText={(value) => {
-                setPhone(normalizePhoneInput(value));
-                setError(null);
-              }}
-              onSubmitEditing={canSubmit ? submit : undefined}
+              onChangeText={changePhone}
+              onSubmitEditing={submit}
               placeholder={t('auth.phonePlaceholder')}
               placeholderTextColor={c.placeholder}
               returnKeyType="done"
@@ -159,8 +174,13 @@ export function PhoneScreen() {
             />
           </View>
 
-          {error ? (
-            <Text style={[styles.error, { fontSize: sx(13), marginTop: sy(10) }]}>{error}</Text>
+          {message ? (
+            <Text
+              accessibilityLiveRegion="polite"
+              style={[styles.error, { fontSize: sx(13), marginTop: sy(10) }]}
+            >
+              {message}
+            </Text>
           ) : null}
         </View>
 
@@ -202,6 +222,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 12,
+  },
+  inputShellInvalid: {
+    borderColor: c.danger,
   },
   root: {
     backgroundColor: '#F8F4EF',

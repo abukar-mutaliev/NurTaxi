@@ -68,6 +68,23 @@ export const driverApi = baseApi.injectEndpoints({
     updateDriverStatus: build.mutation<DriverProfile, UpdateDriverStatusPayload>({
       query: (body) => ({ url: '/driver/status', method: 'PATCH', body }),
       invalidatesTags: ['DriverProfile'],
+      /**
+       * Статус из ответа сразу кладём в кэш профиля: иначе между ответом и перечитыванием
+       * профиля экран смены показывал старый статус, и переключатель линии отпрыгивал назад.
+       * Подменяем только статус — в ответе нет документов, которые есть в `GET /profile`.
+       */
+      async onQueryStarted(_payload, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            driverApi.util.updateQueryData('getDriverProfile', undefined, (draft) => {
+              draft.onlineStatus = data.onlineStatus;
+            }),
+          );
+        } catch {
+          // Отказ обрабатывает вызывающий экран.
+        }
+      },
     }),
 
     updateWorkSchedule: build.mutation<DriverProfile, UpdateWorkSchedulePayload>({

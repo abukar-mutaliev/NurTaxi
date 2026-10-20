@@ -366,6 +366,15 @@ export interface OrderEstimatePayload {
   tariffId?: string;
   pickup: GeoLocation;
   dropoff: GeoLocation;
+  /** Промежуточные остановки по порядку: маршрут и цена считаются через них. */
+  stops?: GeoLocation[];
+}
+
+/** Промежуточная остановка заказа. */
+export interface OrderStop {
+  lat: number;
+  lng: number;
+  address: string;
 }
 
 export interface OrderEstimate {
@@ -416,6 +425,8 @@ export interface Order {
   dropoffAddress: string;
   dropoffLat: number;
   dropoffLng: number;
+  /** Промежуточные остановки по порядку; у заказов до появления остановок поля может не быть. */
+  stops?: OrderStop[];
   priceEstimated: number;
   priceFinal: number | null;
   cancellationFee: number | null;
@@ -425,6 +436,8 @@ export interface Order {
   passengerName: string | null;
   passengerPhone: string | null;
   familyMemberId: string | null;
+  /** Телефон заказчика — приходит только на активной поездке (для связи водителя с ним). */
+  clientPhone?: string | null;
   route: OrderRoute | null;
   tariff: TariffRef | null;
   driver: OrderDriver | null;
@@ -612,6 +625,8 @@ export interface DriverOrderOffer {
   expiresAt: string;
   pickup: { lat: number; lng: number; address: string };
   dropoff: { lat: number; lng: number; address: string };
+  /** Промежуточные остановки — водитель видит их до принятия заказа. */
+  stops?: OrderStop[];
   price: number;
   paymentMethod: PaymentMethod;
   comment: string | null;

@@ -20,6 +20,11 @@ export function isValidPhone(input: string): boolean {
   return /^\+7\d{10}$/.test(normalizePhone(input));
 }
 
+/** Мобильный номер РФ: код оператора начинается с 9 — только на такие уходит SMS с кодом. */
+export function isMobilePhone(input: string): boolean {
+  return /^\+79\d{9}$/.test(normalizePhone(input));
+}
+
 /** Человекочитаемый вид: `+7 (928) 123-45-67`. */
 export function formatPhone(input: string): string {
   const normalized = normalizePhone(input);
@@ -33,6 +38,10 @@ export function formatPhone(input: string): string {
 /**
  * Маска для поля ввода: показывает частично введённый номер, не мешая правкам.
  * Возвращает строку вида `+7 (92` для незавершённого ввода.
+ *
+ * Разделитель появляется только вместе со следующей цифрой. Если дописывать его сразу
+ * за заполненной группой (`…822-28-`), стёртый дефис возвращается при следующем
+ * форматировании — цифр столько же — и номер не удаётся стереть дальше.
  */
 export function applyPhoneMask(input: string): string {
   const digits = (input.match(DIGITS) ?? []).join('');
@@ -45,13 +54,13 @@ export function applyPhoneMask(input: string): string {
     return '+7 ';
   }
   let masked = `+7 (${local.slice(0, 3)}`;
-  if (local.length >= 3) {
+  if (local.length > 3) {
     masked += `) ${local.slice(3, 6)}`;
   }
-  if (local.length >= 6) {
+  if (local.length > 6) {
     masked += `-${local.slice(6, 8)}`;
   }
-  if (local.length >= 8) {
+  if (local.length > 8) {
     masked += `-${local.slice(8, 10)}`;
   }
   return masked;

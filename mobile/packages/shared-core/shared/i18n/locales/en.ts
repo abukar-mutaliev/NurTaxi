@@ -51,6 +51,7 @@ export const en: DeepPartial<TranslationResources> = {
     phoneSubtitle: 'Sign in to continue',
     phoneLabel: 'Phone number',
     phonePlaceholder: '+7 (___) ___-__-__',
+    phoneInvalid: 'Invalid phone number format',
     getCode: 'Continue',
     codeTitle: 'Enter the code from SMS',
     codeSubtitle: 'Code sent to {{phone}}',
@@ -62,6 +63,11 @@ export const en: DeepPartial<TranslationResources> = {
   },
   order: {
     where: 'Where to?',
+    stop: 'Stop',
+    addStop: 'Add a stop',
+    removeStop: 'Remove stop',
+    stopNotPriced:
+      'The price does not include the stop yet — the driver will see it in the comment',
     createNur: 'Order Nur',
     priceFrom: 'from {{price}}',
     extraComment: 'Additional comment',
@@ -75,6 +81,7 @@ export const en: DeepPartial<TranslationResources> = {
     passengerPhone: 'Passenger phone',
     passengerPhonePlaceholder: '+7 (___) ___-__-__',
     orderForOtherInvalid: 'Enter the passenger name and phone number',
+    farRouteWarning: 'The route is {{distance}} — check that the points are in the right city',
     familyMembers: 'Family members',
     searchingTitle1: 'Looking for',
     searchingTitle2: 'an available driver',
@@ -103,6 +110,14 @@ export const en: DeepPartial<TranslationResources> = {
     cardMasked: 'Card •••• 4242',
     deleteConfirm: 'Remove card {{brand}} •••• {{last4}}?',
     cannotDeleteLast: 'You cannot remove the last card.',
+  },
+  contact: {
+    driver: 'Contact driver',
+    driverShort: 'Contact',
+    passenger: 'Contact passenger',
+    call: 'Call',
+    sms: 'Send SMS',
+    unavailable: 'Phone number is unavailable right now',
   },
   history: {
     today: 'Today, {{time}}',

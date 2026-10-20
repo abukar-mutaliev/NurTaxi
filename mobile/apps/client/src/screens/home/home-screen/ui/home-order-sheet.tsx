@@ -12,7 +12,7 @@ import {
 import Animated from 'react-native-reanimated';
 
 import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
-import { formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import { formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
@@ -30,6 +30,7 @@ const sheetColors = {
   text: '#2E2331',
   divider: '#E8E0D4',
   pickupDot: '#E8C882',
+  stopDot: '#C99A54',
   dropoffDot: '#2E2331',
   tariffSelectedBg: '#FCF4E4',
   tariffSelectedBorder: '#E8C882',
@@ -51,6 +52,8 @@ const TARIFF_ICON_SIZE = 28;
 
 export interface HomeOrderSheetProps {
   pickupAddress: string;
+  /** Промежуточная остановка; `null` — её нет, вместо строки показываем «Добавить остановку». */
+  stopAddress: string | null;
   dropoffAddress: string;
   estimate: OrderEstimate | null;
   isEstimating: boolean;
@@ -58,16 +61,24 @@ export interface HomeOrderSheetProps {
   paymentLabel: string;
   paymentMethod: PaymentMethod;
   fromLabel: string;
+  stopLabel: string;
+  addStopLabel: string;
+  removeStopLabel: string;
   toLabel: string;
   paymentMethodLabel: string;
   priceFromLabel: (price: string) => string;
   orderLabel: string;
   loadingLabel: string;
   error?: string | null;
+  /** Пояснение без тревоги — например, что цена пока без учёта остановки. */
+  notice?: string | null;
   isOrdering: boolean;
   canOrder: boolean;
   bottomInset: number;
   onPickupPress: () => void;
+  /** Выбор адреса остановки — и для новой, и для уже добавленной. */
+  onStopPress: () => void;
+  onRemoveStop: () => void;
   onDropoffPress: () => void;
   onTariffPress: (tariffId: string) => void;
   onPaymentPress: () => void;
@@ -110,7 +121,7 @@ function TariffCard({
           ~{formatDuration(estimate.pickupEtaS)}
         </Text>
         <Text numberOfLines={1} style={styles.tariffPrice}>
-          {priceFromLabel(formatMoney(estimate.price.estimated, estimate.price.currency))}
+          {priceFromLabel(formatPrice(estimate.price.estimated, estimate.price.currency))}
         </Text>
       </View>
     </Pressable>
@@ -119,6 +130,7 @@ function TariffCard({
 
 export function HomeOrderSheet({
   pickupAddress,
+  stopAddress,
   dropoffAddress,
   estimate,
   isEstimating,
@@ -126,16 +138,22 @@ export function HomeOrderSheet({
   paymentLabel,
   paymentMethod,
   fromLabel,
+  stopLabel,
+  addStopLabel,
+  removeStopLabel,
   toLabel,
   paymentMethodLabel,
   priceFromLabel,
   orderLabel,
   loadingLabel,
   error,
+  notice,
   isOrdering,
   canOrder,
   bottomInset,
   onPickupPress,
+  onStopPress,
+  onRemoveStop,
   onDropoffPress,
   onTariffPress,
   onPaymentPress,
@@ -183,6 +201,39 @@ export function HomeOrderSheet({
                   </Text>
                 </View>
               </Pressable>
+
+              {stopAddress ? (
+                <View style={styles.stopRow}>
+                  <Pressable onPress={onStopPress} style={[styles.addressRow, styles.stopMain]}>
+                    <View style={[styles.addressDot, { backgroundColor: sheetColors.stopDot }]} />
+                    <View style={styles.addressText}>
+                      <Text style={styles.addressLabel}>{stopLabel}</Text>
+                      <Text numberOfLines={1} style={styles.addressValue}>
+                        {stopAddress}
+                      </Text>
+                    </View>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel={removeStopLabel}
+                    accessibilityRole="button"
+                    hitSlop={10}
+                    onPress={onRemoveStop}
+                    style={({ pressed }) => [styles.removeStop, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.removeStopGlyph}>×</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  hitSlop={{ bottom: 6, top: 6 }}
+                  onPress={onStopPress}
+                  style={({ pressed }) => [styles.addStopRow, pressed && styles.pressed]}
+                >
+                  <Text style={styles.addStopGlyph}>+</Text>
+                  <Text style={styles.addStopText}>{addStopLabel}</Text>
+                </Pressable>
+              )}
 
               <Pressable onPress={onDropoffPress} style={styles.addressRow}>
                 <View style={[styles.addressDot, { backgroundColor: sheetColors.dropoffDot }]} />
@@ -243,6 +294,7 @@ export function HomeOrderSheet({
               </ScrollView>
             ) : null}
 
+            {notice ? <Text style={styles.notice}>{notice}</Text> : null}
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Pressable
@@ -271,6 +323,26 @@ export function HomeOrderSheet({
 }
 
 const styles = StyleSheet.create({
+  addStopGlyph: {
+    color: sheetColors.stopDot,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 16,
+    textAlign: 'center',
+    width: 8,
+  },
+  addStopRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 3,
+  },
+  addStopText: {
+    color: sheetColors.label,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
   addressBlock: {
     gap: 2,
     paddingHorizontal: 16,
@@ -339,6 +411,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
+  notice: {
+    color: sheetColors.label,
+    fontSize: 12,
+    paddingHorizontal: 19,
+    paddingTop: 4,
+    textAlign: 'center',
+  },
   orderButton: {
     alignItems: 'center',
     borderRadius: 24,
@@ -385,6 +464,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  pressed: {
+    opacity: 0.7,
+  },
+  removeStop: {
+    alignItems: 'center',
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  removeStopGlyph: {
+    color: sheetColors.label,
+    fontSize: 20,
+    lineHeight: 22,
+  },
   root: {
     bottom: 0,
     justifyContent: 'flex-end',
@@ -398,6 +491,13 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
+  },
+  stopMain: {
+    flex: 1,
+  },
+  stopRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   sheetFrame: {
     borderRadius: 22,

@@ -2,7 +2,7 @@
  * Экран поездки (M4.5–M4.10, M5.2–M5.3): стадии заказа, карта, отмена, SOS.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Linking, Share, StyleSheet, View } from 'react-native';
+import { Alert, Share, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -12,6 +12,7 @@ import {
   formatDistance,
   formatDuration,
   formatMoney,
+  formatPrice,
   applyPhoneMask,
 } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
@@ -34,6 +35,7 @@ import {
   useCurrentPosition,
   useLocationPermission,
 } from '@nurtaxi/shared-core/features/geolocation';
+import { contactByPhone } from '@nurtaxi/shared-core/features/contact';
 import { useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
 import {
   selectDriverPosition,
@@ -62,6 +64,7 @@ import {
   paymentMethodSelected,
   pickupSelected,
   regionSelected,
+  stopSelected,
   tariffSelected,
 } from '@/processes/order-flow';
 import {
@@ -178,6 +181,7 @@ export function OrderScreen() {
               lng: order.pickupLng,
             },
             routePolyline: order.route?.polyline,
+            stops: order.stops,
           })
         : [],
     [carPoint, nearbyDrivers, order],
@@ -194,6 +198,7 @@ export function OrderScreen() {
     origin: carPoint,
     pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
     status: order?.status ?? '',
+    stops: order?.stops,
   });
   const etaLabel =
     liveRoute.leg === 'to-pickup' ? driverPosition?.eta || liveRoute.duration || null : null;
@@ -203,6 +208,7 @@ export function OrderScreen() {
     }
     return [
       { lat: order.pickupLat, lng: order.pickupLng },
+      ...(order.stops ?? []),
       { lat: order.dropoffLat, lng: order.dropoffLng },
     ];
   }, [order]);
@@ -274,10 +280,14 @@ export function OrderScreen() {
     }
   };
 
-  const callDriver = () => {
-    if (order.driver?.phone) {
-      void Linking.openURL(`tel:${order.driver.phone}`);
-    }
+  const contactDriver = () => {
+    contactByPhone(order.driver?.phone, {
+      title: t('contact.driver'),
+      call: t('contact.call'),
+      sms: t('contact.sms'),
+      cancel: t('common.cancel'),
+      unavailable: t('contact.unavailable'),
+    });
   };
 
   const triggerSos = () => {
@@ -340,6 +350,7 @@ export function OrderScreen() {
         address: order.dropoffAddress,
       }),
     );
+    dispatch(stopSelected(order.stops?.[0] ?? null));
     dispatch(paymentMethodSelected(order.paymentMethod));
     dispatch(commentChanged(order.comment ?? ''));
     dispatch(childSeatChanged(order.childSeat));
@@ -373,7 +384,7 @@ export function OrderScreen() {
   // у водителя в карточке те же цифры, и они не должны сжиматься по ходу поездки.
   const tripDuration = order.route?.durationS ? formatDuration(order.route.durationS) : '—';
   const tripDistance = order.route?.distanceM ? formatDistance(order.route.distanceM) : '—';
-  const tripPrice = formatMoney(order.priceFinal ?? order.priceEstimated, 'RUB');
+  const tripPrice = formatPrice(order.priceFinal ?? order.priceEstimated, 'RUB');
 
   return (
     <>
@@ -406,16 +417,14 @@ export function OrderScreen() {
 
           {showDriverEnRoute && order.driver ? (
             <DriverEnRouteOverlay
-              callLabel={t('order.callDriver')}
               cancelLabel={t('order.cancelAction')}
-              chatLabel={t('order.chat')}
-              chatUnavailableMessage={t('order.chatUnavailable')}
+              contactLabel={t('contact.driver')}
               driver={order.driver}
               etaLabel={etaLabel}
               femaleDriverSubtitle={t('order.femaleDriverSubtitle')}
               femaleDriverTitle={t('order.femaleDriverTitle')}
-              onCall={callDriver}
               onCancel={() => setCancelVisible(true)}
+              onContact={contactDriver}
               onMenuPress={leaveToHome}
               onProfilePress={centerOnMyLocation}
               statusLabel={formatOrderStatusLabel(order.status)}
@@ -426,6 +435,8 @@ export function OrderScreen() {
             <TripInProgressOverlay
               cancelLabel={t('order.cancelTrip')}
               canCancel={isCancellableByClient(order.status)}
+              contactLabel={t('contact.driver')}
+              contactShortLabel={t('contact.driverShort')}
               driver={order.driver}
               distanceLabel={t('order.distance')}
               distanceValue={tripDistance}
@@ -434,10 +445,12 @@ export function OrderScreen() {
               durationValue={tripDuration}
               onBack={leaveToHome}
               onCancel={() => setCancelVisible(true)}
+              onContact={contactDriver}
               onProfilePress={centerOnMyLocation}
               onShare={shareTrip}
               onSos={isSosAllowed(order.status) ? triggerSos : undefined}
               pickupAddress={order.pickupAddress}
+              stopAddresses={(order.stops ?? []).map((stop) => stop.address)}
               priceLabel={t('order.price')}
               priceValue={tripPrice}
               shareLabel={t('order.shareTrip')}
@@ -500,7 +513,7 @@ export function OrderScreen() {
                       {stage === 'finishing' || order.status === OrderStatus.Closed ? (
                         <View style={{ gap: 4, paddingTop: 8 }}>
                           <Text style={{ color: GLASS_COLORS.title, fontSize: 15 }}>
-                            {formatMoney(order.priceFinal ?? order.priceEstimated, 'RUB')}
+                            {formatPrice(order.priceFinal ?? order.priceEstimated, 'RUB')}
                           </Text>
                           <GlassCaption>{order.dropoffAddress}</GlassCaption>
                         </View>

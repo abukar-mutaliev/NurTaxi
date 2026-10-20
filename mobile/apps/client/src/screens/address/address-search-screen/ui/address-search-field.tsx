@@ -13,6 +13,7 @@ const colors = {
   placeholder: '#A99FA6',
   iconOuter: 'rgba(252,244,228,0.95)',
   iconPickup: '#E8C882',
+  iconStop: '#C99A54',
   iconDropoff: '#2E2331',
 } as const;
 
@@ -22,7 +23,7 @@ export interface AddressSearchFieldProps {
   onChangeText: (value: string) => void;
   scale?: number;
   autoFocus?: boolean;
-  variant?: 'pickup' | 'dropoff';
+  variant?: 'pickup' | 'stop' | 'dropoff';
   active?: boolean;
   onActivate?: () => void;
 }
@@ -37,7 +38,12 @@ export function AddressSearchField({
   active = true,
   onActivate,
 }: AddressSearchFieldProps) {
-  const dotColor = variant === 'pickup' ? colors.iconPickup : colors.iconDropoff;
+  const dotColor =
+    variant === 'pickup'
+      ? colors.iconPickup
+      : variant === 'stop'
+        ? colors.iconStop
+        : colors.iconDropoff;
 
   const field = (
     <View

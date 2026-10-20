@@ -1,9 +1,39 @@
 import {
   childSeatChanged,
+  draftStops,
   orderDraftReducer,
+  orderDraftCleared,
   orderForOtherChanged,
   pickupSelected,
+  selectOrderStop,
+  stopSelected,
 } from './order-draft.slice';
+
+describe('stopSelected', () => {
+  const stop = { lat: 43.19, lng: 44.79, address: 'ул. Московская, 1' };
+
+  it('добавляет остановку, сбрасывает расчёт и убирается по null', () => {
+    const withStop = orderDraftReducer(undefined, stopSelected(stop));
+    expect(withStop.stop).toEqual(stop);
+    expect(withStop.estimate).toBeNull();
+    expect(draftStops(withStop.stop)).toEqual([stop]);
+
+    const cleared = orderDraftReducer(withStop, stopSelected(null));
+    expect(cleared.stop).toBeNull();
+    expect(draftStops(cleared.stop)).toBeUndefined();
+  });
+
+  it('стирается вместе с черновиком после заказа', () => {
+    const withStop = orderDraftReducer(undefined, stopSelected(stop));
+    expect(orderDraftReducer(withStop, orderDraftCleared()).stop).toBeNull();
+  });
+
+  it('читает черновик прежней версии без поля остановки', () => {
+    // Состояние Redux заморожено — «старый» черновик собираем копией без поля.
+    const { stop: _absent, ...legacy } = orderDraftReducer(undefined, { type: 'init' });
+    expect(selectOrderStop({ orderDraft: legacy })).toBeNull();
+  });
+});
 
 describe('pickupSelected', () => {
   const pickup = {

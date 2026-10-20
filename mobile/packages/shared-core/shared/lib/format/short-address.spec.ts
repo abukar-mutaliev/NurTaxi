@@ -59,6 +59,14 @@ describe('formatShortDisplayAddress', () => {
     ).toBe('г. Назрань, Московская улица, 12');
   });
 
+  it('берёт город рядом с улицей, а не страну в начале чужого адреса', () => {
+    expect(
+      formatShortDisplayAddress(
+        'Польша, Куявско-Поморское воеводство, Торунь, улица Юрия Гагарина, 20',
+      ),
+    ).toBe('Торунь, улица Юрия Гагарина, 20');
+  });
+
   it('считает точным только адрес с улицей и домом', () => {
     expect(isExactStreetAddress('г. Назрань, ул. Московская, 12')).toBe(true);
     expect(isExactStreetAddress('г. Назрань')).toBe(false);

@@ -20,15 +20,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 /** Зазор между якорем и клавиатурой, а также между потолком и статус-баром. */
 const DEFAULT_GAP = 16;
+/** Длительность подъёма, когда клавиатура уже открыта: события с длительностью нет. */
+const ANDROID_LIFT_MS = 180;
+/** Подождать раскладку нового экрана, прежде чем мерить якорь. */
+const INITIAL_MEASURE_DELAY_MS = 120;
 
 function animationDuration(event: KeyboardEvent): number {
   // На Android события приходят после анимации клавиатуры и без длительности.
-  return Platform.OS === 'ios' ? event.duration || 250 : 180;
+  return Platform.OS === 'ios' ? event.duration || 250 : ANDROID_LIFT_MS;
 }
 
 /** Верх клавиатуры в координатах окна. */
-function keyboardTop(event: KeyboardEvent): number {
-  const { height, screenY } = event.endCoordinates;
+function keyboardTop({ height, screenY }: { height: number; screenY: number }): number {
   return screenY > 0 ? screenY : Dimensions.get('window').height - height;
 }
 
@@ -52,7 +55,7 @@ export function useKeyboardLift({ gap = DEFAULT_GAP }: KeyboardLiftOptions = {})
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSubscription = Keyboard.addListener(showEvent, (event) => {
+    const liftAbove = (keyboardTopY: number, duration: number) => {
       const anchor = anchorRef.current;
       if (!anchor) {
         return;
@@ -64,21 +67,38 @@ export function useKeyboardLift({ gap = DEFAULT_GAP }: KeyboardLiftOptions = {})
         const anchorBox = await measureBox(anchor);
         const ceilingBox = ceilingRef.current ? await measureBox(ceilingRef.current) : anchorBox;
 
-        const needed = anchorBox.bottom + applied + gap - keyboardTop(event);
+        const needed = anchorBox.bottom + applied + gap - keyboardTopY;
         const allowed = ceilingBox.top + applied - safeTop - gap;
         const next = Math.max(0, Math.min(needed, allowed));
 
-        lift.value = withTiming(next, { duration: animationDuration(event) });
+        lift.value = withTiming(next, { duration });
       })();
+    };
+
+    const showSubscription = Keyboard.addListener(showEvent, (event) => {
+      liftAbove(keyboardTop(event.endCoordinates), animationDuration(event));
     });
 
     const hideSubscription = Keyboard.addListener(hideEvent, (event) => {
       lift.value = withTiming(0, { duration: animationDuration(event) });
     });
 
+    /**
+     * Клавиатура могла остаться открытой с прошлого экрана (номер → код): фокус переходит
+     * в новое поле, и события показа уже не будет. Без этой проверки поле кода оставалось
+     * под клавиатурой, пока её не закрыть и не открыть снова.
+     */
+    const metrics = Keyboard.isVisible() ? Keyboard.metrics() : undefined;
+    const initialLift = metrics
+      ? setTimeout(() => liftAbove(keyboardTop(metrics), ANDROID_LIFT_MS), INITIAL_MEASURE_DELAY_MS)
+      : null;
+
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
+      if (initialLift) {
+        clearTimeout(initialLift);
+      }
     };
   }, [gap, lift, safeTop]);
 

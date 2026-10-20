@@ -35,17 +35,20 @@ export interface NearbyMapDriver {
   lng: number;
 }
 
-/** Маркеры A/B, назначенный водитель и свободные машины рядом. */
+/** Маркеры A/B, остановки между ними, назначенный водитель и свободные машины рядом. */
 export function resolveOrderMapMarkers(options: {
   pickup: GeoLocation | null;
   dropoff: GeoLocation | null;
+  /** Промежуточные остановки по порядку. */
+  stops?: GeoLocation[] | null;
   routePolyline?: string | null;
   driver?: GeoPoint | null;
   /** Свободные машины вокруг точки. Назначенного водителя сюда не кладём — он приходит отдельно. */
   nearbyDrivers?: NearbyMapDriver[] | null;
   assignedDriverId?: string | null;
 }): MapMarker[] {
-  const { pickup, dropoff, routePolyline, driver, nearbyDrivers, assignedDriverId } = options;
+  const { pickup, dropoff, stops, routePolyline, driver, nearbyDrivers, assignedDriverId } =
+    options;
   const items: MapMarker[] = [];
 
   const pickupPoint = pickup && isValidGeoPoint(pickup) ? normalizeGeoPoint(pickup) : null;
@@ -66,6 +69,18 @@ export function resolveOrderMapMarkers(options: {
       title: pickup?.address,
     });
   }
+
+  (stops ?? []).forEach((stop, index) => {
+    if (!isValidGeoPoint(stop)) {
+      return;
+    }
+    items.push({
+      id: `stop-${index}`,
+      kind: 'stop',
+      point: normalizeGeoPoint(stop),
+      title: stop.address,
+    });
+  });
 
   if (dropoffPoint) {
     items.push({

@@ -22,6 +22,11 @@ function normalizeGeoLocation(location: GeoLocation | null): GeoLocation | null 
 export interface OrderDraftState {
   regionId: string | null;
   pickup: GeoLocation | null;
+  /**
+   * Промежуточная остановка между подачей и точкой Б. В черновике, сохранённом прежней
+   * версией приложения, поля нет — читать через `selectOrderStop`.
+   */
+  stop?: GeoLocation | null;
   dropoff: GeoLocation | null;
   tariffId: string | null;
   paymentMethod: PaymentMethod;
@@ -42,6 +47,7 @@ export interface OrderDraftState {
 const initialState: OrderDraftState = {
   regionId: null,
   pickup: null,
+  stop: null,
   dropoff: null,
   tariffId: null,
   paymentMethod: PaymentMethod.Cash,
@@ -78,7 +84,17 @@ export const orderDraftSlice = createSlice({
       state.dropoff = next;
       state.estimate = null;
     },
+    /** Остановка меняет маршрут и цену, поэтому сбрасывает расчёт, как и концы маршрута. */
+    stopSelected(state, action: PayloadAction<GeoLocation | null>) {
+      const next = normalizeGeoLocation(action.payload);
+      if (isSameGeoLocation(state.stop ?? null, next)) {
+        return;
+      }
+      state.stop = next;
+      state.estimate = null;
+    },
     routeReversed(state) {
+      // Остановка в середине пути остаётся на месте — меняются только концы.
       const { pickup, dropoff } = state;
       state.pickup = dropoff;
       state.dropoff = pickup;
@@ -135,6 +151,7 @@ export const orderDraftSlice = createSlice({
 export const {
   regionSelected,
   pickupSelected,
+  stopSelected,
   dropoffSelected,
   routeReversed,
   tariffSelected,
@@ -157,6 +174,14 @@ export interface WithOrderDraftState {
 }
 
 export const selectOrderDraft = (state: WithOrderDraftState): OrderDraftState => state.orderDraft;
+
+export const selectOrderStop = (state: WithOrderDraftState): GeoLocation | null =>
+  state.orderDraft.stop ?? null;
+
+/** Остановки черновика в формате запроса к API. */
+export function draftStops(stop: GeoLocation | null | undefined): GeoLocation[] | undefined {
+  return stop ? [toApiGeoLocation(stop)] : undefined;
+}
 
 /** Расчёт цены возможен, только когда заданы обе точки и регион. */
 export const selectCanEstimate = (state: WithOrderDraftState): boolean => {

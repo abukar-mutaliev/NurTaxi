@@ -9,7 +9,11 @@ export function parseRouteParam(value: string | string[] | undefined): string | 
 }
 
 export function parseAddressFieldParam(value: string | string[] | undefined): AddressField {
-  return parseRouteParam(value) === 'pickup' ? 'pickup' : 'dropoff';
+  const param = parseRouteParam(value);
+  if (param === 'pickup' || param === 'stop') {
+    return param;
+  }
+  return 'dropoff';
 }
 
 export function parseAddressModeParam(value: string | string[] | undefined): AddressMode {

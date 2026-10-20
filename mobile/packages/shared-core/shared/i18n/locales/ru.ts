@@ -49,6 +49,7 @@ export const ru = {
     phoneSubtitle: 'Войдите, чтобы продолжить',
     phoneLabel: 'Номер телефона',
     phonePlaceholder: '+7 (___) ___-__-__',
+    phoneInvalid: 'Неверный формат номера',
     getCode: 'Продолжить',
     codeTitle: 'Введите код из SMS',
     codeSubtitle: 'Код отправлен на номер {{phone}}',
@@ -195,6 +196,10 @@ export const ru = {
   order: {
     where: 'Куда поедем?',
     from: 'Откуда',
+    stop: 'Остановка',
+    addStop: 'Добавить остановку',
+    removeStop: 'Убрать остановку',
+    stopNotPriced: 'Цена пока без учёта остановки — водитель увидит её в комментарии',
     to: 'Куда',
     tariff: 'Тариф',
     paymentMethod: 'Способ оплаты',
@@ -211,6 +216,7 @@ export const ru = {
     passengerPhone: 'Телефон пассажира',
     passengerPhonePlaceholder: '+7 (___) ___-__-__',
     orderForOtherInvalid: 'Укажите имя и телефон пассажира',
+    farRouteWarning: 'Маршрут {{distance}} — проверьте, что точки выбраны в нужном городе',
     familyMembers: 'Члены семьи',
     estimate: 'Рассчитать',
     price: 'Стоимость',
@@ -254,6 +260,14 @@ export const ru = {
   },
   trip: {
     detailsTitle: 'Детали поездки',
+  },
+  contact: {
+    driver: 'Связаться с водителем',
+    driverShort: 'Связаться',
+    passenger: 'Связаться с пассажиром',
+    call: 'Позвонить',
+    sms: 'Написать SMS',
+    unavailable: 'Номер телефона сейчас недоступен',
   },
   promo: {
     balance: 'Бонусный баланс',

@@ -144,12 +144,12 @@ export function SaveAddressSheet({
       if (!point) {
         return;
       }
-      const location = suggestionToGeoLocation(toAddressSuggestion(option, point), address);
+      const location = suggestionToGeoLocation(toAddressSuggestion(option, point));
       onAddressChange(location.address ?? '');
       onLocationChange?.(geoLocationForSave(location));
       Keyboard.dismiss();
     },
-    [address, onAddressChange, onLocationChange, resolvePoint, suggestions],
+    [onAddressChange, onLocationChange, resolvePoint, suggestions],
   );
 
   useEffect(() => {

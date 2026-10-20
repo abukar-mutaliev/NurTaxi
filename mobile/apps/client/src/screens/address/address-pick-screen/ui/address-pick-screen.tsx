@@ -68,8 +68,9 @@ export function AddressPickScreen() {
   const [pickError, setPickError] = useState<string | null>(null);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
 
+  // Поле адреса и вид метки совпадают: pickup, stop, dropoff.
   const markers: MapMarker[] = selectedPoint
-    ? [{ id: 'picked', point: selectedPoint, kind: field === 'pickup' ? 'pickup' : 'dropoff' }]
+    ? [{ id: 'picked', point: selectedPoint, kind: field }]
     : [];
 
   const mapPointAddress = (point: GeoPoint) =>
@@ -192,7 +193,9 @@ export function AddressPickScreen() {
       ? t('addresses.pickOnMap')
       : field === 'pickup'
         ? t('order.from')
-        : t('order.where');
+        : field === 'stop'
+          ? t('order.stop')
+          : t('order.where');
 
   return (
     <>

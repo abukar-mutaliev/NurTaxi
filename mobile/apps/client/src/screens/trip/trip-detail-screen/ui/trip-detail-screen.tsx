@@ -6,7 +6,7 @@ import { View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { formatDateTime, formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
+import { formatDateTime, formatPrice, formatRating } from '@nurtaxi/shared-core/shared/lib';
 import { OrderStatus, ReviewTarget } from '@nurtaxi/shared-core/shared/model';
 import { Avatar, Badge, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
@@ -117,7 +117,7 @@ export function TripDetailScreen() {
               paddingTop: scale * 12,
             }}
           >
-            {formatMoney(order.priceFinal ?? order.priceEstimated, 'RUB')}
+            {formatPrice(order.priceFinal ?? order.priceEstimated, 'RUB')}
           </Text>
 
           {order.tariff ? (

@@ -16,6 +16,8 @@ export interface OrderRouteInput {
   status: string;
   pickup: GeoPoint;
   dropoff: GeoPoint;
+  /** Промежуточные остановки заказа по порядку. */
+  stops?: GeoPoint[] | null;
   /** Текущая позиция водителя; пока её нет, участок до клиента не рисуем. */
   driverPosition?: GeoPoint | null;
   /** Пока заказ не загружен или уже завершён, строить нечего. */
@@ -32,5 +34,6 @@ export function useOrderRoute(input: OrderRouteInput) {
     origin: input.driverPosition,
     pickup: input.pickup,
     status: input.status,
+    stops: input.stops,
   });
 }

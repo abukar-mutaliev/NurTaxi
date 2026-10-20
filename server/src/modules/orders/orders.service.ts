@@ -71,6 +71,11 @@ const DRIVER_ACTION_REQUIRED: Record<'en_route' | 'arrived' | 'start' | 'complet
   complete: OrderStatus.InProgress,
 };
 
+/** Остановки заказа как промежуточные точки маршрута. */
+function toWaypoints(stops: OrderEstimateDto['stops']): Array<{ lat: number; lng: number }> {
+  return (stops ?? []).map((stop) => ({ lat: stop.lat, lng: stop.lng }));
+}
+
 @Injectable()
 export class OrdersService {
   constructor(
@@ -123,6 +128,7 @@ export class OrdersService {
     const route = await this.mapProvider.route({
       origin: { lat: dto.pickup.lat, lng: dto.pickup.lng },
       destination: { lat: dto.dropoff.lat, lng: dto.dropoff.lng },
+      waypoints: toWaypoints(dto.stops),
     });
 
     const price = this.pricingService.calculate(tariff, region, {
@@ -149,9 +155,11 @@ export class OrdersService {
     const region = await this.regionsService.getRegionOrThrow(dto.regionId);
     const tariff = await this.tariffsService.getEffectiveTariff(dto.regionId, dto.tariffId);
 
+    // Цена — за весь путь через остановки, как в `estimate`, иначе заказ вышел бы дешевле оценки.
     const mapRoute = await this.mapProvider.route({
       origin: { lat: dto.pickup.lat, lng: dto.pickup.lng },
       destination: { lat: dto.dropoff.lat, lng: dto.dropoff.lng },
+      waypoints: toWaypoints(dto.stops),
     });
 
     const price = this.pricingService.calculate(tariff, region, {
@@ -163,9 +171,16 @@ export class OrdersService {
       `SELECT nextval('order_public_number_seq') AS next`,
     )) as Array<{ next: string }>;
 
-    const [pickupAddress, dropoffAddress] = await Promise.all([
+    const [pickupAddress, dropoffAddress, stops] = await Promise.all([
       this.geoService.resolveStoredAddress(dto.pickup),
       this.geoService.resolveStoredAddress(dto.dropoff),
+      Promise.all(
+        (dto.stops ?? []).map(async (stop) => ({
+          lat: stop.lat,
+          lng: stop.lng,
+          address: await this.geoService.resolveStoredAddress(stop),
+        })),
+      ),
     ]);
 
     if (pickupAddress !== (dto.pickup.address ?? '').trim()) {
@@ -184,6 +199,7 @@ export class OrdersService {
       dropoffLat: dto.dropoff.lat,
       dropoffLng: dto.dropoff.lng,
       dropoffAddress,
+      stops,
       status: OrderStatus.Created,
       priceEstimated: String(price.estimated),
       paymentMethod: dto.paymentMethod,
@@ -405,6 +421,8 @@ export class OrdersService {
         lng: order.dropoffLng,
         address: order.dropoffAddress,
       },
+      // Остановки водитель видит до принятия: от них зависит, согласится ли он на поездку.
+      stops: order.stops ?? [],
       price: Number(order.priceEstimated),
       paymentMethod: order.paymentMethod,
       comment: order.comment ?? null,
@@ -858,7 +876,16 @@ export class OrdersService {
   private async loadFullOrder(orderId: string): Promise<Order> {
     const order = await this.orders.findOneOrFail({
       where: { id: orderId },
-      relations: ['route', 'tariff', 'region', 'driver', 'driver.vehicles', 'driver.user'],
+      // `client` — ради телефона заказчика в карточке заказа у водителя (`clientPhone`).
+      relations: [
+        'route',
+        'tariff',
+        'region',
+        'client',
+        'driver',
+        'driver.vehicles',
+        'driver.user',
+      ],
     });
     return this.repairOrderAddresses(order);
   }

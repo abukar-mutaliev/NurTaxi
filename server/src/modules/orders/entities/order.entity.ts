@@ -21,6 +21,13 @@ import { Carrier } from '../../carriers/entities/carrier.entity';
 import { TaxiPermit } from '../../carriers/entities/taxi-permit.entity';
 import { OrderRoute } from './order-route.entity';
 
+/** Промежуточная остановка поездки. */
+export interface OrderStop {
+  lat: number;
+  lng: number;
+  address: string;
+}
+
 /**
  * Заказ поездки (Req §13.3, Des §5).
  */
@@ -74,6 +81,10 @@ export class Order {
 
   @Column({ name: 'dropoff_address', type: 'text' })
   dropoffAddress!: string;
+
+  /** Промежуточные остановки по порядку, между подачей и точкой Б. */
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  stops!: OrderStop[];
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.Created })
   status!: OrderStatus;

@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 
 import { encodePolyline } from './polyline.util';
 import { haversineM } from './geo.util';
-import type { GeoPoint, MapRouteOptions, RouteResult } from './map-provider.interface';
+import {
+  routePoints,
+  type GeoPoint,
+  type MapRouteOptions,
+  type RouteResult,
+} from './map-provider.interface';
 import type { RoutingProvider } from './routing-provider.interface';
 
 /** Средняя скорость в городе (м/с) для расчёта ETA в stub-провайдере. */
@@ -16,12 +21,17 @@ const ROAD_FACTOR = 1.35;
 @Injectable()
 export class StubRoutingProvider implements RoutingProvider {
   async route(options: MapRouteOptions): Promise<RouteResult> {
-    const straightM = haversineM(options.origin, options.destination);
+    const points = routePoints(options);
+    // С остановками маршрут — цепочка отрезков, а не прямая между концами.
+    let straightM = 0;
+    for (let i = 1; i < points.length; i += 1) {
+      straightM += haversineM(points[i - 1]!, points[i]!);
+    }
     const distanceM = Math.round(straightM * ROAD_FACTOR);
     const durationS = Math.max(60, Math.round(distanceM / AVG_SPEED_MS));
 
     return {
-      polyline: encodePolyline([options.origin, options.destination]),
+      polyline: encodePolyline(points),
       distanceM,
       durationS,
     };

@@ -7,6 +7,14 @@ import type { OrderStatusLog } from '../entities/order-status-log.entity';
 import { OrderStatus, PaymentMethod } from '../../../common/enums/order-status.enum';
 import { VehicleResponse } from '../../drivers/dto/driver.presenter';
 
+/** Статусы, на которых водителю и клиенту может понадобиться связаться друг с другом. */
+const CONTACT_STATUSES: ReadonlySet<OrderStatus> = new Set([
+  OrderStatus.DriverAssigned,
+  OrderStatus.DriverEnRoute,
+  OrderStatus.DriverArrived,
+  OrderStatus.InProgress,
+]);
+
 export class RouteResponse {
   @ApiProperty()
   polyline!: string;
@@ -111,6 +119,17 @@ export class AssignedDriverResponse {
   lng!: number | null;
 }
 
+export class OrderStopResponse {
+  @ApiProperty()
+  lat!: number;
+
+  @ApiProperty()
+  lng!: number;
+
+  @ApiProperty()
+  address!: string;
+}
+
 export class OrderResponse {
   @ApiProperty()
   id!: string;
@@ -142,6 +161,9 @@ export class OrderResponse {
   @ApiProperty()
   dropoffLng!: number;
 
+  @ApiProperty({ type: [OrderStopResponse], description: 'Промежуточные остановки по порядку' })
+  stops!: OrderStopResponse[];
+
   @ApiProperty()
   priceEstimated!: number;
 
@@ -168,6 +190,14 @@ export class OrderResponse {
 
   @ApiPropertyOptional()
   familyMemberId!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description:
+      'Телефон заказчика для кнопки «Связаться с пассажиром». Отдаётся только на активной ' +
+      'поездке (водитель назначен — в пути): в истории номер клиента водителю не нужен.',
+  })
+  clientPhone!: string | null;
 
   @ApiPropertyOptional({ type: RouteResponse })
   route!: RouteResponse | null;
@@ -200,6 +230,11 @@ export class OrderResponse {
       dropoffAddress: order.dropoffAddress,
       dropoffLat: order.dropoffLat,
       dropoffLng: order.dropoffLng,
+      stops: (order.stops ?? []).map((stop) => ({
+        lat: stop.lat,
+        lng: stop.lng,
+        address: stop.address,
+      })),
       priceEstimated: Number(order.priceEstimated),
       priceFinal: order.priceFinal ? Number(order.priceFinal) : null,
       cancellationFee: order.cancellationFee ? Number(order.cancellationFee) : null,
@@ -209,6 +244,7 @@ export class OrderResponse {
       passengerName: order.passengerName ?? null,
       passengerPhone: order.passengerPhone ?? null,
       familyMemberId: order.familyMemberId,
+      clientPhone: CONTACT_STATUSES.has(order.status) ? (order.client?.phone ?? null) : null,
       route: order.route ? RouteResponse.from(order.route) : null,
       tariff: order.tariff ? TariffSummaryResponse.from(order.tariff) : null,
       driver: order.driver

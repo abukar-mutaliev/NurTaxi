@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { formatDateTime, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import { formatDateTime, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderHistoryItem } from '@nurtaxi/shared-core/shared/model';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useGetDriverOrderHistoryQuery } from '@nurtaxi/shared-core/entities/driver';
@@ -132,7 +132,7 @@ function OrderCard({ item, onPress }: OrderCardProps) {
           {formatDateTime(order.createdAt)}
         </Text>
         <Text variant="bodyStrong">
-          {formatMoney(receiptAmount ?? order.priceFinal ?? order.priceEstimated)}
+          {formatPrice(receiptAmount ?? order.priceFinal ?? order.priceEstimated)}
         </Text>
       </View>
 

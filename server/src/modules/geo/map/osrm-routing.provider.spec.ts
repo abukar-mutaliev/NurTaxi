@@ -61,6 +61,27 @@ describe('OsrmRoutingProvider', () => {
     expect(calledUrl).toContain('geometries=polyline');
   });
 
+  it('ведёт маршрут через остановки в заданном порядке', async () => {
+    const provider = createProvider({});
+
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        code: 'Ok',
+        routes: [{ distance: 15000, duration: 1200, geometry: 'with_stop' }],
+      }),
+    } as Response);
+
+    await provider.route({
+      origin: { lat: 43.2167, lng: 44.7667 },
+      waypoints: [{ lat: 43.19, lng: 44.79 }],
+      destination: { lat: 43.1687, lng: 44.8133 },
+    });
+
+    const calledUrl = (global.fetch as jest.Mock).mock.calls[0]?.[0] as string;
+    expect(calledUrl).toContain('/driving/44.7667,43.2167;44.79,43.19;44.8133,43.1687?');
+  });
+
   it('при ошибке OSRM падает, если fallback отключён', async () => {
     const provider = createProvider({ fallbackToStub: false });
 

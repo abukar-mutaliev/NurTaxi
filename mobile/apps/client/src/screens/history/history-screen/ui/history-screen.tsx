@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import { formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { ReviewTarget } from '@nurtaxi/shared-core/shared/model';
 import type { OrderHistoryItem } from '@nurtaxi/shared-core/shared/model';
 import { EmptyState, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
@@ -69,7 +69,7 @@ export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
           dropoffAddress={item.order.dropoffAddress}
           onPress={() => router.push({ pathname: '/trip/[id]', params: { id: item.order.id } })}
           pickupAddress={item.order.pickupAddress}
-          priceLabel={formatMoney(price, 'RUB')}
+          priceLabel={formatPrice(price, 'RUB')}
           ratingStars={driverReview ? formatRatingStars(driverReview.rating) : null}
         />
       );

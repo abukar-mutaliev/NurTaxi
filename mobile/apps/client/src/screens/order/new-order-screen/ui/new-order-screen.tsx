@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import { formatDistance, formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useCreateOrderMutation } from '@nurtaxi/shared-core/entities/order';
@@ -21,14 +21,15 @@ import {
   canSubmitOrderExtras,
   childSeatChanged,
   commentChanged,
-  extrasFromDraft,
+  createOrderCompat,
+  draftStops,
   familyMemberSelected,
-  isUnknownOrderExtrasError,
   orderForOtherChanged,
   passengerNameChanged,
   passengerPhoneChanged,
   paymentMethodSelected,
   selectOrderDraft,
+  selectOrderStop,
 } from '@/processes/order-flow';
 import { MapCanvas, resolveOrderMapMarkers } from '@/widgets/map';
 import {
@@ -52,11 +53,12 @@ export function NewOrderScreen() {
 
   const { hasActiveOrder, isChecking } = useActiveOrderGuard(true);
   const draft = useAppSelector(selectOrderDraft);
+  const stop = useAppSelector(selectOrderStop);
   const myLocationLabel = t('addresses.myLocation');
   const resolvedPickupAddress = useResolvedLocationAddress(draft.pickup, [myLocationLabel]);
   const resolvedDropoffAddress = useResolvedLocationAddress(draft.dropoff, [myLocationLabel]);
   const resolveLocationForOrder = useResolveLocationForOrder(myLocationLabel);
-  const { estimate, isEstimating, error, refetch } = useOrderEstimate();
+  const { estimate, isEstimating, error, refetch, stopNotPriced } = useOrderEstimate();
   const [createOrder, createState] = useCreateOrderMutation();
   const [createError, setCreateError] = useState<string | null>(null);
   const nearbyDrivers = useNearbyDrivers({
@@ -70,8 +72,9 @@ export function NewOrderScreen() {
         nearbyDrivers,
         pickup: draft.pickup,
         routePolyline: estimate?.route.polyline,
+        stops: stop ? [stop] : null,
       }),
-    [draft.dropoff, draft.pickup, estimate?.route.polyline, nearbyDrivers],
+    [draft.dropoff, draft.pickup, estimate?.route.polyline, nearbyDrivers, stop],
   );
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export function NewOrderScreen() {
       return;
     }
     setCreateError(null);
-    const payload = {
+    const base = {
       regionId: draft.regionId,
       pickup: await resolveLocationForOrder(draft.pickup),
       dropoff: await resolveLocationForOrder(draft.dropoff),
@@ -97,24 +100,12 @@ export function NewOrderScreen() {
       paymentMethod: draft.paymentMethod,
     };
     try {
-      try {
-        const order = await createOrder({
-          ...payload,
-          ...extrasFromDraft(draft),
-        }).unwrap();
-        dispatch(activeOrderChanged(order.id));
-        router.replace(`/order/${order.id}`);
-        return;
-      } catch (cause) {
-        const appError = toAppError(cause as never);
-        if (!isUnknownOrderExtrasError(appError)) {
-          throw cause;
-        }
-      }
-      const order = await createOrder({
-        ...payload,
-        ...extrasFromDraft(draft, 'legacy'),
-      }).unwrap();
+      const order = await createOrderCompat(
+        (payload) => createOrder(payload).unwrap(),
+        base,
+        draft,
+        draftStops(stop),
+      );
       dispatch(activeOrderChanged(order.id));
       router.replace(`/order/${order.id}`);
     } catch (cause) {
@@ -161,6 +152,12 @@ export function NewOrderScreen() {
         <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
           {resolvedPickupAddress ?? draft.pickup?.address ?? t('common.notSpecified')}
         </Text>
+        {stop?.address ? (
+          <>
+            <GlassSectionLabel>{t('order.stop')}</GlassSectionLabel>
+            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>{stop.address}</Text>
+          </>
+        ) : null}
         <GlassSectionLabel>{t('order.to')}</GlassSectionLabel>
         <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
           {resolvedDropoffAddress ?? draft.dropoff?.address ?? t('common.notSpecified')}
@@ -178,7 +175,7 @@ export function NewOrderScreen() {
           </Text>
           <View style={{ gap: scale * 6, paddingTop: scale * 8 }}>
             <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
-              {t('order.price')}: {formatMoney(estimate.price.estimated, estimate.price.currency)}
+              {t('order.price')}: {formatPrice(estimate.price.estimated, estimate.price.currency)}
             </Text>
             <GlassCaption>
               {t('order.distance')}: {formatDistance(estimate.route.distanceM)} ·{' '}
@@ -187,6 +184,7 @@ export function NewOrderScreen() {
             <GlassCaption>
               {t('order.pickupEta')}: {formatDuration(estimate.pickupEtaS)}
             </GlassCaption>
+            {stopNotPriced ? <GlassCaption>{t('order.stopNotPriced')}</GlassCaption> : null}
           </View>
         </GlassCard>
       ) : null}

@@ -2,7 +2,12 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import type { RoutingConfig } from '../../../config/configuration';
-import type { GeoPoint, MapRouteOptions, RouteResult } from './map-provider.interface';
+import {
+  routePoints,
+  type GeoPoint,
+  type MapRouteOptions,
+  type RouteResult,
+} from './map-provider.interface';
 import type { RoutingProvider } from './routing-provider.interface';
 import { StubRoutingProvider } from './stub-routing.provider';
 
@@ -63,10 +68,11 @@ export class OsrmRoutingProvider implements RoutingProvider, OnModuleInit {
 
   private async routeViaOsrm(options: MapRouteOptions): Promise<RouteResult> {
     const baseUrl = this.config.osrmBaseUrl.replace(/\/$/, '');
-    const { origin, destination } = options;
 
-    // OSRM принимает координаты в порядке longitude,latitude.
-    const coordinates = `${origin.lng},${origin.lat};${destination.lng},${destination.lat}`;
+    // OSRM принимает координаты в порядке longitude,latitude; остановки — между концами.
+    const coordinates = routePoints(options)
+      .map((point) => `${point.lng},${point.lat}`)
+      .join(';');
     const params = new URLSearchParams({
       overview: 'full',
       geometries: 'polyline',

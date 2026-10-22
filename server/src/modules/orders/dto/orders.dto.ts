@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsEnum,
   IsNotEmpty,
@@ -41,6 +43,12 @@ export class GeoLocationDto {
   address?: string;
 }
 
+/** Сколько промежуточных остановок можно добавить к поездке. */
+export const MAX_ORDER_STOPS = 3;
+
+const STOPS_DESCRIPTION =
+  'Промежуточные остановки по порядку: маршрут и цена считаются через них (не больше 3).';
+
 export class OrderEstimateDto {
   @ApiProperty({ description: 'UUID региона' })
   @IsUUID()
@@ -60,6 +68,14 @@ export class OrderEstimateDto {
   @ValidateNested()
   @Type(() => GeoLocationDto)
   dropoff!: GeoLocationDto;
+
+  @ApiPropertyOptional({ type: [GeoLocationDto], description: STOPS_DESCRIPTION })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_ORDER_STOPS)
+  @ValidateNested({ each: true })
+  @Type(() => GeoLocationDto)
+  stops?: GeoLocationDto[];
 }
 
 export class CreateOrderDto {
@@ -81,6 +97,14 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => GeoLocationDto)
   dropoff!: GeoLocationDto;
+
+  @ApiPropertyOptional({ type: [GeoLocationDto], description: STOPS_DESCRIPTION })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_ORDER_STOPS)
+  @ValidateNested({ each: true })
+  @Type(() => GeoLocationDto)
+  stops?: GeoLocationDto[];
 
   @ApiProperty({ enum: PaymentMethod })
   @IsEnum(PaymentMethod)

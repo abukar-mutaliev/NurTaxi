@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { applyPhoneMask, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
+import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
@@ -61,6 +61,7 @@ export function PhoneScreen() {
 
   const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [formatError, setFormatError] = useState(false);
   // Поле и кнопка должны оставаться над клавиатурой — см. `useKeyboardLift`.
   const { anchorRef, liftStyle } = useKeyboardLift();
 
@@ -77,11 +78,33 @@ export function PhoneScreen() {
   const logoCropOffsetX = logoWidth * 0.3507;
   const glowSize = sx(150);
   const glowLeft = (width - glowSize) / 2;
+  const headerTop = logoTop + logoHeight + sy(24);
+  // Низ подзаголовка: заголовок 28 + отступ + подзаголовок 20 (в масштабе макета).
+  const headerBottom = headerTop + sx(28) + sy(2) + sx(20);
+  /**
+   * Форма — по макету, но не выше подзаголовка. Заголовок отсчитывается от выреза под
+   * камеру, и на телефонах с высоким вырезом поле ввода наезжало на «Войдите, чтобы продолжить».
+   */
+  const formTop = Math.max(sy(364), headerBottom + sy(20));
 
-  const canSubmit = isValidPhone(phone) && !isRequestingOtp;
+  // Кнопка доступна с первой цифры: нажатие на неполный номер объясняет, что не так.
+  const canSubmit = phone !== '' && !isRequestingOtp;
+  const message = formatError ? t('auth.phoneInvalid') : error;
+
+  const changePhone = (value: string) => {
+    const next = normalizePhoneInput(value);
+    setPhone(next);
+    setError(null);
+    // Пока номер набирается, не ругаемся; набран целиком, но не мобильный — говорим сразу.
+    setFormatError(normalizePhone(next).length === 12 && !isMobilePhone(next));
+  };
 
   const submit = async () => {
     if (!canSubmit) {
+      return;
+    }
+    if (!isMobilePhone(phone)) {
+      setFormatError(true);
       return;
     }
     setError(null);
@@ -169,7 +192,7 @@ export function PhoneScreen() {
           style={[
             styles.header,
             {
-              paddingTop: logoTop + logoHeight + sy(24),
+              paddingTop: headerTop,
             },
           ]}
         >
@@ -190,7 +213,7 @@ export function PhoneScreen() {
             styles.form,
             {
               paddingHorizontal: sx(40),
-              top: sy(364),
+              top: formTop,
             },
           ]}
         >
@@ -199,7 +222,7 @@ export function PhoneScreen() {
               styles.inputShell,
               {
                 backgroundColor: phoneColors.inputBg,
-                borderColor: phoneColors.inputBorder,
+                borderColor: formatError ? phoneColors.error : phoneColors.inputBorder,
                 borderRadius: sx(18),
                 gap: sx(14),
                 height: sx(58),
@@ -227,13 +250,11 @@ export function PhoneScreen() {
             </View>
             <View style={styles.inputField}>
               <TextInput
+                accessibilityHint={formatError ? t('auth.phoneInvalid') : undefined}
                 autoFocus
                 keyboardType="phone-pad"
-                onChangeText={(value) => {
-                  setPhone(normalizePhoneInput(value));
-                  setError(null);
-                }}
-                onSubmitEditing={canSubmit ? submit : undefined}
+                onChangeText={changePhone}
+                onSubmitEditing={submit}
                 placeholder={t('auth.phonePlaceholder')}
                 placeholderTextColor={phoneColors.inputPlaceholder}
                 returnKeyType="done"
@@ -250,8 +271,9 @@ export function PhoneScreen() {
             </View>
           </View>
 
-          {error ? (
+          {message ? (
             <Text
+              accessibilityLiveRegion="polite"
               style={[
                 styles.error,
                 {
@@ -260,7 +282,7 @@ export function PhoneScreen() {
                 },
               ]}
             >
-              {error}
+              {message}
             </Text>
           ) : null}
 
@@ -271,7 +293,7 @@ export function PhoneScreen() {
             style={({ pressed }) => [
               styles.buttonWrap,
               {
-                marginTop: sy(error ? 24 : 112),
+                marginTop: sy(message ? 24 : 112),
                 opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
               },
             ]}

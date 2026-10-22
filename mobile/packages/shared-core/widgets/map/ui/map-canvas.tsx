@@ -19,7 +19,7 @@ export interface MapMarker {
   id: string;
   point: GeoPoint;
   title?: string;
-  kind: 'pickup' | 'dropoff' | 'driver';
+  kind: 'pickup' | 'stop' | 'dropoff' | 'driver';
 }
 
 export interface MapCanvasProps {

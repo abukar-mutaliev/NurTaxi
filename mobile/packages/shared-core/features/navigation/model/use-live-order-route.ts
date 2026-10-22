@@ -1,10 +1,10 @@
 /**
- * Живой маршрут текущего заказа: от машины к клиенту, после посадки — к точке Б.
+ * Живой маршрут текущего заказа: от машины к клиенту, после посадки — через остановки к точке Б.
  *
  * Серверный `order.route.polyline` — это линия подачи→назначения на момент создания
  * заказа. Навигатору нужна актуальная геометрия от текущей позиции, поэтому участок
  * пересчитывается здесь. Сначала пробуем локальный строитель (MapKit у водителя),
- * если его нет — `GET /geo/route`.
+ * если его нет — `GET /geo/route` (по отрезку на каждую пару точек).
  */
 import { useEffect, useState } from 'react';
 
@@ -26,6 +26,21 @@ const ROAD_MIN_POINTS = 3;
  */
 const ROAD_RETRY_MS = 6000;
 const ROAD_RETRY_LIMIT = 5;
+/** Машина подъехала к остановке ближе этого — остановка пройдена, ведём к следующей точке. */
+const STOP_REACHED_M = 150;
+
+function pointsKey(points: GeoPoint[]): string {
+  return points.map((point) => `${point.lat},${point.lng}`).join(';');
+}
+
+function parsePointsKey(key: string): GeoPoint[] {
+  return key
+    ? key.split(';').map((pair) => {
+        const [lat, lng] = pair.split(',');
+        return { lat: Number(lat), lng: Number(lng) };
+      })
+    : [];
+}
 
 function roadPoints(points: GeoPoint[] | null | undefined): GeoPoint[] | null {
   return points && points.length >= ROAD_MIN_POINTS ? points : null;
@@ -58,6 +73,8 @@ export interface LiveOrderRouteInput {
   status: string;
   pickup: GeoPoint;
   dropoff: GeoPoint;
+  /** Промежуточные остановки заказа по порядку. */
+  stops?: GeoPoint[] | null;
   origin?: GeoPoint | null;
   enabled?: boolean;
   /** Нативный маршрут (Yandex MapKit). `null` — переключаемся на сервер. */
@@ -70,6 +87,8 @@ export interface LiveOrderRouteResult {
   distanceM: number | null;
   isBuilding: boolean;
   leg: OrderRouteLeg;
+  /** Ближайшая цель участка: клиент, следующая непройденная остановка или точка Б. */
+  target: GeoPoint | null;
 }
 
 function useStableOrigin(origin: GeoPoint | null): GeoPoint | null {
@@ -85,27 +104,47 @@ function useStableOrigin(origin: GeoPoint | null): GeoPoint | null {
 
 export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteResult {
   const { enabled = true, buildLocalRoute } = input;
+  const stops = input.stops ?? [];
+  const leg = orderRouteLeg(input.status);
+  // Подача, остановки и назначение не двигаются вместе с машиной: их смена — уже другой заказ.
+  const scope =
+    `${input.pickup.lat},${input.pickup.lng}>${input.dropoff.lat},${input.dropoff.lng}` +
+    `|${pointsKey(stops)}`;
+
+  /**
+   * Сколько остановок машина уже проехала. Держим в состоянии: проехав остановку, машина
+   * от неё удаляется, и по одной текущей позиции этого уже не понять.
+   */
+  const [passedStops, setPassedStops] = useState({ count: 0, scope });
+  const passedCount = passedStops.scope === scope ? passedStops.count : 0;
+  const nextStop = stops[passedCount];
+  if (
+    leg === 'to-dropoff' &&
+    nextStop &&
+    input.origin &&
+    haversineDistance(input.origin, nextStop) < STOP_REACHED_M
+  ) {
+    setPassedStops({ count: passedCount + 1, scope });
+  }
+
   const waypoints = orderRouteWaypoints({
     dropoff: input.dropoff,
     origin: input.origin,
     pickup: input.pickup,
     status: input.status,
+    stopsAhead: stops.slice(passedCount),
   });
   const origin = useStableOrigin(waypoints?.[0] ?? null);
-  const destination = waypoints?.[1] ?? null;
   const [fetchServerRoute] = useLazyGetDrivingRouteQuery();
 
   const originLat = origin?.lat;
   const originLng = origin?.lng;
-  const destinationLat = destination?.lat;
-  const destinationLng = destination?.lng;
+  /** Точки после машины: оставшиеся остановки и цель участка. Строкой — для зависимостей эффекта. */
+  const targetsKey = waypoints && waypoints.length > 1 ? pointsKey(waypoints.slice(1)) : '';
   const routeKey =
-    originLat != null && originLng != null && destinationLat != null && destinationLng != null
-      ? `${originLat},${originLng}>${destinationLat},${destinationLng}`
+    originLat != null && originLng != null && targetsKey
+      ? `${originLat},${originLng}>${targetsKey}`
       : '';
-  const leg = orderRouteLeg(input.status);
-  // Подача и назначение не двигаются вместе с машиной: смена пары — уже другой заказ.
-  const scope = `${input.pickup.lat},${input.pickup.lng}>${input.dropoff.lat},${input.dropoff.lng}`;
 
   const [built, setBuilt] = useState<{
     key: string;
@@ -120,21 +159,14 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
   const roadAttempt = roadRetry.key === routeKey ? roadRetry.attempt : 0;
 
   useEffect(() => {
-    if (
-      !enabled ||
-      !routeKey ||
-      originLat == null ||
-      originLng == null ||
-      destinationLat == null ||
-      destinationLng == null
-    ) {
+    if (!enabled || !routeKey || originLat == null || originLng == null || !targetsKey) {
       return;
     }
 
     let cancelled = false;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     const from = { lat: originLat, lng: originLng };
-    const to = { lat: destinationLat, lng: destinationLng };
+    const chain = [from, ...parsePointsKey(targetsKey)];
 
     const apply = (next: {
       points: GeoPoint[];
@@ -158,30 +190,47 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
       }, ROAD_RETRY_MS);
     };
 
-    const build = async () => {
-      const localPromise: Promise<LocalDrivingRoute | null> = buildLocalRoute
-        ? buildLocalRoute([from, to]).catch(() => null)
-        : Promise.resolve(null);
-
-      const serverPromise = fetchServerRoute({
-        destLat: to.lat,
-        destLng: to.lng,
-        originLat: from.lat,
-        originLng: from.lng,
-      })
+    /** Один отрезок с сервера; `null` — не построился. */
+    const fetchSegment = (a: GeoPoint, b: GeoPoint) =>
+      fetchServerRoute({ destLat: b.lat, destLng: b.lng, originLat: a.lat, originLng: a.lng })
         .unwrap()
         .then((server) => {
           const points = server?.polyline ? decodePolyline(server.polyline) : [];
           if (points.length < 2) {
             return null;
           }
-          return {
-            distanceM: server?.distanceM ?? null,
-            duration: server?.durationS != null ? formatDuration(server.durationS) : null,
-            points,
-          };
+          return { distanceM: server?.distanceM ?? null, durationS: server?.durationS, points };
         })
         .catch(() => null);
+
+    const build = async () => {
+      const localPromise: Promise<LocalDrivingRoute | null> = buildLocalRoute
+        ? buildLocalRoute(chain).catch(() => null)
+        : Promise.resolve(null);
+
+      // `GET /geo/route` знает только пару точек — с остановками склеиваем отрезки по порядку.
+      const serverPromise = Promise.all(
+        chain.slice(1).map((point, index) => fetchSegment(chain[index]!, point)),
+      ).then((segments) => {
+        if (segments.some((segment) => segment == null)) {
+          return null;
+        }
+        const parts = segments as NonNullable<(typeof segments)[number]>[];
+        const points = parts.flatMap((part, index) =>
+          index === 0 ? part.points : part.points.slice(1),
+        );
+        const distanceM = parts.every((part) => part.distanceM != null)
+          ? parts.reduce((sum, part) => sum + (part.distanceM ?? 0), 0)
+          : null;
+        const durationS = parts.every((part) => part.durationS != null)
+          ? parts.reduce((sum, part) => sum + (part.durationS ?? 0), 0)
+          : null;
+        return {
+          distanceM,
+          duration: durationS != null ? formatDuration(durationS) : null,
+          points,
+        };
+      });
 
       const local = await withTimeout(localPromise, LOCAL_ROUTE_TIMEOUT_MS);
       if (cancelled) {
@@ -240,8 +289,6 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     };
   }, [
     buildLocalRoute,
-    destinationLat,
-    destinationLng,
     enabled,
     fetchServerRoute,
     leg,
@@ -250,6 +297,7 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     roadAttempt,
     routeKey,
     scope,
+    targetsKey,
   ]);
 
   /**
@@ -265,5 +313,6 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     isBuilding: enabled && Boolean(routeKey) && visible?.key !== routeKey,
     leg,
     points: visible?.points ?? null,
+    target: waypoints?.[1] ?? null,
   };
 }

@@ -22,12 +22,47 @@ import {
   toMapPoint,
   type CameraPosition,
 } from '../model/map-provider';
+import { useGlidingMarker } from '../model/use-gliding-point';
 import type { MapCanvasHandle, MapCanvasProps, MapMarker } from './map-canvas';
 import { MAP_MARKER_SOURCES } from './map-marker.assets';
 import { MAP_MARKER_ICON_SCALE, getMarkerAnchor } from './map-marker.constants';
 
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 const ROUTE_STROKE_COLOR = '#C99A54';
+
+/**
+ * Якоря — константы, а не новый объект на каждый рендер: любой пересланный проп нативная
+ * метка применяет через `updateMarker`, который заодно ставит её в `point` из пропов. Для
+ * машины, которую ведёт нативная анимация, это был бы прыжок назад на каждый тик GPS.
+ */
+const MARKER_ANCHORS: Record<MapMarker['kind'], { x: number; y: number }> = {
+  driver: getMarkerAnchor('driver'),
+  dropoff: getMarkerAnchor('dropoff'),
+  pickup: getMarkerAnchor('pickup'),
+  stop: getMarkerAnchor('stop'),
+};
+
+type NativeMarker = React.ComponentRef<typeof Marker>;
+
+/**
+ * Больше точек линии не нужно ни на каком масштабе: городской маршрут укладывается в сотни,
+ * а у межгородского на экране всё равно не различить отдельные метры.
+ */
+const MAX_ROUTE_POINTS = 2000;
+
+/** Прореживает очень длинную линию равномерно, сохраняя начало и конец. */
+function thinRoute<T>(points: T[]): T[] {
+  if (points.length <= MAX_ROUTE_POINTS) {
+    return points;
+  }
+  const step = Math.ceil(points.length / MAX_ROUTE_POINTS);
+  const thinned = points.filter((_, index) => index % step === 0);
+  const last = points[points.length - 1];
+  if (last !== undefined && thinned[thinned.length - 1] !== last) {
+    thinned.push(last);
+  }
+  return thinned;
+}
 
 /**
  * Движение камеры — «просьба», а не обязательство: нативная карта отклоняет вызов, если
@@ -48,17 +83,47 @@ function ignoreCameraRejection(result: Promise<unknown> | undefined): void {
  * React-дети `<Marker>` намеренно не используются: на Android их снимок в битмап зависит от
  * раскладки нативного контейнера и после смены координаты уезжал на полэкрана
  * (подробнее — в `map-marker.assets.ts`).
+ *
+ * Машина между GPS-точками не прыгает, а скользит — см. `CarPlacemark`.
  */
 function MapPlacemark({ marker }: { marker: MapMarker }) {
-  const point = normalizeGeoPoint(marker.point);
+  if (marker.kind === 'driver') {
+    return <CarPlacemark marker={marker} />;
+  }
 
   return (
     <Marker
-      anchor={getMarkerAnchor(marker.kind)}
-      point={toMapPoint(point)}
+      anchor={MARKER_ANCHORS[marker.kind]}
+      point={toMapPoint(normalizeGeoPoint(marker.point))}
       scale={MAP_MARKER_ICON_SCALE}
       source={MAP_MARKER_SOURCES[marker.kind]}
-      zIndex={marker.kind === 'driver' ? 3 : 2}
+      zIndex={2}
+    />
+  );
+}
+
+/**
+ * Машина: проп `point` задаётся один раз, дальше метку ведёт нативная анимация
+ * (`useGlidingMarker`). Все пропы стабильны по ссылке, чтобы React их не пересылал.
+ */
+function CarPlacemark({ marker }: { marker: MapMarker }) {
+  const markerRef = useRef<NativeMarker>(null);
+  const moveTo = useCallback(
+    (point: { lat: number; lng: number }, durationMs: number) =>
+      markerRef.current?.animatedMoveTo(toMapPoint(point), durationMs),
+    [],
+  );
+  const initial = useGlidingMarker(normalizeGeoPoint(marker.point), moveTo);
+  const point = useMemo(() => toMapPoint(initial), [initial]);
+
+  return (
+    <Marker
+      anchor={MARKER_ANCHORS.driver}
+      point={point}
+      ref={markerRef}
+      scale={MAP_MARKER_ICON_SCALE}
+      source={MAP_MARKER_SOURCES.driver}
+      zIndex={3}
     />
   );
 }
@@ -101,13 +166,21 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
     return routePolyline ? decodePolyline(routePolyline) : [];
   }, [explicitRoutePoints, routePolyline]);
 
+  /**
+   * Точки линии — один массив на маршрут. Раньше он собирался заново на каждом рендере, и
+   * Fabric пересылал всю линию в нативный модуль: карта перерисовывается на каждый тик GPS,
+   * а линия на 3 000 км — это десятки тысяч точек, которые разбирались через JNI на главном
+   * потоке. Приложение зависало.
+   */
+  const polylinePoints = useMemo(() => thinRoute(routePoints).map(toMapPoint), [routePoints]);
+
   const fitPoints = useMemo(() => {
-    if (routePoints.length > 1) {
-      return routePoints.map(toMapPoint);
+    if (polylinePoints.length > 1) {
+      return polylinePoints;
     }
 
     return placedMarkers.map((marker) => toMapPoint(normalizeGeoPoint(marker.point)));
-  }, [placedMarkers, routePoints]);
+  }, [placedMarkers, polylinePoints]);
 
   const fitCameraToContent = useCallback(() => {
     if (fitPoints.length > 1) {
@@ -211,7 +284,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
             key={`${routePoints[0]?.lat}:${routePoints[routePoints.length - 1]?.lng}:${routePoints.length}`}
             outlineColor="#FFFFFF"
             outlineWidth={2}
-            points={routePoints.map(toMapPoint)}
+            points={polylinePoints}
             strokeColor={ROUTE_STROKE_COLOR}
             strokeWidth={6}
             zIndex={1}

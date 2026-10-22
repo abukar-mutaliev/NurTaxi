@@ -28,16 +28,18 @@ function isUsablePoint(point?: GeoPoint | null): point is GeoPoint {
 }
 
 /**
- * Точки текущего участка навигации.
+ * Точки текущего участка навигации по порядку.
  * Пока нет позиции машины, путь до клиента строить неоткуда — возвращаем `null`,
  * а не подменяем его линией подачи→назначения: это другой участок.
+ * После посадки путь идёт через ещё не пройденные остановки (`stopsAhead`) к точке Б.
  */
 export function orderRouteWaypoints(input: {
   status: string;
   pickup: GeoPoint;
   dropoff: GeoPoint;
   origin?: GeoPoint | null;
-}): [GeoPoint, GeoPoint] | null {
+  stopsAhead?: GeoPoint[] | null;
+}): GeoPoint[] | null {
   const { pickup, dropoff, origin } = input;
 
   if (!isUsablePoint(pickup) || !isUsablePoint(dropoff)) {
@@ -48,5 +50,6 @@ export function orderRouteWaypoints(input: {
     return isUsablePoint(origin) ? [origin, pickup] : null;
   }
 
-  return [isUsablePoint(origin) ? origin : pickup, dropoff];
+  const stops = (input.stopsAhead ?? []).filter(isUsablePoint);
+  return [isUsablePoint(origin) ? origin : pickup, ...stops, dropoff];
 }

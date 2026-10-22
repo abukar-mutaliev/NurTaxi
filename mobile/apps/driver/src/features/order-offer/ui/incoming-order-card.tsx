@@ -3,7 +3,7 @@
  */
 import { StyleSheet, View } from 'react-native';
 
-import { formatDistance, formatDuration, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import { formatDistance, formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import type { OrderOfferEvent } from '@nurtaxi/shared-core/features/realtime';
@@ -81,13 +81,19 @@ export function IncomingOrderCard({
         <Text numberOfLines={2} variant="body">
           {offer.pickup.address}
         </Text>
+        {/* Остановки видны до принятия: от них зависит, возьмёт ли водитель поездку. */}
+        {(offer.stops ?? []).map((stop, index) => (
+          <Text key={`${index}:${stop.address}`} numberOfLines={1} tone="muted" variant="caption">
+            ◦ Остановка: {stop.address}
+          </Text>
+        ))}
         <Text numberOfLines={2} tone="muted" variant="caption">
           → {offer.dropoff.address}
         </Text>
       </View>
 
       <View style={styles.headerRow}>
-        <Text variant="title">{formatMoney(offer.price)}</Text>
+        <Text variant="title">{formatPrice(offer.price)}</Text>
         {meta.length > 0 ? (
           <Text tone="muted" variant="caption">
             {meta.join(' · ')}

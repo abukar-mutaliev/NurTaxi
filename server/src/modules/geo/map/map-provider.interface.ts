@@ -28,6 +28,13 @@ export interface MapSearchOptions {
 export interface MapRouteOptions {
   origin: GeoPoint;
   destination: GeoPoint;
+  /** Промежуточные остановки по порядку: маршрут идёт `origin → …waypoints → destination`. */
+  waypoints?: GeoPoint[];
+}
+
+/** Все точки маршрута по порядку. */
+export function routePoints(options: MapRouteOptions): GeoPoint[] {
+  return [options.origin, ...(options.waypoints ?? []), options.destination];
 }
 
 /**

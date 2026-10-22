@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatRating } from '@nurtaxi/shared-core/shared/lib';
@@ -37,15 +37,14 @@ export interface DriverEnRouteOverlayProps {
   driver: OrderDriver;
   statusLabel: string;
   etaLabel?: string | null;
-  callLabel: string;
-  chatLabel: string;
+  /** «Связаться с водителем»: звонок или SMS — см. `contactByPhone`. */
+  contactLabel: string;
   cancelLabel: string;
   femaleDriverTitle: string;
   femaleDriverSubtitle: string;
-  chatUnavailableMessage: string;
   onMenuPress: () => void;
   onProfilePress: () => void;
-  onCall: () => void;
+  onContact: () => void;
   onCancel: () => void;
 }
 
@@ -53,10 +52,13 @@ function ActionButton({
   label,
   onPress,
   tone = 'default',
+  wide = false,
 }: {
   label: string;
   onPress: () => void;
   tone?: 'default' | 'danger';
+  /** Основное действие занимает две доли ряда — длинная подпись не переносится. */
+  wide?: boolean;
 }) {
   const isDanger = tone === 'danger';
 
@@ -66,6 +68,7 @@ function ActionButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.actionButton,
+        wide && styles.actionButtonWide,
         {
           backgroundColor: isDanger ? colors.cancelBg : colors.actionBg,
           opacity: pressed ? 0.88 : 1,
@@ -87,25 +90,19 @@ export function DriverEnRouteOverlay({
   driver,
   statusLabel,
   etaLabel,
-  callLabel,
-  chatLabel,
+  contactLabel,
   cancelLabel,
   femaleDriverTitle,
   femaleDriverSubtitle,
-  chatUnavailableMessage,
   onMenuPress,
   onProfilePress,
-  onCall,
+  onContact,
   onCancel,
 }: DriverEnRouteOverlayProps) {
   const insets = useSafeAreaInsets();
   const headerTopInset = useOrderTopInset();
   const vehicle = driver.vehicle;
   const vehicleLine = vehicle ? `${vehicle.make} ${vehicle.model} · ${vehicle.color}` : null;
-
-  const openChat = () => {
-    Alert.alert(chatLabel, chatUnavailableMessage);
-  };
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
@@ -193,8 +190,7 @@ export function DriverEnRouteOverlay({
             <View style={styles.divider} />
 
             <View style={styles.actionsRow}>
-              <ActionButton label={callLabel} onPress={onCall} />
-              <ActionButton label={chatLabel} onPress={openChat} />
+              <ActionButton label={contactLabel} onPress={onContact} wide />
               <ActionButton label={cancelLabel} onPress={onCancel} tone="danger" />
             </View>
           </View>
@@ -223,6 +219,9 @@ const styles = StyleSheet.create({
     height: 54,
     justifyContent: 'center',
     paddingHorizontal: 4,
+  },
+  actionButtonWide: {
+    flex: 2,
   },
   actionIcon: {
     borderRadius: 999,

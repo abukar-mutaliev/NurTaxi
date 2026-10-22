@@ -35,16 +35,29 @@ describe('PricingService', () => {
     updatedAt: new Date(),
   } as Tariff;
 
-  it('считает стоимость по формуле base + km + min', () => {
+  it('считает стоимость по формуле base + km + min и округляет до десятков', () => {
     const result = service.calculate(tariff, region, { distanceM: 5000, durationS: 900 });
-    // 99 + 5*18 + 15*5 = 99+90+75 = 264
-    expect(result.estimated).toBe(264);
+    // 99 + 5*18 + 15*5 = 99+90+75 = 264 → 260
+    expect(result.subtotal).toBe(264);
+    expect(result.estimated).toBe(260);
     expect(result.currency).toBe('RUB');
+  });
+
+  it('округляет копейки и рубли до ближайшего десятка', () => {
+    // 99 + 7,63*18 + 18,6*5 = 99 + 137,34 + 93 = 329,34 → 330
+    expect(service.calculate(tariff, region, { distanceM: 7630, durationS: 1116 }).estimated).toBe(
+      330,
+    );
+    // 99 + 7,1*18 + 13,08*5 = 99 + 127,8 + 65,4 = 292,2 → 290
+    expect(service.calculate(tariff, region, { distanceM: 7100, durationS: 784.8 }).estimated).toBe(
+      290,
+    );
   });
 
   it('применяет min_price если расчёт ниже', () => {
     const result = service.calculate(tariff, region, { distanceM: 500, durationS: 120 });
-    expect(result.estimated).toBe(149);
+    // min_price 149 → 150: к клиенту уходит только круглая сумма.
+    expect(result.estimated).toBe(150);
     expect(result.minPriceApplied).toBe(true);
   });
 
@@ -56,7 +69,8 @@ describe('PricingService', () => {
     } as Tariff;
 
     const result = service.calculate(surgeTariff, surgeRegion, { distanceM: 5000, durationS: 900 });
-    expect(result.estimated).toBe(396);
+    // 264 × 1,5 = 396 → 400
+    expect(result.estimated).toBe(400);
     expect(result.surgeMultiplier).toBe(1.5);
   });
 });

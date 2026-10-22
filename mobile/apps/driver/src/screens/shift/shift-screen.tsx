@@ -12,6 +12,7 @@ import medium from 'expo-symbols/androidWeights/medium';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { resolveCurrentPosition } from '@nurtaxi/shared-core/features/geolocation';
@@ -39,6 +40,11 @@ import { MapCanvas, type MapCanvasHandle } from '@/widgets/map';
  */
 const DRIVER_ZOOM_DELTA = 0.01;
 
+/** Карточка растёт вверх, когда появляются подсказки, — без анимации переключатель прыгал. */
+const SHEET_LAYOUT = LinearTransition.duration(220);
+const HINT_ENTERING = FadeIn.duration(180);
+const HINT_EXITING = FadeOut.duration(120);
+
 export function ShiftScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -49,14 +55,24 @@ export function ShiftScreen() {
   const wantsOnline = useAppSelector(selectWantsOnline);
   const { data: profile } = useGetDriverProfileQuery();
   const { data: earnings } = useGetDriverEarningsQuery();
-  const [updateStatus, { isLoading: switching }] = useUpdateDriverStatusMutation();
+  const [updateStatus] = useUpdateDriverStatusMutation();
 
   const [error, setError] = useState<string | null>(null);
 
   // Входящий заказ (M8.3) показывает `IncomingOrderOverlay` в корневом layout — над любым
   // экраном, а не только над этим.
 
-  const isOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
+  const serverOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
+  /**
+   * Значение, к которому переключатель уже уехал, пока сервер не ответил. Без него `value`
+   * оставался серверным: ползунок уезжал, отпрыгивал назад и после ответа ехал снова.
+   */
+  const [pendingOnline, setPendingOnline] = useState<boolean | null>(null);
+  // Снимаем, как только подтверждённый статус догнал, — прямо при рендере, как в `SwitchRow`.
+  if (pendingOnline !== null && pendingOnline === serverOnline) {
+    setPendingOnline(null);
+  }
+  const isOnline = pendingOnline ?? serverOnline;
   const canGoOnline = profile?.canGoOnline ?? false;
 
   /**
@@ -119,12 +135,22 @@ export function ShiftScreen() {
   };
 
   const toggleOnline = async (next: boolean) => {
+    // Повторное нажатие до ответа сервера игнорируем: запросы не должны обгонять друг друга.
+    if (pendingOnline !== null) {
+      return;
+    }
     setError(null);
     // Оптимистично двигаем переключатель, чтобы отклик был мгновенным.
+    setPendingOnline(next);
     dispatch(onlineIntentChanged(next));
     try {
-      await updateStatus({ status: next ? 'online' : 'offline' }).unwrap();
+      const updated = await updateStatus({ status: next ? 'online' : 'offline' }).unwrap();
+      // Сервер мог оставить другой статус (например, `busy`) — тогда ждать нечего.
+      if ((updated.onlineStatus === 'online') !== next) {
+        setPendingOnline(null);
+      }
     } catch (cause) {
+      setPendingOnline(null);
       dispatch(onlineIntentChanged(!next));
       setError(toAppError(cause as never).message);
     }
@@ -219,7 +245,8 @@ export function ShiftScreen() {
       </View>
 
       {/* Нижняя карточка: переключатель линии и сводка */}
-      <View
+      <Animated.View
+        layout={SHEET_LAYOUT}
         onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
         style={[
           styles.sheet,
@@ -242,13 +269,19 @@ export function ShiftScreen() {
               {isOnline ? t('driver.goOffline') : t('driver.goOnline')}
             </Text>
             <Text tone="muted" variant="caption">
-              {canGoOnline
-                ? 'Нажмите, чтобы начать принимать заказы'
-                : 'Выйти на линию можно после одобрения документов'}
+              {!canGoOnline
+                ? 'Выйти на линию можно после одобрения документов'
+                : isOnline
+                  ? 'Нажмите, чтобы перестать принимать заказы'
+                  : 'Нажмите, чтобы начать принимать заказы'}
             </Text>
           </View>
+          {/*
+            Не блокируем на время запроса: смена `disabled` перекрашивала переключатель
+            посреди анимации. Повторные нажатия отсекает `toggleOnline`.
+          */}
           <Switch
-            disabled={!canGoOnline || switching}
+            disabled={!canGoOnline}
             ios_backgroundColor={theme.colors.surfaceMuted}
             onValueChange={toggleOnline}
             thumbColor={theme.colors.surface}
@@ -258,9 +291,11 @@ export function ShiftScreen() {
         </View>
 
         {error ? (
-          <Text tone="danger" variant="caption">
-            {error}
-          </Text>
+          <Animated.View entering={HINT_ENTERING} exiting={HINT_EXITING}>
+            <Text tone="danger" variant="caption">
+              {error}
+            </Text>
+          </Animated.View>
         ) : null}
 
         {/*
@@ -268,25 +303,31 @@ export function ShiftScreen() {
           и предупреждение выглядело бы придиркой на пустом месте.
         */}
         {isOnline && permissionState === 'denied' ? (
-          <Pressable onPress={() => void (canAskAgain ? requestLocation() : openSettings())}>
-            <Text tone="muted" variant="caption">
-              {canAskAgain
-                ? 'Нажмите, чтобы разрешить доступ к геопозиции и видеть себя на карте'
-                : 'Доступ к геопозиции запрещён. Нажмите, чтобы открыть настройки'}
-            </Text>
-          </Pressable>
+          <Animated.View entering={HINT_ENTERING} exiting={HINT_EXITING}>
+            <Pressable onPress={() => void (canAskAgain ? requestLocation() : openSettings())}>
+              <Text tone="muted" variant="caption">
+                {canAskAgain
+                  ? 'Нажмите, чтобы разрешить доступ к геопозиции и видеть себя на карте'
+                  : 'Доступ к геопозиции запрещён. Нажмите, чтобы открыть настройки'}
+              </Text>
+            </Pressable>
+          </Animated.View>
         ) : null}
 
         {isOnline && permissionState === 'granted' && !position && isLocating ? (
-          <Text tone="muted" variant="caption">
-            Определяем ваше положение…
-          </Text>
+          <Animated.View entering={HINT_ENTERING} exiting={HINT_EXITING}>
+            <Text tone="muted" variant="caption">
+              Определяем ваше положение…
+            </Text>
+          </Animated.View>
         ) : null}
 
         {positionError ? (
-          <Text tone="muted" variant="caption">
-            {positionError}
-          </Text>
+          <Animated.View entering={HINT_ENTERING} exiting={HINT_EXITING}>
+            <Text tone="muted" variant="caption">
+              {positionError}
+            </Text>
+          </Animated.View>
         ) : null}
 
         <StatTiles
@@ -299,7 +340,7 @@ export function ShiftScreen() {
             { label: t('driver.rating'), value: formatRating(profile?.rating ?? 5) },
           ]}
         />
-      </View>
+      </Animated.View>
     </View>
   );
 }

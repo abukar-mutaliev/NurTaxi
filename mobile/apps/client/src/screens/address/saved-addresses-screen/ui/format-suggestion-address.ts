@@ -10,8 +10,6 @@ export function formatSaveAddressText(address: string | null | undefined): strin
   return formatShortDisplayAddress(address);
 }
 
-const LOCALITY_PREFIX = /^(?:г|город|с|село|п|пгт|пос(?:\.|елок)?|ст|станица|аул|деревня)\.?\s+/i;
-
 const STREET_PREFIX =
   /^(?:ул|улица|пр|просп(?:\.|ект)?|пер|переулок|ш|шоссе|б-?р|бульвар|наб|набережная)\.?\s+/i;
 const HOUSE_PREFIX = /^(?:д|дом|стр|строение|к|корп(?:\.|ус)?|лит|литера)\.?\s*\d/i;
@@ -21,10 +19,6 @@ function splitParts(address: string): string[] {
     .split(',')
     .map((part) => part.trim())
     .filter(Boolean);
-}
-
-function isLocalityPart(part: string): boolean {
-  return LOCALITY_PREFIX.test(part.trim());
 }
 
 function isHousePart(part: string): boolean {
@@ -60,26 +54,19 @@ function scoreShortAddress(address: string): number {
   return score;
 }
 
-function extractStreetAndHouseFromAddress(address: string): string | null {
-  const parts = splitParts(formatShortDisplayAddress(address));
-  const segments = parts.filter((part) => isStreetLikePart(part));
-  if (segments.length === 0) {
-    return null;
-  }
-
-  return segments.join(', ');
-}
-
 function buildSuggestionCandidates(
   item: Pick<AddressSuggestion, 'address' | 'subtitle' | 'title'>,
 ): string[] {
   const subtitle = item.subtitle?.trim();
   const title = item.title?.trim();
   const address = item.address?.trim();
+  // Подпись идёт от узкого к широкому («Торунь, … воеводство, Польша»), полный адрес — наоборот.
+  // Разворачиваем подпись, чтобы город оказался рядом с улицей, как в полном адресе.
+  const subtitleWideFirst = subtitle ? splitParts(subtitle).reverse().join(', ') : '';
 
   return [
     address,
-    [subtitle, title].filter(Boolean).join(', '),
+    [subtitleWideFirst, title].filter(Boolean).join(', '),
     [title, subtitle].filter(Boolean).join(', '),
     title,
     subtitle,
@@ -137,70 +124,17 @@ function buildInitialInsertText(item: AddressSuggestion, short: string): string 
   return extractLocalityFromAddress(short) ?? short;
 }
 
-function mergeAddressWithSuggestion(
-  currentQuery: string,
-  item: AddressSuggestion,
-  suggestionText: string,
-): string {
-  const current = currentQuery.trim();
-  const suggestion = suggestionText.trim();
-
-  if (!suggestion) {
-    return current;
-  }
-
-  if (!current) {
-    return suggestion;
-  }
-
-  const currentLocality = extractLocalityFromAddress(current) ?? splitParts(current)[0] ?? current;
-  const suggestionLocality = extractLocalityFromAddress(suggestion);
-  const suggestionHasStreet = hasStreetOrHouseInShort(suggestion);
-
-  if (suggestionHasStreet && suggestionLocality) {
-    return suggestion;
-  }
-
-  if (suggestionHasStreet) {
-    const streetSegment = extractStreetAndHouseFromAddress(suggestion) ?? suggestion;
-    return `${currentLocality}, ${streetSegment}`;
-  }
-
-  const title = suggestionTitle(item);
-  const titleLooksLikeStreet =
-    isStreetLikePart(title) ||
-    STREET_PREFIX.test(title) ||
-    (/\d/.test(title) && !isLocalityPart(title));
-
-  if (titleLooksLikeStreet && currentLocality && title !== currentLocality) {
-    return `${currentLocality}, ${title}`;
-  }
-
-  if (currentLocality && suggestion !== currentLocality && !isLocalityPart(suggestion)) {
-    return `${currentLocality}, ${suggestion}`;
-  }
-
-  if (current.length >= suggestion.length) {
-    return current;
-  }
-
-  return suggestion;
-}
-
 /**
- * Текст для вставки в поле поиска.
- * Учитывает уже введённый текст (например, город + дописываемая улица).
+ * Текст для вставки в поле поиска — только из самой подсказки.
+ *
+ * Раньше к улице из подсказки приписывался населённый пункт, набранный пассажиром. Если
+ * подсказка была из другого города (в Торуне тоже есть улица Юрия Гагарина), в поле
+ * оказывалось «село Экажево, улица Юрия Гагарина, 20» с координатами Польши — и маршрут
+ * на 3 000 км выглядел как поездка по селу. Текст должен описывать ту точку, чьи
+ * координаты уйдут в заказ.
  */
-export function formatSuggestionInsertText(item: AddressSuggestion, currentQuery = ''): string {
-  const short = resolveShortSuggestionAddress(item);
-  const trimmedQuery = currentQuery.trim();
-  const suggestionText = buildInitialInsertText(item, short);
-
-  if (!trimmedQuery) {
-    return suggestionText;
-  }
-
-  return mergeAddressWithSuggestion(trimmedQuery, item, suggestionText);
+export function formatSuggestionInsertText(item: AddressSuggestion): string {
+  return buildInitialInsertText(item, resolveShortSuggestionAddress(item));
 }
 
 export function geoLocationForSave(location: GeoLocation): GeoLocation {
@@ -212,11 +146,8 @@ export function geoLocationForSave(location: GeoLocation): GeoLocation {
   return { ...location, address: formatSaveAddressText(address) };
 }
 
-export function suggestionToGeoLocationForSave(
-  item: AddressSuggestion,
-  currentQuery = '',
-): GeoLocation {
-  return geoLocationForSave(suggestionToGeoLocation(item, currentQuery));
+export function suggestionToGeoLocationForSave(item: AddressSuggestion): GeoLocation {
+  return geoLocationForSave(suggestionToGeoLocation(item));
 }
 
 export function formatSuggestionAddress(
@@ -235,8 +166,8 @@ export function formatSuggestionAddress(
   return item.title?.trim() ?? '';
 }
 
-export function suggestionToGeoLocation(item: AddressSuggestion, currentQuery = ''): GeoLocation {
-  const address = formatSuggestionInsertText(item, currentQuery);
+export function suggestionToGeoLocation(item: AddressSuggestion): GeoLocation {
+  const address = formatSuggestionInsertText(item);
 
   return {
     lat: item.lat,

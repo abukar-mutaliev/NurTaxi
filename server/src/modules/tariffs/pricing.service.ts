@@ -18,9 +18,13 @@ export interface RouteInput {
   durationS: number;
 }
 
+/** Шаг итоговой цены: клиенту показываем и списываем круглую сумму (321,32 → 320). */
+const PRICE_STEP = 10;
+
 /**
  * Расчёт стоимости поездки (Des §7, Req §22).
- * Формула: base + km*price_km + min*price_min, не ниже min_price, surge по флагу региона.
+ * Формула: base + km*price_km + min*price_min, не ниже min_price, surge по флагу региона;
+ * итог округляется до десятков рублей.
  */
 @Injectable()
 export class PricingService {
@@ -50,7 +54,7 @@ export class PricingService {
       surgeMultiplier = tariff.surgeRules.multiplier;
     }
 
-    const estimated = round2(subtotal * surgeMultiplier);
+    const estimated = roundToStep(subtotal * surgeMultiplier);
 
     return {
       baseFare,
@@ -67,4 +71,9 @@ export class PricingService {
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+/** До ближайшего шага; копейки предварительно сглаживаем, чтобы 324,999… не ушло вниз. */
+function roundToStep(value: number): number {
+  return Math.round(round2(value) / PRICE_STEP) * PRICE_STEP;
 }

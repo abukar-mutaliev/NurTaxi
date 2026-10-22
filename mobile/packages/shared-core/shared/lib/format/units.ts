@@ -2,16 +2,29 @@
 
 const DEFAULT_LOCALE = 'ru-RU';
 
+/** Шаг цены поездки — тот же, что у сервера в `PricingService`. */
+const PRICE_STEP = 10;
+
+/** Сумма без копеек: заработок, комиссия, баланс, чек. */
 export function formatMoney(amount: number, currency = 'RUB', locale = DEFAULT_LOCALE): string {
+  const rounded = Math.round(amount);
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
-      maximumFractionDigits: amount % 1 === 0 ? 0 : 2,
-    }).format(amount);
+      maximumFractionDigits: 0,
+    }).format(rounded);
   } catch {
-    return `${Math.round(amount)} ${currency}`;
+    return `${rounded} ${currency}`;
   }
+}
+
+/**
+ * Цена поездки — до десятков рублей (321,32 → «320 ₽»). Новые заказы сервер и так считает
+ * круглыми; округление здесь выравнивает старые заказы в истории.
+ */
+export function formatPrice(amount: number, currency = 'RUB', locale = DEFAULT_LOCALE): string {
+  return formatMoney(Math.round(amount / PRICE_STEP) * PRICE_STEP, currency, locale);
 }
 
 /** Метры → «850 м» / «12,4 км». */

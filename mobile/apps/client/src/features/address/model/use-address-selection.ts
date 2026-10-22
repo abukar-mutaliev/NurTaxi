@@ -21,10 +21,12 @@ import {
   pickupSelected,
   recentAddressUsed,
   selectOrderDraft,
+  stopSelected,
 } from '@/processes/order-flow';
 import { useOrderRegion } from './use-order-region';
 
-export type AddressField = 'pickup' | 'dropoff';
+/** `stop` — промежуточная остановка между подачей и точкой Б. */
+export type AddressField = 'pickup' | 'stop' | 'dropoff';
 export type AddressMode = 'order' | 'save' | 'edit';
 
 export type SelectedAddress = GeoLocation & {
@@ -126,6 +128,10 @@ export function useAddressSelection() {
           pathname: '/address/search',
           params: { field: 'dropoff', mode: 'order', sync: String(Date.now()) },
         });
+      } else if (field === 'stop') {
+        // Остановку добавляют к уже собранному маршруту — сразу назад, к карточке заказа.
+        dispatch(stopSelected(normalized));
+        router.dismissTo('/(tabs)');
       } else {
         dispatch(dropoffSelected(normalized));
         ensurePickupFromGps();

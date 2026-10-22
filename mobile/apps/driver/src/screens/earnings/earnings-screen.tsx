@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { formatDate, formatMoney } from '@nurtaxi/shared-core/shared/lib';
+import { formatDate, formatMoney, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
   useGetDriverEarningsQuery,
@@ -130,7 +130,7 @@ export function EarningsScreen() {
                 </Text>
               </View>
               <Text variant="bodyStrong">
-                {formatMoney(receiptAmount ?? order.priceFinal ?? order.priceEstimated)}
+                {formatPrice(receiptAmount ?? order.priceFinal ?? order.priceEstimated)}
               </Text>
             </View>
           ))

@@ -120,10 +120,7 @@ export function SavedAddressDetailScreen() {
     if (!point) {
       return;
     }
-    const location = suggestionToGeoLocationForSave(
-      toAddressSuggestion(option, point),
-      addressText,
-    );
+    const location = suggestionToGeoLocationForSave(toAddressSuggestion(option, point));
     setAddressText(location.address ?? '');
     setLat(location.lat);
     setLng(location.lng);

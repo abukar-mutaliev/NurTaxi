@@ -4,6 +4,7 @@ export type { StoredTokens } from './storage';
 export {
   applyPhoneMask,
   formatPhone,
+  isMobilePhone,
   isValidPhone,
   maskPhone,
   normalizePhone,
@@ -15,6 +16,7 @@ export {
   formatDistance,
   formatDuration,
   formatMoney,
+  formatPrice,
   formatRating,
 } from './format/units';
 export {

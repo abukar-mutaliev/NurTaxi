@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
+import { formatDistance } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { Text } from '@nurtaxi/shared-core/shared/ui';
@@ -33,6 +34,7 @@ import {
   useOrderRegion,
   useResolveLocationForOrder,
   useResolvedLocationAddress,
+  type AddressField,
 } from '@/features/address';
 import { useActiveOrderGuard, useOrderEstimate, OrderExtrasFields } from '@/features/order';
 import {
@@ -46,9 +48,9 @@ import {
   canSubmitOrderExtras,
   childSeatChanged,
   commentChanged,
-  extrasFromDraft,
+  draftStops,
+  createOrderCompat,
   familyMemberSelected,
-  isUnknownOrderExtrasError,
   orderForOtherChanged,
   passengerNameChanged,
   passengerPhoneChanged,
@@ -56,6 +58,8 @@ import {
   pickupSelected,
   selectActiveOrderId,
   selectOrderDraft,
+  selectOrderStop,
+  stopSelected,
 } from '@/processes/order-flow';
 import {
   MapCanvas,
@@ -71,6 +75,12 @@ import { PaymentMethodSheet } from './payment-method-sheet';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { glassShadow } from '@/shared/ui/glass-shadow';
+
+/**
+ * Длиннее этого маршрут почти наверняка собран из точки в чужом городе (в Торуне тоже есть
+ * улица Юрия Гагарина) — предупреждаем, но заказ не запрещаем: дальние поездки бывают.
+ */
+const FAR_ROUTE_M = 500_000;
 
 export function HomeScreen() {
   const { t } = useTranslation();
@@ -103,11 +113,12 @@ export function HomeScreen() {
 
   const draft = useAppSelector(selectOrderDraft);
   const { pickup, dropoff } = draft;
+  const stop = useAppSelector(selectOrderStop);
   const activeOrderId = useAppSelector(selectActiveOrderId);
   const effectiveActiveId = guardedActiveId ?? activeOrderId;
   useOrderRealtime(hasActiveOrder ? effectiveActiveId : null);
 
-  const { estimate, isEstimating, error: estimateError } = useOrderEstimate();
+  const { estimate, isEstimating, error: estimateError, stopNotPriced } = useOrderEstimate();
   const [createOrder, createState] = useCreateOrderMutation();
   const [createError, setCreateError] = useState<string | null>(null);
   const [paymentSheetVisible, setPaymentSheetVisible] = useState(false);
@@ -135,6 +146,7 @@ export function HomeScreen() {
     origin: carPoint,
     pickup: { lat: activeOrder?.pickupLat ?? 0, lng: activeOrder?.pickupLng ?? 0 },
     status: activeOrder?.status ?? '',
+    stops: activeOrder?.stops,
   });
 
   const showOrderSheet = Boolean(pickup && dropoff && !hasActiveOrder);
@@ -200,6 +212,7 @@ export function HomeScreen() {
           lng: activeOrder.pickupLng,
         },
         routePolyline: activeOrder.route?.polyline,
+        stops: activeOrder.stops,
       });
     }
 
@@ -208,21 +221,23 @@ export function HomeScreen() {
       nearbyDrivers,
       pickup,
       routePolyline: estimate?.route.polyline,
+      stops: stop ? [stop] : null,
     });
-  }, [activeOrder, carPoint, dropoff, estimate?.route.polyline, nearbyDrivers, pickup]);
+  }, [activeOrder, carPoint, dropoff, estimate?.route.polyline, nearbyDrivers, pickup, stop]);
 
   const tripWaypoints = useMemo((): GeoPoint[] | null => {
     if (activeOrder) {
       return [
         { lat: activeOrder.pickupLat, lng: activeOrder.pickupLng },
+        ...(activeOrder.stops ?? []),
         { lat: activeOrder.dropoffLat, lng: activeOrder.dropoffLng },
       ];
     }
     if (pickup && dropoff) {
-      return [pickup, dropoff];
+      return stop ? [pickup, stop, dropoff] : [pickup, dropoff];
     }
     return null;
-  }, [activeOrder, dropoff, pickup]);
+  }, [activeOrder, dropoff, pickup, stop]);
   const driverRoad = roadFromPolyline(driverPosition?.route);
   const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
   const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
@@ -295,6 +310,7 @@ export function HomeScreen() {
     pickup,
     position,
     routePoints,
+    stop,
   ]);
 
   const centerOnMyLocation = () => {
@@ -309,7 +325,7 @@ export function HomeScreen() {
     mapRef.current?.centerOn(position, 0.01);
   };
 
-  const openSearch = (field: 'pickup' | 'dropoff' = 'dropoff') => {
+  const openSearch = (field: AddressField = 'dropoff') => {
     if (hasActiveOrder && effectiveActiveId) {
       router.push(`/order/${effectiveActiveId}`);
       return;
@@ -328,7 +344,7 @@ export function HomeScreen() {
       return;
     }
     setCreateError(null);
-    const payload = {
+    const base = {
       regionId: draft.regionId,
       pickup: await resolveLocationForOrder(draft.pickup),
       dropoff: await resolveLocationForOrder(draft.dropoff),
@@ -336,24 +352,12 @@ export function HomeScreen() {
       paymentMethod: draft.paymentMethod,
     };
     try {
-      try {
-        const order = await createOrder({
-          ...payload,
-          ...extrasFromDraft(draft),
-        }).unwrap();
-        dispatch(activeOrderChanged(order.id));
-        router.push(`/order/${order.id}`);
-        return;
-      } catch (cause) {
-        const appError = toAppError(cause as never);
-        if (!isUnknownOrderExtrasError(appError)) {
-          throw cause;
-        }
-      }
-      const order = await createOrder({
-        ...payload,
-        ...extrasFromDraft(draft, 'legacy'),
-      }).unwrap();
+      const order = await createOrderCompat(
+        (payload) => createOrder(payload).unwrap(),
+        base,
+        draft,
+        draftStops(stop),
+      );
       dispatch(activeOrderChanged(order.id));
       router.push(`/order/${order.id}`);
     } catch (cause) {
@@ -430,8 +434,12 @@ export function HomeScreen() {
           error={
             createError ??
             estimateError?.message ??
-            (!canSubmitOrderExtras(draft) ? t('order.orderForOtherInvalid') : null)
+            (!canSubmitOrderExtras(draft) ? t('order.orderForOtherInvalid') : null) ??
+            (estimate && estimate.route.distanceM > FAR_ROUTE_M
+              ? t('order.farRouteWarning', { distance: formatDistance(estimate.route.distanceM) })
+              : null)
           }
+          notice={stopNotPriced ? t('order.stopNotPriced') : null}
           estimate={estimate}
           extras={
             <OrderExtrasFields
@@ -467,10 +475,16 @@ export function HomeScreen() {
           isEstimating={isEstimating}
           isOrdering={createState.isLoading}
           loadingLabel={t('common.loading')}
+          addStopLabel={t('order.addStop')}
           onDropoffPress={() => openSearch('dropoff')}
           onOrder={submitOrder}
           onPaymentPress={openPaymentMethods}
           onPickupPress={() => openSearch('pickup')}
+          onRemoveStop={() => dispatch(stopSelected(null))}
+          onStopPress={() => openSearch('stop')}
+          removeStopLabel={t('order.removeStop')}
+          stopAddress={stop?.address ?? null}
+          stopLabel={t('order.stop')}
           onTariffPress={() => undefined}
           orderLabel={t('order.createNur')}
           paymentLabel={paymentLabel}

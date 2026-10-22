@@ -162,8 +162,15 @@ export function formatShortDisplayAddress(address: string | null | undefined): s
     return meaningful.slice(localityIndex, endIndex + 1).join(', ');
   }
 
-  const locality = meaningful.find((part) => !isStreetLikePart(part) && !isHousePart(part));
   const street = meaningful.find(isStreetLikePart);
+  const streetIndex = street === undefined ? meaningful.length : meaningful.indexOf(street);
+  // Населённый пункт — ближайшая к улице часть, а не первая: в чужих адресах впереди стоят
+  // страна и регион, которых нет в списке административных («Польша, … воеводство, Торунь»),
+  // и первая часть давала «Польша, улица …» вместо города.
+  const locality = meaningful
+    .slice(0, streetIndex)
+    .reverse()
+    .find((part) => !isStreetLikePart(part) && !isHousePart(part));
   const house = [...meaningful].reverse().find(isHousePart);
 
   const segments = [locality, street, house].filter((part): part is string =>

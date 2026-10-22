@@ -19,6 +19,7 @@ import {
   formatDistance,
   formatDuration,
   formatMoney,
+  formatPrice,
 } from '@nurtaxi/shared-core/shared/lib';
 import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/model';
 import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
@@ -28,6 +29,7 @@ import {
   useGetOrderQuery,
   useGetReceiptQuery,
 } from '@nurtaxi/shared-core/entities/order';
+import { contactByPhone } from '@nurtaxi/shared-core/features/contact';
 import { openExternalNavigator } from '@nurtaxi/shared-core/features/navigation';
 import { useOrderRealtime } from '@nurtaxi/shared-core/features/realtime';
 
@@ -147,6 +149,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
     enabled: routeActive,
     pickup: { lat: order?.pickupLat ?? 0, lng: order?.pickupLng ?? 0 },
     status: order?.status ?? '',
+    stops: order?.stops,
   });
 
   const pickupEta = route.leg === 'to-pickup' ? (route.duration ?? undefined) : null;
@@ -274,11 +277,24 @@ export function OrderScreen({ orderId }: { orderId: string }) {
     }
   };
 
+  // Заказ «для другого» — связываемся с тем, кто поедет, иначе с заказчиком.
+  const contactPassenger = () => {
+    contactByPhone(order.passengerPhone ?? order.clientPhone, {
+      title: t('contact.passenger'),
+      call: t('contact.call'),
+      sms: t('contact.sms'),
+      cancel: t('common.cancel'),
+      unavailable: t('contact.unavailable'),
+    });
+  };
+
   const openNavigator = async () => {
+    // С остановками навигатор ведёт к ближайшей непройденной, а не сразу в точку Б.
     const destination =
-      route.leg === 'to-pickup'
+      route.target ??
+      (route.leg === 'to-pickup'
         ? { lat: order.pickupLat, lng: order.pickupLng }
-        : { lat: order.dropoffLat, lng: order.dropoffLng };
+        : { lat: order.dropoffLat, lng: order.dropoffLng });
     const opened = await openExternalNavigator(destination, driverPosition);
     if (!opened) {
       Alert.alert(t('errors.title'), t('driver.navigatorUnavailable'));
@@ -292,6 +308,12 @@ export function OrderScreen({ orderId }: { orderId: string }) {
       point: { lat: order.pickupLat, lng: order.pickupLng },
       title: order.pickupAddress,
     },
+    ...(order.stops ?? []).map((stop, index) => ({
+      id: `stop-${index}`,
+      kind: 'stop' as const,
+      point: { lat: stop.lat, lng: stop.lng },
+      title: stop.address,
+    })),
     {
       id: 'dropoff',
       kind: 'dropoff' as const,
@@ -414,6 +436,25 @@ export function OrderScreen({ orderId }: { orderId: string }) {
                 {order.pickupAddress}
               </Text>
             </View>
+            {(order.stops ?? []).map((stop, index) => (
+              <View
+                key={`${index}:${stop.address}`}
+                style={[styles.addressRow, { gap: theme.spacing.sm }]}
+              >
+                <View
+                  style={{
+                    borderColor: theme.colors.accent,
+                    borderRadius: 999,
+                    borderWidth: 2,
+                    height: 10,
+                    width: 10,
+                  }}
+                />
+                <Text style={{ flex: 1 }} tone="muted" variant="caption">
+                  {t('order.stop')}: {stop.address}
+                </Text>
+              </View>
+            ))}
             <View style={[styles.addressRow, { gap: theme.spacing.sm }]}>
               <View
                 style={{
@@ -451,7 +492,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
               },
               {
                 label: 'Стоимость',
-                value: formatMoney(order.priceFinal ?? order.priceEstimated),
+                value: formatPrice(order.priceFinal ?? order.priceEstimated),
               },
             ]}
           />
@@ -461,6 +502,13 @@ export function OrderScreen({ orderId }: { orderId: string }) {
               {error}
             </Text>
           ) : null}
+
+          <PillButton
+            height={50}
+            onPress={contactPassenger}
+            title={t('contact.passenger')}
+            variant="surface"
+          />
 
           {step ? <PillButton loading={updating} onPress={advance} title={step.label} /> : null}
         </ScrollView>

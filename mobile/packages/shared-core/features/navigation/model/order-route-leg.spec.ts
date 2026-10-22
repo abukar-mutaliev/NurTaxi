@@ -38,6 +38,31 @@ describe('orderRouteWaypoints', () => {
       }),
     ).toEqual([origin, dropoff]);
   });
+
+  it('в поездке ведёт через оставшиеся остановки', () => {
+    const stop = { lat: 43.19, lng: 44.79 };
+    expect(
+      orderRouteWaypoints({
+        dropoff,
+        origin,
+        pickup,
+        status: OrderStatus.InProgress,
+        stopsAhead: [stop],
+      }),
+    ).toEqual([origin, stop, dropoff]);
+  });
+
+  it('до посадки остановки не учитывает', () => {
+    expect(
+      orderRouteWaypoints({
+        dropoff,
+        origin,
+        pickup,
+        status: OrderStatus.DriverEnRoute,
+        stopsAhead: [{ lat: 43.19, lng: 44.79 }],
+      }),
+    ).toEqual([origin, pickup]);
+  });
 });
 
 describe('orderRouteLeg', () => {

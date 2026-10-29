@@ -9,7 +9,8 @@
  * Отказ навсегда (`canAskAgain === false`) системным диалогом уже не исправить — остаётся
  * экран настроек, и вызывающий код обязан это показать, иначе кнопка молча не работает.
  */
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
+import { showAlert } from '../../ui/alert/alert-store';
 import * as ImagePicker from 'expo-image-picker';
 
 import { ensureImagePickerPermission, type ImagePickerSource } from './image-picker-permission';
@@ -94,9 +95,9 @@ type PickSource = ImagePickerSource | 'files';
 /**
  * Диалог выбора источника. `null` — пользователь передумал.
  *
- * Кнопки только три: Android рисует максимум три (positive/negative/neutral), и четвёртая
- * «Отмена» молча пропадала — выйти из диалога было нечем. Отказ ловим через `onDismiss`
- * (кнопка «Назад» и тап мимо окна), иначе промис зависал бы навсегда.
+ * Диалог свой (`showAlert`), без ограничения системного Android в три кнопки, поэтому
+ * «Отмена» есть всегда. Кнопка «Назад» и тап мимо окна тоже отменяют выбор — промис
+ * не зависает.
  */
 function askSource(title: string, message: string, withFiles: boolean): Promise<PickSource | null> {
   return new Promise((resolve) => {
@@ -108,13 +109,16 @@ function askSource(title: string, message: string, withFiles: boolean): Promise<
       }
     };
 
-    Alert.alert(
+    showAlert(
       title,
-      `${message} Чтобы отменить — нажмите «Назад» или коснитесь экрана вне окна.`,
+      message,
+      // Основным `showAlert` считает последнее действие и ставит его сверху — на экране
+      // порядок будет «Камера, Галерея, Файлы, Отмена».
       [
-        { onPress: () => done('camera'), text: 'Камера' },
-        { onPress: () => done('gallery'), text: 'Галерея' },
         ...(withFiles ? [{ onPress: () => done('files'), text: 'Файлы' }] : []),
+        { onPress: () => done('gallery'), text: 'Галерея' },
+        { onPress: () => done('camera'), text: 'Камера' },
+        { onPress: () => done(null), style: 'cancel' as const, text: 'Отмена' },
       ],
       { cancelable: true, onDismiss: () => done(null) },
     );
@@ -165,11 +169,11 @@ function explainDenied(source: ImagePickerSource, canAskAgain: boolean): void {
   const what = source === 'camera' ? 'камере' : 'галерее';
 
   if (canAskAgain) {
-    Alert.alert('Нет доступа', `Чтобы продолжить, разрешите доступ к ${what}.`);
+    showAlert('Нет доступа', `Чтобы продолжить, разрешите доступ к ${what}.`);
     return;
   }
 
-  Alert.alert('Нет доступа', `Доступ к ${what} запрещён. Откройте настройки и разрешите его.`, [
+  showAlert('Нет доступа', `Доступ к ${what} запрещён. Откройте настройки и разрешите его.`, [
     { style: 'cancel', text: 'Отмена' },
     {
       onPress: () => {

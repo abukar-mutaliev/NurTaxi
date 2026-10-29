@@ -53,6 +53,21 @@ async function ensurePermissions(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Запуск и остановка идут строго по очереди. Статус водителя мигает при принятии заказа
+ * (`online` → `busy`, перезапрос профиля), и две остановки, начатые одновременно, обе
+ * видели задачу запущенной: вторая падала с `TaskNotFoundException`, и поверх экрана
+ * заказа всплывала ошибка «Call to function 'ExpoLocation.stopLocationUpdatesAsync' has
+ * been rejected».
+ */
+let queue: Promise<void> = Promise.resolve();
+
+function enqueue(operation: () => Promise<void>): void {
+  queue = queue.then(operation).catch(() => {
+    // Сбой одной операции не должен останавливать очередь: следующая смена статуса повторит.
+  });
+}
+
 /** `active` — `profile.onlineStatus === 'online'` на сервере. */
 export function useDriverLocationTracking(active: boolean): void {
   const dispatch = useAppDispatch();
@@ -100,18 +115,18 @@ export function useDriverLocationTracking(active: boolean): void {
 
       const alreadyRunning = await Location.hasStartedLocationUpdatesAsync(DRIVER_LOCATION_TASK);
       if (alreadyRunning) {
-        await Location.stopLocationUpdatesAsync(DRIVER_LOCATION_TASK);
+        try {
+          await Location.stopLocationUpdatesAsync(DRIVER_LOCATION_TASK);
+        } catch {
+          // Задачи уже нет (её сняли раньше или после перезапуска) — нужного и добивались.
+        }
       }
 
       startedRef.current = false;
       dispatch(locationTrackingChanged(false));
     }
 
-    if (active) {
-      void start();
-    } else {
-      void stop();
-    }
+    enqueue(active ? start : stop);
 
     return () => {
       cancelled = true;

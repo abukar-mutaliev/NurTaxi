@@ -1,3 +1,5 @@
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import medium from 'expo-symbols/androidWeights/medium';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -22,9 +24,8 @@ const colors = {
   plateBg: '#FCF4E4',
   divider: '#EFE9DC',
   actionBg: 'rgba(252,244,228,0.85)',
-  actionIcon: 'rgba(169,159,166,0.55)',
+  actionIcon: '#C99A54',
   cancelBg: 'rgba(253,239,236,0.85)',
-  cancelIcon: 'rgba(224,112,95,0.45)',
   cancelText: '#E0705F',
   safetyBg: 'rgba(255,255,255,0.82)',
   safetyIconOuter: 'rgba(231,238,227,0.95)',
@@ -48,13 +49,18 @@ export interface DriverEnRouteOverlayProps {
   onCancel: () => void;
 }
 
+const PHONE_ICON: SymbolViewProps['name'] = { android: 'call', ios: 'phone.fill', web: 'call' };
+const CANCEL_ICON: SymbolViewProps['name'] = { android: 'close', ios: 'xmark', web: 'close' };
+
 function ActionButton({
   label,
+  icon,
   onPress,
   tone = 'default',
   wide = false,
 }: {
   label: string;
+  icon: SymbolViewProps['name'];
   onPress: () => void;
   tone?: 'default' | 'danger';
   /** Основное действие занимает две доли ряда — длинная подпись не переносится. */
@@ -64,6 +70,7 @@ function ActionButton({
 
   return (
     <Pressable
+      accessibilityLabel={label}
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
@@ -75,11 +82,13 @@ function ActionButton({
         },
       ]}
     >
-      <View
-        style={[
-          styles.actionIcon,
-          { backgroundColor: isDanger ? colors.cancelIcon : colors.actionIcon },
-        ]}
+      <SymbolView
+        name={icon}
+        resizeMode="scaleAspectFit"
+        size={18}
+        tintColor={isDanger ? colors.cancelText : colors.actionIcon}
+        type="monochrome"
+        weight={{ android: medium, ios: 'medium' }}
       />
       <Text style={[styles.actionLabel, isDanger && styles.actionLabelDanger]}>{label}</Text>
     </Pressable>
@@ -162,48 +171,59 @@ export function DriverEnRouteOverlay({
         pointerEvents="box-none"
         style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 12) }]}
       >
-        <CollapsibleSheet variant="floating">
-          <View style={styles.driverSheet}>
-            <View style={styles.driverHeader}>
-              <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} />
+        {/* Ручка — верхняя полоса карточки водителя, а не отдельная плашка над ней. */}
+        <CollapsibleSheet>
+          {(handle) => (
+            <>
+              <View style={styles.driverSheet}>
+                {handle}
+                <View style={styles.driverHeader}>
+                  <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} />
 
-              <View style={styles.driverInfo}>
-                <View style={styles.nameRow}>
-                  <Text numberOfLines={1} style={styles.driverName}>
-                    {driver.fullName}
-                  </Text>
-                  <Text style={styles.rating}>★ {formatRating(driver.rating)}</Text>
-                </View>
-                {vehicleLine ? (
-                  <Text numberOfLines={1} style={styles.vehicleLine}>
-                    {vehicleLine}
-                  </Text>
-                ) : null}
-                {vehicle?.plateNumber ? (
-                  <View style={styles.plateBadge}>
-                    <Text style={styles.plateText}>{vehicle.plateNumber}</Text>
+                  <View style={styles.driverInfo}>
+                    <View style={styles.nameRow}>
+                      <Text numberOfLines={1} style={styles.driverName}>
+                        {driver.fullName}
+                      </Text>
+                      <Text style={styles.rating}>★ {formatRating(driver.rating)}</Text>
+                    </View>
+                    {vehicleLine ? (
+                      <Text numberOfLines={1} style={styles.vehicleLine}>
+                        {vehicleLine}
+                      </Text>
+                    ) : null}
+                    {vehicle?.plateNumber ? (
+                      <View style={styles.plateBadge}>
+                        <Text style={styles.plateText}>{vehicle.plateNumber}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                ) : null}
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.actionsRow}>
+                  <ActionButton icon={PHONE_ICON} label={contactLabel} onPress={onContact} wide />
+                  <ActionButton
+                    icon={CANCEL_ICON}
+                    label={cancelLabel}
+                    onPress={onCancel}
+                    tone="danger"
+                  />
+                </View>
               </View>
-            </View>
 
-            <View style={styles.divider} />
-
-            <View style={styles.actionsRow}>
-              <ActionButton label={contactLabel} onPress={onContact} wide />
-              <ActionButton label={cancelLabel} onPress={onCancel} tone="danger" />
-            </View>
-          </View>
-
-          <View style={styles.safetyBanner}>
-            <View style={styles.safetyIconOuter}>
-              <View style={styles.safetyIconInner} />
-            </View>
-            <View style={styles.safetyText}>
-              <Text style={styles.safetyTitle}>{femaleDriverTitle}</Text>
-              <Text style={styles.safetySubtitle}>{femaleDriverSubtitle}</Text>
-            </View>
-          </View>
+              <View style={styles.safetyBanner}>
+                <View style={styles.safetyIconOuter}>
+                  <View style={styles.safetyIconInner} />
+                </View>
+                <View style={styles.safetyText}>
+                  <Text style={styles.safetyTitle}>{femaleDriverTitle}</Text>
+                  <Text style={styles.safetySubtitle}>{femaleDriverSubtitle}</Text>
+                </View>
+              </View>
+            </>
+          )}
         </CollapsibleSheet>
       </View>
     </View>
@@ -222,11 +242,6 @@ const styles = StyleSheet.create({
   },
   actionButtonWide: {
     flex: 2,
-  },
-  actionIcon: {
-    borderRadius: 999,
-    height: 18,
-    width: 18,
   },
   actionLabel: {
     color: colors.text,
@@ -260,7 +275,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 14,
     paddingHorizontal: 21,
-    paddingTop: 23,
+    // Сверху уже ручка карточки — свой отступ меньше.
+    paddingTop: 6,
   },
   driverInfo: {
     flex: 1,

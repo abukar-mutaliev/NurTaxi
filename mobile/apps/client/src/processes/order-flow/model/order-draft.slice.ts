@@ -145,6 +145,18 @@ export const orderDraftSlice = createSlice({
     orderDraftCleared(state) {
       return { ...initialState, regionId: state.regionId, activeOrderId: state.activeOrderId };
     },
+    /**
+     * Клиент передумал до нажатия «Заказать»: маршрут и пожелания к поездке сбрасываются,
+     * а способ оплаты остаётся — это привычка, а не часть отменённой поездки.
+     */
+    orderDraftDiscarded(state) {
+      return {
+        ...initialState,
+        regionId: state.regionId,
+        activeOrderId: state.activeOrderId,
+        paymentMethod: state.paymentMethod,
+      };
+    },
   },
 });
 
@@ -165,6 +177,7 @@ export const {
   estimateReceived,
   activeOrderChanged,
   orderDraftCleared,
+  orderDraftDiscarded,
 } = orderDraftSlice.actions;
 
 export const orderDraftReducer = orderDraftSlice.reducer;

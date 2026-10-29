@@ -42,6 +42,9 @@ const sheetColors = {
   buttonEnd: '#3A1D3F',
   buttonText: '#F7F3EE',
   buttonShadow: 'rgba(89,71,31,0.1)',
+  // Как «Отменить» на экране поездки — одно действие выглядит одинаково на всех шагах.
+  cancelBg: 'rgba(253,239,236,0.85)',
+  cancelText: '#E0705F',
   error: '#B42318',
 } as const;
 
@@ -68,6 +71,7 @@ export interface HomeOrderSheetProps {
   paymentMethodLabel: string;
   priceFromLabel: (price: string) => string;
   orderLabel: string;
+  cancelLabel: string;
   loadingLabel: string;
   error?: string | null;
   /** Пояснение без тревоги — например, что цена пока без учёта остановки. */
@@ -83,6 +87,8 @@ export interface HomeOrderSheetProps {
   onTariffPress: (tariffId: string) => void;
   onPaymentPress: () => void;
   onOrder: () => void;
+  /** Передумал до заказа: черновик сбрасывается, лист закрывается. */
+  onCancel: () => void;
   extras?: ReactNode;
   onLayout?: (event: LayoutChangeEvent) => void;
 }
@@ -145,6 +151,7 @@ export function HomeOrderSheet({
   paymentMethodLabel,
   priceFromLabel,
   orderLabel,
+  cancelLabel,
   loadingLabel,
   error,
   notice,
@@ -158,6 +165,7 @@ export function HomeOrderSheet({
   onTariffPress,
   onPaymentPress,
   onOrder,
+  onCancel,
   extras,
   onLayout,
 }: HomeOrderSheetProps) {
@@ -297,24 +305,41 @@ export function HomeOrderSheet({
             {notice ? <Text style={styles.notice}>{notice}</Text> : null}
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canOrder || isOrdering}
-              onPress={onOrder}
-              style={({ pressed }) => [
-                styles.orderButtonWrap,
-                { opacity: !canOrder ? 0.45 : pressed ? 0.92 : 1 },
-              ]}
-            >
-              <LinearGradient
-                colors={[sheetColors.buttonStart, sheetColors.buttonEnd]}
-                end={{ x: 1, y: 0.5 }}
-                start={{ x: 0, y: 0.5 }}
-                style={styles.orderButton}
+            <View style={styles.actionsRow}>
+              {/* Пока заказ создаётся, отменять черновик поздно — заказ уже уходит на сервер. */}
+              <Pressable
+                accessibilityRole="button"
+                disabled={isOrdering}
+                onPress={onCancel}
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  { opacity: isOrdering ? 0.45 : pressed ? 0.85 : 1 },
+                ]}
               >
-                <Text style={styles.orderButtonText}>{isOrdering ? loadingLabel : orderLabel}</Text>
-              </LinearGradient>
-            </Pressable>
+                <Text style={styles.cancelButtonText}>{cancelLabel}</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                disabled={!canOrder || isOrdering}
+                onPress={onOrder}
+                style={({ pressed }) => [
+                  styles.orderButtonWrap,
+                  { opacity: !canOrder ? 0.45 : pressed ? 0.92 : 1 },
+                ]}
+              >
+                <LinearGradient
+                  colors={[sheetColors.buttonStart, sheetColors.buttonEnd]}
+                  end={{ x: 1, y: 0.5 }}
+                  start={{ x: 0, y: 0.5 }}
+                  style={styles.orderButton}
+                >
+                  <Text style={styles.orderButtonText}>
+                    {isOrdering ? loadingLabel : orderLabel}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+            </View>
           </View>
         </CollapsibleSheet>
       </View>
@@ -323,6 +348,12 @@ export function HomeOrderSheet({
 }
 
 const styles = StyleSheet.create({
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 8,
+  },
   addStopGlyph: {
     color: sheetColors.stopDot,
     fontSize: 15,
@@ -378,6 +409,19 @@ const styles = StyleSheet.create({
   body: {
     paddingBottom: 10,
   },
+  cancelButton: {
+    alignItems: 'center',
+    backgroundColor: sheetColors.cancelBg,
+    borderRadius: 24,
+    height: 48,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  cancelButtonText: {
+    color: sheetColors.cancelText,
+    fontSize: 15,
+    fontWeight: '600',
+  },
   chevron: {
     color: sheetColors.label,
     fontSize: 16,
@@ -432,8 +476,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   orderButtonWrap: {
-    marginHorizontal: 16,
-    marginTop: 8,
+    flex: 1,
   },
   paymentLine: {
     flex: 1,

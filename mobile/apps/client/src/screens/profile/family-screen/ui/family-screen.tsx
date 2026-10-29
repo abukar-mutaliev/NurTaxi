@@ -2,13 +2,13 @@
  * Семейный аккаунт (M10.4, Req §8.6).
  */
 import { useState } from 'react';
-import { Alert, View, useWindowDimensions } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, formatPhone, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
 import { FamilyMemberStatus } from '@nurtaxi/shared-core/shared/model';
-import { Badge, Button, Input, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Badge, Button, Input, Sheet, Text, showAlert } from '@nurtaxi/shared-core/shared/ui';
 import {
   FAMILY_FEATURE_FLAG,
   useAddFamilyMemberMutation,
@@ -112,7 +112,7 @@ export function FamilyScreen() {
   };
 
   const confirmRemove = (id: string, memberPhone: string) => {
-    Alert.alert(t('common.delete'), formatPhone(memberPhone), [
+    showAlert(t('common.delete'), formatPhone(memberPhone), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('common.delete'),

@@ -24,12 +24,15 @@ import { AppErrorBoundary } from './error-boundary';
 
 initI18n();
 
+const flushPersistedState = () => persistor.flush();
+
 /** Запускает фоновые процессы, которым нужен доступ к store. */
 function SessionGate({ children }: { children: ReactNode }) {
   useSessionBootstrap();
   useRealtimeConnection();
-  // Линия не переживает перезапуск: выходить на неё водитель должен осознанно.
-  useOfflineOnLaunch();
+  // Линия не переживает перезапуск (кроме выгрузки свёрнутого приложения системой):
+  // выходить на неё водитель должен осознанно.
+  useOfflineOnLaunch(flushPersistedState);
   return <>{children}</>;
 }
 

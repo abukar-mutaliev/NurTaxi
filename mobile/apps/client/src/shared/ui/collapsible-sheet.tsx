@@ -25,7 +25,12 @@ import { glassShadow } from './glass-shadow';
 const SNAP_MS = 240;
 
 export interface CollapsibleSheetProps {
-  children: ReactNode;
+  /**
+   * Содержимое. Функцией — получает ручку и сама ставит её в свою карточку: так ручка и
+   * карточка — одно окно, а не плашка с отступом над ним. Ручка должна идти первой, у самого
+   * верха содержимого: в свёрнутом виде остаётся видна полоса до её нижнего края.
+   */
+  children: ReactNode | ((handle: ReactNode) => ReactNode);
   onVisibleHeightChange?: (height: number) => void;
   style?: StyleProp<ViewStyle>;
   /** `inline` — ручка внутри карточки. `floating` — отдельная плашка над содержимым. */
@@ -70,8 +75,10 @@ export function CollapsibleSheet({
   };
 
   const onPeekLayout = (event: LayoutChangeEvent) => {
-    const next = event.nativeEvent.layout.height;
-    if (next <= 0 || Math.abs(collapsedHeight.value - next) < 1) {
+    // Встроенная ручка стоит под рамкой карточки — свёрнутая полоса заканчивается по её низу.
+    const { y, height } = event.nativeEvent.layout;
+    const next = y + height;
+    if (height <= 0 || Math.abs(collapsedHeight.value - next) < 1) {
       return;
     }
 
@@ -138,26 +145,38 @@ export function CollapsibleSheet({
     };
   });
 
-  const floating = variant === 'floating';
+  const embedsHandle = typeof children === 'function';
+  const floating = variant === 'floating' && !embedsHandle;
+
+  const handle = (
+    <GestureDetector gesture={gesture}>
+      <View
+        accessibilityLabel={expanded ? t('order.collapseSheet') : t('order.expandSheet')}
+        accessibilityRole="button"
+        accessible
+        onLayout={onPeekLayout}
+        style={floating ? styles.floatingPeek : styles.inlinePeek}
+      >
+        <View style={floating ? styles.floatingHandle : styles.inlineHandle}>
+          <View style={styles.grabber} />
+        </View>
+      </View>
+    </GestureDetector>
+  );
 
   return (
     <Animated.View style={[styles.clip, style, frameStyle]}>
       <View onLayout={onContentLayout} style={styles.content}>
-        <GestureDetector gesture={gesture}>
-          <View
-            accessibilityLabel={expanded ? t('order.collapseSheet') : t('order.expandSheet')}
-            accessibilityRole="button"
-            accessible
-            onLayout={onPeekLayout}
-            style={floating ? styles.floatingPeek : styles.inlinePeek}
-          >
-            <View style={floating ? styles.floatingHandle : styles.inlineHandle}>
-              <View style={styles.grabber} />
-            </View>
-          </View>
-        </GestureDetector>
-
-        <View pointerEvents={expanded ? 'auto' : 'none'}>{children}</View>
+        {typeof children === 'function' ? (
+          // Ручка внутри карточки: обёртку с `pointerEvents="none"` здесь ставить нельзя —
+          // в свёрнутом виде она отключила бы и саму ручку. Скрытое содержимое и так обрезано.
+          children(handle)
+        ) : (
+          <>
+            {handle}
+            <View pointerEvents={expanded ? 'auto' : 'none'}>{children}</View>
+          </>
+        )}
       </View>
     </Animated.View>
   );

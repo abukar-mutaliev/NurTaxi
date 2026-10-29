@@ -143,96 +143,102 @@ export function TripInProgressOverlay({
         pointerEvents="box-none"
         style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 12) }]}
       >
-        <CollapsibleSheet variant="floating">
-          <View style={styles.tripSheet}>
-            {driver ? (
-              <>
-                <View style={styles.driverRow}>
-                  <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} size={44} />
-                  <Text numberOfLines={1} style={styles.driverName}>
-                    {driver.fullName}
-                  </Text>
-                  <Pressable
-                    accessibilityLabel={contactLabel}
-                    accessibilityRole="button"
-                    hitSlop={6}
-                    onPress={onContact}
-                    style={({ pressed }) => [styles.contactButton, pressed && styles.pressed]}
-                  >
-                    <Text style={styles.contactText}>{contactShortLabel}</Text>
-                  </Pressable>
-                </View>
-                <View style={styles.driverDivider} />
-              </>
-            ) : null}
+        {/* Ручка — верхняя полоса карточки поездки, как в карточке «водитель едет». */}
+        <CollapsibleSheet>
+          {(handle) => (
+            <>
+              <View style={styles.tripSheet}>
+                {handle}
+                {driver ? (
+                  <>
+                    <View style={styles.driverRow}>
+                      <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} size={44} />
+                      <Text numberOfLines={1} style={styles.driverName}>
+                        {driver.fullName}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel={contactLabel}
+                        accessibilityRole="button"
+                        hitSlop={6}
+                        onPress={onContact}
+                        style={({ pressed }) => [styles.contactButton, pressed && styles.pressed]}
+                      >
+                        <Text style={styles.contactText}>{contactShortLabel}</Text>
+                      </Pressable>
+                    </View>
+                    <View style={styles.driverDivider} />
+                  </>
+                ) : null}
 
-            <View style={styles.addressBlock}>
-              <View style={styles.addressRail}>
-                <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
-                {stopAddresses.map((address, index) => (
-                  <View key={`${index}:${address}`} style={styles.railStop}>
+                <View style={styles.addressBlock}>
+                  <View style={styles.addressRail}>
+                    <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
+                    {stopAddresses.map((address, index) => (
+                      <View key={`${index}:${address}`} style={styles.railStop}>
+                        <View style={styles.connector} />
+                        <View style={[styles.addressDot, { backgroundColor: colors.stopDot }]} />
+                      </View>
+                    ))}
                     <View style={styles.connector} />
-                    <View style={[styles.addressDot, { backgroundColor: colors.stopDot }]} />
+                    <View style={[styles.addressDot, { backgroundColor: colors.dropoffDot }]} />
                   </View>
-                ))}
-                <View style={styles.connector} />
-                <View style={[styles.addressDot, { backgroundColor: colors.dropoffDot }]} />
+                  <View style={styles.addressList}>
+                    <Text numberOfLines={2} style={styles.addressText}>
+                      {pickupAddress}
+                    </Text>
+                    {stopAddresses.map((address, index) => (
+                      <Text
+                        key={`${index}:${address}`}
+                        numberOfLines={2}
+                        style={[styles.addressText, styles.stopText]}
+                      >
+                        {address}
+                      </Text>
+                    ))}
+                    <Text numberOfLines={2} style={styles.addressText}>
+                      {dropoffAddress}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.statsRow}>
+                  <StatColumn label={durationLabel} value={durationValue} />
+                  <StatColumn label={distanceLabel} value={distanceValue} />
+                  <StatColumn label={priceLabel} value={priceValue} />
+                </View>
               </View>
-              <View style={styles.addressList}>
-                <Text numberOfLines={2} style={styles.addressText}>
-                  {pickupAddress}
-                </Text>
-                {stopAddresses.map((address, index) => (
-                  <Text
-                    key={`${index}:${address}`}
-                    numberOfLines={2}
-                    style={[styles.addressText, styles.stopText]}
+
+              <View style={styles.actionsRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={onShare}
+                  style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.shareText}>{shareLabel}</Text>
+                </Pressable>
+
+                {canCancel ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={onCancel}
+                    style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
                   >
-                    {address}
-                  </Text>
-                ))}
-                <Text numberOfLines={2} style={styles.addressText}>
-                  {dropoffAddress}
-                </Text>
+                    <Text style={styles.cancelText}>{cancelLabel}</Text>
+                  </Pressable>
+                ) : onSos && sosLabel ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={onSos}
+                    style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.cancelText}>{sosLabel}</Text>
+                  </Pressable>
+                ) : null}
               </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.statsRow}>
-              <StatColumn label={durationLabel} value={durationValue} />
-              <StatColumn label={distanceLabel} value={distanceValue} />
-              <StatColumn label={priceLabel} value={priceValue} />
-            </View>
-          </View>
-
-          <View style={styles.actionsRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onShare}
-              style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.shareText}>{shareLabel}</Text>
-            </Pressable>
-
-            {canCancel ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onCancel}
-                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-              >
-                <Text style={styles.cancelText}>{cancelLabel}</Text>
-              </Pressable>
-            ) : onSos && sosLabel ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onSos}
-                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-              >
-                <Text style={styles.cancelText}>{sosLabel}</Text>
-              </Pressable>
-            ) : null}
-          </View>
+            </>
+          )}
         </CollapsibleSheet>
       </View>
     </View>
@@ -329,7 +335,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 21,
-    paddingTop: 18,
+    // Сверху уже ручка карточки — свой отступ меньше.
+    paddingTop: 4,
   },
   divider: {
     backgroundColor: colors.divider,

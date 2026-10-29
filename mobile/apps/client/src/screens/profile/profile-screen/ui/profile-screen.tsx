@@ -4,13 +4,13 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatPhone } from '@nurtaxi/shared-core/shared/lib';
-import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { ErrorView, Loader, Text, showAlert } from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
@@ -45,7 +45,7 @@ export function ProfileScreen() {
   const { data: profile, isLoading, isError, error, refetch } = useGetMeQuery();
 
   const confirmLogout = () => {
-    Alert.alert(t('auth.logout'), t('auth.logoutConfirm'), [
+    showAlert(t('auth.logout'), t('auth.logoutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('auth.logout'),
@@ -58,7 +58,7 @@ export function ProfileScreen() {
   };
 
   const openSupport = () => {
-    Alert.alert(t('profile.support'), t('profile.supportHint'));
+    showAlert(t('profile.support'), t('profile.supportHint'));
   };
 
   if (isLoading) {

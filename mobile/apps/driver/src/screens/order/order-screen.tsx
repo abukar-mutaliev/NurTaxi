@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, AppState, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -22,7 +22,7 @@ import {
   formatPrice,
 } from '@nurtaxi/shared-core/shared/lib';
 import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/model';
-import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { Loader, Text, useTheme, showAlert } from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
 import {
   isCancelled,
@@ -127,7 +127,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
       return;
     }
     cancelledNoticeShownRef.current = true;
-    Alert.alert('Заказ отменён', 'Клиент отменил заказ.', [
+    showAlert('Заказ отменён', 'Клиент отменил заказ.', [
       { text: 'Понятно', onPress: () => router.replace('/(tabs)') },
     ]);
   }, [order, router]);
@@ -297,7 +297,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
         : { lat: order.dropoffLat, lng: order.dropoffLng });
     const opened = await openExternalNavigator(destination, driverPosition);
     if (!opened) {
-      Alert.alert(t('errors.title'), t('driver.navigatorUnavailable'));
+      showAlert(t('errors.title'), t('driver.navigatorUnavailable'));
     }
   };
 

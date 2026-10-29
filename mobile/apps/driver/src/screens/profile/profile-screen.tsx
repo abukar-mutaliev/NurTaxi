@@ -10,19 +10,11 @@ import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
-import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { Loader, Text, useTheme, showAlert } from '@nurtaxi/shared-core/shared/ui';
 import { DriverRequirementKey, RequirementMode } from '@nurtaxi/shared-core/shared/model';
 import {
   requirementMode,
@@ -61,7 +53,7 @@ export function ProfileScreen() {
   const { logout } = useAuth();
 
   const openSupport = () => {
-    Alert.alert(t('profile.support'), t('profile.supportHint'), [
+    showAlert(t('profile.support'), t('profile.supportHint'), [
       { style: 'cancel', text: t('common.cancel') },
       {
         onPress: () => {

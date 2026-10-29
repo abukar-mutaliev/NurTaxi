@@ -28,6 +28,14 @@ const VERIFICATION_STATUS_SCREEN = 'status';
 const CONSENT_SCREEN = 'consent';
 const AUTH_WELCOME_ROUTE = '/(auth)/welcome' as Href;
 const CONSENT_ROUTE = '/(auth)/consent' as Href;
+/** Как часто повторять загрузку профиля, пока сервер недоступен. */
+const PROFILE_RETRY_MS = 5000;
+
+/** Сбой связи или сервера, а не ответ о профиле: по нему нельзя судить о верификации. */
+function isTransientError(error: unknown): boolean {
+  const status = (error as { status?: unknown } | undefined)?.status;
+  return typeof status === 'string' || (typeof status === 'number' && status >= 500);
+}
 
 /**
  * Локальный переключатель для вёрстки: `true` отключает перенаправления, и тогда любой
@@ -59,15 +67,31 @@ export function useAuthGuard(): { isResolving: boolean } {
     isLoading: isProfileLoading,
     isError,
     error,
+    refetch,
   } = useGetDriverProfileQuery(undefined, {
     skip: !isAuthenticated,
   });
 
   const hasNoProfile = isError && error !== undefined && 'status' in error && error.status === 404;
+  /**
+   * Профиль не загрузился из-за связи. Раньше это читалось как «не допущен», и водитель,
+   * запустивший приложение в слабой сети, попадал на экран проверки документов вместо
+   * линии. Теперь ждём профиль, повторяя запрос.
+   */
+  const isProfileUnavailable = isAuthenticated && !profile && isError && isTransientError(error);
 
   // Отсутствие профиля означает, что анкета ещё не подана, — это нормальное состояние.
   const isApproved = profile?.verificationStatus === VerificationStatus.Approved;
-  const isResolving = status === 'unknown' || (isAuthenticated && isProfileLoading);
+  const isResolving =
+    status === 'unknown' || (isAuthenticated && isProfileLoading) || isProfileUnavailable;
+
+  useEffect(() => {
+    if (!isProfileUnavailable) {
+      return;
+    }
+    const timer = setInterval(() => void refetch(), PROFILE_RETRY_MS);
+    return () => clearInterval(timer);
+  }, [isProfileUnavailable, refetch]);
 
   useEffect(() => {
     if (isResolving || SKIP_GUARD) {

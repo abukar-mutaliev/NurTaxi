@@ -19,6 +19,9 @@ export type {
   TypographyToken,
 } from './theme/tokens';
 
+export { AlertHost } from './alert/alert-host';
+export { showAlert } from './alert/alert-store';
+export type { AlertButton, AlertOptions } from './alert/alert-store';
 export { Avatar } from './components/avatar';
 export { Badge } from './components/badge';
 export type { BadgeProps, BadgeTone } from './components/badge';

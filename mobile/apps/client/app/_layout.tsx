@@ -4,7 +4,7 @@
  */
 import { Stack } from 'expo-router';
 
-import { Loader } from '@nurtaxi/shared-core/shared/ui';
+import { AlertHost, Loader } from '@nurtaxi/shared-core/shared/ui';
 import { useNotificationHandlers } from '@nurtaxi/shared-core/features/notifications';
 
 import { AppProviders, useAuthGuard } from '@/app';
@@ -25,6 +25,8 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <RootNavigator />
+      {/* Диалоги `showAlert` — поверх любого экрана, в стиле приложения. */}
+      <AlertHost />
     </AppProviders>
   );
 }

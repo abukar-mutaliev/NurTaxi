@@ -8,12 +8,12 @@
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import type { NotificationSettings, PrivacySettings } from '@nurtaxi/shared-core/shared/model';
-import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { Loader, Text, useTheme, showAlert } from '@nurtaxi/shared-core/shared/ui';
 import { useGetMeQuery, useUpdateMeMutation } from '@nurtaxi/shared-core/entities/user';
 import { useRegisterPushTokenMutation } from '@nurtaxi/shared-core/entities/notification';
 /**
@@ -97,19 +97,15 @@ export function SettingsScreen() {
         notificationPermission.state === 'granted' || (await notificationPermission.request());
 
       if (!granted) {
-        Alert.alert(
-          t('permissions.notificationsTitle'),
-          t('permissions.notificationsDescription'),
-          [
-            { style: 'cancel', text: t('common.cancel') },
-            {
-              onPress: () => {
-                void notificationPermission.openSettings();
-              },
-              text: t('permissions.openSettings'),
+        showAlert(t('permissions.notificationsTitle'), t('permissions.notificationsDescription'), [
+          { style: 'cancel', text: t('common.cancel') },
+          {
+            onPress: () => {
+              void notificationPermission.openSettings();
             },
-          ],
-        );
+            text: t('permissions.openSettings'),
+          },
+        ]);
         throw new Error('notifications_permission_denied');
       }
 

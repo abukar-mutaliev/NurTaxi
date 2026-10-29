@@ -2,7 +2,7 @@
  * Главный экран клиента (M3.3): карта, поиск адреса, оформление заказа (Figma node 39:1106).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
@@ -51,6 +51,7 @@ import {
   draftStops,
   createOrderCompat,
   familyMemberSelected,
+  orderDraftDiscarded,
   orderForOtherChanged,
   passengerNameChanged,
   passengerPhoneChanged,
@@ -374,6 +375,33 @@ export function HomeScreen() {
     }
   };
 
+  /**
+   * Отказ от заказа до его создания. Раньше выйти из оформления было нельзя: лист держался,
+   * пока выбраны оба адреса, а стереть адрес назначения было негде. Точка подачи «моё
+   * местоположение» вернётся сама — её подставляет эффект выше.
+   */
+  const discardOrderDraft = useCallback(() => {
+    setCreateError(null);
+    setPaymentSheetVisible(false);
+    dispatch(orderDraftDiscarded());
+  }, [dispatch]);
+
+  // Системная «Назад» на Android при открытом листе отменяет оформление, а не сворачивает
+  // приложение с недооформленным заказом.
+  const canDiscardByBack = showOrderSheet && !createState.isLoading;
+  useFocusEffect(
+    useCallback(() => {
+      if (!canDiscardByBack) {
+        return undefined;
+      }
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        discardOrderDraft();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [canDiscardByBack, discardOrderDraft]),
+  );
+
   const openPaymentMethods = () => {
     setPaymentSheetVisible(true);
   };
@@ -476,6 +504,7 @@ export function HomeScreen() {
           isOrdering={createState.isLoading}
           loadingLabel={t('common.loading')}
           addStopLabel={t('order.addStop')}
+          onCancel={discardOrderDraft}
           onDropoffPress={() => openSearch('dropoff')}
           onOrder={submitOrder}
           onPaymentPress={openPaymentMethods}
@@ -487,6 +516,7 @@ export function HomeScreen() {
           stopLabel={t('order.stop')}
           onTariffPress={() => undefined}
           orderLabel={t('order.createNur')}
+          cancelLabel={t('order.cancelShort')}
           paymentLabel={paymentLabel}
           paymentMethod={draft.paymentMethod}
           paymentMethodLabel={t('order.paymentMethod')}

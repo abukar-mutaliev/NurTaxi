@@ -6,11 +6,11 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { Text, showAlert } from '@nurtaxi/shared-core/shared/ui';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { GlassAddIconButton, GlassConfirmDialog, GlassScreenHeader } from '@/shared/ui';
@@ -67,7 +67,7 @@ export function PaymentMethodsScreen() {
   );
 
   const showAddCardHint = () => {
-    Alert.alert(t('payment.addCard'), t('payment.addCardHint'));
+    showAlert(t('payment.addCard'), t('payment.addCardHint'));
   };
 
   const finishEditing = () => {
@@ -77,7 +77,7 @@ export function PaymentMethodsScreen() {
 
   const requestDelete = (card: DemoPaymentCard) => {
     if (cards.length <= 1) {
-      Alert.alert(t('common.delete'), t('payment.cannotDeleteLast'));
+      showAlert(t('common.delete'), t('payment.cannotDeleteLast'));
       return;
     }
 

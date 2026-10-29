@@ -6,7 +6,6 @@
  * поле `photoUrl` — сам ключ, по которому картинку не загрузить.
  */
 import { useCallback, useState } from 'react';
-import { Alert } from 'react-native';
 
 import { toAppError, userErrorMessage } from '@nurtaxi/shared-core/shared/api';
 import { pickImageWithChoice, uploadFileToStorage } from '@nurtaxi/shared-core/shared/lib';
@@ -14,6 +13,7 @@ import {
   useConfirmProfilePhotoMutation,
   usePresignProfilePhotoMutation,
 } from '@nurtaxi/shared-core/entities/user';
+import { showAlert } from '@nurtaxi/shared-core/shared/ui';
 
 export interface ProfilePhotoUpload {
   /** Открывает выбор источника и загружает снимок. Ошибку показывает сам. */
@@ -34,7 +34,7 @@ export function useProfilePhotoUpload(): ProfilePhotoUpload {
         message: 'Сделать снимок или выбрать из галереи?',
       });
     } catch (cause) {
-      Alert.alert('Не удалось выбрать фото', userErrorMessage(toAppError(cause as never)));
+      showAlert('Не удалось выбрать фото', userErrorMessage(toAppError(cause as never)));
       return;
     }
     if (!picked) {
@@ -54,7 +54,7 @@ export function useProfilePhotoUpload(): ProfilePhotoUpload {
       // `confirm` сбрасывает тег `Profile` — `getMe` перечитается с новой ссылкой на фото.
       await confirmPhoto({ storageKey }).unwrap();
     } catch (cause) {
-      Alert.alert('Не удалось обновить фото', userErrorMessage(toAppError(cause as never)));
+      showAlert('Не удалось обновить фото', userErrorMessage(toAppError(cause as never)));
     } finally {
       setIsUploading(false);
     }

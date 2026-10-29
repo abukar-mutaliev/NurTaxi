@@ -8,11 +8,12 @@
  */
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
+import { AppState } from 'react-native';
 
 import { driverApi } from '@nurtaxi/shared-core/entities/driver';
 import { realtimeClient } from '@nurtaxi/shared-core/features/realtime';
 
-import { store } from '@/app/store/store';
+import { persistor, store } from '@/app/store/store';
 import { positionSent } from '@/processes/shift';
 
 export const DRIVER_LOCATION_TASK = 'nurtaxi-driver-location-task';
@@ -34,6 +35,11 @@ export function sendDriverLocationUpdate(
     void store.dispatch(driverApi.endpoints.updateDriverLocation.initiate({ lat, lng }));
   }
   store.dispatch(positionSent({ lat, lng }));
+  // В фоне таймер redux-persist стоит — без явной записи отметка «приложение живо» не
+  // дошла бы до диска, и выгрузка системой снимала бы водителя с линии (см. `useOfflineOnLaunch`).
+  if (AppState.currentState !== 'active') {
+    void persistor.flush().catch(() => undefined);
+  }
 }
 
 interface LocationTaskPayload {

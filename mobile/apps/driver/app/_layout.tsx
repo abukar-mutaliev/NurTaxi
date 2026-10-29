@@ -4,7 +4,7 @@
  */
 import { Stack } from 'expo-router';
 
-import { Loader } from '@nurtaxi/shared-core/shared/ui';
+import { AlertHost, Loader } from '@nurtaxi/shared-core/shared/ui';
 
 import { AppProviders, useAuthGuard } from '@/app';
 // Побочный эффект: регистрирует фоновую задачу геопозиции до монтирования компонентов (M8.2).
@@ -32,6 +32,8 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <RootNavigator />
+      {/* Диалоги `showAlert` — поверх любого экрана, в стиле приложения. */}
+      <AlertHost />
     </AppProviders>
   );
 }

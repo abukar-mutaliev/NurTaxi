@@ -18,9 +18,24 @@ import {
 } from '@nurtaxi/shared-core/entities/session';
 import { useLazyGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
+/** Пауза перед повторной загрузкой профиля, когда сервер не ответил. */
+const RETRY_DELAY_MS = 5000;
+
 function isSupportedLanguage(value: string): value is AppLanguage {
   return (Object.values(AppLanguage) as string[]).includes(value);
 }
+
+/**
+ * Сервер ответил, что сессия недействительна, — а не просто не ответил. Только тогда
+ * выходим в гостевой режим: раньше выход случался и при запуске без связи, и водитель
+ * терял аккаунт вместе с линией.
+ */
+function isSessionRejected(cause: unknown): boolean {
+  const status = (cause as { status?: unknown } | null)?.status;
+  return status === 401 || status === 403;
+}
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export function useSessionBootstrap(): void {
   const dispatch = useDispatch();
@@ -40,19 +55,28 @@ export function useSessionBootstrap(): void {
         return;
       }
 
-      try {
-        const profile = await fetchMe().unwrap();
-        if (cancelled) {
+      while (!cancelled) {
+        try {
+          const profile = await fetchMe().unwrap();
+          if (cancelled) {
+            return;
+          }
+          dispatch(profileLoaded(profile));
+          if (isSupportedLanguage(profile.language)) {
+            await changeLanguage(profile.language);
+          }
           return;
-        }
-        dispatch(profileLoaded(profile));
-        if (isSupportedLanguage(profile.language)) {
-          await changeLanguage(profile.language);
-        }
-      } catch {
-        // Токен оказался нерабочим и refresh не помог — выходим в гостевой режим.
-        if (!cancelled) {
-          dispatch(signedOut());
+        } catch (cause) {
+          if (cancelled) {
+            return;
+          }
+          if (isSessionRejected(cause)) {
+            // Токен оказался нерабочим и refresh не помог — выходим в гостевой режим.
+            dispatch(signedOut());
+            return;
+          }
+          // Нет связи или сервер недоступен: сессия цела, пробуем ещё раз.
+          await delay(RETRY_DELAY_MS);
         }
       }
     };

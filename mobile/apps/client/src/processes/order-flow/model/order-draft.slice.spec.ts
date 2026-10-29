@@ -1,10 +1,18 @@
+import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
+
 import {
+  activeOrderChanged,
   childSeatChanged,
+  commentChanged,
   draftStops,
+  dropoffSelected,
+  orderDraftDiscarded,
   orderDraftReducer,
   orderDraftCleared,
   orderForOtherChanged,
+  paymentMethodSelected,
   pickupSelected,
+  regionSelected,
   selectOrderStop,
   stopSelected,
 } from './order-draft.slice';
@@ -66,6 +74,33 @@ describe('pickupSelected', () => {
       lng: 44.77,
       address: 'Моё местоположение',
     });
+  });
+});
+
+describe('orderDraftDiscarded', () => {
+  it('сбрасывает маршрут и пожелания, но оставляет регион, оплату и активный заказ', () => {
+    const steps = [
+      regionSelected('region-1'),
+      pickupSelected({ lat: 43.2, lng: 44.7, address: 'пр. Мира, 1' }),
+      stopSelected({ lat: 43.19, lng: 44.79, address: 'ул. Московская, 1' }),
+      dropoffSelected({ lat: 43.1, lng: 44.6, address: 'Аэропорт' }),
+      commentChanged('У второго подъезда'),
+      childSeatChanged(true),
+      paymentMethodSelected(PaymentMethod.Card),
+      activeOrderChanged('order-1'),
+    ];
+    const filled = steps.reduce(orderDraftReducer, orderDraftReducer(undefined, { type: 'init' }));
+
+    const discarded = orderDraftReducer(filled, orderDraftDiscarded());
+
+    expect(discarded.pickup).toBeNull();
+    expect(discarded.stop).toBeNull();
+    expect(discarded.dropoff).toBeNull();
+    expect(discarded.comment).toBe('');
+    expect(discarded.childSeat).toBe(false);
+    expect(discarded.regionId).toBe('region-1');
+    expect(discarded.paymentMethod).toBe(PaymentMethod.Card);
+    expect(discarded.activeOrderId).toBe('order-1');
   });
 });
 

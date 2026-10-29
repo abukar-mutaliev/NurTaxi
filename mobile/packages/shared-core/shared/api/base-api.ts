@@ -43,18 +43,37 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+/**
+ * Итог обновления токенов. `unavailable` — сервер не ответил (нет сети, таймаут, 5xx):
+ * о сессии это ничего не говорит, и выходить из аккаунта нельзя. Раньше любой сбой
+ * считался отказом — водитель, у которого на секунду пропала связь, оказывался
+ * разлогинен, переставал быть на линии и не получал заказы.
+ */
+type RefreshOutcome = 'refreshed' | 'rejected' | 'unavailable';
+
 /** Гарантирует, что одновременно выполняется не больше одного refresh-запроса. */
-let refreshInFlight: Promise<boolean> | null = null;
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
 
 type RawBaseQuery = typeof rawBaseQuery;
+
+/**
+ * Сервер ответил на refresh отказом — токен отозван, истёк или не принадлежит никому.
+ * 408 и 429 — не отказ, а «попробуйте позже».
+ */
+function isRefreshRejected(error: FetchBaseQueryError): boolean {
+  const { status } = error;
+  return (
+    typeof status === 'number' && status >= 400 && status < 500 && status !== 408 && status !== 429
+  );
+}
 
 async function refreshTokens(
   api: Parameters<RawBaseQuery>[1],
   extraOptions: Parameters<RawBaseQuery>[2],
-): Promise<boolean> {
+): Promise<RefreshOutcome> {
   const refreshToken = tokenStorage.getRefreshToken();
   if (!refreshToken) {
-    return false;
+    return 'rejected';
   }
 
   const result = await rawBaseQuery(
@@ -63,8 +82,11 @@ async function refreshTokens(
     extraOptions,
   );
 
-  if (result.error || !result.data) {
-    return false;
+  if (result.error) {
+    return isRefreshRejected(result.error) ? 'rejected' : 'unavailable';
+  }
+  if (!result.data) {
+    return 'unavailable';
   }
 
   const tokens = result.data as RefreshResponse;
@@ -73,7 +95,7 @@ async function refreshTokens(
     refreshToken: tokens.refreshToken,
   });
   api.dispatch(sessionTokensRefreshed(tokens));
-  return true;
+  return 'refreshed';
 }
 
 /** Эндпоинты авторизации не нуждаются в повторе после refresh — там 401 означает неверный код. */
@@ -98,12 +120,20 @@ const baseQueryWithReauth: BaseQueryFn<
   refreshInFlight ??= refreshTokens(api, extraOptions).finally(() => {
     refreshInFlight = null;
   });
-  const refreshed = await refreshInFlight;
+  const outcome = await refreshInFlight;
 
-  if (!refreshed) {
+  if (outcome === 'rejected') {
     await tokenStorage.clear();
     api.dispatch(sessionUnauthorized());
     return result;
+  }
+  if (outcome === 'unavailable') {
+    /**
+     * Сессию не трогаем: запрос повторится при восстановлении связи или возврате на экран.
+     * Отдаём сетевую ошибку, а не исходный 401 — иначе вызывающий код примет сбой связи
+     * за недействительную сессию.
+     */
+    return { error: { status: 'FETCH_ERROR', error: 'Token refresh unavailable' } };
   }
 
   result = await rawBaseQuery(args, api, extraOptions);

@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme/theme-provider';
 import { Text } from './text';
+import { radius } from '../theme/tokens';
 
 export interface SheetProps {
   visible: boolean;
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 4,
     width: 40,
   },

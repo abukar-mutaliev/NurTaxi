@@ -8,7 +8,6 @@ import { Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassCard, GlassPrimaryButton } from '@/shared/ui';
 import { WelcomeGradientBackground } from '@/shared/ui/welcome-gradient-background';
 
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 const logoAsset = require('@/assets/images/welcome/logo.png');
 
 export interface ErrorBoundaryFallbackProps {
@@ -29,20 +28,6 @@ export function ErrorBoundaryFallback({ error, onRetry }: ErrorBoundaryFallbackP
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <View
         style={[

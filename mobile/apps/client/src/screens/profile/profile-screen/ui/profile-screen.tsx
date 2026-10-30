@@ -14,6 +14,7 @@ import {
   brandColors,
   ErrorView,
   Loader,
+  radius,
   showAlert,
   Text,
   typeScale,
@@ -38,8 +39,6 @@ const colors = {
   logoutText: brandColors.textMuted,
   shadow: brandColors.shadow,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export function ProfileScreen() {
   const { t } = useTranslation();
@@ -97,21 +96,6 @@ export function ProfileScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <ScrollView
         contentContainerStyle={{
@@ -206,13 +190,13 @@ const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
     backgroundColor: colors.avatarBg,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 64,
     justifyContent: 'center',
     width: 64,
   },
   avatarImage: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 64,
     width: 64,
   },
@@ -233,7 +217,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.logoutBg,
     borderColor: colors.logoutBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 58,

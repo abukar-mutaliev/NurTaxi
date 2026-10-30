@@ -112,3 +112,40 @@ export const brandColors = {
 } as const;
 
 export type BrandColor = keyof typeof brandColors;
+
+/**
+ * Состояния кнопок — из тех же цветов, без прозрачности: обычное, нажатое и неактивное.
+ * Неактивное по WCAG контрастом не ограничено, поэтому оно светлее и тише.
+ */
+export const controlColors = {
+  primary: {
+    background: brandColors.primary,
+    pressed: brandColors.primaryPressed,
+    disabled: brandColors.primaryDisabled,
+    text: brandColors.onPrimary,
+    disabledText: brandColors.onPrimary,
+  },
+  secondary: {
+    background: brandColors.secondarySoft,
+    pressed: brandColors.secondary,
+    disabled: brandColors.surfaceMuted,
+    text: brandColors.text,
+    disabledText: brandColors.textMuted,
+  },
+  danger: {
+    background: brandColors.danger,
+    pressed: brandColors.dangerPressed,
+    disabled: brandColors.dangerSoft,
+    text: brandColors.onPrimary,
+    disabledText: brandColors.danger,
+  },
+  ghost: {
+    background: 'transparent',
+    pressed: brandColors.secondarySubtle,
+    disabled: 'transparent',
+    text: brandColors.primary,
+    disabledText: brandColors.icon,
+  },
+} as const;
+
+export type ControlVariant = keyof typeof controlColors;

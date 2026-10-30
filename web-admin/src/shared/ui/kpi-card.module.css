@@ -1,6 +1,6 @@
 .card {
   height: 100%;
-  border-radius: 16px;
+  border-radius: var(--nur-radius-lg);
 }
 
 .header {

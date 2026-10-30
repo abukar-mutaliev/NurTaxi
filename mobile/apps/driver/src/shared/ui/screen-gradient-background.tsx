@@ -1,28 +1,27 @@
-import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
+
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 
 export type GradientTone = 'gold' | 'rose';
 
 /**
- * Фирменный фон экранов Нур: `gold` — приветствие и вход, `rose` — код, верификация, профиль.
+ * Фон экранов Нур: `gold` — приветствие и вход, `rose` — код, верификация, профиль.
  *
- * Градиент отрисован заранее в PNG (8×1200, ~300 байт) и растягивается на весь экран.
- * Так фон не зависит от нативного модуля `expo-linear-gradient`: он попадает в приложение
- * только при пересборке dev-клиента, а без него React Native падает с
- * `IllegalViewOperationException` (нет ViewManager для ExpoLinearGradient).
+ * Прежние градиенты (PNG 8×1200) заменены ровными цветами палитры: молочный фон и едва
+ * заметная пудра для второго тона — без многоцветных переходов.
  *
- * Обёртка `View` с `pointerEvents="none"` нужна, чтобы фон не перехватывал касания
- * на участках, не закрытых содержимым экрана.
+ * `pointerEvents="none"` — фон не перехватывает касания на участках без содержимого.
  */
-const SOURCES = {
-  gold: require('@/assets/images/welcome/bg-gold.png'),
-  rose: require('@/assets/images/welcome/bg-rose.png'),
-} as const;
+const BACKGROUND: Record<GradientTone, string> = {
+  gold: brandColors.background,
+  rose: brandColors.secondarySubtle,
+};
 
 export function ScreenGradientBackground({ tone = 'gold' }: { tone?: GradientTone }) {
   return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Image contentFit="fill" source={SOURCES[tone]} style={StyleSheet.absoluteFill} />
-    </View>
+    <View
+      pointerEvents="none"
+      style={[StyleSheet.absoluteFill, { backgroundColor: BACKGROUND[tone] }]}
+    />
   );
 }

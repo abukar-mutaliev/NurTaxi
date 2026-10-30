@@ -22,6 +22,8 @@ import {
 
 import { brandColors } from '../theme/brand';
 import { typeScale } from '../theme/fonts';
+import { radius } from '../theme/tokens';
+import { shadows } from '../theme/elevation';
 /** Кремовая карточка, как листы заказа; в тёмной теме — поверхность темы. */
 const LIGHT_CARD = brandColors.surface;
 const LIGHT_CARD_BORDER = brandColors.divider;
@@ -182,13 +184,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   card: {
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     elevation: 12,
-    shadowColor: brandColors.shadowStrong,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 1,
-    shadowRadius: 24,
+    ...shadows.lg,
   },
   column: {
     flexDirection: 'column',

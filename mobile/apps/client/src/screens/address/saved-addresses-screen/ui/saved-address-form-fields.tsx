@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GlassCaption, GlassTextField } from '@/shared/ui';
 
@@ -136,7 +136,7 @@ function PresetChip({ label, active, scale, onPress }: PresetChipProps) {
       style={({ pressed }) => [
         styles.chip,
         {
-          borderRadius: scale * 16,
+          borderRadius: scale * radius.lg,
           opacity: pressed ? 0.92 : 1,
           paddingHorizontal: scale * 14,
           paddingVertical: scale * 8,

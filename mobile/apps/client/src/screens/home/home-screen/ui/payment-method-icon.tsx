@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 
-import { brandColors } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const paymentSymbols: Record<PaymentMethod, SymbolName> = {
@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.background,
     borderColor: colors.ring,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: 'center',
   },

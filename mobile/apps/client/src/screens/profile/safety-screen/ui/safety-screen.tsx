@@ -1,17 +1,15 @@
 /**
  * Экран безопасности (Figma node 39:1088): SOS, аудиозапись, проверка водителя.
  */
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   isTripRecordingAllowed,
   useActivateSosMutation,
@@ -43,8 +41,6 @@ const colors = {
   panicButtonInner: brandColors.surface,
   panicShadow: brandColors.shadowStrong,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 type SafetyDialogState =
   | null
@@ -156,21 +152,6 @@ export function SafetyScreen() {
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
-
       <ScrollView
         contentContainerStyle={{
           gap: scale * 20,
@@ -188,11 +169,12 @@ export function SafetyScreen() {
           onPress={triggerPanic}
           style={({ pressed }) => [{ opacity: pressed || sosState.isLoading ? 0.94 : 1 }]}
         >
-          <LinearGradient
-            colors={[brandColors.danger, brandColors.dangerSoft]}
-            end={{ x: 1, y: 0.5 }}
-            start={{ x: 0, y: 0.5 }}
-            style={[styles.panicCard, { borderRadius: scale * 28, height: scale * 132 }]}
+          <View
+            style={[
+              styles.panicCard,
+              { borderRadius: scale * radius.xxl, height: scale * 132 },
+              { backgroundColor: brandColors.dangerSoft },
+            ]}
           >
             <View style={styles.panicText}>
               <Text style={[styles.panicTitle, { fontSize: scale * typeScale.base }]}>
@@ -242,7 +224,7 @@ export function SafetyScreen() {
                 ]}
               />
             </View>
-          </LinearGradient>
+          </View>
         </Pressable>
 
         <View style={{ gap: scale * 20 }}>
@@ -372,12 +354,12 @@ const styles = StyleSheet.create({
   },
   panicButtonInner: {
     backgroundColor: colors.panicButtonInner,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   panicButtonOuter: {
     alignItems: 'center',
     backgroundColor: colors.panicButton,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     elevation: 6,
     justifyContent: 'center',
     position: 'absolute',
@@ -389,7 +371,7 @@ const styles = StyleSheet.create({
   },
   panicGlow: {
     backgroundColor: colors.panicGlow,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     position: 'absolute',
   },
   panicSubtitle: {

@@ -3,7 +3,7 @@ import medium from 'expo-symbols/androidWeights/medium';
 import regular from 'expo-symbols/androidWeights/regular';
 import { StyleSheet, View } from 'react-native';
 
-import { brandColors } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 export type TariffIconVariant = 'economy' | 'comfort' | 'business' | 'van';
@@ -104,7 +104,7 @@ export function TariffIcon({ variant, selected = false, size = 36 }: TariffIconP
 const styles = StyleSheet.create({
   outer: {
     alignItems: 'center',
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
     justifyContent: 'center',
   },

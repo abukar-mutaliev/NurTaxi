@@ -22,7 +22,15 @@ import {
   formatPrice,
 } from '@nurtaxi/shared-core/shared/lib';
 import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Loader, showAlert, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Loader,
+  radius,
+  shadows,
+  showAlert,
+  Text,
+  useTheme,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
 import {
   isCancelled,
@@ -384,7 +392,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
           <View
             style={{
               backgroundColor: theme.colors.accent,
-              borderRadius: 999,
+              borderRadius: radius.pill,
               height: 12,
               width: 12,
             }}
@@ -427,7 +435,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
               <View
                 style={{
                   backgroundColor: theme.colors.accent,
-                  borderRadius: 999,
+                  borderRadius: radius.pill,
                   height: 10,
                   width: 10,
                 }}
@@ -444,7 +452,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
                 <View
                   style={{
                     borderColor: theme.colors.accent,
-                    borderRadius: 999,
+                    borderRadius: radius.pill,
                     borderWidth: 2,
                     height: 10,
                     width: 10,
@@ -459,7 +467,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
               <View
                 style={{
                   backgroundColor: theme.colors.text,
-                  borderRadius: 999,
+                  borderRadius: radius.pill,
                   height: 10,
                   width: 10,
                 }}
@@ -525,10 +533,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: brandColors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   finishedBody: {
     alignItems: 'center',
@@ -550,18 +555,12 @@ const styles = StyleSheet.create({
     maxHeight: '62%',
     position: 'absolute',
     right: 0,
-    shadowColor: brandColors.shadowStrong,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
+    ...shadows.up,
   },
   statusPill: {
     borderWidth: 1,
     elevation: 2,
-    shadowColor: brandColors.shadowStrong,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   topBar: {
     alignItems: 'center',

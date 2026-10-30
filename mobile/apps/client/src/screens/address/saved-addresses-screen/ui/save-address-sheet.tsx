@@ -36,7 +36,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AddressSuggestion, GeoLocation } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   MIN_GEO_QUERY_LENGTH,
   toAddressSuggestion,
@@ -248,8 +248,8 @@ export function SaveAddressSheet({
                 styles.panel,
                 panelStyle,
                 {
-                  borderTopLeftRadius: scale * 28,
-                  borderTopRightRadius: scale * 28,
+                  borderTopLeftRadius: scale * radius.xxl,
+                  borderTopRightRadius: scale * radius.xxl,
                   paddingBottom: insets.bottom + scale * 20,
                   paddingHorizontal: scale * 16,
                 },
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     backgroundColor: brandColors.border,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 4,
     width: 40,
   },

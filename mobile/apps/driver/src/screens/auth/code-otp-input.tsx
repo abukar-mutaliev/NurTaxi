@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, shadows, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 const c = {
   cellBg: brandColors.background,
@@ -111,10 +111,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.md,
   },
   cellText: {
     color: c.text,

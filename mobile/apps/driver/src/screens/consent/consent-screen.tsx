@@ -25,7 +25,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  fontFamily,
+  radius,
+  shadows,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useOnboarding } from '@nurtaxi/shared-core/features/auth';
 
 import { PillButton } from '@/shared/ui/pill-button';
@@ -112,7 +119,7 @@ export function ConsentScreen() {
           <View
             style={[
               styles.inputShell,
-              { borderRadius: sx(18), height: sx(58), paddingHorizontal: sx(20) },
+              { borderRadius: sx(radius.lg), height: sx(58), paddingHorizontal: sx(20) },
             ]}
           >
             <TextInput
@@ -138,7 +145,7 @@ export function ConsentScreen() {
             styles.consentCard,
             {
               borderColor: consent ? c.consentBorderActive : c.consentBorder,
-              borderRadius: sx(18),
+              borderRadius: sx(radius.lg),
               gap: sy(8),
               marginTop: sy(24),
               padding: sx(18),
@@ -159,7 +166,7 @@ export function ConsentScreen() {
                 {
                   backgroundColor: consent ? c.checkBg : 'transparent',
                   borderColor: consent ? c.checkBg : c.consentBorder,
-                  borderRadius: sx(6),
+                  borderRadius: sx(radius.sm),
                   height: sx(22),
                   width: sx(22),
                 },
@@ -243,10 +250,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...shadows.md,
   },
   root: {
     backgroundColor: brandColors.background,

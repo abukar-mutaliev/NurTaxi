@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { glassShadow } from './glass-shadow';
 
-import { brandColors } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 const colors = {
   glassBg: brandColors.surface,
   glassBorder: brandColors.divider,
@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 44,
@@ -61,14 +61,14 @@ const styles = StyleSheet.create({
   },
   plusHorizontal: {
     backgroundColor: colors.icon,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 2,
     position: 'absolute',
     width: 16,
   },
   plusVertical: {
     backgroundColor: colors.icon,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 16,
     position: 'absolute',
     width: 2,

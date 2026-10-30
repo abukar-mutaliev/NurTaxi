@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 44,
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 25,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 50,
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   },
   carIcon: {
     backgroundColor: colors.car,
-    borderRadius: 7,
+    borderRadius: radius.sm,
   },
   content: {
     alignItems: 'center',
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.core,
     borderColor: colors.coreBorder,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
     elevation: 3,
     justifyContent: 'center',
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   grabber: {
     backgroundColor: brandColors.border,
-    borderRadius: 2,
+    borderRadius: radius.xs,
     height: 4,
     width: 36,
   },
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     elevation: 2,
     height: 28,
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     gap: 8,
     paddingBottom: 16,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     opacity: 0.88,
   },
   pulseRing: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
     position: 'absolute',
   },
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     marginVertical: 24,
   },
   staticRing: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     position: 'absolute',
   },
   subtitle: {

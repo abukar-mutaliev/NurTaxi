@@ -1,15 +1,18 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { brandColors } from '@nurtaxi/shared-core/shared/ui';
-/** Вертикальный градиент Figma 2:2: #F7DCA8 → #FCEFD6 @42% → #F8F4EF. */
+
+/**
+ * Фон экранов клиента. Прежний золотой градиент Figma 2:2 заменён ровным молочным фоном:
+ * в новом стиле — чистые плоские поверхности без многоцветных переходов.
+ */
 export function WelcomeGradientBackground() {
-  return (
-    <LinearGradient
-      colors={[brandColors.primary, brandColors.secondarySoft, brandColors.background]}
-      locations={[0, 0.42, 1]}
-      pointerEvents="none"
-      style={StyleSheet.absoluteFill}
-    />
-  );
+  return <View pointerEvents="none" style={styles.fill} />;
 }
+
+const styles = StyleSheet.create({
+  fill: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: brandColors.background,
+  },
+});

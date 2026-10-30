@@ -3,7 +3,7 @@ import medium from 'expo-symbols/androidWeights/medium';
 import regular from 'expo-symbols/androidWeights/regular';
 import { StyleSheet, View } from 'react-native';
 
-import { brandColors } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 type TabIconName = NonNullable<SymbolViewProps['name']>;
 
 type TabRouteName = 'index' | 'orders' | 'earnings' | 'profile';
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   indicator: {
     backgroundColor: 'transparent',
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 3,
     marginTop: 4,
     width: 3,

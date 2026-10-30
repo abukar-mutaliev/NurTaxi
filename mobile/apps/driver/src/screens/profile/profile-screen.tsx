@@ -17,6 +17,8 @@ import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
 import {
   brandColors,
   Loader,
+  radius,
+  shadows,
   showAlert,
   Text,
   typeScale,
@@ -267,7 +269,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
-    borderRadius: 31,
+    borderRadius: radius.xxl,
     height: 62,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -275,7 +277,7 @@ const styles = StyleSheet.create({
   },
   avatarBadge: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     bottom: -2,
     height: 24,
@@ -297,10 +299,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: brandColors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   headerTitle: {
     textAlign: 'center',

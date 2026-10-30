@@ -37,7 +37,6 @@ const colors = {
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export interface HistoryScreenProps {
   /** На вкладке таббара — без кнопки «назад». */
@@ -115,21 +114,6 @@ export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -190,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <FlatList
         ListEmptyComponent={

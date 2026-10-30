@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Avatar, brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { Avatar, brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
 import { useProfilePhotoUpload, useProfileUpdate } from '@/features/profile';
@@ -93,7 +93,7 @@ export function EditProfileScreen() {
                 style={{
                   alignItems: 'center',
                   backgroundColor: brandColors.overlay,
-                  borderRadius: 48,
+                  borderRadius: radius.pill,
                   bottom: 0,
                   justifyContent: 'center',
                   left: 0,

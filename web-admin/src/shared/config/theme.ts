@@ -98,6 +98,24 @@ export const typeScale = {
   display: 32,
 } as const;
 
+/** Мягкие скругления — та же шкала, что `radius` в мобильных приложениях. */
+export const radius = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 28,
+  pill: 999,
+} as const;
+
+/** Спокойные тени из цвета текста, без цветных ореолов. */
+export const shadows = {
+  sm: `0 2px 8px ${palette.shadow}`,
+  md: `0 6px 16px ${palette.shadow}`,
+  lg: `0 12px 28px ${palette.shadowStrong}`,
+} as const;
+
 const toKebab = (name: string) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
 
 /**
@@ -110,6 +128,12 @@ export const cssVariables: Record<string, string> = {
   ),
   ...Object.fromEntries(
     Object.entries(typeScale).map(([name, value]) => [`--nur-font-${name}`, `${value}px`]),
+  ),
+  ...Object.fromEntries(
+    Object.entries(radius).map(([name, value]) => [`--nur-radius-${name}`, `${value}px`]),
+  ),
+  ...Object.fromEntries(
+    Object.entries(shadows).map(([name, value]) => [`--nur-shadow-${name}`, value]),
   ),
   '--nur-font-family': FONT_FAMILY,
 };
@@ -132,8 +156,12 @@ export const antTheme = {
     colorLink: palette.primary,
     colorLinkHover: palette.primaryHover,
     colorLinkActive: palette.primaryPressed,
-    borderRadius: 10,
-    borderRadiusLG: 16,
+    borderRadius: radius.md,
+    borderRadiusLG: radius.lg,
+    borderRadiusSM: radius.sm,
+    borderRadiusXS: radius.xs,
+    boxShadow: shadows.md,
+    boxShadowSecondary: shadows.lg,
     fontFamily: FONT_FAMILY,
     fontSize: typeScale.md,
     fontSizeSM: typeScale.xs,
@@ -180,10 +208,22 @@ export const antTheme = {
       rowHoverBg: palette.secondarySubtle,
     },
     Card: {
-      borderRadiusLG: 16,
+      borderRadiusLG: radius.xl,
     },
+    // Плоские кнопки: тень только у основной, и спокойная.
     Button: {
-      primaryShadow: `0 4px 12px ${palette.shadow}`,
+      primaryShadow: shadows.sm,
+      defaultShadow: 'none',
+      dangerShadow: 'none',
+      borderRadius: radius.pill,
+      borderRadiusLG: radius.pill,
+      borderRadiusSM: radius.pill,
+    },
+    Input: {
+      activeShadow: `0 0 0 3px ${palette.primarySoft}`,
+    },
+    Modal: {
+      borderRadiusLG: radius.xl,
     },
   },
 } as const;

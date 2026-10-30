@@ -9,7 +9,14 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { brandColors, fontFamily, Sheet, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  fontFamily,
+  radius,
+  Sheet,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 
 const colors = {
   text: brandColors.text,
@@ -130,7 +137,7 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: radius.lg,
     flex: 1,
     flexDirection: 'row',
     gap: 6,
@@ -163,7 +170,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
     backgroundColor: colors.fieldBg,
     borderColor: colors.fieldBorder,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     borderWidth: 1,
     color: colors.text,
     fontSize: typeScale.base,

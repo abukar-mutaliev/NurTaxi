@@ -22,12 +22,15 @@ export const spacing = {
 } as const;
 export type SpacingToken = keyof typeof spacing;
 
+/** Мягкие скругления: от мелких меток (`xs`) до шторок (`xxl`) и капсул (`pill`). */
 export const radius = {
   none: 0,
-  sm: 6,
-  md: 10,
+  xs: 4,
+  sm: 8,
+  md: 12,
   lg: 16,
   xl: 24,
+  xxl: 28,
   pill: 999,
 } as const;
 export type RadiusToken = keyof typeof radius;

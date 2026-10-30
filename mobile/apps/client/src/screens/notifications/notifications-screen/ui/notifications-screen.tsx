@@ -1,7 +1,6 @@
 /**
  * Центр in-app уведомлений (M10.3, Req §23).
  */
-import { Image } from 'expo-image';
 import { FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -30,8 +29,6 @@ import {
   GlassScreenHeader,
   GlassScreenShell,
 } from '@/shared/ui';
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export function NotificationsScreen() {
   const { t } = useTranslation();
@@ -79,20 +76,6 @@ export function NotificationsScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <FlatList
         ListEmptyComponent={

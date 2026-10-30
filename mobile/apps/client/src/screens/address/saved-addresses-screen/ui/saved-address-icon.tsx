@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import type { SavedAddressLabelKind } from './saved-address-label';
 
-import { brandColors } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const iconNames: Record<SavedAddressLabelKind, SymbolName> = {
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   iconOuter: {
     alignItems: 'center',
     backgroundColor: colors.iconOuter,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     justifyContent: 'center',
   },
 });

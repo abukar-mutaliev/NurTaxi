@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -27,10 +27,6 @@ const welcomeColors = {
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
-const ellipseBottomAsset = require('@/assets/images/welcome/ellipse-bottom.png');
-const markGlowAsset = require('@/assets/images/welcome/mark-glow.png');
-const iconGlowAsset = require('@/assets/images/welcome/icon-glow.png');
 
 export function WelcomeScreen() {
   const { t } = useTranslation();
@@ -55,9 +51,6 @@ export function WelcomeScreen() {
   const logoRenderWidth = logoWidth * 1.3507;
   const logoCropOffsetX = logoWidth * 0.3507;
 
-  const glowSize = sx(150);
-  const glowLeft = (width - glowSize) / 2;
-
   const goToLogin = () => {
     router.push('/(auth)/phone');
   };
@@ -67,50 +60,6 @@ export function WelcomeScreen() {
       <StatusBar style="dark" />
 
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.layer,
-          {
-            height: sx(460),
-            left: sx(-35),
-            top: sy(100),
-            width: sx(460),
-          },
-        ]}
-      />
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseBottomAsset}
-        style={[
-          styles.layer,
-          {
-            height: sy(300),
-            left: sx(-185),
-            top: sy(560),
-            width: sx(760),
-          },
-        ]}
-      />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={markGlowAsset}
-        style={[
-          styles.layer,
-          {
-            height: glowSize,
-            left: glowLeft,
-            top: sy(120),
-            width: glowSize,
-          },
-        ]}
-      />
 
       <View
         style={[
@@ -128,21 +77,6 @@ export function WelcomeScreen() {
           }}
         />
       </View>
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={iconGlowAsset}
-        style={[
-          styles.layer,
-          {
-            height: glowSize,
-            left: glowLeft,
-            top: sy(188),
-            width: glowSize,
-          },
-        ]}
-      />
 
       <View
         style={[
@@ -217,7 +151,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     alignItems: 'center',
-    borderRadius: 30,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',

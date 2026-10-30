@@ -1,7 +1,6 @@
 /**
  * Поиск адреса с debounce (M3.4), быстрый выбор избранного (M3.7).
  */
-import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -72,8 +71,6 @@ const colors = {
   section: brandColors.textMuted,
   hint: brandColors.textMuted,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 /**
  * Координаты принадлежат выбранной подсказке. Дописать к её адресу подъезд или квартиру
@@ -411,21 +408,6 @@ export function AddressSearchScreen() {
       <View style={styles.root}>
         <StatusBar style="dark" />
         <WelcomeGradientBackground />
-
-        <Image
-          contentFit="cover"
-          pointerEvents="none"
-          source={ellipseTopAsset}
-          style={[
-            styles.ellipse,
-            {
-              height: scale * 560,
-              left: scale * -90,
-              top: scale * -200,
-              width: scale * 560,
-            },
-          ]}
-        />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}

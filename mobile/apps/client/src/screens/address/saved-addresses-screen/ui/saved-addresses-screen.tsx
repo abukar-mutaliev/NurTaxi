@@ -1,7 +1,6 @@
 /**
  * Избранные адреса: список, добавление, удаление (M3.6, Figma node 39:997).
  */
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -29,8 +28,6 @@ const colors = {
   background: brandColors.background,
   empty: brandColors.textMuted,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export interface SavedAddressesScreenProps {
   /** На вкладке таббара — без кнопки «назад». */
@@ -98,21 +95,6 @@ export function SavedAddressesScreen({ variant = 'stack' }: SavedAddressesScreen
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <ScrollView
         contentContainerStyle={{

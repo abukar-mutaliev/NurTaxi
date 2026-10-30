@@ -1,6 +1,6 @@
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
-import { fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { fontFamily, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
@@ -28,7 +28,7 @@ export function GlassTextField({
         style={[
           styles.shell,
           {
-            borderRadius: scale * 18,
+            borderRadius: scale * radius.lg,
             minHeight: inputProps.multiline ? scale * 96 : scale * 58,
             paddingHorizontal: scale * 18,
             paddingVertical: scale * 14,

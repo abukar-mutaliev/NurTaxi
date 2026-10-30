@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: headerColors.glassBg,
     borderColor: headerColors.glassBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   menuLine: {
     backgroundColor: headerColors.icon,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 2,
     width: 16,
   },

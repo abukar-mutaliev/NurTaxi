@@ -3,23 +3,21 @@
  *
  * Без явного согласия кнопка завершения недоступна — это юридическое требование, а не UX-выбор.
  */
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
-  View,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -58,8 +56,6 @@ const onboardingColors = {
   checkMark: brandColors.primary,
 } as const;
 
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
-
 export function OnboardingScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -82,21 +78,6 @@ export function OnboardingScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.layer,
-          {
-            height: sx(520),
-            left: sx(-65),
-            top: sy(-140),
-            width: sx(520),
-          },
-        ]}
-      />
 
       {/* Передний план поднимается над клавиатурой целиком, фон остаётся на месте. */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, liftStyle]}>
@@ -156,7 +137,7 @@ export function OnboardingScreen() {
                   {
                     backgroundColor: onboardingColors.inputBg,
                     borderColor: onboardingColors.inputBorder,
-                    borderRadius: sx(18),
+                    borderRadius: sx(radius.lg),
                     height: sx(58),
                     paddingHorizontal: sx(21),
                   },
@@ -205,7 +186,7 @@ export function OnboardingScreen() {
                     borderColor: consent
                       ? onboardingColors.cardBorderChecked
                       : onboardingColors.cardBorder,
-                    borderRadius: sx(20),
+                    borderRadius: sx(radius.xl),
                     gap: sy(10),
                     paddingHorizontal: sx(18),
                     paddingVertical: sy(16),
@@ -229,7 +210,7 @@ export function OnboardingScreen() {
                         borderColor: consent
                           ? onboardingColors.checkMark
                           : onboardingColors.inputPlaceholder,
-                        borderRadius: sx(8),
+                        borderRadius: sx(radius.sm),
                         height: sx(22),
                         width: sx(22),
                       },
@@ -265,22 +246,20 @@ export function OnboardingScreen() {
               },
             ]}
           >
-            <LinearGradient
-              colors={[onboardingColors.buttonStart, onboardingColors.buttonEnd]}
-              end={{ x: 1, y: 0.5 }}
-              start={{ x: 0, y: 0.5 }}
+            <View
               style={[
                 styles.button,
                 {
-                  borderRadius: sx(29),
+                  borderRadius: sx(radius.xxl),
                   height: sx(58),
                 },
+                { backgroundColor: onboardingColors.buttonStart },
               ]}
             >
               <Text style={[styles.buttonText, { fontSize: sx(typeScale.base) }]}>
                 {isSubmitting ? t('common.loading') : t('onboarding.finish')}
               </Text>
-            </LinearGradient>
+            </View>
           </Pressable>
         </ScrollView>
       </Animated.View>
@@ -347,7 +326,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   dot: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   error: {
     color: onboardingColors.error,

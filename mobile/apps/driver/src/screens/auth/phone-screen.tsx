@@ -22,7 +22,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  fontFamily,
+  radius,
+  shadows,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
 import { PillButton } from '@/shared/ui/pill-button';
@@ -146,7 +153,7 @@ export function PhoneScreen() {
               styles.inputShell,
               formatError && styles.inputShellInvalid,
               {
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 gap: sx(12),
                 height: sx(58),
                 paddingHorizontal: sx(20),
@@ -218,10 +225,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...shadows.md,
   },
   inputShellInvalid: {
     borderColor: c.danger,

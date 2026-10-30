@@ -14,7 +14,7 @@
   background: var(--nur-primary);
   color: var(--nur-on-primary);
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--nur-radius-sm);
 }
 
 .skipLink:focus {
@@ -26,7 +26,7 @@
 
 .sider {
   background: var(--nur-secondary-subtle) !important;
-  box-shadow: 4px 0 24px var(--nur-shadow);
+  box-shadow: none;
   border-right: 1px solid var(--nur-divider);
 }
 
@@ -45,7 +45,7 @@
 .brandIcon {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--nur-radius-md);
   background: var(--nur-surface);
   display: flex;
   align-items: center;
@@ -53,7 +53,7 @@
   font-size: var(--nur-font-xl);
   color: var(--nur-primary);
   flex-shrink: 0;
-  box-shadow: 0 2px 8px var(--nur-shadow);
+  box-shadow: var(--nur-shadow-sm);
 }
 
 .brandTitle {
@@ -78,7 +78,7 @@
 
 .menu :global(.ant-menu-item) {
   color: var(--nur-text);
-  border-radius: 10px;
+  border-radius: var(--nur-radius-md);
   margin-inline: 4px;
   width: calc(100% - 8px);
 }
@@ -91,7 +91,7 @@
   background: var(--nur-primary-soft) !important;
   color: var(--nur-text) !important;
   font-weight: 600;
-  box-shadow: 0 2px 8px var(--nur-shadow);
+  box-shadow: var(--nur-shadow-sm);
 }
 
 .menu :global(.ant-menu-item-selected .anticon) {
@@ -129,7 +129,7 @@
 .userChip {
   cursor: pointer;
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: var(--nur-radius-md);
   transition: background 0.2s;
 }
 

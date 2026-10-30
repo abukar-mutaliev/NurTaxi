@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron, CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     paddingTop: 23,
   },
   addressDot: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 9,
     width: 9,
   },
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cancelBg,
     borderColor: colors.glassBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flex: 1,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   },
   contactButton: {
     backgroundColor: colors.contactBg,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     justifyContent: 'center',
     minHeight: 36,
     paddingHorizontal: 14,
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.xl,
     height: 44,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.shareBg,
     borderColor: colors.glassBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flex: 1,
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   },
   statusPill: {
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.xl,
     height: 44,
     justifyContent: 'center',
     paddingHorizontal: 12,
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
   tripSheet: {
     backgroundColor: colors.sheetBg,
     borderColor: colors.glassBorder,
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     elevation: 4,
     ...glassShadow({ color: colors.shadow }),

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -126,7 +126,7 @@ export function PaymentMethodCard({
 const styles = StyleSheet.create({
   badge: {
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: radius.sm,
     height: 32,
     justifyContent: 'center',
     width: 46,
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderColor: colors.cardBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     alignItems: 'center',
     backgroundColor: brandColors.danger,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 24,
     justifyContent: 'center',
     width: 24,
@@ -176,14 +176,14 @@ const styles = StyleSheet.create({
   },
   radioInner: {
     backgroundColor: colors.radioInner,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 10,
     width: 10,
   },
   radioOuter: {
     alignItems: 'center',
     backgroundColor: colors.radioOuter,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 24,
     justifyContent: 'center',
     width: 24,

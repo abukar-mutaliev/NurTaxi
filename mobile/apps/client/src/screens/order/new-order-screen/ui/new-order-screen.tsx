@@ -10,7 +10,7 @@ import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDistance, formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
-import { ErrorView, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { ErrorView, Loader, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useCreateOrderMutation } from '@nurtaxi/shared-core/entities/order';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -138,7 +138,7 @@ export function NewOrderScreen() {
     >
       <View
         pointerEvents="none"
-        style={{ borderRadius: scale * 20, height: scale * 220, overflow: 'hidden' }}
+        style={{ borderRadius: scale * radius.xl, height: scale * 220, overflow: 'hidden' }}
       >
         <MapCanvas
           initialPoint={draft.pickup}

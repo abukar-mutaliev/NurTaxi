@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatRating } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -233,7 +233,7 @@ export function DriverEnRouteOverlay({
 const styles = StyleSheet.create({
   actionButton: {
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: radius.lg,
     flex: 1,
     gap: 4,
     height: 54,
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
   driverSheet: {
     backgroundColor: colors.sheetBg,
     borderColor: colors.glassBorder,
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     elevation: 4,
     paddingBottom: 19,
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   },
   etaBadge: {
     backgroundColor: colors.etaBadge,
-    borderRadius: 15,
+    borderRadius: radius.lg,
     minWidth: 52,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.xl,
     height: 44,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   },
   menuLine: {
     backgroundColor: colors.text,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 2,
     width: 16,
   },
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   plateBadge: {
     alignSelf: 'flex-start',
     backgroundColor: colors.plateBg,
-    borderRadius: 7,
+    borderRadius: radius.sm,
     marginTop: 2,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.safetyBg,
     borderColor: colors.glassBorder,
-    borderRadius: 24,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 3,
     flexDirection: 'row',
@@ -390,14 +390,14 @@ const styles = StyleSheet.create({
   },
   safetyIconInner: {
     backgroundColor: colors.safetyIconInner,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 14,
     width: 14,
   },
   safetyIconOuter: {
     alignItems: 'center',
     backgroundColor: colors.safetyIconOuter,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 34,
     justifyContent: 'center',
     width: 34,
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
   },
   statusPill: {
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.xl,
     height: 44,
     justifyContent: 'center',
     paddingHorizontal: 12,

@@ -21,6 +21,7 @@ import { OrderStatus, ReviewTarget, type GeoPoint } from '@nurtaxi/shared-core/s
 import {
   Badge,
   brandColors,
+  radius,
   Screen,
   showAlert,
   Text,
@@ -762,7 +763,7 @@ const styles = StyleSheet.create({
   },
   summaryButton: {
     alignItems: 'center',
-    borderRadius: 16,
+    borderRadius: radius.lg,
     flex: 1,
     height: 52,
     justifyContent: 'center',
@@ -779,7 +780,7 @@ const styles = StyleSheet.create({
   summarySheet: {
     backgroundColor: summaryColors.sheetBg,
     borderColor: summaryColors.sheetBorder,
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     elevation: 8,
     ...glassShadow({ color: summaryColors.shadow, radius: 16 }),

@@ -13,7 +13,7 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDistance } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   formatOrderStatusLabel,
   orderStage,
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
   activeOrderCard: {
     backgroundColor: brandColors.surface,
     borderColor: brandColors.divider,
-    borderRadius: 18,
+    borderRadius: radius.lg,
     borderWidth: 1,
     elevation: 2,
     gap: 2,
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
   },
   permissionBanner: {
     backgroundColor: brandColors.surface,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     left: 16,
     padding: 12,
     position: 'absolute',

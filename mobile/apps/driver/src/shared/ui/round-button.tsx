@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { brandColors, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { shadows, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from './chevron';
 
@@ -94,9 +94,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
-    shadowColor: brandColors.shadowStrong,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
 });

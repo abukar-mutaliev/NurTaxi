@@ -1,19 +1,18 @@
 import { useState, type ReactNode } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   ActivityIndicator,
+  type LayoutChangeEvent,
   Pressable,
   ScrollView,
   StyleSheet,
-  View,
   useWindowDimensions,
-  type LayoutChangeEvent,
+  View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { CollapsibleSheet } from '@/shared/ui';
@@ -328,16 +327,11 @@ export function HomeOrderSheet({
                   { opacity: !canOrder ? 0.45 : pressed ? 0.92 : 1 },
                 ]}
               >
-                <LinearGradient
-                  colors={[sheetColors.buttonStart, sheetColors.buttonEnd]}
-                  end={{ x: 1, y: 0.5 }}
-                  start={{ x: 0, y: 0.5 }}
-                  style={styles.orderButton}
-                >
+                <View style={[styles.orderButton, { backgroundColor: sheetColors.buttonStart }]}>
                   <Text style={styles.orderButtonText}>
                     {isOrdering ? loadingLabel : orderLabel}
                   </Text>
-                </LinearGradient>
+                </View>
               </Pressable>
             </View>
           </View>
@@ -380,7 +374,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   addressDot: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 8,
     marginTop: 5,
     width: 8,
@@ -412,7 +406,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     alignItems: 'center',
     backgroundColor: sheetColors.cancelBg,
-    borderRadius: 24,
+    borderRadius: radius.xl,
     height: 48,
     justifyContent: 'center',
     paddingHorizontal: 20,
@@ -464,7 +458,7 @@ const styles = StyleSheet.create({
   },
   orderButton: {
     alignItems: 'center',
-    borderRadius: 24,
+    borderRadius: radius.xl,
     elevation: 3,
     height: 48,
     justifyContent: 'center',
@@ -492,7 +486,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: sheetColors.paymentBg,
     borderColor: sheetColors.paymentBorder,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: 8,
@@ -531,7 +525,7 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: sheetColors.background,
     borderColor: sheetColors.border,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -543,7 +537,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   sheetFrame: {
-    borderRadius: 22,
+    borderRadius: radius.xl,
     elevation: 8,
     marginHorizontal: 16,
     ...glassShadow({ color: sheetColors.shadow, radius: 16 }),
@@ -555,7 +549,7 @@ const styles = StyleSheet.create({
   },
   tariffCard: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: radius.md,
     gap: 3,
     // Три строки Manrope по 16 — выше прежних 78.
     height: 88,

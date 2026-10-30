@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -85,13 +85,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   iconInner: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 15,
     width: 15,
   },
   iconOuter: {
     alignItems: 'center',
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderColor: colors.cardBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',

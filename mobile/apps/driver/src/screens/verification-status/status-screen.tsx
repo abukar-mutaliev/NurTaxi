@@ -18,7 +18,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Loader,
+  radius,
+  shadows,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { rejectedDocuments, useGetDriverProfileQuery } from '@nurtaxi/shared-core/entities/driver';
 
 import { GlowIcon } from '@/shared/ui/glow-icon';
@@ -223,7 +230,7 @@ export function VerificationStatusScreen() {
               {
                 backgroundColor: c.dangerBg,
                 borderColor: c.dangerBg,
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 marginTop: sy(24),
                 paddingHorizontal: sx(20),
                 paddingVertical: sy(16),
@@ -257,7 +264,7 @@ export function VerificationStatusScreen() {
               {
                 backgroundColor: c.dangerBg,
                 borderColor: c.dangerBg,
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 marginTop: sy(24),
                 paddingHorizontal: sx(20),
                 paddingVertical: sy(16),
@@ -279,7 +286,7 @@ export function VerificationStatusScreen() {
               styles.card,
               styles.cardRow,
               {
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 gap: sx(12),
                 marginTop: sy(26),
                 paddingHorizontal: sx(20),
@@ -301,7 +308,7 @@ export function VerificationStatusScreen() {
             <View
               style={{
                 backgroundColor: view.badgeBg,
-                borderRadius: sx(999),
+                borderRadius: sx(radius.pill),
                 paddingHorizontal: sx(12),
                 paddingVertical: sy(5),
               }}
@@ -358,10 +365,7 @@ const styles = StyleSheet.create({
     borderColor: c.cardBorder,
     borderWidth: 1,
     elevation: 2,
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...shadows.md,
   },
   cardRow: {
     alignItems: 'center',

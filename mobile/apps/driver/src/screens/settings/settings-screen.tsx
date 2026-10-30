@@ -13,7 +13,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import type { NotificationSettings, PrivacySettings } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Loader, showAlert, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Loader,
+  shadows,
+  showAlert,
+  Text,
+  useTheme,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useGetMeQuery, useUpdateMeMutation } from '@nurtaxi/shared-core/entities/user';
 import { useRegisterPushTokenMutation } from '@nurtaxi/shared-core/entities/notification';
 /**
@@ -214,10 +221,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: brandColors.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   root: {
     backgroundColor: brandColors.background,

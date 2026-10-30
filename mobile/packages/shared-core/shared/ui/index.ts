@@ -1,10 +1,12 @@
 export { ThemeProvider, useTheme } from './theme/theme-provider';
 export type { ThemeProviderProps } from './theme/theme-provider';
-export { brandColors, brandPalette, mixColors, withAlpha } from './theme/brand';
-export type { BrandColor } from './theme/brand';
+export { brandColors, brandPalette, controlColors, mixColors, withAlpha } from './theme/brand';
+export type { BrandColor, ControlVariant } from './theme/brand';
 export { brandFontAssets, fontFamily, fontFamilyForWeight, typeScale } from './theme/fonts';
 export type { TypeScaleToken } from './theme/fonts';
 export { useBrandFonts } from './theme/use-brand-fonts';
+export { shadows } from './theme/elevation';
+export type { ShadowToken } from './theme/elevation';
 export {
   MIN_TOUCH_SIZE,
   darkColors,

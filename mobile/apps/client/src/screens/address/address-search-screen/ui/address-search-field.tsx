@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -50,7 +50,7 @@ export function AddressSearchField({
       style={[
         styles.field,
         {
-          borderRadius: scale * 22,
+          borderRadius: scale * radius.xl,
           gap: scale * 12,
           minHeight: scale * 58,
           paddingHorizontal: scale * 18,
@@ -134,12 +134,12 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
   iconInner: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   iconOuter: {
     alignItems: 'center',
     backgroundColor: colors.iconOuter,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     justifyContent: 'center',
   },
   inactiveText: {

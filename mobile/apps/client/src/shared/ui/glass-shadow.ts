@@ -1,30 +1,23 @@
-import { Platform, type ViewStyle } from 'react-native';
-
-type GlassShadowStyle = ViewStyle & { boxShadow?: string };
+import { shadows } from '@nurtaxi/shared-core/shared/ui';
 
 /**
- * React Native Web отклоняет `shadow*` в пользу `boxShadow`.
- * На нативных платформах оставляем привычные iOS/Android-тени.
+ * Тень клиентских карточек и кнопок — один из уровней `shadows` из общих токенов.
+ * Параметры остались от прежнего «стеклянного» стиля: по ним выбирается уровень, а цвет
+ * всегда берётся из палитры (поэтому `color` больше не влияет).
  */
 export function glassShadow({
-  color,
-  offset = { width: 0, height: 8 },
+  offset,
   radius = 12,
 }: {
-  color: string;
+  color?: string;
   offset?: { width: number; height: number };
   radius?: number;
-}): GlassShadowStyle {
-  if (Platform.OS === 'web') {
-    return {
-      boxShadow: `${offset.width}px ${offset.height}px ${radius}px ${color}`,
-    };
+}) {
+  if (offset && offset.height < 0) {
+    return shadows.up;
   }
-
-  return {
-    shadowColor: color,
-    shadowOffset: offset,
-    shadowOpacity: 1,
-    shadowRadius: radius,
-  };
+  if (radius >= 20) {
+    return shadows.lg;
+  }
+  return radius >= 12 ? shadows.md : shadows.sm;
 }

@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import {
   ScrollView,
@@ -23,8 +22,6 @@ import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 
 import { GlassScreenHeader } from './glass-screen-header';
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export interface GlassScreenShellProps {
   title?: string;
@@ -78,20 +75,6 @@ export function GlassScreenShell({
     <>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
     </>
   );
 

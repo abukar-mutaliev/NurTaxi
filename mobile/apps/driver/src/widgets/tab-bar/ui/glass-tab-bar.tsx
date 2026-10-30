@@ -2,7 +2,7 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, shadows, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_TAB_BAR_HEIGHT, GLASS_TAB_BAR_MARGIN } from '@/shared/constants/glass-tab-bar';
 
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.barBg,
     borderColor: colors.barBorder,
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     elevation: 4,
     flexDirection: 'row',
@@ -91,10 +91,7 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: { boxShadow: `0px 8px 12px ${colors.shadow}` },
       default: {
-        shadowColor: colors.shadow,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 1,
-        shadowRadius: 12,
+        ...shadows.md,
       },
     }),
   },

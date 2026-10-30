@@ -6,16 +6,22 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  controlColors,
+  shadows,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 
-const c = {
-  primaryBg: brandColors.primary,
-  primaryPressed: brandColors.primaryPressed,
-  primaryText: brandColors.onPrimary,
-  surfaceBg: brandColors.surface,
-  surfaceBorder: brandColors.surfaceMuted,
-  surfaceText: brandColors.text,
-  shadow: brandColors.shadow,
+const primary = controlColors.primary;
+const surface = {
+  background: brandColors.surface,
+  pressed: brandColors.secondarySubtle,
+  disabled: brandColors.surfaceMuted,
+  border: brandColors.border,
+  text: brandColors.text,
+  disabledText: brandColors.textMuted,
 } as const;
 
 export type PillButtonVariant = 'gradient' | 'surface';
@@ -32,11 +38,8 @@ export interface PillButtonProps {
 }
 
 /**
- * Кнопка-«пилюля» из макета.
- *
- * Заливка сплошная, а не градиентная: градиент в макете почти неразличим на кнопке,
- * а нативный `expo-linear-gradient` требует пересборки dev-клиента. Цвет взят средним
- * между крайними точками градиента макета (#5A2E60 → #3A1D3F).
+ * Кнопка-«пилюля»: сплошная заливка основным цветом или белая второстепенная.
+ * Нажатое и неактивное состояния — цвета палитры, а не прозрачность.
  */
 export function PillButton({
   title,
@@ -49,6 +52,8 @@ export function PillButton({
 }: PillButtonProps) {
   const isDisabled = disabled || loading;
   const isPrimary = variant === 'gradient';
+  const colors = isPrimary ? primary : surface;
+  const textColor = isDisabled && !loading ? colors.disabledText : colors.text;
 
   return (
     <Pressable
@@ -59,22 +64,23 @@ export function PillButton({
       style={({ pressed }) => [
         styles.base,
         {
-          backgroundColor: isPrimary ? (pressed ? c.primaryPressed : c.primaryBg) : c.surfaceBg,
-          borderColor: isPrimary ? 'transparent' : c.surfaceBorder,
+          backgroundColor: isDisabled
+            ? colors.disabled
+            : pressed
+              ? colors.pressed
+              : colors.background,
+          borderColor: isPrimary ? 'transparent' : surface.border,
           borderRadius: height / 2,
           borderWidth: isPrimary ? 0 : 1,
           height,
-          opacity: isDisabled ? 0.45 : 1,
         },
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? c.primaryText : c.surfaceText} />
+        <ActivityIndicator color={colors.text} />
       ) : (
-        <Text style={[styles.label, { color: isPrimary ? c.primaryText : c.surfaceText }]}>
-          {title}
-        </Text>
+        <Text style={[styles.label, { color: textColor }]}>{title}</Text>
       )}
     </Pressable>
   );
@@ -83,12 +89,8 @@ export function PillButton({
 const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
-    elevation: 3,
     justifyContent: 'center',
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   label: {
     fontSize: typeScale.base,

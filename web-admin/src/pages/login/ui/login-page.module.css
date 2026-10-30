@@ -14,17 +14,6 @@
   overflow: hidden;
 }
 
-.hero::before {
-  content: '';
-  position: absolute;
-  width: 480px;
-  height: 480px;
-  border-radius: 50%;
-  background: var(--nur-secondary-soft);
-  top: -120px;
-  right: -120px;
-}
-
 .heroContent {
   position: relative;
   max-width: 480px;
@@ -33,7 +22,7 @@
 .logoMark {
   width: 56px;
   height: 56px;
-  border-radius: 16px;
+  border-radius: var(--nur-radius-lg);
   background: var(--nur-surface);
   display: flex;
   align-items: center;
@@ -41,7 +30,7 @@
   font-size: var(--nur-font-display);
   color: var(--nur-primary);
   margin-bottom: 24px;
-  box-shadow: 0 4px 16px var(--nur-shadow);
+  box-shadow: var(--nur-shadow-sm);
 }
 
 .heroTitle {
@@ -88,9 +77,9 @@
   width: 100%;
   max-width: 420px;
   background: var(--nur-surface);
-  border-radius: 20px;
+  border-radius: var(--nur-radius-xl);
   padding: 32px;
-  box-shadow: 0 12px 40px var(--nur-shadow);
+  box-shadow: var(--nur-shadow-md);
   border: 1px solid var(--nur-divider);
 }
 

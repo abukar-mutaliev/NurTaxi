@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassCard } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -50,8 +50,8 @@ export function PaymentMethodSheet({
           style={[
             styles.panel,
             {
-              borderTopLeftRadius: scale * 28,
-              borderTopRightRadius: scale * 28,
+              borderTopLeftRadius: scale * radius.xxl,
+              borderTopRightRadius: scale * radius.xxl,
               gap: scale * 14,
               paddingBottom: insets.bottom + scale * 20,
               paddingHorizontal: scale * 16,
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   handle: {
     alignSelf: 'center',
     backgroundColor: brandColors.border,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 4,
     width: 40,
   },

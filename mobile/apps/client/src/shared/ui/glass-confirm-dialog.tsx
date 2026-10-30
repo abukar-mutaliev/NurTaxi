@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
@@ -75,7 +75,7 @@ export function GlassConfirmDialog({
             style={[
               styles.card,
               {
-                borderRadius: scale * 24,
+                borderRadius: scale * radius.xl,
                 gap: scale * 16,
                 paddingHorizontal: scale * 20,
                 paddingVertical: scale * 22,

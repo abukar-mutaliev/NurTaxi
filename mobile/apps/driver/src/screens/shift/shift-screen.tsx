@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveCurrentPosition } from '@nurtaxi/shared-core/features/geolocation';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, shadows, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
   useGetDriverEarningsQuery,
   useGetDriverProfileQuery,
@@ -435,18 +435,12 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     right: 0,
-    shadowColor: brandColors.shadowStrong,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
+    ...shadows.up,
   },
   statusPill: {
     borderWidth: 1,
     elevation: 2,
-    shadowColor: brandColors.shadowStrong,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   switchRow: {
     alignItems: 'center',

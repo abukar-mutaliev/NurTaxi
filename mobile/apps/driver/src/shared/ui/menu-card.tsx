@@ -34,8 +34,10 @@ export interface MenuCardProps {
 export function MenuCard({ title, subtitle, icon, dotTone = 'primary', onPress }: MenuCardProps) {
   const theme = useTheme();
 
+  // Тон передаёт подложка: пудра — «обратите внимание». Сам значок всегда основным цветом —
+  // пудровый значок на пудре не набирал и 2:1.
   const dotBg = dotTone === 'accent' ? brandColors.secondarySoft : brandColors.primarySoft;
-  const dotColor = dotTone === 'accent' ? theme.colors.accent : theme.colors.primary;
+  const dotColor = theme.colors.primary;
 
   return (
     <Pressable

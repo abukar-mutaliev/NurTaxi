@@ -79,7 +79,7 @@ export function OrderExtrasNotice({
           {phoneLabel ? (
             canCallPassenger ? (
               <Pressable accessibilityRole="button" onPress={callPassenger}>
-                <Text style={{ color: theme.colors.accent }} variant="caption">
+                <Text style={{ color: theme.colors.primary }} variant="caption">
                   {phoneLabel}
                 </Text>
               </Pressable>

@@ -28,7 +28,7 @@ const colors = {
   cancelBg: brandColors.dangerSoft,
   cancelText: brandColors.danger,
   safetyBg: brandColors.surface,
-  safetyIconOuter: brandColors.primary,
+  safetyIconOuter: brandColors.primarySoft,
   safetyIconInner: brandColors.primary,
   etaBadge: brandColors.scrim,
   etaShadow: brandColors.shadowStrong,

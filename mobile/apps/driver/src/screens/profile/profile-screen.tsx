@@ -182,7 +182,7 @@ export function ProfileScreen() {
                   </Text>
                 </View>
               ) : null}
-              <Text style={{ color: theme.colors.accent }} variant="label">
+              <Text style={{ color: theme.colors.primary }} variant="label">
                 ★ {formatRating(profile?.rating ?? 5)}
               </Text>
             </View>

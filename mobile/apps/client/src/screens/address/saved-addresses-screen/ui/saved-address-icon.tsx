@@ -16,7 +16,7 @@ const iconNames: Record<SavedAddressLabelKind, SymbolName> = {
 };
 
 const colors = {
-  iconOuter: brandColors.primary,
+  iconOuter: brandColors.secondarySoft,
   iconAccent: brandColors.primary,
 } as const;
 

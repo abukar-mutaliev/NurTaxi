@@ -9,7 +9,7 @@ const colors = {
   cardBorder: brandColors.secondary,
   shadow: brandColors.shadow,
   title: brandColors.text,
-  iconOuter: brandColors.primary,
+  iconOuter: brandColors.secondarySoft,
   iconAccent: brandColors.primary,
 } as const;
 

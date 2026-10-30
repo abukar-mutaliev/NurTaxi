@@ -147,7 +147,7 @@ function OrderCard({ item, onPress }: OrderCardProps) {
 
       <OrderExtrasNotice compact source={order} />
 
-      <Text style={{ color: theme.colors.accent }} variant="micro">
+      <Text style={{ color: theme.colors.primary }} variant="micro">
         {formatOrderStatusLabel(order.status)}
       </Text>
     </Pressable>

@@ -11,9 +11,9 @@ const colors = {
   title: brandColors.text,
   subtitle: brandColors.textMuted,
   chevron: brandColors.textMuted,
-  iconOuterDefault: brandColors.primary,
+  iconOuterDefault: brandColors.secondarySoft,
   iconInnerDefault: brandColors.primary,
-  iconOuterSafety: brandColors.primary,
+  iconOuterSafety: brandColors.primarySoft,
   iconInnerSafety: brandColors.primary,
 } as const;
 

@@ -31,7 +31,7 @@ const phoneColors = {
   inputPlaceholder: brandColors.textMuted,
   inputBg: brandColors.surface,
   inputBorder: brandColors.divider,
-  iconOuter: brandColors.primary,
+  iconOuter: brandColors.secondarySoft,
   iconAccent: brandColors.primary,
   buttonStart: brandColors.primary,
   buttonEnd: brandColors.primary,

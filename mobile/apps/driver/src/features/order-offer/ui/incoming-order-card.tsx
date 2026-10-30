@@ -55,7 +55,7 @@ export function IncomingOrderCard({
     >
       <View style={styles.headerRow}>
         <Text variant="subtitle">Новый заказ</Text>
-        <Text style={{ color: theme.colors.accent }} variant="bodyStrong">
+        <Text style={{ color: theme.colors.primary }} variant="bodyStrong">
           {secondsLeft} с
         </Text>
       </View>

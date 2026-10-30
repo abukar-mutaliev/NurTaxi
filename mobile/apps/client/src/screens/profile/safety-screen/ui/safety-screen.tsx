@@ -176,7 +176,8 @@ export function SafetyScreen() {
               { backgroundColor: brandColors.dangerSoft },
             ]}
           >
-            <View style={styles.panicText}>
+            {/* Справа поверх карточки висит кнопка (56 + отступ 30) — текст переносится до неё. */}
+            <View style={[styles.panicText, { paddingRight: scale * 102 }]}>
               <Text style={[styles.panicTitle, { fontSize: scale * typeScale.base }]}>
                 {t('safety.panicTitle')}
               </Text>

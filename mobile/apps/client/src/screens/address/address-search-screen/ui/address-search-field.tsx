@@ -11,7 +11,7 @@ const colors = {
   shadow: brandColors.shadow,
   text: brandColors.text,
   placeholder: brandColors.textMuted,
-  iconOuter: brandColors.primary,
+  iconOuter: brandColors.secondarySoft,
   iconPickup: brandColors.primary,
   iconStop: brandColors.primary,
   iconDropoff: brandColors.text,

@@ -69,9 +69,6 @@ export function PhoneScreen() {
   const logoHeight = sx(199);
   const logoLeft = (width - logoWidth) / 2;
   const logoTop = Math.max(insets.top, sy(20)) + sy(76);
-  const logoRenderHeight = logoHeight * 1.0017;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
   const headerTop = logoTop + logoHeight + sy(24);
   // Низ подзаголовка: заголовок 28 + отступ + подзаголовок 20 (в масштабе макета).
   const headerBottom = headerTop + sx(28) + sy(2) + sx(20);
@@ -126,13 +123,9 @@ export function PhoneScreen() {
           ]}
         >
           <Image
-            contentFit="fill"
+            contentFit="contain"
             source={logoAsset}
-            style={{
-              height: logoRenderHeight,
-              marginLeft: -logoCropOffsetX,
-              width: logoRenderWidth,
-            }}
+            style={{ height: logoHeight, width: logoWidth }}
           />
         </View>
 

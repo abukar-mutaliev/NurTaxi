@@ -36,7 +36,7 @@ const colors = {
   title: brandColors.text,
 } as const;
 
-const logoAsset = require('@/assets/images/welcome/logo.png');
+const logoAsset = require('@/assets/images/welcome/logo-mark.png');
 
 export interface HistoryScreenProps {
   /** На вкладке таббара — без кнопки «назад». */
@@ -107,8 +107,6 @@ export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
 
   const logoWidth = scale * 50;
   const logoHeight = scale * 39;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
 
   return (
     <View style={styles.root}>
@@ -130,13 +128,9 @@ export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
                 <View style={styles.brandRow}>
                   <View style={[styles.logoClip, { height: logoHeight, width: logoWidth }]}>
                     <Image
-                      contentFit="fill"
+                      contentFit="contain"
                       source={logoAsset}
-                      style={{
-                        height: logoHeight * 1.0017,
-                        marginLeft: -logoCropOffsetX,
-                        width: logoRenderWidth,
-                      }}
+                      style={{ height: logoHeight, width: logoWidth }}
                     />
                   </View>
                 </View>

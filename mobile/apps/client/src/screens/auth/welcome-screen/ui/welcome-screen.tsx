@@ -43,13 +43,6 @@ export function WelcomeScreen() {
   const logoHeight = sx(199);
   const logoLeft = (width - logoWidth) / 2;
   const logoTop = sy(242);
-  /**
-   * В ассете знак смещён вправо (~63% ширины). Figma обрезает слева на 35.07%,
-   * чтобы марка оказалась по центру контейнера 164×199.
-   */
-  const logoRenderHeight = logoHeight * 1.0017;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
 
   const goToLogin = () => {
     router.push('/(auth)/phone');
@@ -68,13 +61,9 @@ export function WelcomeScreen() {
         ]}
       >
         <Image
-          contentFit="fill"
+          contentFit="contain"
           source={logoAsset}
-          style={{
-            height: logoRenderHeight,
-            marginLeft: -logoCropOffsetX,
-            width: logoRenderWidth,
-          }}
+          style={{ height: logoHeight, width: logoWidth }}
         />
       </View>
 

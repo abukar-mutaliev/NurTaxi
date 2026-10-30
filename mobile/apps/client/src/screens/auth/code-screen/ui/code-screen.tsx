@@ -74,9 +74,6 @@ export function CodeScreen() {
   const logoHeight = sx(199);
   const logoLeft = (width - logoWidth) / 2;
   const logoTop = Math.max(insets.top, sy(20)) + sy(76);
-  const logoRenderHeight = logoHeight * 1.0017;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
   const canSubmit = code.length >= OTP_LENGTH && !isVerifyingOtp;
 
   useEffect(() => {
@@ -126,13 +123,9 @@ export function CodeScreen() {
           ]}
         >
           <Image
-            contentFit="fill"
+            contentFit="contain"
             source={logoAsset}
-            style={{
-              height: logoRenderHeight,
-              marginLeft: -logoCropOffsetX,
-              width: logoRenderWidth,
-            }}
+            style={{ height: logoHeight, width: logoWidth }}
           />
         </View>
 

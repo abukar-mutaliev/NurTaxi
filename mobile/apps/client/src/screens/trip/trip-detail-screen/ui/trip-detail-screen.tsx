@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { formatDateTime, formatPrice, formatRating } from '@nurtaxi/shared-core/shared/lib';
 import { OrderStatus, ReviewTarget } from '@nurtaxi/shared-core/shared/model';
-import { Avatar, Badge, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Avatar, Badge, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   formatOrderStatusLabel,
   orderStatusTone,
@@ -100,11 +100,11 @@ export function TripDetailScreen() {
 
           <View style={{ gap: scale * 6, paddingTop: scale * 8 }}>
             <GlassSectionLabel>{t('order.from')}</GlassSectionLabel>
-            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
+            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base }}>
               {order.pickupAddress}
             </Text>
             <GlassSectionLabel>{t('order.to')}</GlassSectionLabel>
-            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
+            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base }}>
               {order.dropoffAddress}
             </Text>
           </View>
@@ -112,7 +112,7 @@ export function TripDetailScreen() {
           <Text
             style={{
               color: GLASS_COLORS.title,
-              fontSize: scale * 24,
+              fontSize: scale * typeScale.xxl,
               fontWeight: '600',
               paddingTop: scale * 12,
             }}
@@ -141,7 +141,11 @@ export function TripDetailScreen() {
               <Avatar name={order.driver.fullName} size={48} uri={order.driver.photoUrl} />
               <View style={{ flex: 1, gap: scale * 4 }}>
                 <Text
-                  style={{ color: GLASS_COLORS.title, fontSize: scale * 15, fontWeight: '600' }}
+                  style={{
+                    color: GLASS_COLORS.title,
+                    fontSize: scale * typeScale.base,
+                    fontWeight: '600',
+                  }}
                 >
                   {order.driver.fullName}
                 </Text>
@@ -161,7 +165,13 @@ export function TripDetailScreen() {
 
         {order.status === OrderStatus.FailedPayment ? (
           <GlassCard tone="warning">
-            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15, fontWeight: '600' }}>
+            <Text
+              style={{
+                color: GLASS_COLORS.title,
+                fontSize: scale * typeScale.base,
+                fontWeight: '600',
+              }}
+            >
               {t('payment.failed')}
             </Text>
             <GlassCaption>{t('payment.failedHint')}</GlassCaption>

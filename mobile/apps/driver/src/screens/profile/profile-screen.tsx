@@ -10,19 +10,20 @@ import { StatusBar } from 'expo-status-bar';
 import { SymbolView } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { useTranslation } from 'react-i18next';
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
-import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Loader,
+  radius,
+  shadows,
+  showAlert,
+  Text,
+  typeScale,
+  useTheme,
+} from '@nurtaxi/shared-core/shared/ui';
 import { DriverRequirementKey, RequirementMode } from '@nurtaxi/shared-core/shared/model';
 import {
   requirementMode,
@@ -61,7 +62,7 @@ export function ProfileScreen() {
   const { logout } = useAuth();
 
   const openSupport = () => {
-    Alert.alert(t('profile.support'), t('profile.supportHint'), [
+    showAlert(t('profile.support'), t('profile.supportHint'), [
       { style: 'cancel', text: t('common.cancel') },
       {
         onPress: () => {
@@ -142,7 +143,7 @@ export function ProfileScreen() {
               )}
               {isUploading ? (
                 <View style={[StyleSheet.absoluteFill, styles.avatarBusy]}>
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={brandColors.onPrimary} />
                 </View>
               ) : null}
             </View>
@@ -181,7 +182,7 @@ export function ProfileScreen() {
                   </Text>
                 </View>
               ) : null}
-              <Text style={{ color: theme.colors.accent }} variant="label">
+              <Text style={{ color: theme.colors.primary }} variant="label">
                 ★ {formatRating(profile?.rating ?? 5)}
               </Text>
             </View>
@@ -268,7 +269,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
-    borderRadius: 31,
+    borderRadius: radius.xxl,
     height: 62,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
   },
   avatarBadge: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     bottom: -2,
     height: 24,
@@ -287,21 +288,18 @@ const styles = StyleSheet.create({
   },
   avatarBusy: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: brandColors.overlay,
     justifyContent: 'center',
   },
   avatarText: {
-    color: '#FFFFFF',
-    fontSize: 24,
+    color: brandColors.onPrimary,
+    fontSize: typeScale.xxl,
     fontWeight: '700',
   },
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: 'rgba(89,71,31,0.07)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   headerTitle: {
     textAlign: 'center',
@@ -316,7 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
 });

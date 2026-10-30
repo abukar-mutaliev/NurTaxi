@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -8,13 +8,13 @@ import type { SavedAddressLabelKind } from './saved-address-label';
 import { SavedAddressIcon } from './saved-address-icon';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  star: '#C99A54',
-  chevron: '#A99FA6',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  star: brandColors.primary,
+  chevron: brandColors.textMuted,
 } as const;
 
 export interface SavedAddressCardProps {
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderColor: colors.cardBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   chevron: {
     color: colors.chevron,
-    fontSize: 17,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   pressed: {
@@ -98,12 +98,12 @@ const styles = StyleSheet.create({
   },
   star: {
     color: colors.star,
-    fontSize: 15,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   subtitle: {
     color: colors.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     marginTop: 2,
   },
   textBlock: {
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.title,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   trailing: {

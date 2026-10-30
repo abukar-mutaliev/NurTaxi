@@ -22,10 +22,16 @@ import { useTranslation } from 'react-i18next';
 
 import { glassShadow } from './glass-shadow';
 
+import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 const SNAP_MS = 240;
 
 export interface CollapsibleSheetProps {
-  children: ReactNode;
+  /**
+   * Содержимое. Функцией — получает ручку и сама ставит её в свою карточку: так ручка и
+   * карточка — одно окно, а не плашка с отступом над ним. Ручка должна идти первой, у самого
+   * верха содержимого: в свёрнутом виде остаётся видна полоса до её нижнего края.
+   */
+  children: ReactNode | ((handle: ReactNode) => ReactNode);
   onVisibleHeightChange?: (height: number) => void;
   style?: StyleProp<ViewStyle>;
   /** `inline` — ручка внутри карточки. `floating` — отдельная плашка над содержимым. */
@@ -70,8 +76,10 @@ export function CollapsibleSheet({
   };
 
   const onPeekLayout = (event: LayoutChangeEvent) => {
-    const next = event.nativeEvent.layout.height;
-    if (next <= 0 || Math.abs(collapsedHeight.value - next) < 1) {
+    // Встроенная ручка стоит под рамкой карточки — свёрнутая полоса заканчивается по её низу.
+    const { y, height } = event.nativeEvent.layout;
+    const next = y + height;
+    if (height <= 0 || Math.abs(collapsedHeight.value - next) < 1) {
       return;
     }
 
@@ -138,26 +146,38 @@ export function CollapsibleSheet({
     };
   });
 
-  const floating = variant === 'floating';
+  const embedsHandle = typeof children === 'function';
+  const floating = variant === 'floating' && !embedsHandle;
+
+  const handle = (
+    <GestureDetector gesture={gesture}>
+      <View
+        accessibilityLabel={expanded ? t('order.collapseSheet') : t('order.expandSheet')}
+        accessibilityRole="button"
+        accessible
+        onLayout={onPeekLayout}
+        style={floating ? styles.floatingPeek : styles.inlinePeek}
+      >
+        <View style={floating ? styles.floatingHandle : styles.inlineHandle}>
+          <View style={styles.grabber} />
+        </View>
+      </View>
+    </GestureDetector>
+  );
 
   return (
     <Animated.View style={[styles.clip, style, frameStyle]}>
       <View onLayout={onContentLayout} style={styles.content}>
-        <GestureDetector gesture={gesture}>
-          <View
-            accessibilityLabel={expanded ? t('order.collapseSheet') : t('order.expandSheet')}
-            accessibilityRole="button"
-            accessible
-            onLayout={onPeekLayout}
-            style={floating ? styles.floatingPeek : styles.inlinePeek}
-          >
-            <View style={floating ? styles.floatingHandle : styles.inlineHandle}>
-              <View style={styles.grabber} />
-            </View>
-          </View>
-        </GestureDetector>
-
-        <View pointerEvents={expanded ? 'auto' : 'none'}>{children}</View>
+        {typeof children === 'function' ? (
+          // Ручка внутри карточки: обёртку с `pointerEvents="none"` здесь ставить нельзя —
+          // в свёрнутом виде она отключила бы и саму ручку. Скрытое содержимое и так обрезано.
+          children(handle)
+        ) : (
+          <>
+            {handle}
+            <View pointerEvents={expanded ? 'auto' : 'none'}>{children}</View>
+          </>
+        )}
       </View>
     </Animated.View>
   );
@@ -173,20 +193,20 @@ const styles = StyleSheet.create({
   floatingHandle: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 18,
+    backgroundColor: brandColors.surface,
+    borderColor: brandColors.divider,
+    borderRadius: radius.lg,
     borderWidth: 1,
     height: 36,
     justifyContent: 'center',
-    ...glassShadow({ color: 'rgba(89,71,31,0.12)', offset: { width: 0, height: 4 }, radius: 8 }),
+    ...glassShadow({ color: brandColors.shadowStrong, offset: { width: 0, height: 4 }, radius: 8 }),
   },
   floatingPeek: {
     paddingBottom: 8,
   },
   grabber: {
-    backgroundColor: '#D9D0C4',
-    borderRadius: 2,
+    backgroundColor: brandColors.border,
+    borderRadius: radius.xs,
     height: 4,
     width: 36,
   },

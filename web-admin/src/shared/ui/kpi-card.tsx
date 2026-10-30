@@ -45,10 +45,10 @@ export function KpiCard({
           showInfo
           strokeColor={
             status === 'success'
-              ? palette.green600
+              ? palette.primaryPressed
               : status === 'exception'
-                ? palette.red500
-                : palette.gold
+                ? palette.danger
+                : palette.primary
           }
           style={{ marginTop: 12 }}
         />

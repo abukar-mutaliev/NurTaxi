@@ -7,6 +7,15 @@
  */
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
+/**
+ * Цвета палитры «Слива и пудра» (packages/shared-core/shared/ui/theme/brand.ts). Конфиг Expo
+ * не транспилирует импорты TS-модулей, поэтому значения повторены здесь.
+ */
+const brandPalette = {
+  primary: '#6B3A5B',
+  background: '#FBF6F4',
+} as const;
+
 type Environment = 'development' | 'staging' | 'production';
 
 const environment = (process.env.EXPO_PUBLIC_ENV as Environment) ?? 'development';
@@ -70,7 +79,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: variant.identifier,
     adaptiveIcon: {
-      backgroundColor: '#F8F4EF',
+      backgroundColor: brandPalette.background,
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
@@ -97,7 +106,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#1B6B5A',
+        // Знак сливой на молочном фоне — как иконка клиента.
+        backgroundColor: brandPalette.background,
         image: './assets/images/splash-icon.png',
         imageWidth: 96,
       },
@@ -132,7 +142,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-notifications',
       {
-        color: '#1B6B5A',
+        color: brandPalette.primary,
         defaultChannel: 'orders',
       },
     ],

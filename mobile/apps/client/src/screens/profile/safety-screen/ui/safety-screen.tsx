@@ -1,17 +1,15 @@
 /**
  * Экран безопасности (Figma node 39:1088): SOS, аудиозапись, проверка водителя.
  */
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   isTripRecordingAllowed,
   useActivateSosMutation,
@@ -35,16 +33,14 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welcome-gradient-background';
 
 const colors = {
-  background: '#F8F4EF',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  panicGlow: 'rgba(232,93,74,0.22)',
-  panicButton: '#E85D4A',
-  panicButtonInner: '#FFFFFF',
-  panicShadow: 'rgba(232,93,74,0.35)',
+  background: brandColors.background,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  panicGlow: brandColors.dangerSoft,
+  panicButton: brandColors.danger,
+  panicButtonInner: brandColors.surface,
+  panicShadow: brandColors.shadowStrong,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 type SafetyDialogState =
   | null
@@ -156,21 +152,6 @@ export function SafetyScreen() {
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
-
       <ScrollView
         contentContainerStyle={{
           gap: scale * 20,
@@ -188,18 +169,23 @@ export function SafetyScreen() {
           onPress={triggerPanic}
           style={({ pressed }) => [{ opacity: pressed || sosState.isLoading ? 0.94 : 1 }]}
         >
-          <LinearGradient
-            colors={['#FDF0EC', '#FADDD6']}
-            end={{ x: 1, y: 0.5 }}
-            start={{ x: 0, y: 0.5 }}
-            style={[styles.panicCard, { borderRadius: scale * 28, height: scale * 132 }]}
+          <View
+            style={[
+              styles.panicCard,
+              { borderRadius: scale * radius.xxl, height: scale * 132 },
+              { backgroundColor: brandColors.dangerSoft },
+            ]}
           >
-            <View style={styles.panicText}>
-              <Text style={[styles.panicTitle, { fontSize: scale * 17 }]}>
+            {/* Справа поверх карточки висит кнопка (56 + отступ 30) — текст переносится до неё. */}
+            <View style={[styles.panicText, { paddingRight: scale * 102 }]}>
+              <Text style={[styles.panicTitle, { fontSize: scale * typeScale.base }]}>
                 {t('safety.panicTitle')}
               </Text>
               <Text
-                style={[styles.panicSubtitle, { fontSize: scale * 13, lineHeight: scale * 18 }]}
+                style={[
+                  styles.panicSubtitle,
+                  { fontSize: scale * typeScale.sm, lineHeight: scale * 18 },
+                ]}
               >
                 {t('safety.panicSubtitle')}
               </Text>
@@ -239,7 +225,7 @@ export function SafetyScreen() {
                 ]}
               />
             </View>
-          </LinearGradient>
+          </View>
         </Pressable>
 
         <View style={{ gap: scale * 20 }}>
@@ -369,12 +355,12 @@ const styles = StyleSheet.create({
   },
   panicButtonInner: {
     backgroundColor: colors.panicButtonInner,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   panicButtonOuter: {
     alignItems: 'center',
     backgroundColor: colors.panicButton,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     elevation: 6,
     justifyContent: 'center',
     position: 'absolute',
@@ -382,11 +368,11 @@ const styles = StyleSheet.create({
   },
   panicCard: {
     overflow: 'hidden',
-    ...glassShadow({ color: 'rgba(89,71,31,0.08)', radius: 26 }),
+    ...glassShadow({ color: brandColors.shadow, radius: 26 }),
   },
   panicGlow: {
     backgroundColor: colors.panicGlow,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     position: 'absolute',
   },
   panicSubtitle: {

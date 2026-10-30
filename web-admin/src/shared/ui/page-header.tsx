@@ -1,5 +1,6 @@
 import { Typography } from 'antd';
 import type { ReactNode } from 'react';
+import { typeScale } from '@/shared/config/theme';
 
 const { Title, Text } = Typography;
 
@@ -26,7 +27,7 @@ export function PageHeader({ title, subtitle, extra }: PageHeaderProps) {
           {title}
         </Title>
         {subtitle ? (
-          <Text type="secondary" style={{ fontSize: 15 }}>
+          <Text type="secondary" style={{ fontSize: typeScale.base }}>
             {subtitle}
           </Text>
         ) : null}

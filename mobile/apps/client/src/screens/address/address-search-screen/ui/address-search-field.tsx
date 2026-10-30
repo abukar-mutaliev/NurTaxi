@@ -1,20 +1,20 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  cardBorderActive: 'rgba(201,154,84,0.55)',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
-  placeholder: '#A99FA6',
-  iconOuter: 'rgba(252,244,228,0.95)',
-  iconPickup: '#E8C882',
-  iconStop: '#C99A54',
-  iconDropoff: '#2E2331',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  cardBorderActive: brandColors.primary,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  placeholder: brandColors.textMuted,
+  iconOuter: brandColors.secondarySoft,
+  iconPickup: brandColors.primary,
+  iconStop: brandColors.primary,
+  iconDropoff: brandColors.text,
 } as const;
 
 export interface AddressSearchFieldProps {
@@ -50,7 +50,7 @@ export function AddressSearchField({
       style={[
         styles.field,
         {
-          borderRadius: scale * 22,
+          borderRadius: scale * radius.xl,
           gap: scale * 12,
           minHeight: scale * 58,
           paddingHorizontal: scale * 18,
@@ -88,7 +88,7 @@ export function AddressSearchField({
             placeholder={placeholder}
             placeholderTextColor={colors.placeholder}
             returnKeyType="search"
-            style={[styles.input, { color: colors.text, fontSize: scale * 16 }]}
+            style={[styles.input, { color: colors.text, fontSize: scale * typeScale.base }]}
             value={value}
           />
         ) : (
@@ -96,7 +96,7 @@ export function AddressSearchField({
             numberOfLines={1}
             style={[
               styles.inactiveText,
-              { fontSize: scale * 16 },
+              { fontSize: scale * typeScale.base },
               !value ? styles.placeholderText : null,
             ]}
           >
@@ -134,12 +134,12 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
   iconInner: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   iconOuter: {
     alignItems: 'center',
     backgroundColor: colors.iconOuter,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     justifyContent: 'center',
   },
   inactiveText: {
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputWrap: {

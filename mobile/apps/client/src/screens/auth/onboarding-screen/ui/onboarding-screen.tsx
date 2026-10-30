@@ -3,23 +3,21 @@
  *
  * Без явного согласия кнопка завершения недоступна — это юридическое требование, а не UX-выбор.
  */
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
   Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
-  View,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -31,34 +29,32 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const onboardingColors = {
-  background: '#F8F4EF',
-  brand: '#3A1D3F',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  label: '#7A6E78',
-  inputText: '#2E2331',
-  inputPlaceholder: '#A99FA6',
-  inputBg: 'rgba(255,255,255,0.72)',
-  inputBorder: 'rgba(255,255,255,0.9)',
-  dot: '#E8C882',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  inputShadow: 'rgba(89,71,31,0.06)',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  error: '#B42318',
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  cardBorderChecked: 'rgba(201,154,84,0.55)',
-  cardShadow: 'rgba(89,71,31,0.06)',
-  consentTitle: '#2E2331',
-  consentText: '#7A6E78',
-  consentAction: '#3A1D3F',
-  checkBg: 'rgba(201,154,84,0.18)',
-  checkMark: '#C99A54',
+  background: brandColors.background,
+  brand: brandColors.primary,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  label: brandColors.textMuted,
+  inputText: brandColors.text,
+  inputPlaceholder: brandColors.textMuted,
+  inputBg: brandColors.surface,
+  inputBorder: brandColors.divider,
+  dot: brandColors.secondary,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  inputShadow: brandColors.shadow,
+  buttonShadow: brandColors.shadow,
+  error: brandColors.danger,
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  cardBorderChecked: brandColors.primary,
+  cardShadow: brandColors.shadow,
+  consentTitle: brandColors.text,
+  consentText: brandColors.textMuted,
+  consentAction: brandColors.primary,
+  checkBg: brandColors.secondarySubtle,
+  checkMark: brandColors.primary,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export function OnboardingScreen() {
   const { t } = useTranslation();
@@ -82,21 +78,6 @@ export function OnboardingScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.layer,
-          {
-            height: sx(520),
-            left: sx(-65),
-            top: sy(-140),
-            width: sx(520),
-          },
-        ]}
-      />
 
       {/* Передний план поднимается над клавиатурой целиком, фон остаётся на месте. */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, liftStyle]}>
@@ -124,16 +105,22 @@ export function OnboardingScreen() {
                 },
               ]}
             />
-            <Text style={[styles.brand, { fontSize: sx(40), lineHeight: sx(50) }]}>
+            <Text style={[styles.brand, { fontSize: sx(typeScale.hero), lineHeight: sx(50) }]}>
               {t('auth.brandName')}
             </Text>
             <Text
-              style={[styles.title, { fontSize: sx(22), lineHeight: sx(28), marginTop: sy(24) }]}
+              style={[
+                styles.title,
+                { fontSize: sx(typeScale.xxl), lineHeight: sx(32), marginTop: sy(24) },
+              ]}
             >
               {t('onboarding.title')}
             </Text>
             <Text
-              style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
+              style={[
+                styles.subtitle,
+                { fontSize: sx(typeScale.md), lineHeight: sx(20), marginTop: sy(8) },
+              ]}
             >
               {t('onboarding.subtitle')}
             </Text>
@@ -141,7 +128,7 @@ export function OnboardingScreen() {
 
           <View style={{ gap: sy(20), marginTop: sy(40) }}>
             <View style={{ gap: sy(8) }}>
-              <Text style={[styles.fieldLabel, { fontSize: sx(13) }]}>
+              <Text style={[styles.fieldLabel, { fontSize: sx(typeScale.sm) }]}>
                 {t('onboarding.nameLabel')}
               </Text>
               <View
@@ -150,7 +137,7 @@ export function OnboardingScreen() {
                   {
                     backgroundColor: onboardingColors.inputBg,
                     borderColor: onboardingColors.inputBorder,
-                    borderRadius: sx(18),
+                    borderRadius: sx(radius.lg),
                     height: sx(58),
                     paddingHorizontal: sx(21),
                   },
@@ -160,7 +147,7 @@ export function OnboardingScreen() {
                   {showPlaceholder ? (
                     <Text
                       pointerEvents="none"
-                      style={[styles.inputPlaceholder, { fontSize: sx(16) }]}
+                      style={[styles.inputPlaceholder, { fontSize: sx(typeScale.base) }]}
                     >
                       {t('onboarding.namePlaceholder')}
                     </Text>
@@ -175,7 +162,7 @@ export function OnboardingScreen() {
                       styles.input,
                       {
                         color: onboardingColors.inputText,
-                        fontSize: sx(16),
+                        fontSize: sx(typeScale.base),
                       },
                     ]}
                     textContentType="name"
@@ -199,17 +186,19 @@ export function OnboardingScreen() {
                     borderColor: consent
                       ? onboardingColors.cardBorderChecked
                       : onboardingColors.cardBorder,
-                    borderRadius: sx(20),
+                    borderRadius: sx(radius.xl),
                     gap: sy(10),
                     paddingHorizontal: sx(18),
                     paddingVertical: sy(16),
                   },
                 ]}
               >
-                <Text style={[styles.consentTitle, { fontSize: sx(15) }]}>
+                <Text style={[styles.consentTitle, { fontSize: sx(typeScale.base) }]}>
                   {t('onboarding.consentTitle')}
                 </Text>
-                <Text style={[styles.consentText, { fontSize: sx(13), lineHeight: sx(18) }]}>
+                <Text
+                  style={[styles.consentText, { fontSize: sx(typeScale.sm), lineHeight: sx(18) }]}
+                >
                   {t('onboarding.consentText')}
                 </Text>
                 <View style={[styles.consentActionRow, { gap: sx(10), marginTop: sy(4) }]}>
@@ -221,17 +210,17 @@ export function OnboardingScreen() {
                         borderColor: consent
                           ? onboardingColors.checkMark
                           : onboardingColors.inputPlaceholder,
-                        borderRadius: sx(8),
+                        borderRadius: sx(radius.sm),
                         height: sx(22),
                         width: sx(22),
                       },
                     ]}
                   >
                     {consent ? (
-                      <Text style={[styles.checkMark, { fontSize: sx(14) }]}>✓</Text>
+                      <Text style={[styles.checkMark, { fontSize: sx(typeScale.md) }]}>✓</Text>
                     ) : null}
                   </View>
-                  <Text style={[styles.consentAction, { fontSize: sx(14) }]}>
+                  <Text style={[styles.consentAction, { fontSize: sx(typeScale.md) }]}>
                     {t('common.confirm')}
                   </Text>
                 </View>
@@ -239,7 +228,7 @@ export function OnboardingScreen() {
             </Pressable>
 
             {error ? (
-              <Text style={[styles.error, { fontSize: sx(13) }]}>{error.message}</Text>
+              <Text style={[styles.error, { fontSize: sx(typeScale.sm) }]}>{error.message}</Text>
             ) : null}
           </View>
 
@@ -257,22 +246,20 @@ export function OnboardingScreen() {
               },
             ]}
           >
-            <LinearGradient
-              colors={[onboardingColors.buttonStart, onboardingColors.buttonEnd]}
-              end={{ x: 1, y: 0.5 }}
-              start={{ x: 0, y: 0.5 }}
+            <View
               style={[
                 styles.button,
                 {
-                  borderRadius: sx(29),
+                  borderRadius: sx(radius.xxl),
                   height: sx(58),
                 },
+                { backgroundColor: onboardingColors.buttonStart },
               ]}
             >
-              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+              <Text style={[styles.buttonText, { fontSize: sx(typeScale.base) }]}>
                 {isSubmitting ? t('common.loading') : t('onboarding.finish')}
               </Text>
-            </LinearGradient>
+            </View>
           </Pressable>
         </ScrollView>
       </Animated.View>
@@ -339,7 +326,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   dot: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
   error: {
     color: onboardingColors.error,
@@ -354,7 +341,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputField: {

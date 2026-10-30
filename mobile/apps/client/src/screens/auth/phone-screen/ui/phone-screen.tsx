@@ -1,20 +1,19 @@
 /** Экран ввода телефона → `POST /auth/otp/request` (M1.2, Figma node 39:1104). */
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -25,27 +24,24 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const phoneColors = {
-  background: '#F8F4EF',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  inputText: '#2E2331',
-  inputPlaceholder: '#A99FA6',
-  inputBg: 'rgba(255,255,255,0.72)',
-  inputBorder: 'rgba(255,255,255,0.9)',
-  iconOuter: 'rgba(252,244,228,0.95)',
-  iconAccent: '#E8C882',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  inputShadow: 'rgba(89,71,31,0.06)',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  error: '#B42318',
+  background: brandColors.background,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  inputText: brandColors.text,
+  inputPlaceholder: brandColors.textMuted,
+  inputBg: brandColors.surface,
+  inputBorder: brandColors.divider,
+  iconOuter: brandColors.secondarySoft,
+  iconAccent: brandColors.primary,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  inputShadow: brandColors.shadow,
+  buttonShadow: brandColors.shadow,
+  error: brandColors.danger,
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
-const markGlowAsset = require('@/assets/images/welcome/mark-glow.png');
-const iconGlowAsset = require('@/assets/images/welcome/icon-glow.png');
 
 const normalizePhoneInput = (value: string) => {
   const masked = applyPhoneMask(value);
@@ -73,11 +69,6 @@ export function PhoneScreen() {
   const logoHeight = sx(199);
   const logoLeft = (width - logoWidth) / 2;
   const logoTop = Math.max(insets.top, sy(20)) + sy(76);
-  const logoRenderHeight = logoHeight * 1.0017;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
-  const glowSize = sx(150);
-  const glowLeft = (width - glowSize) / 2;
   const headerTop = logoTop + logoHeight + sy(24);
   // Низ подзаголовка: заголовок 28 + отступ + подзаголовок 20 (в масштабе макета).
   const headerBottom = headerTop + sx(28) + sy(2) + sx(20);
@@ -122,38 +113,8 @@ export function PhoneScreen() {
 
       <WelcomeGradientBackground />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.layer,
-          {
-            height: sx(520),
-            left: sx(-65),
-            top: sy(-140),
-            width: sx(520),
-          },
-        ]}
-      />
-
       {/* Передний план поднимается над клавиатурой целиком, фон остаётся на месте. */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, liftStyle]}>
-        <Image
-          contentFit="cover"
-          pointerEvents="none"
-          source={markGlowAsset}
-          style={[
-            styles.layer,
-            {
-              height: glowSize,
-              left: glowLeft,
-              top: logoTop - sy(122),
-              width: glowSize,
-            },
-          ]}
-        />
-
         <View
           pointerEvents="none"
           style={[
@@ -162,30 +123,11 @@ export function PhoneScreen() {
           ]}
         >
           <Image
-            contentFit="fill"
+            contentFit="contain"
             source={logoAsset}
-            style={{
-              height: logoRenderHeight,
-              marginLeft: -logoCropOffsetX,
-              width: logoRenderWidth,
-            }}
+            style={{ height: logoHeight, width: logoWidth }}
           />
         </View>
-
-        <Image
-          contentFit="cover"
-          pointerEvents="none"
-          source={iconGlowAsset}
-          style={[
-            styles.layer,
-            {
-              height: glowSize,
-              left: glowLeft,
-              top: logoTop - sy(54),
-              width: glowSize,
-            },
-          ]}
-        />
 
         <View
           pointerEvents="none"
@@ -196,11 +138,14 @@ export function PhoneScreen() {
             },
           ]}
         >
-          <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xxl), lineHeight: sx(32) }]}>
             {t('auth.phoneTitle')}
           </Text>
           <Text
-            style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(2) }]}
+            style={[
+              styles.subtitle,
+              { fontSize: sx(typeScale.md), lineHeight: sx(20), marginTop: sy(2) },
+            ]}
           >
             {t('auth.phoneSubtitle')}
           </Text>
@@ -223,7 +168,7 @@ export function PhoneScreen() {
               {
                 backgroundColor: phoneColors.inputBg,
                 borderColor: formatError ? phoneColors.error : phoneColors.inputBorder,
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 gap: sx(14),
                 height: sx(58),
                 paddingHorizontal: sx(21),
@@ -262,7 +207,7 @@ export function PhoneScreen() {
                   styles.input,
                   {
                     color: phoneColors.inputText,
-                    fontSize: sx(16),
+                    fontSize: sx(typeScale.base),
                   },
                 ]}
                 textContentType="telephoneNumber"
@@ -277,7 +222,7 @@ export function PhoneScreen() {
               style={[
                 styles.error,
                 {
-                  fontSize: sx(13),
+                  fontSize: sx(typeScale.sm),
                   marginTop: sy(8),
                 },
               ]}
@@ -298,22 +243,20 @@ export function PhoneScreen() {
               },
             ]}
           >
-            <LinearGradient
-              colors={[phoneColors.buttonStart, phoneColors.buttonEnd]}
-              end={{ x: 1, y: 0.5 }}
-              start={{ x: 0, y: 0.5 }}
+            <View
               style={[
                 styles.button,
                 {
-                  borderRadius: sx(29),
+                  borderRadius: sx(radius.xxl),
                   height: sx(58),
                 },
+                { backgroundColor: phoneColors.buttonStart },
               ]}
             >
-              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+              <Text style={[styles.buttonText, { fontSize: sx(typeScale.base) }]}>
                 {isRequestingOtp ? t('common.loading') : t('auth.getCode')}
               </Text>
-            </LinearGradient>
+            </View>
           </Pressable>
         </View>
       </Animated.View>
@@ -350,13 +293,13 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputIconOuter: {
     alignItems: 'center',
     backgroundColor: phoneColors.iconOuter,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     justifyContent: 'center',
   },
   inputField: {

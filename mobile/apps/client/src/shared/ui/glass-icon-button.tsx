@@ -3,11 +3,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { glassShadow } from './glass-shadow';
 
+import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 const colors = {
-  glassBg: 'rgba(255,255,255,0.85)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  icon: '#2E2331',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  icon: brandColors.text,
 } as const;
 
 export interface GlassIconButtonProps {
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 44,
@@ -60,14 +61,14 @@ const styles = StyleSheet.create({
   },
   plusHorizontal: {
     backgroundColor: colors.icon,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 2,
     position: 'absolute',
     width: 16,
   },
   plusVertical: {
     backgroundColor: colors.icon,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 16,
     position: 'absolute',
     width: 2,

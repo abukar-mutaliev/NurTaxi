@@ -1,7 +1,6 @@
 /**
  * Центр in-app уведомлений (M10.3, Req §23).
  */
-import { Image } from 'expo-image';
 import { FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDateTime } from '@nurtaxi/shared-core/shared/lib';
-import { Badge, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Badge, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   useGetNotificationsQuery,
   useMarkAllNotificationsReadMutation,
@@ -30,8 +29,6 @@ import {
   GlassScreenHeader,
   GlassScreenShell,
 } from '@/shared/ui';
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export function NotificationsScreen() {
   const { t } = useTranslation();
@@ -79,24 +76,16 @@ export function NotificationsScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <FlatList
         ListEmptyComponent={
-          <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 14, textAlign: 'center' }}>
+          <Text
+            style={{
+              color: GLASS_COLORS.subtitle,
+              fontSize: scale * typeScale.md,
+              textAlign: 'center',
+            }}
+          >
             {t('notifications.empty')}
           </Text>
         }
@@ -147,7 +136,7 @@ export function NotificationsScreen() {
                     style={{
                       color: GLASS_COLORS.title,
                       flex: 1,
-                      fontSize: scale * 15,
+                      fontSize: scale * typeScale.base,
                       fontWeight: '600',
                     }}
                   >
@@ -156,7 +145,7 @@ export function NotificationsScreen() {
                   {!item.readAt ? <Badge label={t('notifications.unread')} tone="primary" /> : null}
                 </View>
                 <GlassCaption>{copy.body}</GlassCaption>
-                <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * 11 }}>
+                <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * typeScale.xs }}>
                   {formatDateTime(item.createdAt)}
                 </Text>
               </GlassCard>

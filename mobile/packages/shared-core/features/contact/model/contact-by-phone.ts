@@ -5,9 +5,10 @@
  * Номера может не быть (сервер отдаёт его только на активной поездке) — тогда говорим
  * об этом, а не оставляем кнопку молча не работать.
  */
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
 
 import { formatPhone, isValidPhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
+import { showAlert } from '@nurtaxi/shared-core/shared/ui';
 
 export interface PhoneContactLabels {
   /** Заголовок диалога: «Связаться с водителем». */
@@ -22,15 +23,15 @@ export interface PhoneContactLabels {
 export function contactByPhone(phone: string | null | undefined, labels: PhoneContactLabels): void {
   const number = phone && isValidPhone(phone) ? normalizePhone(phone) : null;
   if (!number) {
-    Alert.alert(labels.title, labels.unavailable);
+    showAlert(labels.title, labels.unavailable);
     return;
   }
 
   const open = (url: string) => {
-    Linking.openURL(url).catch(() => Alert.alert(labels.title, labels.unavailable));
+    Linking.openURL(url).catch(() => showAlert(labels.title, labels.unavailable));
   };
 
-  Alert.alert(labels.title, formatPhone(number), [
+  showAlert(labels.title, formatPhone(number), [
     { text: labels.cancel, style: 'cancel' },
     { text: labels.sms, onPress: () => open(`sms:${number}`) },
     { text: labels.call, onPress: () => open(`tel:${number}`) },

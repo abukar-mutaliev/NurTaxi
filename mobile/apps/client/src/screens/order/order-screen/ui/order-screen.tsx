@@ -2,9 +2,10 @@
  * Экран поездки (M4.5–M4.10, M5.2–M5.3): стадии заказа, карта, отмена, SOS.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Share, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -17,7 +18,15 @@ import {
 } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { OrderStatus, ReviewTarget, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Badge, Button, Input, Screen, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  Badge,
+  brandColors,
+  radius,
+  Screen,
+  showAlert,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import {
   isCancellableByClient,
   isSosAllowed,
@@ -76,17 +85,60 @@ import {
   GlassScreenShell,
   CollapsibleSheet,
 } from '@/shared/ui';
+import { glassShadow } from '@/shared/ui/glass-shadow';
 import { MapCanvas, type MapCanvasHandle, resolveOrderMapMarkers } from '@/widgets/map';
 
+import { CancelOrderSheet } from './cancel-order-sheet';
 import { DriverSearchOverlay } from './driver-search-overlay';
 import { DriverEnRouteOverlay } from './driver-en-route-overlay';
 import { TripInProgressOverlay } from './trip-in-progress-overlay';
 import { useOrderTopInset } from './use-order-top-inset';
 
+const summaryColors = {
+  sheetBg: brandColors.surface,
+  sheetBorder: brandColors.divider,
+  shadow: brandColors.shadowStrong,
+  text: brandColors.text,
+  muted: brandColors.textMuted,
+  divider: brandColors.divider,
+  secondaryBg: brandColors.secondarySoft,
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
+} as const;
+
+/** Второстепенное действие внутри карточки поездки: «Чек», «Закрыть», «Отменить заказ». */
+function SummaryButton({
+  label,
+  onPress,
+  tone = 'default',
+}: {
+  label: string;
+  onPress: () => void;
+  tone?: 'default' | 'danger';
+}) {
+  const isDanger = tone === 'danger';
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.summaryButton,
+        { backgroundColor: isDanger ? summaryColors.cancelBg : summaryColors.secondaryBg },
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text style={[styles.summaryButtonText, isDanger && styles.summaryButtonTextDanger]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function OrderScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const { id: orderId } = useLocalSearchParams<{ id: string }>();
   const mapRef = useRef<MapCanvasHandle>(null);
 
@@ -267,6 +319,14 @@ export function OrderScreen() {
   const showDriverEnRoute = stage === 'waiting-driver' && Boolean(order.driver) && !noDrivers;
   const showTripInProgress = stage === 'riding';
   const showLegacyPanel = !showDriverSearch && !showDriverEnRoute && !showTripInProgress;
+  const showTripTotal = stage === 'finishing' || order.status === OrderStatus.Closed;
+  const canReview = showTripTotal && !hasReview;
+  const canClose = isTerminalOrder(order.status) && !noDrivers;
+  const canOpenReceipt = order.status === OrderStatus.Closed;
+  const canCancel = isCancellableByClient(order.status);
+  const canSos = isSosAllowed(order.status);
+  // Главное действие одно: оценка, а без неё — «Закрыть». Остальное — второстепенный ряд.
+  const closeIsSecondary = canClose && canReview;
 
   const confirmCancel = async () => {
     try {
@@ -276,7 +336,7 @@ export function OrderScreen() {
       dispatch(activeOrderChanged(null));
       router.replace('/(tabs)');
     } catch (cause) {
-      Alert.alert(t('errors.title'), toAppError(cause as never).message);
+      showAlert(t('errors.title'), toAppError(cause as never).message);
     }
   };
 
@@ -291,7 +351,7 @@ export function OrderScreen() {
   };
 
   const triggerSos = () => {
-    Alert.alert(t('sos.title'), t('sos.description'), [
+    showAlert(t('sos.title'), t('sos.description'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('sos.confirm'),
@@ -306,13 +366,13 @@ export function OrderScreen() {
             .unwrap()
             .then((response) => {
               setSosActivated(true);
-              Alert.alert(
+              showAlert(
                 t('sos.activated'),
                 t('sos.contactsNotified', { count: response.contactsNotified }),
               );
             })
             .catch((cause) => {
-              Alert.alert(t('errors.title'), toAppError(cause as never).message);
+              showAlert(t('errors.title'), toAppError(cause as never).message);
             });
         },
       },
@@ -465,119 +525,145 @@ export function OrderScreen() {
                 <GlassScreenHeader onBack={leaveToHome} title={t('order.tripTitle')} />
               </View>
 
-              <View style={[styles.panel, { padding: 16 }]}>
-                <CollapsibleSheet variant="floating">
-                  <View style={{ gap: 12 }}>
-                    <GlassCard>
-                      <View style={styles.statusRow}>
-                        <Badge
-                          label={formatOrderStatusLabel(order.status)}
-                          tone={orderStatusTone(order.status)}
-                        />
-                        {!isOnline ? (
-                          <View style={styles.reconnectingWrap}>
-                            <GlassCaption style={styles.reconnectingCaption}>
-                              {t('common.reconnecting')}
-                            </GlassCaption>
+              <View
+                pointerEvents="box-none"
+                style={[styles.panel, { paddingBottom: Math.max(insets.bottom, 12) }]}
+              >
+                {/*
+                  Одна карточка с ручкой: статус, итог и кнопки. Раньше итог лежал в
+                  полупрозрачной плашке, а «Чек», «Оцените поездку» и «Закрыть» висели под ней
+                  отдельно, прямо над картой.
+                */}
+                <CollapsibleSheet>
+                  {(handle) => (
+                    <View style={styles.summarySheet}>
+                      {handle}
+                      <View style={styles.summaryBody}>
+                        <View style={styles.statusRow}>
+                          <Badge
+                            label={formatOrderStatusLabel(order.status)}
+                            tone={orderStatusTone(order.status)}
+                          />
+                          {!isOnline ? (
+                            <View style={styles.reconnectingWrap}>
+                              <GlassCaption style={styles.reconnectingCaption}>
+                                {t('common.reconnecting')}
+                              </GlassCaption>
+                            </View>
+                          ) : null}
+                        </View>
+
+                        {noDrivers ? (
+                          <View style={styles.noDriversBlock}>
+                            <Text style={styles.noDriversText}>{t('order.noDrivers')}</Text>
+                            <GlassPrimaryButton onPress={retryOrder} title={t('order.tryAgain')} />
                           </View>
                         ) : null}
+
+                        {order.status === OrderStatus.FailedPayment ? (
+                          <GlassCard tone="warning">
+                            <Text
+                              style={{
+                                color: GLASS_COLORS.title,
+                                fontSize: typeScale.base,
+                                fontWeight: '600',
+                              }}
+                            >
+                              {t('payment.failed')}
+                            </Text>
+                            <GlassCaption>{t('payment.failedHint')}</GlassCaption>
+                            <GlassPrimaryButton
+                              onPress={refetch}
+                              title={t('payment.retry')}
+                              variant="secondary"
+                            />
+                          </GlassCard>
+                        ) : null}
+
+                        {showTripTotal ? (
+                          <View style={styles.totalBlock}>
+                            <Text style={styles.totalPrice}>
+                              {formatPrice(order.priceFinal ?? order.priceEstimated, 'RUB')}
+                            </Text>
+                            <Text numberOfLines={2} style={styles.totalAddress}>
+                              {order.dropoffAddress}
+                            </Text>
+                          </View>
+                        ) : null}
+
+                        {order.childSeat ? (
+                          <GlassCaption>{t('order.childSeat')}</GlassCaption>
+                        ) : null}
+                        {order.passengerName ? (
+                          <GlassCaption>
+                            {t('driver.orderForOtherPassenger', { name: order.passengerName })}
+                            {order.passengerPhone ? ` · ${order.passengerPhone}` : ''}
+                          </GlassCaption>
+                        ) : null}
+                        {order.comment ? (
+                          <GlassCaption>
+                            {t('driver.clientComment')}: {order.comment}
+                          </GlassCaption>
+                        ) : null}
+
+                        <View style={styles.summaryActions}>
+                          {canCancel || canSos ? (
+                            <View style={styles.summaryActionsRow}>
+                              {canCancel ? (
+                                <SummaryButton
+                                  label={t('order.cancel')}
+                                  onPress={() => setCancelVisible(true)}
+                                  tone="danger"
+                                />
+                              ) : null}
+                              {canSos ? (
+                                <View style={styles.flexOne}>
+                                  <GlassPrimaryButton
+                                    disabled={sosActivated || sosState.isLoading}
+                                    loading={sosState.isLoading}
+                                    loadingTitle={t('common.loading')}
+                                    onPress={triggerSos}
+                                    scale={0.9}
+                                    title={t('sos.button')}
+                                  />
+                                </View>
+                              ) : null}
+                            </View>
+                          ) : null}
+
+                          {canReview ? (
+                            <GlassPrimaryButton
+                              onPress={() => setReviewVisible(true)}
+                              title={t('review.title')}
+                            />
+                          ) : null}
+
+                          {canOpenReceipt || closeIsSecondary ? (
+                            <View style={styles.summaryActionsRow}>
+                              {canOpenReceipt ? (
+                                <SummaryButton
+                                  label={t('order.receipt')}
+                                  onPress={() =>
+                                    router.push({
+                                      pathname: '/trip/[id]/receipt',
+                                      params: { id: orderId },
+                                    })
+                                  }
+                                />
+                              ) : null}
+                              {closeIsSecondary ? (
+                                <SummaryButton label={t('common.close')} onPress={leaveToHome} />
+                              ) : null}
+                            </View>
+                          ) : null}
+
+                          {canClose && !closeIsSecondary ? (
+                            <GlassPrimaryButton onPress={leaveToHome} title={t('common.close')} />
+                          ) : null}
+                        </View>
                       </View>
-
-                      {noDrivers ? (
-                        <View style={styles.noDriversBlock}>
-                          <Text style={styles.noDriversText}>{t('order.noDrivers')}</Text>
-                          <GlassPrimaryButton
-                            onPress={retryOrder}
-                            title={t('order.tryAgain')}
-                            variant="secondary"
-                          />
-                        </View>
-                      ) : null}
-
-                      {order.status === OrderStatus.FailedPayment ? (
-                        <GlassCard tone="warning">
-                          <Text
-                            style={{ color: GLASS_COLORS.title, fontSize: 15, fontWeight: '600' }}
-                          >
-                            {t('payment.failed')}
-                          </Text>
-                          <GlassCaption>{t('payment.failedHint')}</GlassCaption>
-                          <GlassPrimaryButton
-                            onPress={refetch}
-                            title={t('payment.retry')}
-                            variant="secondary"
-                          />
-                        </GlassCard>
-                      ) : null}
-
-                      {stage === 'finishing' || order.status === OrderStatus.Closed ? (
-                        <View style={{ gap: 4, paddingTop: 8 }}>
-                          <Text style={{ color: GLASS_COLORS.title, fontSize: 15 }}>
-                            {formatPrice(order.priceFinal ?? order.priceEstimated, 'RUB')}
-                          </Text>
-                          <GlassCaption>{order.dropoffAddress}</GlassCaption>
-                        </View>
-                      ) : null}
-
-                      {order.childSeat ? <GlassCaption>{t('order.childSeat')}</GlassCaption> : null}
-                      {order.passengerName ? (
-                        <GlassCaption>
-                          {t('driver.orderForOtherPassenger', { name: order.passengerName })}
-                          {order.passengerPhone ? ` · ${order.passengerPhone}` : ''}
-                        </GlassCaption>
-                      ) : null}
-                      {order.comment ? (
-                        <GlassCaption>
-                          {t('driver.clientComment')}: {order.comment}
-                        </GlassCaption>
-                      ) : null}
-                    </GlassCard>
-
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      {isCancellableByClient(order.status) ? (
-                        <View style={{ flex: 1 }}>
-                          <GlassPrimaryButton
-                            onPress={() => setCancelVisible(true)}
-                            title={t('order.cancel')}
-                            variant="secondary"
-                          />
-                        </View>
-                      ) : null}
-                      {isSosAllowed(order.status) ? (
-                        <View style={{ flex: 1 }}>
-                          <GlassPrimaryButton
-                            disabled={sosActivated || sosState.isLoading}
-                            loading={sosState.isLoading}
-                            loadingTitle={t('common.loading')}
-                            onPress={triggerSos}
-                            title={t('sos.button')}
-                          />
-                        </View>
-                      ) : null}
                     </View>
-
-                    {order.status === OrderStatus.Closed ? (
-                      <GlassPrimaryButton
-                        onPress={() =>
-                          router.push({ pathname: '/trip/[id]/receipt', params: { id: orderId } })
-                        }
-                        title={t('order.receipt')}
-                        variant="secondary"
-                      />
-                    ) : null}
-
-                    {(stage === 'finishing' || order.status === OrderStatus.Closed) &&
-                    !hasReview ? (
-                      <GlassPrimaryButton
-                        onPress={() => setReviewVisible(true)}
-                        title={t('review.title')}
-                      />
-                    ) : null}
-
-                    {isTerminalOrder(order.status) && !noDrivers ? (
-                      <GlassPrimaryButton onPress={leaveToHome} title={t('common.close')} />
-                    ) : null}
-                  </View>
+                  )}
                 </CollapsibleSheet>
               </View>
             </>
@@ -585,35 +671,24 @@ export function OrderScreen() {
         </View>
       </Screen>
 
-      <Sheet
+      <CancelOrderSheet
+        confirmLabel={t('order.cancel')}
+        feeNotice={
+          order.cancellationFee
+            ? t('order.cancelFee', { amount: formatMoney(order.cancellationFee, 'RUB') })
+            : null
+        }
+        isCancelling={cancelState.isLoading}
+        keepLabel={t('order.keepOrder')}
         onClose={() => setCancelVisible(false)}
+        onConfirm={confirmCancel}
+        onReasonChange={setCancelReason}
+        reason={cancelReason}
+        reasonLabel={t('order.cancelReason')}
+        reasonPlaceholder={t('order.cancelReasonPlaceholder')}
         title={t('order.cancelConfirm')}
         visible={cancelVisible}
-      >
-        <View style={{ gap: 16 }}>
-          <Input
-            label={t('order.cancelReason')}
-            multiline
-            numberOfLines={2}
-            onChangeText={setCancelReason}
-            placeholder={t('order.cancelReason')}
-            value={cancelReason}
-          />
-          {order.cancellationFee ? (
-            <Text tone="danger" variant="caption">
-              {t('order.cancelFee', {
-                amount: formatMoney(order.cancellationFee, 'RUB'),
-              })}
-            </Text>
-          ) : null}
-          <Button
-            loading={cancelState.isLoading}
-            onPress={confirmCancel}
-            title={t('order.cancel')}
-            variant="danger"
-          />
-        </View>
-      </Sheet>
+      />
 
       <ReviewSheet
         onClose={() => setReviewVisible(false)}
@@ -625,6 +700,9 @@ export function OrderScreen() {
 }
 
 const styles = StyleSheet.create({
+  flexOne: {
+    flex: 1,
+  },
   header: {
     left: 0,
     position: 'absolute',
@@ -633,18 +711,22 @@ const styles = StyleSheet.create({
   },
   noDriversBlock: {
     gap: 12,
-    paddingTop: 8,
+    paddingTop: 4,
   },
   noDriversText: {
     color: GLASS_COLORS.error,
-    fontSize: 15,
+    fontSize: typeScale.base,
     textAlign: 'center',
   },
   panel: {
     bottom: 0,
     left: 0,
+    paddingHorizontal: 16,
     position: 'absolute',
     right: 0,
+  },
+  pressed: {
+    opacity: 0.88,
   },
   reconnectingCaption: {
     textAlign: 'right',
@@ -660,5 +742,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
+  },
+  summaryActions: {
+    borderTopColor: summaryColors.divider,
+    borderTopWidth: 1,
+    gap: 10,
+    marginTop: 4,
+    paddingTop: 16,
+  },
+  summaryActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  summaryBody: {
+    gap: 10,
+    paddingBottom: 18,
+    paddingHorizontal: 19,
+    // Сверху уже ручка карточки — свой отступ меньше.
+    paddingTop: 4,
+  },
+  summaryButton: {
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    flex: 1,
+    height: 52,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  summaryButtonText: {
+    color: summaryColors.text,
+    fontSize: typeScale.base,
+    fontWeight: '600',
+  },
+  summaryButtonTextDanger: {
+    color: summaryColors.cancelText,
+  },
+  summarySheet: {
+    backgroundColor: summaryColors.sheetBg,
+    borderColor: summaryColors.sheetBorder,
+    borderRadius: radius.xxl,
+    borderWidth: 1,
+    elevation: 8,
+    ...glassShadow({ color: summaryColors.shadow, radius: 16 }),
+  },
+  totalAddress: {
+    color: summaryColors.muted,
+    fontSize: typeScale.sm,
+    fontWeight: '500',
+  },
+  totalBlock: {
+    gap: 2,
+  },
+  totalPrice: {
+    color: summaryColors.text,
+    fontSize: typeScale.xxl,
+    fontWeight: '700',
   },
 });

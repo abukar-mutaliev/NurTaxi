@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Avatar, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Avatar, brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
 import { useProfilePhotoUpload, useProfileUpdate } from '@/features/profile';
@@ -92,8 +92,8 @@ export function EditProfileScreen() {
               <View
                 style={{
                   alignItems: 'center',
-                  backgroundColor: 'rgba(46,35,49,0.45)',
-                  borderRadius: 48,
+                  backgroundColor: brandColors.overlay,
+                  borderRadius: radius.pill,
                   bottom: 0,
                   justifyContent: 'center',
                   left: 0,
@@ -102,12 +102,12 @@ export function EditProfileScreen() {
                   top: 0,
                 }}
               >
-                <ActivityIndicator color="#F7F3EE" />
+                <ActivityIndicator color={brandColors.onPrimary} />
               </View>
             ) : null}
           </View>
         </Pressable>
-        <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 13 }}>
+        <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * typeScale.sm }}>
           {t('profile.changePhoto')}
         </Text>
       </View>
@@ -121,19 +121,29 @@ export function EditProfileScreen() {
       />
 
       {error ? (
-        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{ color: GLASS_COLORS.error, fontSize: scale * typeScale.sm, textAlign: 'center' }}
+        >
           {error.message}
         </Text>
       ) : null}
 
       {photoError ? (
-        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{ color: GLASS_COLORS.error, fontSize: scale * typeScale.sm, textAlign: 'center' }}
+        >
           {photoError}
         </Text>
       ) : null}
 
       {saved ? (
-        <Text style={{ color: GLASS_COLORS.success, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{
+            color: GLASS_COLORS.success,
+            fontSize: scale * typeScale.sm,
+            textAlign: 'center',
+          }}
+        >
           {t('profile.saveSuccess')}
         </Text>
       ) : null}

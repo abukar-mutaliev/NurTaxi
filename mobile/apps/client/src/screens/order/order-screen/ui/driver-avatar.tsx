@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 const colors = {
-  avatarBg: '#3A1D3F',
-  avatarText: '#F7F3EE',
+  avatarBg: brandColors.primary,
+  avatarText: brandColors.onPrimary,
 } as const;
 
 export function DriverAvatar({

@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, shadows, Text } from '@nurtaxi/shared-core/shared/ui';
 
 export interface GlowIconProps {
   /** Эмодзи или символ в центре свечения. */
@@ -30,17 +30,14 @@ export function GlowIcon({ glyph, size = 92 }: GlowIconProps) {
 const styles = StyleSheet.create({
   inner: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: brandColors.surface,
     elevation: 3,
     justifyContent: 'center',
-    shadowColor: 'rgba(201,154,84,0.45)',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 18,
+    ...shadows.md,
   },
   outer: {
     alignItems: 'center',
-    backgroundColor: 'rgba(247,220,168,0.55)',
+    backgroundColor: brandColors.secondarySoft,
     justifyContent: 'center',
   },
 });

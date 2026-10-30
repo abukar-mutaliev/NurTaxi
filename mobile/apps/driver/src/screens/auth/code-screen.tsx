@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
@@ -38,11 +38,11 @@ const OTP_LENGTH = 4;
 const DEFAULT_RESEND_SECONDS = 30;
 
 const c = {
-  title: '#2E2331',
-  subtitle: '#8A7E88',
-  strong: '#2E2331',
-  hint: '#B5AAB2',
-  link: '#3A1D3F',
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  strong: brandColors.text,
+  hint: brandColors.textMuted,
+  link: brandColors.primary,
 } as const;
 
 export function CodeScreen() {
@@ -122,12 +122,12 @@ export function CodeScreen() {
         />
 
         <View style={{ marginTop: sy(28) }}>
-          <Text style={[styles.title, { fontSize: sx(26), lineHeight: sx(32) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xxl), lineHeight: sx(32) }]}>
             {t('auth.codeTitle')}
           </Text>
-          <Text style={[styles.subtitleLeft, { fontSize: sx(14), marginTop: sy(6) }]}>
+          <Text style={[styles.subtitleLeft, { fontSize: sx(typeScale.md), marginTop: sy(6) }]}>
             Отправили SMS на{' '}
-            <Text style={[styles.strong, { fontSize: sx(14) }]}>
+            <Text style={[styles.strong, { fontSize: sx(typeScale.md) }]}>
               {phone ? formatPhone(phone) : ''}
             </Text>
           </Text>
@@ -149,20 +149,25 @@ export function CodeScreen() {
         <View style={{ alignItems: 'center', marginTop: sy(24) }}>
           {isFinished ? (
             <Pressable disabled={isRequestingOtp} hitSlop={8} onPress={resend}>
-              <Text style={[styles.link, { fontSize: sx(14), opacity: isRequestingOtp ? 0.5 : 1 }]}>
+              <Text
+                style={[
+                  styles.link,
+                  { fontSize: sx(typeScale.md), opacity: isRequestingOtp ? 0.5 : 1 },
+                ]}
+              >
                 {t('auth.resend')}
               </Text>
             </Pressable>
           ) : (
-            <Text style={[styles.subtitle, { fontSize: sx(14) }]}>
+            <Text style={[styles.subtitle, { fontSize: sx(typeScale.md) }]}>
               Отправить повторно через{' '}
-              <Text style={[styles.strong, { fontSize: sx(14) }]}>{secondsLeft}</Text> с
+              <Text style={[styles.strong, { fontSize: sx(typeScale.md) }]}>{secondsLeft}</Text> с
             </Text>
           )}
         </View>
 
         {!isProdEnvironment && devCode ? (
-          <Text style={[styles.hint, { fontSize: sx(12), marginTop: sy(26) }]}>
+          <Text style={[styles.hint, { fontSize: sx(typeScale.xs), marginTop: sy(26) }]}>
             {t('auth.devCodeHint', { code: devCode })}
           </Text>
         ) : null}
@@ -182,7 +187,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   strong: {

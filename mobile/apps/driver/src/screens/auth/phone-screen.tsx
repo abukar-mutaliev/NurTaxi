@@ -22,7 +22,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  fontFamily,
+  radius,
+  shadows,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
 import { PillButton } from '@/shared/ui/pill-button';
@@ -39,14 +46,14 @@ const LOGO_DESIGN_WIDTH = 164;
 const LOGO_DESIGN_HEIGHT = 199;
 
 const c = {
-  title: '#2E2331',
-  subtitle: '#9A8F98',
-  inputBg: '#FFFFFF',
-  inputBorder: '#F0E7DC',
-  inputText: '#2E2331',
-  placeholder: '#B9AFB6',
-  shadow: 'rgba(89,71,31,0.10)',
-  danger: '#B42318',
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  inputBg: brandColors.surface,
+  inputBorder: brandColors.surfaceMuted,
+  inputText: brandColors.text,
+  placeholder: brandColors.textMuted,
+  shadow: brandColors.shadow,
+  danger: brandColors.danger,
 } as const;
 
 /** Пустая маска не должна оставлять в поле висящий префикс «+7 ». */
@@ -132,10 +139,10 @@ export function PhoneScreen() {
             source={logoAsset}
             style={{ height: logoHeight, width: logoWidth }}
           />
-          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(16) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xl), marginTop: sy(16) }]}>
             {t('auth.phoneTitle')}
           </Text>
-          <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(4) }]}>
+          <Text style={[styles.subtitle, { fontSize: sx(typeScale.sm), marginTop: sy(4) }]}>
             {t('auth.phoneSubtitle')}
           </Text>
         </View>
@@ -146,7 +153,7 @@ export function PhoneScreen() {
               styles.inputShell,
               formatError && styles.inputShellInvalid,
               {
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 gap: sx(12),
                 height: sx(58),
                 paddingHorizontal: sx(20),
@@ -168,7 +175,7 @@ export function PhoneScreen() {
               placeholder={t('auth.phonePlaceholder')}
               placeholderTextColor={c.placeholder}
               returnKeyType="done"
-              style={[styles.input, { fontSize: sx(16) }]}
+              style={[styles.input, { fontSize: sx(typeScale.base) }]}
               textContentType="telephoneNumber"
               value={phone}
             />
@@ -177,7 +184,7 @@ export function PhoneScreen() {
           {message ? (
             <Text
               accessibilityLiveRegion="polite"
-              style={[styles.error, { fontSize: sx(13), marginTop: sy(10) }]}
+              style={[styles.error, { fontSize: sx(typeScale.sm), marginTop: sy(10) }]}
             >
               {message}
             </Text>
@@ -208,7 +215,7 @@ const styles = StyleSheet.create({
   input: {
     color: c.inputText,
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputShell: {
@@ -218,16 +225,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...shadows.md,
   },
   inputShellInvalid: {
     borderColor: c.danger,
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   subtitle: {

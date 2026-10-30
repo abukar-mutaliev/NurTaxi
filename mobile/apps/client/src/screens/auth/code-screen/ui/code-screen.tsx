@@ -5,9 +5,8 @@
  * константой: сервер сам решает, как часто можно запрашивать код (`§20`).
  */
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -17,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatCountdown, formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
@@ -32,24 +31,21 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const codeColors = {
-  background: '#F8F4EF',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  link: '#3A1D3F',
-  hint: '#A99FA6',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  devCardBg: 'rgba(255,248,230,0.85)',
-  devCardBorder: 'rgba(201,154,84,0.35)',
-  devCardText: '#7A6E78',
+  background: brandColors.background,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  link: brandColors.primary,
+  hint: brandColors.textMuted,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  buttonShadow: brandColors.shadow,
+  devCardBg: brandColors.secondarySoft,
+  devCardBorder: brandColors.secondary,
+  devCardText: brandColors.textMuted,
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
-const markGlowAsset = require('@/assets/images/welcome/mark-glow.png');
-const iconGlowAsset = require('@/assets/images/welcome/icon-glow.png');
 
 const OTP_LENGTH = 4;
 const DEFAULT_RESEND_SECONDS = 60;
@@ -78,12 +74,6 @@ export function CodeScreen() {
   const logoHeight = sx(199);
   const logoLeft = (width - logoWidth) / 2;
   const logoTop = Math.max(insets.top, sy(20)) + sy(76);
-  const logoRenderHeight = logoHeight * 1.0017;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
-  const glowSize = sx(150);
-  const glowLeft = (width - glowSize) / 2;
-
   const canSubmit = code.length >= OTP_LENGTH && !isVerifyingOtp;
 
   useEffect(() => {
@@ -123,38 +113,8 @@ export function CodeScreen() {
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.layer,
-          {
-            height: sx(520),
-            left: sx(-65),
-            top: sy(-140),
-            width: sx(520),
-          },
-        ]}
-      />
-
       {/* Передний план поднимается над клавиатурой целиком, фон остаётся на месте. */}
       <Animated.View pointerEvents="box-none" style={[StyleSheet.absoluteFill, liftStyle]}>
-        <Image
-          contentFit="cover"
-          pointerEvents="none"
-          source={markGlowAsset}
-          style={[
-            styles.layer,
-            {
-              height: glowSize,
-              left: glowLeft,
-              top: logoTop - sy(122),
-              width: glowSize,
-            },
-          ]}
-        />
-
         <View
           pointerEvents="none"
           style={[
@@ -163,30 +123,11 @@ export function CodeScreen() {
           ]}
         >
           <Image
-            contentFit="fill"
+            contentFit="contain"
             source={logoAsset}
-            style={{
-              height: logoRenderHeight,
-              marginLeft: -logoCropOffsetX,
-              width: logoRenderWidth,
-            }}
+            style={{ height: logoHeight, width: logoWidth }}
           />
         </View>
-
-        <Image
-          contentFit="cover"
-          pointerEvents="none"
-          source={iconGlowAsset}
-          style={[
-            styles.layer,
-            {
-              height: glowSize,
-              left: glowLeft,
-              top: logoTop - sy(54),
-              width: glowSize,
-            },
-          ]}
-        />
 
         <ScrollView
           contentContainerStyle={[
@@ -201,11 +142,14 @@ export function CodeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View collapsable={false} ref={ceilingRef} style={styles.header}>
-            <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
+            <Text style={[styles.title, { fontSize: sx(typeScale.xxl), lineHeight: sx(32) }]}>
               {t('auth.codeTitle')}
             </Text>
             <Text
-              style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
+              style={[
+                styles.subtitle,
+                { fontSize: sx(typeScale.md), lineHeight: sx(20), marginTop: sy(8) },
+              ]}
             >
               {t('auth.codeSubtitle', { phone: phone ? formatPhone(phone) : '' })}
             </Text>
@@ -225,19 +169,24 @@ export function CodeScreen() {
             {isFinished ? (
               <Pressable disabled={isRequestingOtp} onPress={resend}>
                 <Text
-                  style={[styles.link, { fontSize: sx(14), opacity: isRequestingOtp ? 0.5 : 1 }]}
+                  style={[
+                    styles.link,
+                    { fontSize: sx(typeScale.md), opacity: isRequestingOtp ? 0.5 : 1 },
+                  ]}
                 >
                   {t('auth.resend')}
                 </Text>
               </Pressable>
             ) : (
-              <Text style={[styles.hint, { fontSize: sx(13) }]}>
+              <Text style={[styles.hint, { fontSize: sx(typeScale.sm) }]}>
                 {t('auth.resendIn', { time: formatCountdown(secondsLeft) })}
               </Text>
             )}
 
             <Pressable onPress={() => router.replace('/(auth)/phone')}>
-              <Text style={[styles.hint, { fontSize: sx(13) }]}>{t('auth.changeNumber')}</Text>
+              <Text style={[styles.hint, { fontSize: sx(typeScale.sm) }]}>
+                {t('auth.changeNumber')}
+              </Text>
             </Pressable>
 
             {!isProdEnvironment && devCode ? (
@@ -245,14 +194,14 @@ export function CodeScreen() {
                 style={[
                   styles.devCard,
                   {
-                    borderRadius: sx(16),
+                    borderRadius: sx(radius.lg),
                     marginTop: sy(8),
                     paddingHorizontal: sx(16),
                     paddingVertical: sy(12),
                   },
                 ]}
               >
-                <Text style={[styles.devCardText, { fontSize: sx(13) }]}>
+                <Text style={[styles.devCardText, { fontSize: sx(typeScale.sm) }]}>
                   {t('auth.devCodeHint', { code: devCode })}
                 </Text>
               </View>
@@ -273,22 +222,20 @@ export function CodeScreen() {
               },
             ]}
           >
-            <LinearGradient
-              colors={[codeColors.buttonStart, codeColors.buttonEnd]}
-              end={{ x: 1, y: 0.5 }}
-              start={{ x: 0, y: 0.5 }}
+            <View
               style={[
                 styles.button,
                 {
-                  borderRadius: sx(29),
+                  borderRadius: sx(radius.xxl),
                   height: sx(58),
                 },
+                { backgroundColor: codeColors.buttonStart },
               ]}
             >
-              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+              <Text style={[styles.buttonText, { fontSize: sx(typeScale.base) }]}>
                 {isVerifyingOtp ? t('common.loading') : t('common.confirm')}
               </Text>
-            </LinearGradient>
+            </View>
           </Pressable>
         </ScrollView>
       </Animated.View>

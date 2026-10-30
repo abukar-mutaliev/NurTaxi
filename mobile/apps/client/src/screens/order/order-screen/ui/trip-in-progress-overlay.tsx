@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron, CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -11,22 +11,22 @@ import { DriverAvatar } from './driver-avatar';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
-  glassBg: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  sheetBg: 'rgba(255,255,255,0.82)',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
-  muted: '#A99FA6',
-  label: '#A99FA6',
-  pickupDot: '#E8C882',
-  stopDot: '#C99A54',
-  dropoffDot: '#2E2331',
-  connector: '#EFE9DC',
-  divider: '#EFE9DC',
-  shareBg: 'rgba(255,255,255,0.82)',
-  contactBg: 'rgba(252,244,228,0.85)',
-  cancelBg: 'rgba(253,239,236,0.9)',
-  cancelText: '#E0705F',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  sheetBg: brandColors.surface,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  muted: brandColors.textMuted,
+  label: brandColors.textMuted,
+  pickupDot: brandColors.secondary,
+  stopDot: brandColors.primary,
+  dropoffDot: brandColors.text,
+  connector: brandColors.divider,
+  divider: brandColors.divider,
+  shareBg: brandColors.surface,
+  contactBg: brandColors.secondarySoft,
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
 } as const;
 
 export interface TripInProgressOverlayProps {
@@ -143,96 +143,102 @@ export function TripInProgressOverlay({
         pointerEvents="box-none"
         style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 12) }]}
       >
-        <CollapsibleSheet variant="floating">
-          <View style={styles.tripSheet}>
-            {driver ? (
-              <>
-                <View style={styles.driverRow}>
-                  <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} size={44} />
-                  <Text numberOfLines={1} style={styles.driverName}>
-                    {driver.fullName}
-                  </Text>
-                  <Pressable
-                    accessibilityLabel={contactLabel}
-                    accessibilityRole="button"
-                    hitSlop={6}
-                    onPress={onContact}
-                    style={({ pressed }) => [styles.contactButton, pressed && styles.pressed]}
-                  >
-                    <Text style={styles.contactText}>{contactShortLabel}</Text>
-                  </Pressable>
-                </View>
-                <View style={styles.driverDivider} />
-              </>
-            ) : null}
+        {/* Ручка — верхняя полоса карточки поездки, как в карточке «водитель едет». */}
+        <CollapsibleSheet>
+          {(handle) => (
+            <>
+              <View style={styles.tripSheet}>
+                {handle}
+                {driver ? (
+                  <>
+                    <View style={styles.driverRow}>
+                      <DriverAvatar name={driver.fullName} photoUrl={driver.photoUrl} size={44} />
+                      <Text numberOfLines={1} style={styles.driverName}>
+                        {driver.fullName}
+                      </Text>
+                      <Pressable
+                        accessibilityLabel={contactLabel}
+                        accessibilityRole="button"
+                        hitSlop={6}
+                        onPress={onContact}
+                        style={({ pressed }) => [styles.contactButton, pressed && styles.pressed]}
+                      >
+                        <Text style={styles.contactText}>{contactShortLabel}</Text>
+                      </Pressable>
+                    </View>
+                    <View style={styles.driverDivider} />
+                  </>
+                ) : null}
 
-            <View style={styles.addressBlock}>
-              <View style={styles.addressRail}>
-                <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
-                {stopAddresses.map((address, index) => (
-                  <View key={`${index}:${address}`} style={styles.railStop}>
+                <View style={styles.addressBlock}>
+                  <View style={styles.addressRail}>
+                    <View style={[styles.addressDot, { backgroundColor: colors.pickupDot }]} />
+                    {stopAddresses.map((address, index) => (
+                      <View key={`${index}:${address}`} style={styles.railStop}>
+                        <View style={styles.connector} />
+                        <View style={[styles.addressDot, { backgroundColor: colors.stopDot }]} />
+                      </View>
+                    ))}
                     <View style={styles.connector} />
-                    <View style={[styles.addressDot, { backgroundColor: colors.stopDot }]} />
+                    <View style={[styles.addressDot, { backgroundColor: colors.dropoffDot }]} />
                   </View>
-                ))}
-                <View style={styles.connector} />
-                <View style={[styles.addressDot, { backgroundColor: colors.dropoffDot }]} />
+                  <View style={styles.addressList}>
+                    <Text numberOfLines={2} style={styles.addressText}>
+                      {pickupAddress}
+                    </Text>
+                    {stopAddresses.map((address, index) => (
+                      <Text
+                        key={`${index}:${address}`}
+                        numberOfLines={2}
+                        style={[styles.addressText, styles.stopText]}
+                      >
+                        {address}
+                      </Text>
+                    ))}
+                    <Text numberOfLines={2} style={styles.addressText}>
+                      {dropoffAddress}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.statsRow}>
+                  <StatColumn label={durationLabel} value={durationValue} />
+                  <StatColumn label={distanceLabel} value={distanceValue} />
+                  <StatColumn label={priceLabel} value={priceValue} />
+                </View>
               </View>
-              <View style={styles.addressList}>
-                <Text numberOfLines={2} style={styles.addressText}>
-                  {pickupAddress}
-                </Text>
-                {stopAddresses.map((address, index) => (
-                  <Text
-                    key={`${index}:${address}`}
-                    numberOfLines={2}
-                    style={[styles.addressText, styles.stopText]}
+
+              <View style={styles.actionsRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={onShare}
+                  style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.shareText}>{shareLabel}</Text>
+                </Pressable>
+
+                {canCancel ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={onCancel}
+                    style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
                   >
-                    {address}
-                  </Text>
-                ))}
-                <Text numberOfLines={2} style={styles.addressText}>
-                  {dropoffAddress}
-                </Text>
+                    <Text style={styles.cancelText}>{cancelLabel}</Text>
+                  </Pressable>
+                ) : onSos && sosLabel ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={onSos}
+                    style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.cancelText}>{sosLabel}</Text>
+                  </Pressable>
+                ) : null}
               </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.statsRow}>
-              <StatColumn label={durationLabel} value={durationValue} />
-              <StatColumn label={distanceLabel} value={distanceValue} />
-              <StatColumn label={priceLabel} value={priceValue} />
-            </View>
-          </View>
-
-          <View style={styles.actionsRow}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onShare}
-              style={({ pressed }) => [styles.shareButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.shareText}>{shareLabel}</Text>
-            </Pressable>
-
-            {canCancel ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onCancel}
-                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-              >
-                <Text style={styles.cancelText}>{cancelLabel}</Text>
-              </Pressable>
-            ) : onSos && sosLabel ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={onSos}
-                style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
-              >
-                <Text style={styles.cancelText}>{sosLabel}</Text>
-              </Pressable>
-            ) : null}
-          </View>
+            </>
+          )}
         </CollapsibleSheet>
       </View>
     </View>
@@ -252,7 +258,7 @@ const styles = StyleSheet.create({
     paddingTop: 23,
   },
   addressDot: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 9,
     width: 9,
   },
@@ -267,7 +273,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     color: colors.text,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '500',
   },
   bottom: {
@@ -281,7 +287,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cancelBg,
     borderColor: colors.glassBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flex: 1,
@@ -291,19 +297,19 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: colors.cancelText,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   contactButton: {
     backgroundColor: colors.contactBg,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     justifyContent: 'center',
     minHeight: 36,
     paddingHorizontal: 14,
   },
   contactText: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '600',
   },
   connector: {
@@ -321,7 +327,7 @@ const styles = StyleSheet.create({
   driverName: {
     color: colors.text,
     flex: 1,
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   driverRow: {
@@ -329,7 +335,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 21,
-    paddingTop: 18,
+    // Сверху уже ручка карточки — свой отступ меньше.
+    paddingTop: 4,
   },
   divider: {
     backgroundColor: colors.divider,
@@ -354,7 +361,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.xl,
     height: 44,
     justifyContent: 'center',
     overflow: 'hidden',
@@ -369,13 +376,13 @@ const styles = StyleSheet.create({
   },
   stopText: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: typeScale.sm,
   },
   shareButton: {
     alignItems: 'center',
     backgroundColor: colors.shareBg,
     borderColor: colors.glassBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flex: 1,
@@ -385,7 +392,7 @@ const styles = StyleSheet.create({
   },
   shareText: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   statColumn: {
@@ -395,12 +402,12 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: colors.label,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     textAlign: 'center',
   },
   statValue: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: typeScale.lg,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -419,7 +426,7 @@ const styles = StyleSheet.create({
   },
   statusPill: {
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: radius.xl,
     height: 44,
     justifyContent: 'center',
     paddingHorizontal: 12,
@@ -427,7 +434,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
     includeFontPadding: false,
     lineHeight: 20,
@@ -443,7 +450,7 @@ const styles = StyleSheet.create({
   tripSheet: {
     backgroundColor: colors.sheetBg,
     borderColor: colors.glassBorder,
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     elevation: 4,
     ...glassShadow({ color: colors.shadow }),

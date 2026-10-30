@@ -1,20 +1,20 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  chevron: '#A99FA6',
-  iconOuterDefault: 'rgba(252,244,228,0.95)',
-  iconInnerDefault: '#E8C882',
-  iconOuterSafety: 'rgba(231,238,227,0.95)',
-  iconInnerSafety: '#6B9B6E',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  chevron: brandColors.textMuted,
+  iconOuterDefault: brandColors.secondarySoft,
+  iconInnerDefault: brandColors.primary,
+  iconOuterSafety: brandColors.primarySoft,
+  iconInnerSafety: brandColors.primary,
 } as const;
 
 export type SafetyFeatureIconTone = 'default' | 'safety';
@@ -59,7 +59,10 @@ export function SafetyFeatureRow({
     >
       <View style={[styles.iconOuter, { backgroundColor: iconColors.outer }]}>
         <View
-          style={[styles.iconInner, { backgroundColor: active ? '#E85D4A' : iconColors.inner }]}
+          style={[
+            styles.iconInner,
+            { backgroundColor: active ? brandColors.danger : iconColors.inner },
+          ]}
         />
       </View>
       <View style={styles.textBlock}>
@@ -78,17 +81,17 @@ export function SafetyFeatureRow({
 const styles = StyleSheet.create({
   chevron: {
     color: colors.chevron,
-    fontSize: 17,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   iconInner: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 15,
     width: 15,
   },
   iconOuter: {
     alignItems: 'center',
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
@@ -100,13 +103,13 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
   rowActive: {
-    borderColor: 'rgba(232,93,74,0.35)',
+    borderColor: brandColors.dangerSoft,
   },
   row: {
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderColor: colors.cardBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: colors.subtitle,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     lineHeight: 16,
     marginTop: 2,
   },
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.title,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '600',
   },
 });

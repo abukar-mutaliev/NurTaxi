@@ -20,6 +20,12 @@ export interface ShiftState {
   /** Предложение заказа, показанное водителю, и момент, когда оно истекает. */
   pendingOfferOrderId: string | null;
   pendingOfferExpiresAt: string | null;
+  /**
+   * Когда приложение последний раз уходило в фон. По нему запуск отличает «система выгрузила
+   * процесс, пока водитель был в другом приложении» от «приложение не открывали давно».
+   * В черновиках прежних версий поля нет.
+   */
+  backgroundedAt?: string | null;
 }
 
 const initialState: ShiftState = {
@@ -29,7 +35,33 @@ const initialState: ShiftState = {
   currentOrderId: null,
   pendingOfferOrderId: null,
   pendingOfferExpiresAt: null,
+  backgroundedAt: null,
 };
+
+/**
+ * Сколько линия переживает выгрузку приложения. Android (особенно MIUI) убивает свёрнутый
+ * процесс за минуты — водитель ушёл в мессенджер или оформил тестовый заказ в клиенте,
+ * вернулся, а приложение запустилось заново и само сняло его с линии.
+ */
+export const KEEP_ONLINE_AFTER_BACKGROUND_MS = 10 * 60 * 1000;
+
+/**
+ * Сохранить линию при запуске: приложение было живо недавно — ушло в фон или отправило
+ * координаты из фоновой задачи, — а не закрыто давно. Координаты учитываем потому, что
+ * свёрнутое приложение может проработать час и только потом быть выгружено.
+ */
+export function shouldKeepOnlineOnLaunch(
+  shift: Pick<ShiftState, 'backgroundedAt' | 'lastSentPosition'>,
+  now: number,
+): boolean {
+  return [shift.backgroundedAt, shift.lastSentPosition?.at].some((value) => {
+    if (!value) {
+      return false;
+    }
+    const elapsed = now - Date.parse(value);
+    return elapsed >= 0 && elapsed <= KEEP_ONLINE_AFTER_BACKGROUND_MS;
+  });
+}
 
 export const shiftSlice = createSlice({
   name: 'shift',
@@ -61,6 +93,9 @@ export const shiftSlice = createSlice({
       state.pendingOfferOrderId = null;
       state.pendingOfferExpiresAt = null;
     },
+    appBackgrounded(state, action: PayloadAction<string>) {
+      state.backgroundedAt = action.payload;
+    },
   },
 });
 
@@ -71,6 +106,7 @@ export const {
   currentOrderChanged,
   offerReceived,
   offerDismissed,
+  appBackgrounded,
 } = shiftSlice.actions;
 
 export const shiftReducer = shiftSlice.reducer;

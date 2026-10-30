@@ -1,7 +1,6 @@
 /**
  * Избранные адреса: список, добавление, удаление (M3.6, Figma node 39:997).
  */
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
@@ -11,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatShortDisplayAddress } from '@nurtaxi/shared-core/shared/lib';
-import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, ErrorView, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   useDeleteSavedAddressMutation,
   useGetSavedAddressesQuery,
@@ -26,11 +25,9 @@ import { getSavedAddressLabelKind, isPrimaryAddressLabel } from './saved-address
 import { SavedAddressCard } from './saved-address-card';
 
 const colors = {
-  background: '#F8F4EF',
-  empty: '#7A6E78',
+  background: brandColors.background,
+  empty: brandColors.textMuted,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export interface SavedAddressesScreenProps {
   /** На вкладке таббара — без кнопки «назад». */
@@ -99,21 +96,6 @@ export function SavedAddressesScreen({ variant = 'stack' }: SavedAddressesScreen
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
-
       <ScrollView
         contentContainerStyle={{
           gap: scale * 14,
@@ -132,7 +114,7 @@ export function SavedAddressesScreen({ variant = 'stack' }: SavedAddressesScreen
         />
 
         {addresses.length === 0 ? (
-          <Text style={[styles.empty, { fontSize: scale * 14, marginBottom: scale * 6 }]}>
+          <Text style={[styles.empty, { fontSize: scale * typeScale.md, marginBottom: scale * 6 }]}>
             {t('addresses.empty')}
           </Text>
         ) : (

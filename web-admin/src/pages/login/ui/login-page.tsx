@@ -1,4 +1,4 @@
-import { CarOutlined, SafetyCertificateOutlined, TeamOutlined } from '@ant-design/icons';
+import { SafetyCertificateOutlined, TeamOutlined } from '@ant-design/icons';
 import { Alert, Button, Form, Input, Steps, Typography, message } from 'antd';
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ import { setUser, setBootstrapped } from '@/features/auth';
 import { tokenStorage } from '@/shared/lib/token-storage';
 import { getErrorMessage, normalizePhoneInput } from '@/shared/lib/utils';
 import { isAdminRole } from '@/shared/rbac';
+import { NurMark } from '@/shared/ui';
 import styles from './login-page.module.css';
 
 const { Title, Paragraph, Text } = Typography;
@@ -69,7 +70,7 @@ export function LoginPage() {
       <div className={styles.hero}>
         <div className={styles.heroContent}>
           <div className={styles.logoMark}>
-            <CarOutlined />
+            <NurMark size={36} />
           </div>
           <Title level={1} className={styles.heroTitle}>
             Nur Taxi

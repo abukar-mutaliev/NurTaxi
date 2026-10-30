@@ -2,7 +2,6 @@
  * Настройки уведомлений и приватности (M2.3, M10.1).
  */
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import type { NotificationSettings, PrivacySettings } from '@nurtaxi/shared-core/shared/model';
@@ -12,6 +11,7 @@ import {
   acquirePushToken,
   useNotificationPermission,
 } from '@nurtaxi/shared-core/features/notifications';
+import { showAlert } from '@nurtaxi/shared-core/shared/ui';
 
 import { useProfileUpdate } from '@/features/profile';
 import { GlassCard, GlassScreenShell, GlassSectionLabel, SwitchRow } from '@/shared/ui';
@@ -78,19 +78,15 @@ export function SettingsScreen() {
       const granted =
         notificationPermission.state === 'granted' || (await notificationPermission.request());
       if (!granted) {
-        Alert.alert(
-          t('permissions.notificationsTitle'),
-          t('permissions.notificationsDescription'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('permissions.openSettings'),
-              onPress: () => {
-                void notificationPermission.openSettings();
-              },
+        showAlert(t('permissions.notificationsTitle'), t('permissions.notificationsDescription'), [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('permissions.openSettings'),
+            onPress: () => {
+              void notificationPermission.openSettings();
             },
-          ],
-        );
+          },
+        ]);
         throw new Error('notifications_permission_denied');
       }
 

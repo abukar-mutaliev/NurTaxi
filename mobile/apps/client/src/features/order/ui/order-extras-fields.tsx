@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { applyPhoneMask, formatPhone } from '@nurtaxi/shared-core/shared/lib';
 import { FamilyMemberStatus } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   FAMILY_FEATURE_FLAG,
   useGetFamilyMembersQuery,
@@ -47,8 +47,8 @@ function CompactSwitchRow({
       <Text style={sheetStyles.switchTitle}>{title}</Text>
       <Switch
         onValueChange={onValueChange}
-        thumbColor="#FFFFFF"
-        trackColor={{ false: '#D8D0C8', true: GLASS_COLORS.switchActive }}
+        thumbColor={brandColors.onPrimary}
+        trackColor={{ false: brandColors.border, true: GLASS_COLORS.switchActive }}
         value={value}
       />
     </View>
@@ -129,8 +129,8 @@ export function OrderExtrasFields({
         <View style={{ gap: scale * 8 }}>
           <Text
             style={{
-              color: variant === 'glass' ? GLASS_COLORS.subtitle : '#7A6E78',
-              fontSize: scale * 13,
+              color: variant === 'glass' ? GLASS_COLORS.subtitle : brandColors.textMuted,
+              fontSize: scale * typeScale.sm,
               fontWeight: '500',
             }}
           >
@@ -152,13 +152,13 @@ export function OrderExtrasFields({
                   <Text
                     style={{
                       color: GLASS_COLORS.title,
-                      fontSize: scale * 15,
+                      fontSize: scale * typeScale.base,
                       fontWeight: selected ? '600' : '500',
                     }}
                   >
                     {member.relation}
                   </Text>
-                  <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 13 }}>
+                  <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * typeScale.sm }}>
                     {formatPhone(member.memberPhone)}
                   </Text>
                 </GlassCard>
@@ -243,9 +243,9 @@ const sheetStyles = StyleSheet.create({
     minHeight: 32,
   },
   switchTitle: {
-    color: '#2E2331',
+    color: brandColors.text,
     flex: 1,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
 });

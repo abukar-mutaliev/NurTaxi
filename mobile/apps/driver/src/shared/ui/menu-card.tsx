@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 
-import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, shadows, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from './chevron';
 
@@ -34,8 +34,10 @@ export interface MenuCardProps {
 export function MenuCard({ title, subtitle, icon, dotTone = 'primary', onPress }: MenuCardProps) {
   const theme = useTheme();
 
-  const dotBg = dotTone === 'accent' ? 'rgba(232,197,143,0.28)' : 'rgba(58,29,63,0.10)';
-  const dotColor = dotTone === 'accent' ? theme.colors.accent : theme.colors.primary;
+  // Тон передаёт подложка: пудра — «обратите внимание». Сам значок всегда основным цветом —
+  // пудровый значок на пудре не набирал и 2:1.
+  const dotBg = dotTone === 'accent' ? brandColors.secondarySoft : brandColors.primarySoft;
+  const dotColor = theme.colors.primary;
 
   return (
     <Pressable
@@ -55,7 +57,7 @@ export function MenuCard({ title, subtitle, icon, dotTone = 'primary', onPress }
         },
       ]}
     >
-      <View style={[styles.dotWrap, { backgroundColor: dotBg, borderRadius: 999 }]}>
+      <View style={[styles.dotWrap, { backgroundColor: dotBg, borderRadius: radius.pill }]}>
         {icon ? (
           <SymbolView
             name={MENU_ICONS[icon]}
@@ -66,7 +68,9 @@ export function MenuCard({ title, subtitle, icon, dotTone = 'primary', onPress }
             weight={{ android: medium, ios: 'medium' }}
           />
         ) : (
-          <View style={{ backgroundColor: dotColor, borderRadius: 999, height: 10, width: 10 }} />
+          <View
+            style={{ backgroundColor: dotColor, borderRadius: radius.pill, height: 10, width: 10 }}
+          />
         )}
       </View>
 
@@ -94,10 +98,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 1,
     flexDirection: 'row',
-    shadowColor: 'rgba(89,71,31,0.07)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   dotWrap: {
     alignItems: 'center',

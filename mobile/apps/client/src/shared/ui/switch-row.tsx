@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS } from './glass-theme';
 
@@ -44,8 +44,8 @@ export function SwitchRow({ title, subtitle, value, onValueChange, disabled }: S
       <Switch
         disabled={disabled}
         onValueChange={handleValueChange}
-        thumbColor="#FFFFFF"
-        trackColor={{ false: '#D8D0C8', true: GLASS_COLORS.switchActive }}
+        thumbColor={brandColors.onPrimary}
+        trackColor={{ false: brandColors.border, true: GLASS_COLORS.switchActive }}
         value={pendingValue ?? value}
       />
     </View>
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     marginTop: 2,
   },
   textBlock: {
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GLASS_COLORS.title,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
 });

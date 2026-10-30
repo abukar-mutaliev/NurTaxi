@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { orderApi } from '@/entities/order';
 import { driverApi } from '@/entities/driver';
 import { API_TAGS } from '@/shared/api/tags';
+import { palette } from '@/shared/config/theme';
 import { Role } from '@/shared/model/enums';
 import { realtimeClient } from './realtime-client';
 import { RealtimeEvent } from './realtime-events';
@@ -95,7 +96,7 @@ export function useStaffRealtimeEvents(): void {
         duration: 0,
         placement: 'topRight',
         onClick: () => navigate(`/orders/${event.orderId}`),
-        style: { borderLeft: '4px solid #ff4d4f' },
+        style: { borderLeft: `4px solid ${palette.danger}` },
       });
     };
 

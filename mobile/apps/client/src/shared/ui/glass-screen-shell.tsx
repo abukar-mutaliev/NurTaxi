@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { Image } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 import {
   ScrollView,
@@ -16,15 +15,13 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { SerializedError } from '@reduxjs/toolkit';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { ErrorView, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { WelcomeGradientBackground } from './welcome-gradient-background';
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 
 import { GlassScreenHeader } from './glass-screen-header';
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export interface GlassScreenShellProps {
   title?: string;
@@ -78,20 +75,6 @@ export function GlassScreenShell({
     <>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
     </>
   );
 
@@ -170,7 +153,7 @@ export function GlassSectionLabel({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   caption: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     lineHeight: 18,
   },
   center: {
@@ -190,7 +173,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
     letterSpacing: 0.2,
     textTransform: 'uppercase',

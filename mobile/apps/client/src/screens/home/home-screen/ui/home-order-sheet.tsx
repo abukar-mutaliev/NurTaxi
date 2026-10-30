@@ -1,19 +1,18 @@
 import { useState, type ReactNode } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   ActivityIndicator,
+  type LayoutChangeEvent,
   Pressable,
   ScrollView,
   StyleSheet,
-  View,
   useWindowDimensions,
-  type LayoutChangeEvent,
+  View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { CollapsibleSheet } from '@/shared/ui';
@@ -23,26 +22,29 @@ import { PaymentMethodIcon } from './payment-method-icon';
 import { TariffIcon, resolveTariffIconVariant } from './tariff-icon';
 
 const sheetColors = {
-  background: '#FFFBF7',
-  border: 'rgba(255,255,255,0.95)',
-  shadow: 'rgba(89,71,31,0.12)',
-  label: '#7A6E78',
-  text: '#2E2331',
-  divider: '#E8E0D4',
-  pickupDot: '#E8C882',
-  stopDot: '#C99A54',
-  dropoffDot: '#2E2331',
-  tariffSelectedBg: '#FCF4E4',
-  tariffSelectedBorder: '#E8C882',
-  tariffBg: '#FFFFFF',
-  tariffBorder: 'rgba(232,224,212,0.9)',
-  paymentBg: '#FFFFFF',
-  paymentBorder: 'rgba(232,224,212,0.9)',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  error: '#B42318',
+  background: brandColors.surface,
+  border: brandColors.divider,
+  shadow: brandColors.shadowStrong,
+  label: brandColors.textMuted,
+  text: brandColors.text,
+  divider: brandColors.border,
+  pickupDot: brandColors.secondary,
+  stopDot: brandColors.primary,
+  dropoffDot: brandColors.text,
+  tariffSelectedBg: brandColors.secondarySoft,
+  tariffSelectedBorder: brandColors.primary,
+  tariffBg: brandColors.surface,
+  tariffBorder: brandColors.border,
+  paymentBg: brandColors.surface,
+  paymentBorder: brandColors.border,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  buttonShadow: brandColors.shadow,
+  // Как «Отменить» на экране поездки — одно действие выглядит одинаково на всех шагах.
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
+  error: brandColors.danger,
 } as const;
 
 const SHEET_MARGIN = 16;
@@ -68,6 +70,7 @@ export interface HomeOrderSheetProps {
   paymentMethodLabel: string;
   priceFromLabel: (price: string) => string;
   orderLabel: string;
+  cancelLabel: string;
   loadingLabel: string;
   error?: string | null;
   /** Пояснение без тревоги — например, что цена пока без учёта остановки. */
@@ -83,6 +86,8 @@ export interface HomeOrderSheetProps {
   onTariffPress: (tariffId: string) => void;
   onPaymentPress: () => void;
   onOrder: () => void;
+  /** Передумал до заказа: черновик сбрасывается, лист закрывается. */
+  onCancel: () => void;
   extras?: ReactNode;
   onLayout?: (event: LayoutChangeEvent) => void;
 }
@@ -145,6 +150,7 @@ export function HomeOrderSheet({
   paymentMethodLabel,
   priceFromLabel,
   orderLabel,
+  cancelLabel,
   loadingLabel,
   error,
   notice,
@@ -158,6 +164,7 @@ export function HomeOrderSheet({
   onTariffPress,
   onPaymentPress,
   onOrder,
+  onCancel,
   extras,
   onLayout,
 }: HomeOrderSheetProps) {
@@ -297,24 +304,36 @@ export function HomeOrderSheet({
             {notice ? <Text style={styles.notice}>{notice}</Text> : null}
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canOrder || isOrdering}
-              onPress={onOrder}
-              style={({ pressed }) => [
-                styles.orderButtonWrap,
-                { opacity: !canOrder ? 0.45 : pressed ? 0.92 : 1 },
-              ]}
-            >
-              <LinearGradient
-                colors={[sheetColors.buttonStart, sheetColors.buttonEnd]}
-                end={{ x: 1, y: 0.5 }}
-                start={{ x: 0, y: 0.5 }}
-                style={styles.orderButton}
+            <View style={styles.actionsRow}>
+              {/* Пока заказ создаётся, отменять черновик поздно — заказ уже уходит на сервер. */}
+              <Pressable
+                accessibilityRole="button"
+                disabled={isOrdering}
+                onPress={onCancel}
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  { opacity: isOrdering ? 0.45 : pressed ? 0.85 : 1 },
+                ]}
               >
-                <Text style={styles.orderButtonText}>{isOrdering ? loadingLabel : orderLabel}</Text>
-              </LinearGradient>
-            </Pressable>
+                <Text style={styles.cancelButtonText}>{cancelLabel}</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                disabled={!canOrder || isOrdering}
+                onPress={onOrder}
+                style={({ pressed }) => [
+                  styles.orderButtonWrap,
+                  { opacity: !canOrder ? 0.45 : pressed ? 0.92 : 1 },
+                ]}
+              >
+                <View style={[styles.orderButton, { backgroundColor: sheetColors.buttonStart }]}>
+                  <Text style={styles.orderButtonText}>
+                    {isOrdering ? loadingLabel : orderLabel}
+                  </Text>
+                </View>
+              </Pressable>
+            </View>
           </View>
         </CollapsibleSheet>
       </View>
@@ -323,11 +342,17 @@ export function HomeOrderSheet({
 }
 
 const styles = StyleSheet.create({
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 8,
+  },
   addStopGlyph: {
     color: sheetColors.stopDot,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '700',
-    lineHeight: 16,
+    lineHeight: 18,
     textAlign: 'center',
     width: 8,
   },
@@ -339,7 +364,7 @@ const styles = StyleSheet.create({
   },
   addStopText: {
     color: sheetColors.label,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     fontWeight: '600',
     lineHeight: 16,
   },
@@ -349,16 +374,16 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   addressDot: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 8,
     marginTop: 5,
     width: 8,
   },
   addressLabel: {
     color: sheetColors.label,
-    fontSize: 10,
+    fontSize: typeScale.xs,
     fontWeight: '500',
-    lineHeight: 12,
+    lineHeight: 16,
   },
   addressRow: {
     flexDirection: 'row',
@@ -371,16 +396,29 @@ const styles = StyleSheet.create({
   },
   addressValue: {
     color: sheetColors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '600',
     lineHeight: 16,
   },
   body: {
     paddingBottom: 10,
   },
+  cancelButton: {
+    alignItems: 'center',
+    backgroundColor: sheetColors.cancelBg,
+    borderRadius: radius.xl,
+    height: 48,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  cancelButtonText: {
+    color: sheetColors.cancelText,
+    fontSize: typeScale.base,
+    fontWeight: '600',
+  },
   chevron: {
     color: sheetColors.label,
-    fontSize: 16,
+    fontSize: typeScale.base,
     lineHeight: 20,
   },
   divider: {
@@ -391,7 +429,7 @@ const styles = StyleSheet.create({
   },
   error: {
     color: sheetColors.error,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     paddingHorizontal: 19,
     paddingTop: 4,
     textAlign: 'center',
@@ -408,19 +446,19 @@ const styles = StyleSheet.create({
   },
   loaderText: {
     color: sheetColors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   notice: {
     color: sheetColors.label,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     paddingHorizontal: 19,
     paddingTop: 4,
     textAlign: 'center',
   },
   orderButton: {
     alignItems: 'center',
-    borderRadius: 24,
+    borderRadius: radius.xl,
     elevation: 3,
     height: 48,
     justifyContent: 'center',
@@ -428,28 +466,27 @@ const styles = StyleSheet.create({
   },
   orderButtonText: {
     color: sheetColors.buttonText,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   orderButtonWrap: {
-    marginHorizontal: 16,
-    marginTop: 8,
+    flex: 1,
   },
   paymentLine: {
     flex: 1,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     lineHeight: 16,
   },
   paymentLabel: {
     color: sheetColors.label,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   paymentRow: {
     alignItems: 'center',
     backgroundColor: sheetColors.paymentBg,
     borderColor: sheetColors.paymentBorder,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     flexDirection: 'row',
     gap: 8,
@@ -461,7 +498,7 @@ const styles = StyleSheet.create({
   },
   paymentValue: {
     color: sheetColors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '600',
   },
   pressed: {
@@ -475,8 +512,8 @@ const styles = StyleSheet.create({
   },
   removeStopGlyph: {
     color: sheetColors.label,
-    fontSize: 20,
-    lineHeight: 22,
+    fontSize: typeScale.xl,
+    lineHeight: 24,
   },
   root: {
     bottom: 0,
@@ -488,7 +525,7 @@ const styles = StyleSheet.create({
   sheet: {
     backgroundColor: sheetColors.background,
     borderColor: sheetColors.border,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -500,7 +537,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   sheetFrame: {
-    borderRadius: 22,
+    borderRadius: radius.xl,
     elevation: 8,
     marginHorizontal: 16,
     ...glassShadow({ color: sheetColors.shadow, radius: 16 }),
@@ -512,9 +549,10 @@ const styles = StyleSheet.create({
   },
   tariffCard: {
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: radius.md,
     gap: 3,
-    height: 78,
+    // Три строки Manrope по 16 — выше прежних 78.
+    height: 88,
     paddingBottom: 4,
     paddingHorizontal: 4,
     paddingTop: 4,
@@ -531,23 +569,23 @@ const styles = StyleSheet.create({
   },
   tariffEta: {
     color: sheetColors.label,
-    fontSize: 10,
+    fontSize: typeScale.xs,
     fontWeight: '500',
-    lineHeight: 12,
+    lineHeight: 16,
     textAlign: 'center',
   },
   tariffName: {
     color: sheetColors.text,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontWeight: '600',
-    lineHeight: 13,
+    lineHeight: 16,
     textAlign: 'center',
   },
   tariffPrice: {
     color: sheetColors.text,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontWeight: '700',
-    lineHeight: 13,
+    lineHeight: 16,
     marginTop: 1,
     textAlign: 'center',
   },

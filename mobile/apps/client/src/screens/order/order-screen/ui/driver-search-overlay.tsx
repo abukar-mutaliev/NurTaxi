@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -20,18 +20,18 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
-  overlay: 'rgba(248,244,239,0.72)',
-  glassBg: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  ringOuter: 'rgba(247,220,168,0.35)',
-  ringMid: 'rgba(247,220,168,0.5)',
-  ringInner: 'rgba(252,239,214,0.75)',
-  core: '#FCEFD6',
-  coreBorder: 'rgba(247,220,168,0.9)',
-  car: 'rgba(58,29,63,0.6)',
+  overlay: brandColors.background,
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  ringOuter: brandColors.secondarySoft,
+  ringMid: brandColors.secondarySoft,
+  ringInner: brandColors.secondarySoft,
+  core: brandColors.secondarySoft,
+  coreBorder: brandColors.secondarySoft,
+  car: brandColors.primary,
 } as const;
 
 const RING_COUNT = 3;
@@ -139,10 +139,14 @@ export function DriverSearchOverlay({
       {minimized ? null : (
         <View style={styles.content}>
           <View style={styles.titleBlock}>
-            <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
+            <Text
+              style={[styles.title, { fontSize: scale * typeScale.xxl, lineHeight: scale * 32 }]}
+            >
               {titleLine1}
             </Text>
-            <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
+            <Text
+              style={[styles.title, { fontSize: scale * typeScale.xxl, lineHeight: scale * 32 }]}
+            >
               {titleLine2}
             </Text>
           </View>
@@ -199,10 +203,14 @@ export function DriverSearchOverlay({
           </View>
 
           <View style={styles.subtitleBlock}>
-            <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
+            <Text
+              style={[styles.subtitle, { fontSize: scale * typeScale.md, lineHeight: scale * 20 }]}
+            >
               {subtitleLine1}
             </Text>
-            <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
+            <Text
+              style={[styles.subtitle, { fontSize: scale * typeScale.md, lineHeight: scale * 20 }]}
+            >
               {subtitleLine2}
             </Text>
           </View>
@@ -256,7 +264,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 44,
@@ -268,7 +276,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 25,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 50,
@@ -279,12 +287,12 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: colors.subtitle,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
   carIcon: {
     backgroundColor: colors.car,
-    borderRadius: 7,
+    borderRadius: radius.sm,
   },
   content: {
     alignItems: 'center',
@@ -296,11 +304,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.core,
     borderColor: colors.coreBorder,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
     elevation: 3,
     justifyContent: 'center',
-    ...glassShadow({ color: 'rgba(247,220,168,0.45)', radius: 16 }),
+    ...glassShadow({ color: brandColors.primary, radius: 16 }),
     zIndex: 2,
   },
   footer: {
@@ -313,8 +321,8 @@ const styles = StyleSheet.create({
     right: 16,
   },
   grabber: {
-    backgroundColor: '#D9D0C4',
-    borderRadius: 2,
+    backgroundColor: brandColors.border,
+    borderRadius: radius.xs,
     height: 4,
     width: 36,
   },
@@ -323,7 +331,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     borderWidth: 1,
     elevation: 2,
     height: 28,
@@ -336,7 +344,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 28,
+    borderRadius: radius.xxl,
     borderWidth: 1,
     gap: 8,
     paddingBottom: 16,
@@ -351,12 +359,12 @@ const styles = StyleSheet.create({
   },
   minimizedSubtitle: {
     color: colors.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     textAlign: 'center',
   },
   minimizedTitle: {
     color: colors.title,
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -370,7 +378,7 @@ const styles = StyleSheet.create({
     opacity: 0.88,
   },
   pulseRing: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1,
     position: 'absolute',
   },
@@ -380,7 +388,7 @@ const styles = StyleSheet.create({
     marginVertical: 24,
   },
   staticRing: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     position: 'absolute',
   },
   subtitle: {

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
 
 *,
 *::before,
@@ -14,19 +14,19 @@ body,
 }
 
 body {
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--nur-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #f8f4ef;
-  color: #2e2331;
+  background: var(--nur-background);
+  color: var(--nur-text);
 }
 
 .ant-layout {
-  background: #f8f4ef;
+  background: var(--nur-background);
 }
 
 .ant-card {
-  box-shadow: 0 1px 2px rgba(89, 71, 31, 0.06);
+  box-shadow: var(--nur-shadow-sm);
 }
 
 .ant-table-wrapper .ant-table-thead > tr > th {
@@ -34,16 +34,16 @@ body {
 }
 
 .ant-statistic-title {
-  font-size: 13px;
-  color: #7a6e78;
+  font-size: var(--nur-font-sm);
+  color: var(--nur-text-muted);
 }
 
 .ant-modal-content {
-  border-radius: 16px !important;
+  border-radius: var(--nur-radius-xl) !important;
 }
 
 .ant-btn-primary {
-  box-shadow: 0 4px 12px rgba(89, 71, 31, 0.1);
+  box-shadow: var(--nur-shadow-sm);
 }
 
 ::-webkit-scrollbar {
@@ -52,11 +52,11 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e8e0d8;
-  border-radius: 8px;
+  background: var(--nur-border);
+  border-radius: var(--nur-radius-sm);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a99fa6;
+  background: var(--nur-icon);
 }
 

@@ -201,7 +201,7 @@ export function DashboardPage() {
               title={t('dashboard.ordersActive')}
               value={data?.orders.active ?? 0}
               prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: palette.gold }}
+              valueStyle={{ color: palette.primary }}
             />
           </Card>
         </Col>
@@ -211,7 +211,7 @@ export function DashboardPage() {
               title={t('dashboard.ordersCompleted')}
               value={data?.orders.completed ?? 0}
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: palette.green600 }}
+              valueStyle={{ color: palette.primaryPressed }}
             />
           </Card>
         </Col>
@@ -238,7 +238,7 @@ export function DashboardPage() {
             <Statistic
               title="На модерации"
               value={data?.drivers.pending ?? 0}
-              valueStyle={{ color: palette.amber500 }}
+              valueStyle={{ color: palette.textMuted }}
             />
           </Card>
         </Col>
@@ -292,7 +292,7 @@ export function DashboardPage() {
                     type="monotone"
                     dataKey="orders"
                     name="Заказы"
-                    stroke={palette.gold}
+                    stroke={palette.primary}
                     strokeWidth={2}
                     dot={false}
                   />
@@ -300,7 +300,7 @@ export function DashboardPage() {
                     type="monotone"
                     dataKey="completed"
                     name="Завершённые"
-                    stroke={palette.green600}
+                    stroke={palette.textMuted}
                     strokeWidth={2}
                     dot={false}
                   />
@@ -318,7 +318,7 @@ export function DashboardPage() {
                   <XAxis dataKey="name" />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="value" fill={palette.gold} radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="value" fill={palette.primary} radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

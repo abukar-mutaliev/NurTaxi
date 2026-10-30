@@ -7,9 +7,10 @@ import { useTranslation } from 'react-i18next';
 
 import { GlassIconButton } from '@/shared/ui';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 const FLOAT_GAP = 12;
 const FLOAT_RIGHT = 16;
-const ICON_COLOR = '#2E2331';
+const ICON_COLOR = brandColors.text;
 
 export interface MapCenterButtonProps {
   onPress: () => void;

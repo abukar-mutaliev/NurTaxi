@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, AppState, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
@@ -22,7 +22,15 @@ import {
   formatPrice,
 } from '@nurtaxi/shared-core/shared/lib';
 import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/model';
-import { Loader, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Loader,
+  radius,
+  shadows,
+  showAlert,
+  Text,
+  useTheme,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
 import {
   isCancelled,
@@ -127,7 +135,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
       return;
     }
     cancelledNoticeShownRef.current = true;
-    Alert.alert('Заказ отменён', 'Клиент отменил заказ.', [
+    showAlert('Заказ отменён', 'Клиент отменил заказ.', [
       { text: 'Понятно', onPress: () => router.replace('/(tabs)') },
     ]);
   }, [order, router]);
@@ -297,7 +305,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
         : { lat: order.dropoffLat, lng: order.dropoffLng });
     const opened = await openExternalNavigator(destination, driverPosition);
     if (!opened) {
-      Alert.alert(t('errors.title'), t('driver.navigatorUnavailable'));
+      showAlert(t('errors.title'), t('driver.navigatorUnavailable'));
     }
   };
 
@@ -384,7 +392,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
           <View
             style={{
               backgroundColor: theme.colors.accent,
-              borderRadius: 999,
+              borderRadius: radius.pill,
               height: 12,
               width: 12,
             }}
@@ -427,7 +435,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
               <View
                 style={{
                   backgroundColor: theme.colors.accent,
-                  borderRadius: 999,
+                  borderRadius: radius.pill,
                   height: 10,
                   width: 10,
                 }}
@@ -444,7 +452,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
                 <View
                   style={{
                     borderColor: theme.colors.accent,
-                    borderRadius: 999,
+                    borderRadius: radius.pill,
                     borderWidth: 2,
                     height: 10,
                     width: 10,
@@ -459,7 +467,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
               <View
                 style={{
                   backgroundColor: theme.colors.text,
-                  borderRadius: 999,
+                  borderRadius: radius.pill,
                   height: 10,
                   width: 10,
                 }}
@@ -525,10 +533,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: 'rgba(89,71,31,0.07)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   finishedBody: {
     alignItems: 'center',
@@ -540,7 +545,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   sheet: {
@@ -550,18 +555,12 @@ const styles = StyleSheet.create({
     maxHeight: '62%',
     position: 'absolute',
     right: 0,
-    shadowColor: 'rgba(89,71,31,0.16)',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
+    ...shadows.up,
   },
   statusPill: {
     borderWidth: 1,
     elevation: 2,
-    shadowColor: 'rgba(89,71,31,0.12)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   topBar: {
     alignItems: 'center',

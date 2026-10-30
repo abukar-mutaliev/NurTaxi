@@ -1,12 +1,18 @@
 export { ThemeProvider, useTheme } from './theme/theme-provider';
 export type { ThemeProviderProps } from './theme/theme-provider';
+export { brandColors, brandPalette, controlColors, mixColors, withAlpha } from './theme/brand';
+export type { BrandColor, ControlVariant } from './theme/brand';
+export { brandFontAssets, fontFamily, fontFamilyForWeight, typeScale } from './theme/fonts';
+export type { TypeScaleToken } from './theme/fonts';
+export { useBrandFonts } from './theme/use-brand-fonts';
+export { shadows } from './theme/elevation';
+export type { ShadowToken } from './theme/elevation';
 export {
   MIN_TOUCH_SIZE,
   darkColors,
   darkTheme,
   lightColors,
   lightTheme,
-  palette,
   radius,
   spacing,
   typography,
@@ -19,6 +25,9 @@ export type {
   TypographyToken,
 } from './theme/tokens';
 
+export { AlertHost } from './alert/alert-host';
+export { showAlert } from './alert/alert-store';
+export type { AlertButton, AlertOptions } from './alert/alert-store';
 export { Avatar } from './components/avatar';
 export { Badge } from './components/badge';
 export type { BadgeProps, BadgeTone } from './components/badge';

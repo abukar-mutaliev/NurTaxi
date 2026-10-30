@@ -12,3 +12,4 @@ export {
   getOrderStatusSelectOptions,
 } from './status-tag';
 export { KpiCard } from './kpi-card';
+export { NurMark } from './nur-mark';

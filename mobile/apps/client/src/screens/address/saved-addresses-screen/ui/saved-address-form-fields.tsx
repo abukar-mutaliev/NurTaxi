@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GlassCaption, GlassTextField } from '@/shared/ui';
 
@@ -113,7 +113,9 @@ export function SavedAddressFormFields({
         value={address}
       />
 
-      {error ? <Text style={[styles.error, { fontSize: scale * 13 }]}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { fontSize: scale * typeScale.sm }]}>{error}</Text>
+      ) : null}
     </View>
   );
 }
@@ -134,7 +136,7 @@ function PresetChip({ label, active, scale, onPress }: PresetChipProps) {
       style={({ pressed }) => [
         styles.chip,
         {
-          borderRadius: scale * 16,
+          borderRadius: scale * radius.lg,
           opacity: pressed ? 0.92 : 1,
           paddingHorizontal: scale * 14,
           paddingVertical: scale * 8,
@@ -142,7 +144,13 @@ function PresetChip({ label, active, scale, onPress }: PresetChipProps) {
         active && styles.chipActive,
       ]}
     >
-      <Text style={[styles.chipText, { fontSize: scale * 14 }, active && styles.chipTextActive]}>
+      <Text
+        style={[
+          styles.chipText,
+          { fontSize: scale * typeScale.md },
+          active && styles.chipTextActive,
+        ]}
+      >
         {label}
       </Text>
     </Pressable>
@@ -156,8 +164,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipActive: {
-    backgroundColor: 'rgba(201,154,84,0.12)',
-    borderColor: 'rgba(201,154,84,0.45)',
+    backgroundColor: brandColors.secondarySubtle,
+    borderColor: brandColors.primary,
   },
   chipText: {
     color: GLASS_COLORS.title,

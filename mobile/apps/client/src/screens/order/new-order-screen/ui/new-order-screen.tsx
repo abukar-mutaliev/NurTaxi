@@ -10,7 +10,7 @@ import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDistance, formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
-import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { ErrorView, Loader, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useCreateOrderMutation } from '@nurtaxi/shared-core/entities/order';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -138,7 +138,7 @@ export function NewOrderScreen() {
     >
       <View
         pointerEvents="none"
-        style={{ borderRadius: scale * 20, height: scale * 220, overflow: 'hidden' }}
+        style={{ borderRadius: scale * radius.xl, height: scale * 220, overflow: 'hidden' }}
       >
         <MapCanvas
           initialPoint={draft.pickup}
@@ -149,17 +149,19 @@ export function NewOrderScreen() {
 
       <GlassCard>
         <GlassSectionLabel>{t('order.from')}</GlassSectionLabel>
-        <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
+        <Text style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base }}>
           {resolvedPickupAddress ?? draft.pickup?.address ?? t('common.notSpecified')}
         </Text>
         {stop?.address ? (
           <>
             <GlassSectionLabel>{t('order.stop')}</GlassSectionLabel>
-            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>{stop.address}</Text>
+            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base }}>
+              {stop.address}
+            </Text>
           </>
         ) : null}
         <GlassSectionLabel>{t('order.to')}</GlassSectionLabel>
-        <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
+        <Text style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base }}>
           {resolvedDropoffAddress ?? draft.dropoff?.address ?? t('common.notSpecified')}
         </Text>
       </GlassCard>
@@ -170,11 +172,17 @@ export function NewOrderScreen() {
 
       {estimate ? (
         <GlassCard>
-          <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 16, fontWeight: '600' }}>
+          <Text
+            style={{
+              color: GLASS_COLORS.title,
+              fontSize: scale * typeScale.base,
+              fontWeight: '600',
+            }}
+          >
             {estimate.tariff.name}
           </Text>
           <View style={{ gap: scale * 6, paddingTop: scale * 8 }}>
-            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
+            <Text style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base }}>
               {t('order.price')}: {formatPrice(estimate.price.estimated, estimate.price.currency)}
             </Text>
             <GlassCaption>
@@ -199,7 +207,7 @@ export function NewOrderScreen() {
                 <Text
                   style={{
                     color: GLASS_COLORS.title,
-                    fontSize: scale * 15,
+                    fontSize: scale * typeScale.base,
                     fontWeight: selected ? '600' : '500',
                   }}
                 >
@@ -241,12 +249,16 @@ export function NewOrderScreen() {
       />
 
       {createError ? (
-        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{ color: GLASS_COLORS.error, fontSize: scale * typeScale.sm, textAlign: 'center' }}
+        >
           {createError}
         </Text>
       ) : null}
       {!canSubmitOrderExtras(draft) ? (
-        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{ color: GLASS_COLORS.error, fontSize: scale * typeScale.sm, textAlign: 'center' }}
+        >
           {t('order.orderForOtherInvalid')}
         </Text>
       ) : null}

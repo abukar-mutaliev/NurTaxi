@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
@@ -51,7 +51,7 @@ export function GlassListRow({
 const styles = StyleSheet.create({
   chevron: {
     color: GLASS_COLORS.chevron,
-    fontSize: 17,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   destructiveTitle: {
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   },
   iconInner: {
     backgroundColor: GLASS_COLORS.dot,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 15,
     width: 15,
   },
@@ -68,8 +68,8 @@ const styles = StyleSheet.create({
   },
   iconOuter: {
     alignItems: 'center',
-    backgroundColor: 'rgba(252,244,228,0.95)',
-    borderRadius: 999,
+    backgroundColor: brandColors.secondarySoft,
+    borderRadius: radius.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: GLASS_COLORS.cardBg,
     borderColor: GLASS_COLORS.cardBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     flexDirection: 'row',
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     marginTop: 2,
   },
   textBlock: {
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GLASS_COLORS.title,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
 });

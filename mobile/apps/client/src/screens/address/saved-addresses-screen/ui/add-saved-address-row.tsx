@@ -1,16 +1,16 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.62)',
-  cardBorder: 'rgba(201,154,84,0.35)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  iconOuter: 'rgba(252,244,228,0.95)',
-  iconAccent: 'rgba(201,154,84,0.8)',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.secondary,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  iconOuter: brandColors.secondarySoft,
+  iconAccent: brandColors.primary,
 } as const;
 
 export interface AddSavedAddressRowProps {
@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderColor: colors.cardBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderStyle: 'dashed',
     borderWidth: 1.5,
     elevation: 2,
@@ -52,21 +52,21 @@ const styles = StyleSheet.create({
   iconOuter: {
     alignItems: 'center',
     backgroundColor: colors.iconOuter,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
   },
   plusHorizontal: {
     backgroundColor: colors.iconAccent,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 2,
     position: 'absolute',
     width: 14,
   },
   plusVertical: {
     backgroundColor: colors.iconAccent,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 14,
     position: 'absolute',
     width: 2,
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.title,
     flex: 1,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
 });

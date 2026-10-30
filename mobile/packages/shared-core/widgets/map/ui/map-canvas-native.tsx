@@ -22,13 +22,16 @@ import {
   toMapPoint,
   type CameraPosition,
 } from '../model/map-provider';
+import { CLOSE_UP_ZOOM, closeUpCenter } from '../model/close-up-center';
 import { useGlidingMarker } from '../model/use-gliding-point';
 import type { MapCanvasHandle, MapCanvasProps, MapMarker } from './map-canvas';
 import { MAP_MARKER_SOURCES } from './map-marker.assets';
 import { MAP_MARKER_ICON_SCALE, getMarkerAnchor } from './map-marker.constants';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
-const ROUTE_STROKE_COLOR = '#C99A54';
+// Маршрут — основной цвет: на светлой карте он читается лучше пудры.
+const ROUTE_STROKE_COLOR = brandColors.primary;
 
 /**
  * Якоря — константы, а не новый объект на каждый рендер: любой пересланный проп нативная
@@ -105,6 +108,10 @@ function MapPlacemark({ marker }: { marker: MapMarker }) {
 /**
  * Машина: проп `point` задаётся один раз, дальше метку ведёт нативная анимация
  * (`useGlidingMarker`). Все пропы стабильны по ссылке, чтобы React их не пересылал.
+ *
+ * `rotated` — иконка поворачивается вместе с меткой по ходу движения и остаётся вдоль дороги,
+ * даже если карту повернуть. Без него машина всегда лежала горизонтально на экране, куда бы
+ * ни шла дорога.
  */
 function CarPlacemark({ marker }: { marker: MapMarker }) {
   const markerRef = useRef<NativeMarker>(null);
@@ -113,7 +120,12 @@ function CarPlacemark({ marker }: { marker: MapMarker }) {
       markerRef.current?.animatedMoveTo(toMapPoint(point), durationMs),
     [],
   );
-  const initial = useGlidingMarker(normalizeGeoPoint(marker.point), moveTo);
+  const rotateTo = useCallback(
+    (direction: number, durationMs: number) =>
+      markerRef.current?.animatedRotateTo(direction, durationMs),
+    [],
+  );
+  const initial = useGlidingMarker(normalizeGeoPoint(marker.point), moveTo, rotateTo);
   const point = useMemo(() => toMapPoint(initial), [initial]);
 
   return (
@@ -121,6 +133,7 @@ function CarPlacemark({ marker }: { marker: MapMarker }) {
       anchor={MARKER_ANCHORS.driver}
       point={point}
       ref={markerRef}
+      rotated
       scale={MAP_MARKER_ICON_SCALE}
       source={MAP_MARKER_SOURCES.driver}
       zIndex={3}
@@ -183,6 +196,14 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   }, [placedMarkers, polylinePoints]);
 
   const fitCameraToContent = useCallback(() => {
+    const closeUp = fitPoints.length > 1 ? closeUpCenter(fitPoints) : null;
+    if (closeUp) {
+      ignoreCameraRejection(
+        mapRef.current?.setCenter({ ...closeUp, zoom: CLOSE_UP_ZOOM }, { durationSeconds: 0.4 }),
+      );
+      return;
+    }
+
     if (fitPoints.length > 1) {
       ignoreCameraRejection(
         mapRef.current?.fitMarkers(fitPoints, { edgePadding: MAP_EDGE_PADDING }),
@@ -278,11 +299,16 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
         ref={mapRef}
         showUserPosition={showsUserLocation}
         style={StyleSheet.absoluteFill}
+        // Круг точности MapKit на крупном масштабе (машина у подъезда, кадр в пару домов)
+        // заливал синим полэкрана и не исчезал. Точку «я здесь» оставляем, круг прячем.
+        userLocationAccuracyFillColor="transparent"
+        userLocationAccuracyStrokeColor="transparent"
+        userLocationAccuracyStrokeWidth={0}
       >
         {routePoints.length > 1 ? (
           <Polyline
             key={`${routePoints[0]?.lat}:${routePoints[routePoints.length - 1]?.lng}:${routePoints.length}`}
-            outlineColor="#FFFFFF"
+            outlineColor={brandColors.onPrimary}
             outlineWidth={2}
             points={polylinePoints}
             strokeColor={ROUTE_STROKE_COLOR}

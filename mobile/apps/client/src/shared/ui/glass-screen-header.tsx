@@ -3,16 +3,16 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from './chevron';
 import { glassShadow } from './glass-shadow';
 
 const colors = {
-  glassBg: 'rgba(255,255,255,0.85)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
 } as const;
 
 export interface GlassScreenHeaderProps {
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.glassBg,
     borderColor: colors.glassBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 44,
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.title,
     flex: 1,
-    fontSize: 20,
+    fontSize: typeScale.xl,
     fontWeight: '600',
     includeFontPadding: false,
     lineHeight: 24,

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import type { ReactNode } from 'react';
 
+import { controlColors } from '../theme/brand';
 import { useTheme } from '../theme/theme-provider';
 import { MIN_TOUCH_SIZE } from '../theme/tokens';
 import { Text } from './text';
@@ -41,19 +42,9 @@ export function Button({
 }: ButtonProps) {
   const theme = useTheme();
   const isDisabled = Boolean(disabled) || loading;
-
-  const background: Record<ButtonVariant, string> = {
-    primary: theme.colors.primary,
-    secondary: theme.colors.surfaceMuted,
-    ghost: 'transparent',
-    danger: theme.colors.danger,
-  };
-  const foreground: Record<ButtonVariant, string> = {
-    primary: theme.colors.onPrimary,
-    secondary: theme.colors.text,
-    ghost: theme.colors.primary,
-    danger: theme.colors.textInverse,
-  };
+  // Состояния — цвета палитры, а не прозрачность (`controlColors`).
+  const colors = controlColors[variant];
+  const foreground = isDisabled && !loading ? colors.disabledText : colors.text;
 
   return (
     <Pressable
@@ -63,13 +54,16 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         {
-          backgroundColor: background[variant],
-          borderRadius: theme.radius.md,
+          backgroundColor: isDisabled
+            ? colors.disabled
+            : pressed
+              ? colors.pressed
+              : colors.background,
+          borderRadius: theme.radius.pill,
           minHeight: size === 'lg' ? 52 : MIN_TOUCH_SIZE,
-          paddingHorizontal: theme.spacing.lg,
+          paddingHorizontal: theme.spacing.xl,
           borderWidth: variant === 'ghost' ? 1 : 0,
           borderColor: theme.colors.border,
-          opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
         style,
@@ -77,11 +71,11 @@ export function Button({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={foreground[variant]} />
+        <ActivityIndicator color={colors.text} />
       ) : (
         <View style={styles.content}>
           {left}
-          <Text variant="bodyStrong" style={{ color: foreground[variant] }}>
+          <Text variant="bodyStrong" style={{ color: foreground }}>
             {title}
           </Text>
           {right}

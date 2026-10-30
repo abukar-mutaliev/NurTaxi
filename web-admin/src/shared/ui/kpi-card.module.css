@@ -1,6 +1,6 @@
 .card {
   height: 100%;
-  border-radius: 16px;
+  border-radius: var(--nur-radius-lg);
 }
 
 .header {
@@ -11,33 +11,33 @@
 }
 
 .title {
-  font-size: 13px;
+  font-size: var(--nur-font-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
 .icon {
-  font-size: 20px;
-  color: #c99a54;
+  font-size: var(--nur-font-xl);
+  color: var(--nur-primary);
   opacity: 0.85;
 }
 
 .value {
-  font-size: 28px;
+  font-size: var(--nur-font-display);
   font-weight: 700;
   line-height: 1.2;
-  color: #2e2331;
+  color: var(--nur-text);
   margin-bottom: 4px;
 }
 
 .subtitle {
-  font-size: 13px;
+  font-size: var(--nur-font-sm);
   display: block;
 }
 
 .target {
-  font-size: 12px;
+  font-size: var(--nur-font-xs);
   display: block;
   margin-top: 8px;
 }

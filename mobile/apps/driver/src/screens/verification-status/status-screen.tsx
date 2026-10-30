@@ -18,7 +18,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Loader,
+  radius,
+  shadows,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { rejectedDocuments, useGetDriverProfileQuery } from '@nurtaxi/shared-core/entities/driver';
 
 import { GlowIcon } from '@/shared/ui/glow-icon';
@@ -36,18 +43,18 @@ const DESIGN_HEIGHT = 844;
 const SUPPORT_WHATSAPP_URL = 'https://wa.me/79286970697';
 
 const c = {
-  title: '#2E2331',
-  subtitle: '#8A7E88',
-  cardBg: '#FFFFFF',
-  cardBorder: '#F2E9E0',
-  cardText: '#2E2331',
-  shadow: 'rgba(89,71,31,0.08)',
-  pendingBg: '#F8E7C4',
-  pendingText: '#A2761F',
-  successBg: '#DFF1E4',
-  successText: '#2E7D48',
-  dangerBg: '#FBE3E0',
-  dangerText: '#B42318',
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.surfaceMuted,
+  cardText: brandColors.text,
+  shadow: brandColors.shadow,
+  pendingBg: brandColors.secondarySoft,
+  pendingText: brandColors.primary,
+  successBg: brandColors.primarySoft,
+  successText: brandColors.primary,
+  dangerBg: brandColors.dangerSoft,
+  dangerText: brandColors.danger,
 } as const;
 
 type StatusView = {
@@ -159,10 +166,10 @@ export function VerificationStatusScreen() {
         >
           <View style={styles.center}>
             <GlowIcon glyph="🚗" size={sx(92)} />
-            <Text style={[styles.title, { fontSize: sx(20), marginTop: sy(24) }]}>
+            <Text style={[styles.title, { fontSize: sx(typeScale.xl), marginTop: sy(24) }]}>
               Станьте водителем Нур
             </Text>
-            <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(8) }]}>
+            <Text style={[styles.subtitle, { fontSize: sx(typeScale.sm), marginTop: sy(8) }]}>
               Заполните анкету и загрузите документы — после проверки сможете принимать заказы.
             </Text>
           </View>
@@ -208,8 +215,10 @@ export function VerificationStatusScreen() {
       >
         <View style={{ alignItems: 'center' }}>
           <GlowIcon glyph={view.glyph} size={sx(92)} />
-          <Text style={[styles.title, { fontSize: sx(20), marginTop: sy(26) }]}>{view.title}</Text>
-          <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(8) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xl), marginTop: sy(26) }]}>
+            {view.title}
+          </Text>
+          <Text style={[styles.subtitle, { fontSize: sx(typeScale.sm), marginTop: sy(8) }]}>
             {view.subtitle}
           </Text>
         </View>
@@ -221,23 +230,27 @@ export function VerificationStatusScreen() {
               {
                 backgroundColor: c.dangerBg,
                 borderColor: c.dangerBg,
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 marginTop: sy(24),
                 paddingHorizontal: sx(20),
                 paddingVertical: sy(16),
               },
             ]}
           >
-            <Text style={{ color: c.dangerText, fontSize: sx(14), fontWeight: '600' }}>
+            <Text style={{ color: c.dangerText, fontSize: sx(typeScale.md), fontWeight: '600' }}>
               Нужно заменить
             </Text>
             {rejectedDocs.map((doc) => (
               <View key={doc.id} style={{ marginTop: sy(10) }}>
-                <Text style={{ color: c.dangerText, fontSize: sx(13), fontWeight: '600' }}>
+                <Text
+                  style={{ color: c.dangerText, fontSize: sx(typeScale.sm), fontWeight: '600' }}
+                >
                   {t(`documents.${doc.type}`, { defaultValue: doc.type })}
                 </Text>
                 {doc.rejectionReason ? (
-                  <Text style={{ color: c.dangerText, fontSize: sx(13), marginTop: sy(2) }}>
+                  <Text
+                    style={{ color: c.dangerText, fontSize: sx(typeScale.sm), marginTop: sy(2) }}
+                  >
                     {doc.rejectionReason}
                   </Text>
                 ) : null}
@@ -251,17 +264,17 @@ export function VerificationStatusScreen() {
               {
                 backgroundColor: c.dangerBg,
                 borderColor: c.dangerBg,
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 marginTop: sy(24),
                 paddingHorizontal: sx(20),
                 paddingVertical: sy(16),
               },
             ]}
           >
-            <Text style={{ color: c.dangerText, fontSize: sx(14), fontWeight: '600' }}>
+            <Text style={{ color: c.dangerText, fontSize: sx(typeScale.md), fontWeight: '600' }}>
               Причина отклонения
             </Text>
-            <Text style={{ color: c.dangerText, fontSize: sx(13), marginTop: sy(4) }}>
+            <Text style={{ color: c.dangerText, fontSize: sx(typeScale.sm), marginTop: sy(4) }}>
               {profile.rejectionReason}
             </Text>
           </View>
@@ -273,7 +286,7 @@ export function VerificationStatusScreen() {
               styles.card,
               styles.cardRow,
               {
-                borderRadius: sx(18),
+                borderRadius: sx(radius.lg),
                 gap: sx(12),
                 marginTop: sy(26),
                 paddingHorizontal: sx(20),
@@ -283,19 +296,26 @@ export function VerificationStatusScreen() {
           >
             <Text
               numberOfLines={1}
-              style={{ color: c.cardText, flex: 1, fontSize: sx(15), fontWeight: '500' }}
+              style={{
+                color: c.cardText,
+                flex: 1,
+                fontSize: sx(typeScale.base),
+                fontWeight: '500',
+              }}
             >
               {documentSummary}
             </Text>
             <View
               style={{
                 backgroundColor: view.badgeBg,
-                borderRadius: sx(999),
+                borderRadius: sx(radius.pill),
                 paddingHorizontal: sx(12),
                 paddingVertical: sy(5),
               }}
             >
-              <Text style={{ color: view.badgeText, fontSize: sx(12), fontWeight: '600' }}>
+              <Text
+                style={{ color: view.badgeText, fontSize: sx(typeScale.xs), fontWeight: '600' }}
+              >
                 {view.badge}
               </Text>
             </View>
@@ -345,10 +365,7 @@ const styles = StyleSheet.create({
     borderColor: c.cardBorder,
     borderWidth: 1,
     elevation: 2,
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 12,
+    ...shadows.md,
   },
   cardRow: {
     alignItems: 'center',
@@ -359,7 +376,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   spacer: {

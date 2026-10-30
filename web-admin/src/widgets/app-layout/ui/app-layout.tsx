@@ -2,7 +2,6 @@ import {
   DashboardOutlined,
   EnvironmentOutlined,
   TeamOutlined,
-  CarOutlined,
   ShoppingOutlined,
   DollarOutlined,
   ApiOutlined,
@@ -31,6 +30,7 @@ import { tokenStorage } from '@/shared/lib/token-storage';
 import { can, roleLabel, type Permission } from '@/shared/rbac';
 import { formatPhone } from '@/shared/lib/utils';
 import { palette } from '@/shared/config/theme';
+import { NurMark } from '@/shared/ui';
 import { ConnectionStatus, RealtimeProvider } from '@/features/realtime';
 import styles from './app-layout.module.css';
 
@@ -200,7 +200,7 @@ export function AppLayout() {
       >
         <div className={styles.brand}>
           <div className={styles.brandIcon}>
-            <CarOutlined />
+            <NurMark size={28} />
           </div>
           {!collapsed && (
             <div>
@@ -240,7 +240,7 @@ export function AppLayout() {
             )}
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space className={styles.userChip}>
-                <Avatar style={{ backgroundColor: palette.gold }}>
+                <Avatar style={{ backgroundColor: palette.primary, color: palette.onPrimary }}>
                   {(user?.name ?? user?.phone ?? '?').charAt(0).toUpperCase()}
                 </Avatar>
                 <div className={styles.userMeta}>

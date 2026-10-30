@@ -4,13 +4,21 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatPhone } from '@nurtaxi/shared-core/shared/lib';
-import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  ErrorView,
+  Loader,
+  radius,
+  showAlert,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
@@ -21,18 +29,16 @@ import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  background: '#F8F4EF',
-  name: '#2E2331',
-  phone: '#7A6E78',
-  avatarBg: '#3A1D3F',
-  avatarText: '#F7F3EE',
-  logoutBg: 'rgba(255,255,255,0.85)',
-  logoutBorder: 'rgba(255,255,255,0.9)',
-  logoutText: '#7A6E78',
-  shadow: 'rgba(89,71,31,0.06)',
+  background: brandColors.background,
+  name: brandColors.text,
+  phone: brandColors.textMuted,
+  avatarBg: brandColors.primary,
+  avatarText: brandColors.onPrimary,
+  logoutBg: brandColors.surface,
+  logoutBorder: brandColors.divider,
+  logoutText: brandColors.textMuted,
+  shadow: brandColors.shadow,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 export function ProfileScreen() {
   const { t } = useTranslation();
@@ -45,7 +51,7 @@ export function ProfileScreen() {
   const { data: profile, isLoading, isError, error, refetch } = useGetMeQuery();
 
   const confirmLogout = () => {
-    Alert.alert(t('auth.logout'), t('auth.logoutConfirm'), [
+    showAlert(t('auth.logout'), t('auth.logoutConfirm'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
         text: t('auth.logout'),
@@ -58,7 +64,7 @@ export function ProfileScreen() {
   };
 
   const openSupport = () => {
-    Alert.alert(t('profile.support'), t('profile.supportHint'));
+    showAlert(t('profile.support'), t('profile.supportHint'));
   };
 
   if (isLoading) {
@@ -91,21 +97,6 @@ export function ProfileScreen() {
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
 
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
-
       <ScrollView
         contentContainerStyle={{
           gap: scale * 10,
@@ -136,10 +127,10 @@ export function ProfileScreen() {
           )}
 
           <View style={styles.profileText}>
-            <Text numberOfLines={1} style={[styles.name, { fontSize: scale * 22 }]}>
+            <Text numberOfLines={1} style={[styles.name, { fontSize: scale * typeScale.xxl }]}>
               {displayName}
             </Text>
-            <Text style={[styles.phone, { fontSize: scale * 13 }]}>
+            <Text style={[styles.phone, { fontSize: scale * typeScale.sm }]}>
               {formatPhone(profile.phone)}
             </Text>
           </View>
@@ -199,19 +190,19 @@ const styles = StyleSheet.create({
   avatar: {
     alignItems: 'center',
     backgroundColor: colors.avatarBg,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 64,
     justifyContent: 'center',
     width: 64,
   },
   avatarImage: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     height: 64,
     width: 64,
   },
   avatarText: {
     color: colors.avatarText,
-    fontSize: 24,
+    fontSize: typeScale.xxl,
     fontWeight: '600',
   },
   ellipse: {
@@ -226,7 +217,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.logoutBg,
     borderColor: colors.logoutBorder,
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     height: 58,
@@ -235,7 +226,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: colors.logoutText,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
   name: {

@@ -3,7 +3,7 @@
  */
 import { View } from 'react-native';
 
-import { Badge, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Badge, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS } from './glass-theme';
 import { GlassCard } from './glass-card';
@@ -29,7 +29,7 @@ export function PlaceholderScreen({
       <GlassCard>
         <Badge label={task} tone="warning" />
         {!showBack ? (
-          <Text style={{ color: GLASS_COLORS.title, fontSize: 20, fontWeight: '600' }}>
+          <Text style={{ color: GLASS_COLORS.title, fontSize: typeScale.xl, fontWeight: '600' }}>
             {title}
           </Text>
         ) : null}
@@ -37,7 +37,9 @@ export function PlaceholderScreen({
 
         {endpoints.length > 0 ? (
           <View style={{ gap: 6, paddingTop: 8 }}>
-            <Text style={{ color: GLASS_COLORS.title, fontSize: 13, fontWeight: '600' }}>API</Text>
+            <Text style={{ color: GLASS_COLORS.title, fontSize: typeScale.sm, fontWeight: '600' }}>
+              API
+            </Text>
             {endpoints.map((endpoint) => (
               <GlassCaption key={endpoint}>{endpoint}</GlassCaption>
             ))}

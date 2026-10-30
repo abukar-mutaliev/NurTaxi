@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, shadows, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 const c = {
-  cellBg: '#FDFBF9',
-  cellBorder: '#F2E9E0',
-  cellBorderActive: '#DFAE5C',
-  cellBorderError: '#B42318',
-  shadow: 'rgba(89,71,31,0.07)',
-  text: '#2E2331',
-  error: '#B42318',
+  cellBg: brandColors.background,
+  cellBorder: brandColors.surfaceMuted,
+  cellBorderActive: brandColors.primary,
+  cellBorderError: brandColors.danger,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  error: brandColors.danger,
 } as const;
 
 export interface CodeOtpInputProps {
@@ -75,7 +75,7 @@ export function CodeOtpInput({
                 },
               ]}
             >
-              <Text style={[styles.cellText, { fontSize: scale * 24 }]}>{char}</Text>
+              <Text style={[styles.cellText, { fontSize: scale * typeScale.xxl }]}>{char}</Text>
             </View>
           );
         })}
@@ -97,7 +97,9 @@ export function CodeOtpInput({
         value={value}
       />
 
-      {error ? <Text style={[styles.error, { fontSize: scale * 13 }]}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { fontSize: scale * typeScale.sm }]}>{error}</Text>
+      ) : null}
     </View>
   );
 }
@@ -109,10 +111,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
-    shadowColor: c.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.md,
   },
   cellText: {
     color: c.text,

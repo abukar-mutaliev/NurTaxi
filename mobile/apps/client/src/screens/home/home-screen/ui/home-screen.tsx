@@ -2,7 +2,7 @@
  * Главный экран клиента (M3.3): карта, поиск адреса, оформление заказа (Figma node 39:1106).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +13,7 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDistance } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   formatOrderStatusLabel,
   orderStage,
@@ -51,6 +51,7 @@ import {
   draftStops,
   createOrderCompat,
   familyMemberSelected,
+  orderDraftDiscarded,
   orderForOtherChanged,
   passengerNameChanged,
   passengerPhoneChanged,
@@ -374,6 +375,33 @@ export function HomeScreen() {
     }
   };
 
+  /**
+   * Отказ от заказа до его создания. Раньше выйти из оформления было нельзя: лист держался,
+   * пока выбраны оба адреса, а стереть адрес назначения было негде. Точка подачи «моё
+   * местоположение» вернётся сама — её подставляет эффект выше.
+   */
+  const discardOrderDraft = useCallback(() => {
+    setCreateError(null);
+    setPaymentSheetVisible(false);
+    dispatch(orderDraftDiscarded());
+  }, [dispatch]);
+
+  // Системная «Назад» на Android при открытом листе отменяет оформление, а не сворачивает
+  // приложение с недооформленным заказом.
+  const canDiscardByBack = showOrderSheet && !createState.isLoading;
+  useFocusEffect(
+    useCallback(() => {
+      if (!canDiscardByBack) {
+        return undefined;
+      }
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        discardOrderDraft();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [canDiscardByBack, discardOrderDraft]),
+  );
+
   const openPaymentMethods = () => {
     setPaymentSheetVisible(true);
   };
@@ -476,6 +504,7 @@ export function HomeScreen() {
           isOrdering={createState.isLoading}
           loadingLabel={t('common.loading')}
           addStopLabel={t('order.addStop')}
+          onCancel={discardOrderDraft}
           onDropoffPress={() => openSearch('dropoff')}
           onOrder={submitOrder}
           onPaymentPress={openPaymentMethods}
@@ -487,6 +516,7 @@ export function HomeScreen() {
           stopLabel={t('order.stop')}
           onTariffPress={() => undefined}
           orderLabel={t('order.createNur')}
+          cancelLabel={t('order.cancelShort')}
           paymentLabel={paymentLabel}
           paymentMethod={draft.paymentMethod}
           paymentMethodLabel={t('order.paymentMethod')}
@@ -521,40 +551,40 @@ const styles = StyleSheet.create({
     right: 16,
   },
   activeOrderCard: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 18,
+    backgroundColor: brandColors.surface,
+    borderColor: brandColors.divider,
+    borderRadius: radius.lg,
     borderWidth: 1,
     elevation: 2,
     gap: 2,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    ...glassShadow({ color: 'rgba(89,71,31,0.06)' }),
+    ...glassShadow({ color: brandColors.shadow }),
   },
   activeOrderSubtitle: {
-    color: '#7A6E78',
-    fontSize: 13,
+    color: brandColors.textMuted,
+    fontSize: typeScale.sm,
   },
   activeOrderTitle: {
-    color: '#2E2331',
-    fontSize: 14,
+    color: brandColors.text,
+    fontSize: typeScale.md,
     fontWeight: '600',
   },
   permissionBanner: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: 16,
+    backgroundColor: brandColors.surface,
+    borderRadius: radius.lg,
     left: 16,
     padding: 12,
     position: 'absolute',
     right: 16,
   },
   permissionText: {
-    color: '#2E2331',
-    fontSize: 13,
+    color: brandColors.text,
+    fontSize: typeScale.sm,
     textAlign: 'center',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   mapLayer: {

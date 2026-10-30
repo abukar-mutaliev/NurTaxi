@@ -12,7 +12,7 @@ import {
   isValidPhone,
   normalizePhone,
 } from '@nurtaxi/shared-core/shared/lib';
-import { Button, Input, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Button, Input, Sheet, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   EMERGENCY_CONTACTS_LIMIT,
   useCreateEmergencyContactMutation,
@@ -117,7 +117,11 @@ export function EmergencyContactsScreen() {
         {contacts.length === 0 ? (
           <View style={{ gap: scale * 16, paddingTop: scale * 8 }}>
             <Text
-              style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 14, textAlign: 'center' }}
+              style={{
+                color: GLASS_COLORS.subtitle,
+                fontSize: scale * typeScale.md,
+                textAlign: 'center',
+              }}
             >
               {t('emergency.empty')}
             </Text>
@@ -141,7 +145,13 @@ export function EmergencyContactsScreen() {
             ))}
 
             {atLimit ? (
-              <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * 13, textAlign: 'center' }}>
+              <Text
+                style={{
+                  color: GLASS_COLORS.hint,
+                  fontSize: scale * typeScale.sm,
+                  textAlign: 'center',
+                }}
+              >
                 {t('emergency.limitReached')}
               </Text>
             ) : (
@@ -165,7 +175,7 @@ export function EmergencyContactsScreen() {
             value={phone}
           />
           {formError ? (
-            <Text style={{ color: GLASS_COLORS.error, fontSize: 13 }}>{formError}</Text>
+            <Text style={{ color: GLASS_COLORS.error, fontSize: typeScale.sm }}>{formError}</Text>
           ) : null}
           <Button
             disabled={!canAdd}

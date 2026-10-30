@@ -1,18 +1,18 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  date: '#A99FA6',
-  dropoff: '#2E2331',
-  pickup: '#7A6E78',
-  price: '#2E2331',
-  rating: '#C99A54',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  date: brandColors.textMuted,
+  dropoff: brandColors.text,
+  pickup: brandColors.textMuted,
+  price: brandColors.text,
+  rating: brandColors.primary,
 } as const;
 
 export interface TripHistoryCardProps {
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.cardBg,
     borderColor: colors.cardBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     minHeight: 104,
@@ -72,11 +72,11 @@ const styles = StyleSheet.create({
   },
   date: {
     color: colors.date,
-    fontSize: 11,
+    fontSize: typeScale.xs,
   },
   dropoff: {
     color: colors.dropoff,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '500',
     marginTop: 6,
   },
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   pickup: {
     color: colors.pickup,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     marginTop: 4,
   },
   pressed: {
@@ -98,13 +98,13 @@ const styles = StyleSheet.create({
   },
   price: {
     color: colors.price,
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
     textAlign: 'right',
   },
   rating: {
     color: colors.rating,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     marginTop: 8,
     textAlign: 'right',
   },

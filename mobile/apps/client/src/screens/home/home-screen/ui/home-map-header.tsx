@@ -2,16 +2,16 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const headerColors = {
-  glassBg: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  icon: '#2E2331',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  icon: brandColors.text,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
 } as const;
 
 export interface HomeMapHeaderProps {
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: headerColors.glassBg,
     borderColor: headerColors.glassBorder,
-    borderRadius: 22,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     justifyContent: 'center',
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   menuLine: {
     backgroundColor: headerColors.icon,
-    borderRadius: 1,
+    borderRadius: radius.xs,
     height: 2,
     width: 16,
   },
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   searchText: {
     color: headerColors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
     includeFontPadding: false,
     lineHeight: 20,

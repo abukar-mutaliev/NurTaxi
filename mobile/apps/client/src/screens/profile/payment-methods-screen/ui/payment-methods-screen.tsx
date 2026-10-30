@@ -2,15 +2,13 @@
  * Способы оплаты (M2.5, Figma node 39:1092).
  * Привязка карты через SDK — фаза M6.1; пока демо-список и локальный выбор основной карты.
  */
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, showAlert, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { GlassAddIconButton, GlassConfirmDialog, GlassScreenHeader } from '@/shared/ui';
@@ -20,15 +18,13 @@ import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welco
 import { PaymentMethodCard, type PaymentCardBrand } from './payment-method-card';
 
 const colors = {
-  background: '#F8F4EF',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  editText: '#5A2E60',
+  background: brandColors.background,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  buttonShadow: brandColors.shadow,
+  editText: brandColors.primary,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 interface DemoPaymentCard {
   id: string;
@@ -67,7 +63,7 @@ export function PaymentMethodsScreen() {
   );
 
   const showAddCardHint = () => {
-    Alert.alert(t('payment.addCard'), t('payment.addCardHint'));
+    showAlert(t('payment.addCard'), t('payment.addCardHint'));
   };
 
   const finishEditing = () => {
@@ -77,7 +73,7 @@ export function PaymentMethodsScreen() {
 
   const requestDelete = (card: DemoPaymentCard) => {
     if (cards.length <= 1) {
-      Alert.alert(t('common.delete'), t('payment.cannotDeleteLast'));
+      showAlert(t('common.delete'), t('payment.cannotDeleteLast'));
       return;
     }
 
@@ -110,7 +106,9 @@ export function PaymentMethodsScreen() {
       onPress={finishEditing}
       style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}
     >
-      <Text style={[styles.headerActionText, { fontSize: scale * 15 }]}>{t('common.done')}</Text>
+      <Text style={[styles.headerActionText, { fontSize: scale * typeScale.base }]}>
+        {t('common.done')}
+      </Text>
     </Pressable>
   ) : (
     <View style={styles.headerActions}>
@@ -121,7 +119,7 @@ export function PaymentMethodsScreen() {
           onPress={() => setIsEditing(true)}
           style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}
         >
-          <Text style={[styles.headerActionText, { fontSize: scale * 15 }]}>
+          <Text style={[styles.headerActionText, { fontSize: scale * typeScale.base }]}>
             {t('common.edit')}
           </Text>
         </Pressable>
@@ -134,21 +132,6 @@ export function PaymentMethodsScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -200,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <ScrollView
         contentContainerStyle={{
@@ -185,22 +168,20 @@ export function PaymentMethodsScreen() {
             onPress={showAddCardHint}
             style={({ pressed }) => [{ marginTop: scale * 6, opacity: pressed ? 0.92 : 1 }]}
           >
-            <LinearGradient
-              colors={[colors.buttonStart, colors.buttonEnd]}
-              end={{ x: 1, y: 0.5 }}
-              start={{ x: 0, y: 0.5 }}
+            <View
               style={[
                 styles.addButton,
                 {
-                  borderRadius: scale * 29,
+                  borderRadius: scale * radius.xxl,
                   height: scale * 58,
                 },
+                { backgroundColor: colors.buttonStart },
               ]}
             >
-              <Text style={[styles.addButtonText, { fontSize: scale * 16 }]}>
+              <Text style={[styles.addButtonText, { fontSize: scale * typeScale.base }]}>
                 {t('payment.addCard')}
               </Text>
-            </LinearGradient>
+            </View>
           </Pressable>
         ) : null}
       </ScrollView>

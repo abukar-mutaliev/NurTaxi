@@ -8,6 +8,7 @@ import { useActiveRegionId } from '@/features/region-context';
 import { RegionScopeBanner } from '@/widgets/region-scope-banner';
 import { PageHeader, PageLoader } from '@/shared/ui';
 import { formatDate, formatPhone } from '@/shared/lib/utils';
+import { palette, typeScale } from '@/shared/config/theme';
 
 const TARGET_LABELS: Record<string, string> = {
   driver: 'На водителя',
@@ -34,7 +35,7 @@ export function AppealsPage() {
         render: (_, r) => (
           <Space direction="vertical" size={0}>
             <span>{r.authorName ?? '—'}</span>
-            <span style={{ color: '#7a6e78', fontSize: 12 }}>{formatPhone(r.authorPhone)}</span>
+            <span style={{ color: palette.textMuted, fontSize: typeScale.xs }}>{formatPhone(r.authorPhone)}</span>
           </Space>
         ),
       },

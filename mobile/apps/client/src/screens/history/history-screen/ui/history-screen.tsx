@@ -11,7 +11,14 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { ReviewTarget } from '@nurtaxi/shared-core/shared/model';
 import type { OrderHistoryItem } from '@nurtaxi/shared-core/shared/model';
-import { EmptyState, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  EmptyState,
+  ErrorView,
+  Loader,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useGetOrderHistoryQuery } from '@nurtaxi/shared-core/entities/order';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
@@ -24,13 +31,12 @@ import { TripHistoryCard } from './trip-history-card';
 const PAGE_SIZE = 20;
 
 const colors = {
-  background: '#F8F4EF',
-  brand: '#3A1D3F',
-  title: '#2E2331',
+  background: brandColors.background,
+  brand: brandColors.primary,
+  title: brandColors.text,
 } as const;
 
-const logoAsset = require('@/assets/images/welcome/logo.png');
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
+const logoAsset = require('@/assets/images/welcome/logo-mark.png');
 
 export interface HistoryScreenProps {
   /** На вкладке таббара — без кнопки «назад». */
@@ -101,28 +107,11 @@ export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
 
   const logoWidth = scale * 50;
   const logoHeight = scale * 39;
-  const logoRenderWidth = logoWidth * 1.3507;
-  const logoCropOffsetX = logoWidth * 0.3507;
 
   return (
     <View style={styles.root}>
       <StatusBar style="dark" />
       <WelcomeGradientBackground />
-
-      <Image
-        contentFit="cover"
-        pointerEvents="none"
-        source={ellipseTopAsset}
-        style={[
-          styles.ellipse,
-          {
-            height: scale * 560,
-            left: scale * -90,
-            top: scale * -190,
-            width: scale * 560,
-          },
-        ]}
-      />
 
       <FlatList
         ListEmptyComponent={
@@ -139,17 +128,18 @@ export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
                 <View style={styles.brandRow}>
                   <View style={[styles.logoClip, { height: logoHeight, width: logoWidth }]}>
                     <Image
-                      contentFit="fill"
+                      contentFit="contain"
                       source={logoAsset}
-                      style={{
-                        height: logoHeight * 1.0017,
-                        marginLeft: -logoCropOffsetX,
-                        width: logoRenderWidth,
-                      }}
+                      style={{ height: logoHeight, width: logoWidth }}
                     />
                   </View>
                 </View>
-                <Text style={[styles.title, { fontSize: scale * 17, marginTop: scale * 12 }]}>
+                <Text
+                  style={[
+                    styles.title,
+                    { fontSize: scale * typeScale.base, marginTop: scale * 12 },
+                  ]}
+                >
                   {t('profile.tripHistory')}
                 </Text>
               </>

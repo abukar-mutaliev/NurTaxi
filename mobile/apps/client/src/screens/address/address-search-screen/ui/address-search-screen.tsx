@@ -1,7 +1,6 @@
 /**
  * Поиск адреса с debounce (M3.4), быстрый выбор избранного (M3.7).
  */
-import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -18,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatShortDisplayAddress, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import type { GeoLocation, GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   MIN_GEO_QUERY_LENGTH,
   toAddressSuggestion,
@@ -68,12 +67,10 @@ import { SavedAddressCard } from '../../saved-addresses-screen/ui/saved-address-
 import { AddressSearchField } from './address-search-field';
 
 const colors = {
-  background: '#F8F4EF',
-  section: '#7A6E78',
-  hint: '#A99FA6',
+  background: brandColors.background,
+  section: brandColors.textMuted,
+  hint: brandColors.textMuted,
 } as const;
-
-const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
 
 /**
  * Координаты принадлежат выбранной подсказке. Дописать к её адресу подъезд или квартиру
@@ -412,21 +409,6 @@ export function AddressSearchScreen() {
         <StatusBar style="dark" />
         <WelcomeGradientBackground />
 
-        <Image
-          contentFit="cover"
-          pointerEvents="none"
-          source={ellipseTopAsset}
-          style={[
-            styles.ellipse,
-            {
-              height: scale * 560,
-              left: scale * -90,
-              top: scale * -200,
-              width: scale * 560,
-            },
-          ]}
-        />
-
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={insets.top}
@@ -510,7 +492,7 @@ export function AddressSearchScreen() {
 
             {canSearch && !leavingToOrder ? (
               <View style={{ gap: scale * 10 }}>
-                <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
+                <Text style={[styles.sectionLabel, { fontSize: scale * typeScale.sm }]}>
                   {t('addresses.searchResults')}
                 </Text>
                 {isFetching ? (
@@ -519,7 +501,7 @@ export function AddressSearchScreen() {
                   </View>
                 ) : null}
                 {!isFetching && suggestions.length === 0 ? (
-                  <Text style={[styles.emptyHint, { fontSize: scale * 14 }]}>
+                  <Text style={[styles.emptyHint, { fontSize: scale * typeScale.md }]}>
                     {t('addresses.noResults')}
                   </Text>
                 ) : null}
@@ -537,7 +519,7 @@ export function AddressSearchScreen() {
                 ))}
               </View>
             ) : query.trim().length > 0 && query.trim().length < MIN_GEO_QUERY_LENGTH ? (
-              <Text style={[styles.typeMoreHint, { fontSize: scale * 13 }]}>
+              <Text style={[styles.typeMoreHint, { fontSize: scale * typeScale.sm }]}>
                 {t('addresses.typeMore', { count: MIN_GEO_QUERY_LENGTH })}
               </Text>
             ) : null}
@@ -562,7 +544,7 @@ export function AddressSearchScreen() {
 
             {savedAddresses.length > 0 && !leavingToOrder ? (
               <View style={{ gap: scale * 10 }}>
-                <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
+                <Text style={[styles.sectionLabel, { fontSize: scale * typeScale.sm }]}>
                   {t('addresses.favorites')}
                 </Text>
                 {savedAddresses.map((address) => (
@@ -588,7 +570,7 @@ export function AddressSearchScreen() {
 
             {mode === 'order' && !canSearch && !leavingToOrder && recentAddresses.length > 0 ? (
               <View style={{ gap: scale * 10 }}>
-                <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
+                <Text style={[styles.sectionLabel, { fontSize: scale * typeScale.sm }]}>
                   {t('addresses.recent')}
                 </Text>
                 {recentAddresses.map((address) => (

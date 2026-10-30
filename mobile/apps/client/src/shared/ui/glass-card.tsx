@@ -3,6 +3,7 @@ import { StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
+import { radius } from '@nurtaxi/shared-core/shared/ui';
 
 export interface GlassCardProps {
   children: ReactNode;
@@ -25,7 +26,7 @@ export function GlassCard({ children, style, tone = 'default' }: GlassCardProps)
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    borderRadius: radius.xl,
     borderWidth: 1,
     elevation: 2,
     gap: 8,

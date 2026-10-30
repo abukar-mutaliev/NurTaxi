@@ -6,7 +6,7 @@
  * а при отказе сервера возвращается назад.
  */
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { useIsFocused, useRouter, type Href } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { useEffect, useRef, useState } from 'react';
@@ -18,14 +18,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveCurrentPosition } from '@nurtaxi/shared-core/features/geolocation';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
-import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, shadows, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
   useGetDriverEarningsQuery,
   useGetDriverProfileQuery,
   useUpdateDriverStatusMutation,
 } from '@nurtaxi/shared-core/entities/driver';
+import { formatOrderStatusLabel } from '@nurtaxi/shared-core/entities/order';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
+import { useCurrentDriverOrder } from '@/features/current-order';
 import { useDriverPosition } from '@/features/driver-position';
 import { useDriverLocationTracking } from '@/features/location-tracking';
 import { onlineIntentChanged, selectWantsOnline } from '@/processes/shift';
@@ -45,6 +47,12 @@ const SHEET_LAYOUT = LinearTransition.duration(220);
 const HINT_ENTERING = FadeIn.duration(180);
 const HINT_EXITING = FadeOut.duration(120);
 
+/**
+ * Заказы, которые экран уже открывал сам. Автопереход нужен один раз — при запуске на
+ * принятом заказе; вернувшись с экрана заказа назад, водитель не должен улетать туда снова.
+ */
+const openedOrderIds = new Set<string>();
+
 export function ShiftScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -61,6 +69,28 @@ export function ShiftScreen() {
 
   // Входящий заказ (M8.3) показывает `IncomingOrderOverlay` в корневом layout — над любым
   // экраном, а не только над этим.
+
+  const { isBusy, order: currentOrder, isLoading: isCurrentOrderLoading } = useCurrentDriverOrder();
+  const isFocused = useIsFocused();
+
+  /**
+   * Запуск на принятом заказе сразу ведёт на его экран. Если заказ нашёлся, пока этот экран
+   * не на виду (водитель только что принял предложение и уже на экране заказа), просто
+   * запоминаем его — иначе кнопка «Назад» возвращала бы на тот же заказ.
+   */
+  useEffect(() => {
+    if (!currentOrder || openedOrderIds.has(currentOrder.id)) {
+      return;
+    }
+    openedOrderIds.add(currentOrder.id);
+    if (isFocused) {
+      router.push(`/order/${currentOrder.id}`);
+    }
+  }, [currentOrder, isFocused, router]);
+
+  const openCurrentOrder = () => {
+    router.push(currentOrder ? `/order/${currentOrder.id}` : ('/(tabs)/orders' as Href));
+  };
 
   const serverOnline = profile?.onlineStatus === 'online' || (wantsOnline && !profile);
   /**
@@ -199,7 +229,9 @@ export function ShiftScreen() {
               },
             ]}
           >
-            <Text variant="bodyStrong">{isOnline ? 'Вы на линии' : 'Вы офлайн'}</Text>
+            <Text variant="bodyStrong">
+              {isBusy ? t('driver.onTrip') : isOnline ? 'Вы на линии' : 'Вы офлайн'}
+            </Text>
           </View>
         </View>
 
@@ -263,32 +295,69 @@ export function ShiftScreen() {
           },
         ]}
       >
-        <View style={styles.switchRow}>
-          <View style={{ flex: 1, paddingRight: theme.spacing.md }}>
-            <Text variant="bodyStrong">
-              {isOnline ? t('driver.goOffline') : t('driver.goOnline')}
-            </Text>
-            <Text tone="muted" variant="caption">
-              {!canGoOnline
-                ? 'Выйти на линию можно после одобрения документов'
-                : isOnline
-                  ? 'Нажмите, чтобы перестать принимать заказы'
-                  : 'Нажмите, чтобы начать принимать заказы'}
-            </Text>
-          </View>
-          {/*
+        {/*
+          На заказе переключатель линии бесполезен — сервер не даёт менять статус до конца
+          поездки. Вместо него — дорога к текущему заказу.
+        */}
+        {isBusy ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={openCurrentOrder}
+            style={({ pressed }) => [styles.switchRow, { opacity: pressed ? 0.85 : 1 }]}
+          >
+            <View style={{ flex: 1, paddingRight: theme.spacing.md }}>
+              <Text variant="bodyStrong">{t('driver.currentOrder')}</Text>
+              <Text numberOfLines={1} tone="muted" variant="caption">
+                {currentOrder
+                  ? `${formatOrderStatusLabel(currentOrder.status)} · ${currentOrder.pickupAddress}`
+                  : isCurrentOrderLoading
+                    ? t('driver.currentOrderLoading')
+                    : t('driver.currentOrderMissing')}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.openOrderButton,
+                {
+                  backgroundColor: theme.colors.primary,
+                  borderRadius: theme.radius.pill,
+                  paddingHorizontal: theme.spacing.lg,
+                },
+              ]}
+            >
+              <Text style={{ color: theme.colors.onPrimary }} variant="bodyStrong">
+                {t('driver.openOrder')}
+              </Text>
+            </View>
+          </Pressable>
+        ) : (
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: theme.spacing.md }}>
+              <Text variant="bodyStrong">
+                {isOnline ? t('driver.goOffline') : t('driver.goOnline')}
+              </Text>
+              <Text tone="muted" variant="caption">
+                {!canGoOnline
+                  ? 'Выйти на линию можно после одобрения документов'
+                  : isOnline
+                    ? 'Нажмите, чтобы перестать принимать заказы'
+                    : 'Нажмите, чтобы начать принимать заказы'}
+              </Text>
+            </View>
+            {/*
             Не блокируем на время запроса: смена `disabled` перекрашивала переключатель
             посреди анимации. Повторные нажатия отсекает `toggleOnline`.
           */}
-          <Switch
-            disabled={!canGoOnline}
-            ios_backgroundColor={theme.colors.surfaceMuted}
-            onValueChange={toggleOnline}
-            thumbColor={theme.colors.surface}
-            trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.primary }}
-            value={isOnline}
-          />
-        </View>
+            <Switch
+              disabled={!canGoOnline}
+              ios_backgroundColor={theme.colors.surfaceMuted}
+              onValueChange={toggleOnline}
+              thumbColor={theme.colors.surface}
+              trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.primary }}
+              value={isOnline}
+            />
+          </View>
+        )}
 
         {error ? (
           <Animated.View entering={HINT_ENTERING} exiting={HINT_EXITING}>
@@ -351,8 +420,13 @@ const styles = StyleSheet.create({
     right: 16,
     zIndex: 5,
   },
+  openOrderButton: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+  },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   sheet: {
@@ -361,18 +435,12 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     right: 0,
-    shadowColor: 'rgba(89,71,31,0.16)',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 1,
-    shadowRadius: 16,
+    ...shadows.up,
   },
   statusPill: {
     borderWidth: 1,
     elevation: 2,
-    shadowColor: 'rgba(89,71,31,0.12)',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
+    ...shadows.sm,
   },
   switchRow: {
     alignItems: 'center',

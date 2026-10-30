@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
 import { PillButton } from '@/shared/ui/pill-button';
@@ -132,10 +132,10 @@ export function PhoneScreen() {
             source={logoAsset}
             style={{ height: logoHeight, width: logoWidth }}
           />
-          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(16) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xl), marginTop: sy(16) }]}>
             {t('auth.phoneTitle')}
           </Text>
-          <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(4) }]}>
+          <Text style={[styles.subtitle, { fontSize: sx(typeScale.sm), marginTop: sy(4) }]}>
             {t('auth.phoneSubtitle')}
           </Text>
         </View>
@@ -168,7 +168,7 @@ export function PhoneScreen() {
               placeholder={t('auth.phonePlaceholder')}
               placeholderTextColor={c.placeholder}
               returnKeyType="done"
-              style={[styles.input, { fontSize: sx(16) }]}
+              style={[styles.input, { fontSize: sx(typeScale.base) }]}
               textContentType="telephoneNumber"
               value={phone}
             />
@@ -177,7 +177,7 @@ export function PhoneScreen() {
           {message ? (
             <Text
               accessibilityLiveRegion="polite"
-              style={[styles.error, { fontSize: sx(13), marginTop: sy(10) }]}
+              style={[styles.error, { fontSize: sx(typeScale.sm), marginTop: sy(10) }]}
             >
               {message}
             </Text>
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   input: {
     color: c.inputText,
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputShell: {

@@ -7,7 +7,7 @@
 }
 
 .hint {
-  font-size: 13px;
+  font-size: var(--nur-font-sm);
   color: var(--nur-text-muted);
 }
 

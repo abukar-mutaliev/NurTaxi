@@ -9,7 +9,7 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { brandColors, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, Sheet, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 const colors = {
   text: brandColors.text,
@@ -143,12 +143,12 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: colors.cancelText,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   fee: {
     color: colors.cancelText,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   field: {
@@ -156,16 +156,17 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     color: colors.label,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     fontWeight: '500',
   },
   input: {
+    fontFamily: fontFamily.regular,
     backgroundColor: colors.fieldBg,
     borderColor: colors.fieldBorder,
     borderRadius: 16,
     borderWidth: 1,
     color: colors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     minHeight: 76,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
   },
   keepText: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
 });

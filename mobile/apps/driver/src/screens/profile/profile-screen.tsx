@@ -14,7 +14,14 @@ import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, Loader, showAlert, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Loader,
+  showAlert,
+  Text,
+  typeScale,
+  useTheme,
+} from '@nurtaxi/shared-core/shared/ui';
 import { DriverRequirementKey, RequirementMode } from '@nurtaxi/shared-core/shared/model';
 import {
   requirementMode,
@@ -284,7 +291,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: brandColors.onPrimary,
-    fontSize: 24,
+    fontSize: typeScale.xxl,
     fontWeight: '700',
   },
   card: {

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.title,
     flex: 1,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
 });

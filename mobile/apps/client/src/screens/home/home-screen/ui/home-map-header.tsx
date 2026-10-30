@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   searchText: {
     color: headerColors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
     includeFontPadding: false,
     lineHeight: 20,

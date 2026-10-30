@@ -8,6 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+import { fontFamily } from '../theme/fonts';
 import { useTheme } from '../theme/theme-provider';
 import { Text } from './text';
 
@@ -84,6 +85,7 @@ export function Input({
 
 const styles = StyleSheet.create({
   input: {
+    fontFamily: fontFamily.regular,
     borderWidth: 1,
     minHeight: 52,
   },

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { GeoLocation, GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   useCurrentPosition,
   useLocationPermission,
@@ -238,19 +238,23 @@ export function AddressPickScreen() {
             <GlassCard>
               <GlassCaption>{t('addresses.pickHint')}</GlassCaption>
               {selectedLocation ? (
-                <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15 }}>
+                <Text style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base }}>
                   {resolvingAddress && !exactAddress
                     ? t('common.loading')
                     : selectedLocation.address}
                 </Text>
               ) : (
-                <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 15 }}>
+                <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * typeScale.base }}>
                   {t('addresses.pickEmpty')}
                 </Text>
               )}
               {pickError ? (
                 <Text
-                  style={{ color: GLASS_COLORS.error, fontSize: scale * 13, marginTop: scale * 8 }}
+                  style={{
+                    color: GLASS_COLORS.error,
+                    fontSize: scale * typeScale.sm,
+                    marginTop: scale * 8,
+                  }}
                 >
                   {pickError}
                 </Text>

@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassCard, GlassPrimaryButton } from '@/shared/ui';
 import { WelcomeGradientBackground } from '@/shared/ui/welcome-gradient-background';
@@ -73,7 +73,7 @@ export function ErrorBoundaryFallback({ error, onRetry }: ErrorBoundaryFallbackP
               style={[
                 styles.title,
                 {
-                  fontSize: scale * 24,
+                  fontSize: scale * typeScale.xxl,
                   lineHeight: scale * 30,
                 },
               ]}
@@ -84,7 +84,7 @@ export function ErrorBoundaryFallback({ error, onRetry }: ErrorBoundaryFallbackP
               style={[
                 styles.subtitle,
                 {
-                  fontSize: scale * 15,
+                  fontSize: scale * typeScale.base,
                   lineHeight: scale * 22,
                 },
               ]}
@@ -96,14 +96,18 @@ export function ErrorBoundaryFallback({ error, onRetry }: ErrorBoundaryFallbackP
         </View>
 
         <GlassCard tone="warning" style={{ gap: scale * 10 }}>
-          <Text style={[styles.cardTitle, { fontSize: scale * 14 }]}>Что можно сделать</Text>
-          <Text style={[styles.cardText, { fontSize: scale * 13, lineHeight: scale * 18 }]}>
+          <Text style={[styles.cardTitle, { fontSize: scale * typeScale.md }]}>
+            Что можно сделать
+          </Text>
+          <Text
+            style={[styles.cardText, { fontSize: scale * typeScale.sm, lineHeight: scale * 18 }]}
+          >
             Нажмите «Попробовать снова». Если ошибка повторяется, перезапустите приложение.
           </Text>
           {__DEV__ ? (
             <Text
               selectable
-              style={[styles.devError, { fontSize: scale * 12, lineHeight: scale * 17 }]}
+              style={[styles.devError, { fontSize: scale * typeScale.xs, lineHeight: scale * 17 }]}
             >
               {error.message}
             </Text>

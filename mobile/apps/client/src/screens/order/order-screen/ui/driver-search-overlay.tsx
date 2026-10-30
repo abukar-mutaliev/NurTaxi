@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -139,10 +139,14 @@ export function DriverSearchOverlay({
       {minimized ? null : (
         <View style={styles.content}>
           <View style={styles.titleBlock}>
-            <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
+            <Text
+              style={[styles.title, { fontSize: scale * typeScale.xxl, lineHeight: scale * 32 }]}
+            >
               {titleLine1}
             </Text>
-            <Text style={[styles.title, { fontSize: scale * 22, lineHeight: scale * 28 }]}>
+            <Text
+              style={[styles.title, { fontSize: scale * typeScale.xxl, lineHeight: scale * 32 }]}
+            >
               {titleLine2}
             </Text>
           </View>
@@ -199,10 +203,14 @@ export function DriverSearchOverlay({
           </View>
 
           <View style={styles.subtitleBlock}>
-            <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
+            <Text
+              style={[styles.subtitle, { fontSize: scale * typeScale.md, lineHeight: scale * 20 }]}
+            >
               {subtitleLine1}
             </Text>
-            <Text style={[styles.subtitle, { fontSize: scale * 14, lineHeight: scale * 20 }]}>
+            <Text
+              style={[styles.subtitle, { fontSize: scale * typeScale.md, lineHeight: scale * 20 }]}
+            >
               {subtitleLine2}
             </Text>
           </View>
@@ -279,7 +287,7 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: colors.subtitle,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
   carIcon: {
@@ -351,12 +359,12 @@ const styles = StyleSheet.create({
   },
   minimizedSubtitle: {
     color: colors.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     textAlign: 'center',
   },
   minimizedTitle: {
     color: colors.title,
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
     textAlign: 'center',
   },

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDateTime } from '@nurtaxi/shared-core/shared/lib';
-import { Badge, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Badge, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   useGetNotificationsQuery,
   useMarkAllNotificationsReadMutation,
@@ -96,7 +96,13 @@ export function NotificationsScreen() {
 
       <FlatList
         ListEmptyComponent={
-          <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 14, textAlign: 'center' }}>
+          <Text
+            style={{
+              color: GLASS_COLORS.subtitle,
+              fontSize: scale * typeScale.md,
+              textAlign: 'center',
+            }}
+          >
             {t('notifications.empty')}
           </Text>
         }
@@ -147,7 +153,7 @@ export function NotificationsScreen() {
                     style={{
                       color: GLASS_COLORS.title,
                       flex: 1,
-                      fontSize: scale * 15,
+                      fontSize: scale * typeScale.base,
                       fontWeight: '600',
                     }}
                   >
@@ -156,7 +162,7 @@ export function NotificationsScreen() {
                   {!item.readAt ? <Badge label={t('notifications.unread')} tone="primary" /> : null}
                 </View>
                 <GlassCaption>{copy.body}</GlassCaption>
-                <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * 11 }}>
+                <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * typeScale.xs }}>
                   {formatDateTime(item.createdAt)}
                 </Text>
               </GlassCard>

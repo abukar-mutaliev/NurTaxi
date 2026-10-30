@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { PillButton } from '@/shared/ui/pill-button';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
@@ -71,9 +71,11 @@ export function WelcomeScreen() {
         <PillButton height={sx(58)} onPress={goToLogin} title={t('welcome.start')} />
 
         <Pressable hitSlop={8} onPress={goToLogin} style={{ marginTop: sy(18) }}>
-          <Text style={[styles.link, { fontSize: sx(14) }]}>
+          <Text style={[styles.link, { fontSize: sx(typeScale.md) }]}>
             {t('welcome.hasAccount')}{' '}
-            <Text style={[styles.linkAction, { fontSize: sx(14) }]}>{t('welcome.signIn')}</Text>
+            <Text style={[styles.linkAction, { fontSize: sx(typeScale.md) }]}>
+              {t('welcome.signIn')}
+            </Text>
           </Text>
         </Pressable>
       </View>

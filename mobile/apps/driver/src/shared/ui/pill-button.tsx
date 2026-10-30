@@ -6,7 +6,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 const c = {
   primaryBg: brandColors.primary,
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
   },
   label: {
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
 });

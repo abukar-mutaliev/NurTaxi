@@ -8,7 +8,15 @@ import { useTranslation } from 'react-i18next';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, formatPhone, isValidPhone } from '@nurtaxi/shared-core/shared/lib';
 import { FamilyMemberStatus } from '@nurtaxi/shared-core/shared/model';
-import { Badge, Button, Input, Sheet, Text, showAlert } from '@nurtaxi/shared-core/shared/ui';
+import {
+  Badge,
+  Button,
+  Input,
+  Sheet,
+  showAlert,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import {
   FAMILY_FEATURE_FLAG,
   useAddFamilyMemberMutation,
@@ -131,7 +139,13 @@ export function FamilyScreen() {
   if (!familyEnabled) {
     return (
       <GlassScreenShell title={t('family.title')}>
-        <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 14, textAlign: 'center' }}>
+        <Text
+          style={{
+            color: GLASS_COLORS.subtitle,
+            fontSize: scale * typeScale.md,
+            textAlign: 'center',
+          }}
+        >
           {t('family.unavailable')}
         </Text>
       </GlassScreenShell>
@@ -154,7 +168,13 @@ export function FamilyScreen() {
         <GlassCaption>{t('family.hint')}</GlassCaption>
 
         {members.length === 0 ? (
-          <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 14, textAlign: 'center' }}>
+          <Text
+            style={{
+              color: GLASS_COLORS.subtitle,
+              fontSize: scale * typeScale.md,
+              textAlign: 'center',
+            }}
+          >
             {t('family.empty')}
           </Text>
         ) : (
@@ -198,7 +218,7 @@ export function FamilyScreen() {
           />
           <SwitchRow onValueChange={setPay} title={t('family.permissionPay')} value={pay} />
           {formError ? (
-            <Text style={{ color: GLASS_COLORS.error, fontSize: 13 }}>{formError}</Text>
+            <Text style={{ color: GLASS_COLORS.error, fontSize: typeScale.sm }}>{formError}</Text>
           ) : null}
           <Button
             disabled={!canSubmit}

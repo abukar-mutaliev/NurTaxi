@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
@@ -51,7 +51,7 @@ export function GlassListRow({
 const styles = StyleSheet.create({
   chevron: {
     color: GLASS_COLORS.chevron,
-    fontSize: 17,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   destructiveTitle: {
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     marginTop: 2,
   },
   textBlock: {
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GLASS_COLORS.title,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
 });

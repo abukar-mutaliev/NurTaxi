@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -29,13 +29,13 @@ const brandStyles: Record<
     badgeBg: colors.visaBg,
     badgeText: colors.visaText,
     badgeLabel: 'VISA',
-    fontSize: 10,
+    fontSize: typeScale.xs,
   },
   mastercard: {
     badgeBg: colors.mastercardBg,
     badgeText: colors.mastercardText,
     badgeLabel: 'MC',
-    fontSize: 11,
+    fontSize: typeScale.xs,
   },
 };
 
@@ -166,9 +166,9 @@ const styles = StyleSheet.create({
   },
   deleteIcon: {
     color: brandColors.onPrimary,
-    fontSize: 18,
+    fontSize: typeScale.lg,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 22,
     marginTop: -1,
   },
   pressed: {
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: colors.subtitle,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     marginTop: 2,
   },
   textBlock: {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.title,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
 });

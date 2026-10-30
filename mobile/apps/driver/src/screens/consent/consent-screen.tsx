@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useOnboarding } from '@nurtaxi/shared-core/features/auth';
 
 import { PillButton } from '@/shared/ui/pill-button';
@@ -100,10 +100,10 @@ export function ConsentScreen() {
             source={logoMarkAsset}
             style={{ height: sy(96), width: sx(90) }}
           />
-          <Text style={[styles.title, { fontSize: sx(19), marginTop: sy(20) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xl), marginTop: sy(20) }]}>
             {t('onboarding.title')}
           </Text>
-          <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(4) }]}>
+          <Text style={[styles.subtitle, { fontSize: sx(typeScale.sm), marginTop: sy(4) }]}>
             {t('onboarding.subtitle')}
           </Text>
         </View>
@@ -123,7 +123,7 @@ export function ConsentScreen() {
               placeholder={t('onboarding.namePlaceholder')}
               placeholderTextColor={c.placeholder}
               returnKeyType="done"
-              style={[styles.input, { fontSize: sx(16) }]}
+              style={[styles.input, { fontSize: sx(typeScale.base) }]}
               textContentType="name"
               value={name}
             />
@@ -145,10 +145,10 @@ export function ConsentScreen() {
             },
           ]}
         >
-          <Text style={[styles.consentTitle, { fontSize: sx(15) }]}>
+          <Text style={[styles.consentTitle, { fontSize: sx(typeScale.base) }]}>
             {t('onboarding.consentTitle')}
           </Text>
-          <Text style={[styles.consentText, { fontSize: sx(13), lineHeight: sx(18) }]}>
+          <Text style={[styles.consentText, { fontSize: sx(typeScale.sm), lineHeight: sx(18) }]}>
             {t('onboarding.consentText')}
           </Text>
 
@@ -165,14 +165,16 @@ export function ConsentScreen() {
                 },
               ]}
             >
-              {consent ? <Text style={[styles.checkMark, { fontSize: sx(14) }]}>✓</Text> : null}
+              {consent ? (
+                <Text style={[styles.checkMark, { fontSize: sx(typeScale.md) }]}>✓</Text>
+              ) : null}
             </View>
-            <Text style={[styles.consentAgree, { fontSize: sx(14) }]}>Согласен(на)</Text>
+            <Text style={[styles.consentAgree, { fontSize: sx(typeScale.md) }]}>Согласен(на)</Text>
           </View>
         </Pressable>
 
         {error ? (
-          <Text style={[styles.error, { fontSize: sx(13), marginTop: sy(12) }]}>
+          <Text style={[styles.error, { fontSize: sx(typeScale.sm), marginTop: sy(12) }]}>
             {error.message}
           </Text>
         ) : null}
@@ -231,7 +233,7 @@ const styles = StyleSheet.create({
   input: {
     color: c.inputText,
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputShell: {

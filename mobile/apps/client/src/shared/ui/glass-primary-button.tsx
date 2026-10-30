@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pressable, StyleSheet } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
@@ -43,7 +43,7 @@ export function GlassPrimaryButton({
           },
         ]}
       >
-        <Text style={[styles.secondaryText, { fontSize: scale * 15 }]}>{label}</Text>
+        <Text style={[styles.secondaryText, { fontSize: scale * typeScale.base }]}>{label}</Text>
       </Pressable>
     );
   }
@@ -63,7 +63,7 @@ export function GlassPrimaryButton({
           },
         ]}
       >
-        <Text style={[styles.destructiveText, { fontSize: scale * 16 }]}>{label}</Text>
+        <Text style={[styles.destructiveText, { fontSize: scale * typeScale.base }]}>{label}</Text>
       </Pressable>
     );
   }
@@ -87,7 +87,7 @@ export function GlassPrimaryButton({
           },
         ]}
       >
-        <Text style={[styles.buttonText, { fontSize: scale * 16 }]}>{label}</Text>
+        <Text style={[styles.buttonText, { fontSize: scale * typeScale.base }]}>{label}</Text>
       </LinearGradient>
     </Pressable>
   );

@@ -36,7 +36,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { AddressSuggestion, GeoLocation } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   MIN_GEO_QUERY_LENGTH,
   toAddressSuggestion,
@@ -268,7 +268,9 @@ export function SaveAddressSheet({
                 ]}
               >
                 <View style={styles.handle} />
-                <Text style={[styles.title, { fontSize: scale * 18, marginTop: scale * 14 }]}>
+                <Text
+                  style={[styles.title, { fontSize: scale * typeScale.lg, marginTop: scale * 14 }]}
+                >
                   {t('addresses.saveTitle')}
                 </Text>
               </View>

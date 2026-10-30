@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -196,11 +196,14 @@ export function PhoneScreen() {
             },
           ]}
         >
-          <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xxl), lineHeight: sx(32) }]}>
             {t('auth.phoneTitle')}
           </Text>
           <Text
-            style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(2) }]}
+            style={[
+              styles.subtitle,
+              { fontSize: sx(typeScale.md), lineHeight: sx(20), marginTop: sy(2) },
+            ]}
           >
             {t('auth.phoneSubtitle')}
           </Text>
@@ -262,7 +265,7 @@ export function PhoneScreen() {
                   styles.input,
                   {
                     color: phoneColors.inputText,
-                    fontSize: sx(16),
+                    fontSize: sx(typeScale.base),
                   },
                 ]}
                 textContentType="telephoneNumber"
@@ -277,7 +280,7 @@ export function PhoneScreen() {
               style={[
                 styles.error,
                 {
-                  fontSize: sx(13),
+                  fontSize: sx(typeScale.sm),
                   marginTop: sy(8),
                 },
               ]}
@@ -310,7 +313,7 @@ export function PhoneScreen() {
                 },
               ]}
             >
-              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+              <Text style={[styles.buttonText, { fontSize: sx(typeScale.base) }]}>
                 {isRequestingOtp ? t('common.loading') : t('auth.getCode')}
               </Text>
             </LinearGradient>
@@ -350,7 +353,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputIconOuter: {

@@ -1,6 +1,6 @@
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
@@ -21,7 +21,9 @@ export function GlassTextField({
 
   return (
     <View style={{ gap: scale * 8 }}>
-      {label ? <Text style={[styles.label, { fontSize: scale * 13 }]}>{label}</Text> : null}
+      {label ? (
+        <Text style={[styles.label, { fontSize: scale * typeScale.sm }]}>{label}</Text>
+      ) : null}
       <View
         style={[
           styles.shell,
@@ -35,13 +37,19 @@ export function GlassTextField({
       >
         <View style={styles.field}>
           {showPlaceholder && placeholder ? (
-            <Text pointerEvents="none" style={[styles.placeholder, { fontSize: scale * 16 }]}>
+            <Text
+              pointerEvents="none"
+              style={[styles.placeholder, { fontSize: scale * typeScale.base }]}
+            >
               {placeholder}
             </Text>
           ) : null}
           <TextInput
             placeholder=""
-            style={[styles.input, { color: GLASS_COLORS.inputText, fontSize: scale * 16 }]}
+            style={[
+              styles.input,
+              { color: GLASS_COLORS.inputText, fontSize: scale * typeScale.base },
+            ]}
             value={value}
             {...inputProps}
           />
@@ -59,7 +67,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
     textAlignVertical: 'top',
   },

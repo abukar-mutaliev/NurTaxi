@@ -11,7 +11,14 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { ReviewTarget } from '@nurtaxi/shared-core/shared/model';
 import type { OrderHistoryItem } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, EmptyState, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  EmptyState,
+  ErrorView,
+  Loader,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useGetOrderHistoryQuery } from '@nurtaxi/shared-core/entities/order';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
@@ -149,7 +156,12 @@ export function HistoryScreen({ variant = 'tab' }: HistoryScreenProps) {
                     />
                   </View>
                 </View>
-                <Text style={[styles.title, { fontSize: scale * 17, marginTop: scale * 12 }]}>
+                <Text
+                  style={[
+                    styles.title,
+                    { fontSize: scale * typeScale.base, marginTop: scale * 12 },
+                  ]}
+                >
                   {t('profile.tripHistory')}
                 </Text>
               </>

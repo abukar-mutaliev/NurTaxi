@@ -83,13 +83,36 @@ export const palette = {
 
 export type PaletteToken = keyof typeof palette;
 
-/** `primarySoft` → `--nur-primary-soft`: CSS-модули берут цвета только через переменные. */
-export const cssVariables: Record<string, string> = Object.fromEntries(
-  Object.entries(palette).map(([name, value]) => [
-    `--nur-${name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`,
-    value,
-  ]),
-);
+/** Шрифт — Manrope (как в мобильных приложениях), с кириллицей. */
+export const FONT_FAMILY = "'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif";
+
+/** Единая шкала кегля — та же, что `typeScale` в мобильных приложениях. */
+export const typeScale = {
+  xs: 12,
+  sm: 13,
+  md: 14,
+  base: 16,
+  lg: 18,
+  xl: 20,
+  xxl: 24,
+  display: 32,
+} as const;
+
+const toKebab = (name: string) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+
+/**
+ * CSS-модули берут цвета и кегль только через переменные:
+ * `primarySoft` → `--nur-primary-soft`, `typeScale.md` → `--nur-font-md`.
+ */
+export const cssVariables: Record<string, string> = {
+  ...Object.fromEntries(
+    Object.entries(palette).map(([name, value]) => [`--nur-${toKebab(name)}`, value]),
+  ),
+  ...Object.fromEntries(
+    Object.entries(typeScale).map(([name, value]) => [`--nur-font-${name}`, `${value}px`]),
+  ),
+  '--nur-font-family': FONT_FAMILY,
+};
 
 /** Ставит переменные на `:root` до первой отрисовки. */
 export function applyCssVariables(root: HTMLElement = document.documentElement): void {
@@ -111,7 +134,16 @@ export const antTheme = {
     colorLinkActive: palette.primaryPressed,
     borderRadius: 10,
     borderRadiusLG: 16,
-    fontFamily: "'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif",
+    fontFamily: FONT_FAMILY,
+    fontSize: typeScale.md,
+    fontSizeSM: typeScale.xs,
+    fontSizeLG: typeScale.base,
+    fontSizeXL: typeScale.xl,
+    fontSizeHeading1: typeScale.display,
+    fontSizeHeading2: typeScale.xxl,
+    fontSizeHeading3: typeScale.xl,
+    fontSizeHeading4: typeScale.lg,
+    fontSizeHeading5: typeScale.base,
     colorBgLayout: palette.background,
     colorBgContainer: palette.surface,
     colorBgElevated: palette.surface,

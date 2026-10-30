@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatRating } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     color: colors.text,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   driverName: {
     color: colors.text,
     flex: 1,
-    fontSize: 19,
+    fontSize: typeScale.xl,
     fontWeight: '600',
   },
   driverSheet: {
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   etaText: {
     color: brandColors.onPrimary,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
   },
   plateText: {
     color: colors.text,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     fontWeight: '600',
   },
   pressed: {
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   rating: {
     color: colors.rating,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '600',
   },
   safetyBanner: {
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   },
   safetySubtitle: {
     color: colors.muted,
-    fontSize: 12,
+    fontSize: typeScale.xs,
   },
   safetyText: {
     flex: 1,
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
   },
   safetyTitle: {
     color: colors.text,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '600',
   },
   sideSlot: {
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
     includeFontPadding: false,
     lineHeight: 20,
@@ -447,6 +447,6 @@ const styles = StyleSheet.create({
   },
   vehicleLine: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: typeScale.sm,
   },
 });

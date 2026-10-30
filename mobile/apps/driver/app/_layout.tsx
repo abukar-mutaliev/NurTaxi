@@ -4,7 +4,7 @@
  */
 import { Stack } from 'expo-router';
 
-import { AlertHost, Loader } from '@nurtaxi/shared-core/shared/ui';
+import { AlertHost, Loader, useBrandFonts } from '@nurtaxi/shared-core/shared/ui';
 
 import { AppProviders, useAuthGuard } from '@/app';
 // Побочный эффект: регистрирует фоновую задачу геопозиции до монтирования компонентов (M8.2).
@@ -13,9 +13,11 @@ import { IncomingOrderOverlay } from '@/widgets/incoming-order';
 
 function RootNavigator() {
   const { isResolving } = useAuthGuard();
+  const fontsReady = useBrandFonts();
 
   // Пока не прочитан SecureStore и не загружен профиль водителя, показываем загрузку.
-  if (isResolving) {
+  // Шрифт ждём там же: без него первый экран на миг рисовался системным.
+  if (isResolving || !fontsReady) {
     return <Loader />;
   }
 

@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   chevron: {
     color: colors.chevron,
-    fontSize: 17,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   pressed: {
@@ -98,12 +98,12 @@ const styles = StyleSheet.create({
   },
   star: {
     color: colors.star,
-    fontSize: 15,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   subtitle: {
     color: colors.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     marginTop: 2,
   },
   textBlock: {
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.title,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   trailing: {

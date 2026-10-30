@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GlassCaption, GlassTextField } from '@/shared/ui';
 
@@ -113,7 +113,9 @@ export function SavedAddressFormFields({
         value={address}
       />
 
-      {error ? <Text style={[styles.error, { fontSize: scale * 13 }]}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { fontSize: scale * typeScale.sm }]}>{error}</Text>
+      ) : null}
     </View>
   );
 }
@@ -142,7 +144,13 @@ function PresetChip({ label, active, scale, onPress }: PresetChipProps) {
         active && styles.chipActive,
       ]}
     >
-      <Text style={[styles.chipText, { fontSize: scale * 14 }, active && styles.chipTextActive]}>
+      <Text
+        style={[
+          styles.chipText,
+          { fontSize: scale * typeScale.md },
+          active && styles.chipTextActive,
+        ]}
+      >
         {label}
       </Text>
     </Pressable>

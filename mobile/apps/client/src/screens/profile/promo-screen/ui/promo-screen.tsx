@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatMoney } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   PROMO_FEATURE_FLAG,
   useGetPromoBalanceQuery,
@@ -57,7 +57,13 @@ export function PromoScreen() {
   if (!promoEnabled) {
     return (
       <GlassScreenShell title={t('profile.promo')}>
-        <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 15, textAlign: 'center' }}>
+        <Text
+          style={{
+            color: GLASS_COLORS.subtitle,
+            fontSize: scale * typeScale.base,
+            textAlign: 'center',
+          }}
+        >
           {t('promo.unavailable')}
         </Text>
       </GlassScreenShell>
@@ -93,7 +99,13 @@ export function PromoScreen() {
     <GlassScreenShell title={t('profile.promo')}>
       <GlassCard>
         <GlassCaption>{t('promo.balance')}</GlassCaption>
-        <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 28, fontWeight: '600' }}>
+        <Text
+          style={{
+            color: GLASS_COLORS.title,
+            fontSize: scale * typeScale.display,
+            fontWeight: '600',
+          }}
+        >
           {formatMoney(balance?.balance ?? 0, balance?.currency ?? 'RUB')}
         </Text>
       </GlassCard>
@@ -108,12 +120,24 @@ export function PromoScreen() {
           value={code}
         />
         {redeemError ? (
-          <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+          <Text
+            style={{
+              color: GLASS_COLORS.error,
+              fontSize: scale * typeScale.sm,
+              textAlign: 'center',
+            }}
+          >
             {redeemError}
           </Text>
         ) : null}
         {redeemSuccess != null ? (
-          <Text style={{ color: GLASS_COLORS.success, fontSize: scale * 13, textAlign: 'center' }}>
+          <Text
+            style={{
+              color: GLASS_COLORS.success,
+              fontSize: scale * typeScale.sm,
+              textAlign: 'center',
+            }}
+          >
             {t('promo.redeemed', {
               amount: formatMoney(redeemSuccess, balance?.currency ?? 'RUB'),
             })}

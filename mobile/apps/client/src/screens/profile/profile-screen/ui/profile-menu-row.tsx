@@ -2,7 +2,7 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -72,7 +72,7 @@ export function ProfileMenuRow({
 const styles = StyleSheet.create({
   chevron: {
     color: colors.chevron,
-    fontSize: 17,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   iconOuter: {
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.title,
     flex: 1,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '600',
   },
 });

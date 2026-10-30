@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import { applyPhoneMask, formatPhone } from '@nurtaxi/shared-core/shared/lib';
 import { FamilyMemberStatus } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   FAMILY_FEATURE_FLAG,
   useGetFamilyMembersQuery,
@@ -130,7 +130,7 @@ export function OrderExtrasFields({
           <Text
             style={{
               color: variant === 'glass' ? GLASS_COLORS.subtitle : brandColors.textMuted,
-              fontSize: scale * 13,
+              fontSize: scale * typeScale.sm,
               fontWeight: '500',
             }}
           >
@@ -152,13 +152,13 @@ export function OrderExtrasFields({
                   <Text
                     style={{
                       color: GLASS_COLORS.title,
-                      fontSize: scale * 15,
+                      fontSize: scale * typeScale.base,
                       fontWeight: selected ? '600' : '500',
                     }}
                   >
                     {member.relation}
                   </Text>
-                  <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 13 }}>
+                  <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * typeScale.sm }}>
                     {formatPhone(member.memberPhone)}
                   </Text>
                 </GlassCard>
@@ -245,7 +245,7 @@ const sheetStyles = StyleSheet.create({
   switchTitle: {
     color: brandColors.text,
     flex: 1,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
 });

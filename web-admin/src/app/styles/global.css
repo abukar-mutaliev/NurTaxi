@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
 
 *,
 *::before,
@@ -14,7 +14,7 @@ body,
 }
 
 body {
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--nur-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--nur-background);
@@ -34,7 +34,7 @@ body {
 }
 
 .ant-statistic-title {
-  font-size: 13px;
+  font-size: var(--nur-font-sm);
   color: var(--nur-text-muted);
 }
 

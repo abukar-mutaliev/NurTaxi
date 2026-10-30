@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from './chevron';
 import { glassShadow } from './glass-shadow';
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   title: {
     color: colors.title,
     flex: 1,
-    fontSize: 20,
+    fontSize: typeScale.xl,
     fontWeight: '600',
     includeFontPadding: false,
     lineHeight: 24,

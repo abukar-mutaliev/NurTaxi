@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -88,7 +88,7 @@ export function AddressSearchField({
             placeholder={placeholder}
             placeholderTextColor={colors.placeholder}
             returnKeyType="search"
-            style={[styles.input, { color: colors.text, fontSize: scale * 16 }]}
+            style={[styles.input, { color: colors.text, fontSize: scale * typeScale.base }]}
             value={value}
           />
         ) : (
@@ -96,7 +96,7 @@ export function AddressSearchField({
             numberOfLines={1}
             style={[
               styles.inactiveText,
-              { fontSize: scale * 16 },
+              { fontSize: scale * typeScale.base },
               !value ? styles.placeholderText : null,
             ]}
           >
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputWrap: {

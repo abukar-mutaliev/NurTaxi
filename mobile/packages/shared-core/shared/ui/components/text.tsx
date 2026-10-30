@@ -1,5 +1,6 @@
-import { Text as RNText, type TextProps as RNTextProps } from 'react-native';
+import { StyleSheet, Text as RNText, type TextProps as RNTextProps } from 'react-native';
 
+import { fontFamilyForWeight } from '../theme/fonts';
 import { useTheme } from '../theme/theme-provider';
 import type { TypographyToken } from '../theme/tokens';
 
@@ -21,7 +22,21 @@ export function Text({ variant = 'body', tone = 'default', align, style, ...rest
     success: theme.colors.success,
   }[tone];
 
+  /**
+   * Жирность из варианта или переопределённая стилем превращается в начертание Manrope:
+   * у кастомного шрифта Android сам жирность не подбирает (см. `fonts.ts`).
+   */
+  const weight = StyleSheet.flatten([theme.typography[variant], style])?.fontWeight;
+
   return (
-    <RNText {...rest} style={[theme.typography[variant], { color, textAlign: align }, style]} />
+    <RNText
+      {...rest}
+      style={[
+        theme.typography[variant],
+        { color, textAlign: align },
+        style,
+        { fontFamily: fontFamilyForWeight(weight), fontWeight: 'normal' },
+      ]}
+    />
   );
 }

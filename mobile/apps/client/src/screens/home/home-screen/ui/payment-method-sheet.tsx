@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassCard } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -60,7 +60,9 @@ export function PaymentMethodSheet({
           ]}
         >
           <View style={styles.handle} />
-          <Text style={[styles.title, { fontSize: scale * 18 }]}>{t('payment.methodsTitle')}</Text>
+          <Text style={[styles.title, { fontSize: scale * typeScale.lg }]}>
+            {t('payment.methodsTitle')}
+          </Text>
 
           <View style={{ gap: scale * 10 }}>
             {PAYMENT_METHODS.map((method) => {
@@ -76,7 +78,7 @@ export function PaymentMethodSheet({
                         style={[
                           styles.optionLabel,
                           {
-                            fontSize: scale * 15,
+                            fontSize: scale * typeScale.base,
                             fontWeight: selected ? '600' : '500',
                           },
                         ]}
@@ -84,7 +86,9 @@ export function PaymentMethodSheet({
                         {label}
                       </Text>
                       {selected ? (
-                        <Text style={[styles.checkmark, { fontSize: scale * 18 }]}>✓</Text>
+                        <Text style={[styles.checkmark, { fontSize: scale * typeScale.lg }]}>
+                          ✓
+                        </Text>
                       ) : (
                         <View style={styles.checkPlaceholder} />
                       )}

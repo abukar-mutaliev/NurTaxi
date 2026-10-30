@@ -4,17 +4,19 @@
  */
 import { Stack } from 'expo-router';
 
-import { AlertHost, Loader } from '@nurtaxi/shared-core/shared/ui';
+import { AlertHost, Loader, useBrandFonts } from '@nurtaxi/shared-core/shared/ui';
 import { useNotificationHandlers } from '@nurtaxi/shared-core/features/notifications';
 
 import { AppProviders, useAuthGuard } from '@/app';
 
 function RootNavigator() {
   const { isResolving } = useAuthGuard();
+  const fontsReady = useBrandFonts();
   useNotificationHandlers();
 
   // Пока не прочитан SecureStore, показываем загрузку — иначе мигнёт экран входа.
-  if (isResolving) {
+  // Шрифт ждём там же: без него первый экран на миг рисовался системным.
+  if (isResolving || !fontsReady) {
     return <Loader />;
   }
 

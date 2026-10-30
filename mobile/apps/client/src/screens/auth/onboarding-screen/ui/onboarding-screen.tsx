@@ -19,7 +19,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, fontFamily, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -124,16 +124,22 @@ export function OnboardingScreen() {
                 },
               ]}
             />
-            <Text style={[styles.brand, { fontSize: sx(40), lineHeight: sx(50) }]}>
+            <Text style={[styles.brand, { fontSize: sx(typeScale.hero), lineHeight: sx(50) }]}>
               {t('auth.brandName')}
             </Text>
             <Text
-              style={[styles.title, { fontSize: sx(22), lineHeight: sx(28), marginTop: sy(24) }]}
+              style={[
+                styles.title,
+                { fontSize: sx(typeScale.xxl), lineHeight: sx(32), marginTop: sy(24) },
+              ]}
             >
               {t('onboarding.title')}
             </Text>
             <Text
-              style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
+              style={[
+                styles.subtitle,
+                { fontSize: sx(typeScale.md), lineHeight: sx(20), marginTop: sy(8) },
+              ]}
             >
               {t('onboarding.subtitle')}
             </Text>
@@ -141,7 +147,7 @@ export function OnboardingScreen() {
 
           <View style={{ gap: sy(20), marginTop: sy(40) }}>
             <View style={{ gap: sy(8) }}>
-              <Text style={[styles.fieldLabel, { fontSize: sx(13) }]}>
+              <Text style={[styles.fieldLabel, { fontSize: sx(typeScale.sm) }]}>
                 {t('onboarding.nameLabel')}
               </Text>
               <View
@@ -160,7 +166,7 @@ export function OnboardingScreen() {
                   {showPlaceholder ? (
                     <Text
                       pointerEvents="none"
-                      style={[styles.inputPlaceholder, { fontSize: sx(16) }]}
+                      style={[styles.inputPlaceholder, { fontSize: sx(typeScale.base) }]}
                     >
                       {t('onboarding.namePlaceholder')}
                     </Text>
@@ -175,7 +181,7 @@ export function OnboardingScreen() {
                       styles.input,
                       {
                         color: onboardingColors.inputText,
-                        fontSize: sx(16),
+                        fontSize: sx(typeScale.base),
                       },
                     ]}
                     textContentType="name"
@@ -206,10 +212,12 @@ export function OnboardingScreen() {
                   },
                 ]}
               >
-                <Text style={[styles.consentTitle, { fontSize: sx(15) }]}>
+                <Text style={[styles.consentTitle, { fontSize: sx(typeScale.base) }]}>
                   {t('onboarding.consentTitle')}
                 </Text>
-                <Text style={[styles.consentText, { fontSize: sx(13), lineHeight: sx(18) }]}>
+                <Text
+                  style={[styles.consentText, { fontSize: sx(typeScale.sm), lineHeight: sx(18) }]}
+                >
                   {t('onboarding.consentText')}
                 </Text>
                 <View style={[styles.consentActionRow, { gap: sx(10), marginTop: sy(4) }]}>
@@ -228,10 +236,10 @@ export function OnboardingScreen() {
                     ]}
                   >
                     {consent ? (
-                      <Text style={[styles.checkMark, { fontSize: sx(14) }]}>✓</Text>
+                      <Text style={[styles.checkMark, { fontSize: sx(typeScale.md) }]}>✓</Text>
                     ) : null}
                   </View>
-                  <Text style={[styles.consentAction, { fontSize: sx(14) }]}>
+                  <Text style={[styles.consentAction, { fontSize: sx(typeScale.md) }]}>
                     {t('common.confirm')}
                   </Text>
                 </View>
@@ -239,7 +247,7 @@ export function OnboardingScreen() {
             </Pressable>
 
             {error ? (
-              <Text style={[styles.error, { fontSize: sx(13) }]}>{error.message}</Text>
+              <Text style={[styles.error, { fontSize: sx(typeScale.sm) }]}>{error.message}</Text>
             ) : null}
           </View>
 
@@ -269,7 +277,7 @@ export function OnboardingScreen() {
                 },
               ]}
             >
-              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+              <Text style={[styles.buttonText, { fontSize: sx(typeScale.base) }]}>
                 {isSubmitting ? t('common.loading') : t('onboarding.finish')}
               </Text>
             </LinearGradient>
@@ -354,7 +362,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontWeight: '500',
+    fontFamily: fontFamily.medium,
     padding: 0,
   },
   inputField: {

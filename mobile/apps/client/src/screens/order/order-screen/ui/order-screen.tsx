@@ -18,7 +18,14 @@ import {
 } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { OrderStatus, ReviewTarget, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Badge, brandColors, Screen, showAlert, Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  Badge,
+  brandColors,
+  Screen,
+  showAlert,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import {
   isCancellableByClient,
   isSosAllowed,
@@ -555,7 +562,11 @@ export function OrderScreen() {
                         {order.status === OrderStatus.FailedPayment ? (
                           <GlassCard tone="warning">
                             <Text
-                              style={{ color: GLASS_COLORS.title, fontSize: 15, fontWeight: '600' }}
+                              style={{
+                                color: GLASS_COLORS.title,
+                                fontSize: typeScale.base,
+                                fontWeight: '600',
+                              }}
                             >
                               {t('payment.failed')}
                             </Text>
@@ -703,7 +714,7 @@ const styles = StyleSheet.create({
   },
   noDriversText: {
     color: GLASS_COLORS.error,
-    fontSize: 15,
+    fontSize: typeScale.base,
     textAlign: 'center',
   },
   panel: {
@@ -759,7 +770,7 @@ const styles = StyleSheet.create({
   },
   summaryButtonText: {
     color: summaryColors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   summaryButtonTextDanger: {
@@ -775,7 +786,7 @@ const styles = StyleSheet.create({
   },
   totalAddress: {
     color: summaryColors.muted,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   totalBlock: {
@@ -783,7 +794,7 @@ const styles = StyleSheet.create({
   },
   totalPrice: {
     color: summaryColors.text,
-    fontSize: 24,
+    fontSize: typeScale.xxl,
     fontWeight: '700',
   },
 });

@@ -16,7 +16,7 @@ import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import type { SerializedError } from '@reduxjs/toolkit';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { ErrorView, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { WelcomeGradientBackground } from './welcome-gradient-background';
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
@@ -170,7 +170,7 @@ export function GlassSectionLabel({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   caption: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     lineHeight: 18,
   },
   center: {
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
     letterSpacing: 0.2,
     textTransform: 'uppercase',

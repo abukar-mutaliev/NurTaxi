@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron, CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   addressText: {
     color: colors.text,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '500',
   },
   bottom: {
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     color: colors.cancelText,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   contactButton: {
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   contactText: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '600',
   },
   connector: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   driverName: {
     color: colors.text,
     flex: 1,
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   driverRow: {
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   },
   stopText: {
     color: colors.muted,
-    fontSize: 13,
+    fontSize: typeScale.sm,
   },
   shareButton: {
     alignItems: 'center',
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   },
   shareText: {
     color: colors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   statColumn: {
@@ -402,12 +402,12 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: colors.label,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     textAlign: 'center',
   },
   statValue: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: typeScale.lg,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: colors.text,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
     includeFontPadding: false,
     lineHeight: 20,

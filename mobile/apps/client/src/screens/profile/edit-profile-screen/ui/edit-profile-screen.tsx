@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Avatar, brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Avatar, brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
 import { useProfilePhotoUpload, useProfileUpdate } from '@/features/profile';
@@ -107,7 +107,7 @@ export function EditProfileScreen() {
             ) : null}
           </View>
         </Pressable>
-        <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * 13 }}>
+        <Text style={{ color: GLASS_COLORS.subtitle, fontSize: scale * typeScale.sm }}>
           {t('profile.changePhoto')}
         </Text>
       </View>
@@ -121,19 +121,29 @@ export function EditProfileScreen() {
       />
 
       {error ? (
-        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{ color: GLASS_COLORS.error, fontSize: scale * typeScale.sm, textAlign: 'center' }}
+        >
           {error.message}
         </Text>
       ) : null}
 
       {photoError ? (
-        <Text style={{ color: GLASS_COLORS.error, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{ color: GLASS_COLORS.error, fontSize: scale * typeScale.sm, textAlign: 'center' }}
+        >
           {photoError}
         </Text>
       ) : null}
 
       {saved ? (
-        <Text style={{ color: GLASS_COLORS.success, fontSize: scale * 13, textAlign: 'center' }}>
+        <Text
+          style={{
+            color: GLASS_COLORS.success,
+            fontSize: scale * typeScale.sm,
+            textAlign: 'center',
+          }}
+        >
           {t('profile.saveSuccess')}
         </Text>
       ) : null}

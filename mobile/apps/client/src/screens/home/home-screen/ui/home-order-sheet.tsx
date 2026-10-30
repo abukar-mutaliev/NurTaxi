@@ -13,7 +13,7 @@ import Animated from 'react-native-reanimated';
 
 import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { CollapsibleSheet } from '@/shared/ui';
@@ -356,9 +356,9 @@ const styles = StyleSheet.create({
   },
   addStopGlyph: {
     color: sheetColors.stopDot,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '700',
-    lineHeight: 16,
+    lineHeight: 18,
     textAlign: 'center',
     width: 8,
   },
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   },
   addStopText: {
     color: sheetColors.label,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     fontWeight: '600',
     lineHeight: 16,
   },
@@ -387,9 +387,9 @@ const styles = StyleSheet.create({
   },
   addressLabel: {
     color: sheetColors.label,
-    fontSize: 10,
+    fontSize: typeScale.xs,
     fontWeight: '500',
-    lineHeight: 12,
+    lineHeight: 16,
   },
   addressRow: {
     flexDirection: 'row',
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   },
   addressValue: {
     color: sheetColors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '600',
     lineHeight: 16,
   },
@@ -419,12 +419,12 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     color: sheetColors.cancelText,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   chevron: {
     color: sheetColors.label,
-    fontSize: 16,
+    fontSize: typeScale.base,
     lineHeight: 20,
   },
   divider: {
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
   },
   error: {
     color: sheetColors.error,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     paddingHorizontal: 19,
     paddingTop: 4,
     textAlign: 'center',
@@ -452,12 +452,12 @@ const styles = StyleSheet.create({
   },
   loaderText: {
     color: sheetColors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   notice: {
     color: sheetColors.label,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     paddingHorizontal: 19,
     paddingTop: 4,
     textAlign: 'center',
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   },
   orderButtonText: {
     color: sheetColors.buttonText,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '600',
   },
   orderButtonWrap: {
@@ -480,12 +480,12 @@ const styles = StyleSheet.create({
   },
   paymentLine: {
     flex: 1,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     lineHeight: 16,
   },
   paymentLabel: {
     color: sheetColors.label,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '500',
   },
   paymentRow: {
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
   },
   paymentValue: {
     color: sheetColors.text,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     fontWeight: '600',
   },
   pressed: {
@@ -518,8 +518,8 @@ const styles = StyleSheet.create({
   },
   removeStopGlyph: {
     color: sheetColors.label,
-    fontSize: 20,
-    lineHeight: 22,
+    fontSize: typeScale.xl,
+    lineHeight: 24,
   },
   root: {
     bottom: 0,
@@ -557,7 +557,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     gap: 3,
-    height: 78,
+    // Три строки Manrope по 16 — выше прежних 78.
+    height: 88,
     paddingBottom: 4,
     paddingHorizontal: 4,
     paddingTop: 4,
@@ -574,23 +575,23 @@ const styles = StyleSheet.create({
   },
   tariffEta: {
     color: sheetColors.label,
-    fontSize: 10,
+    fontSize: typeScale.xs,
     fontWeight: '500',
-    lineHeight: 12,
+    lineHeight: 16,
     textAlign: 'center',
   },
   tariffName: {
     color: sheetColors.text,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontWeight: '600',
-    lineHeight: 13,
+    lineHeight: 16,
     textAlign: 'center',
   },
   tariffPrice: {
     color: sheetColors.text,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     fontWeight: '700',
-    lineHeight: 13,
+    lineHeight: 16,
     marginTop: 1,
     textAlign: 'center',
   },

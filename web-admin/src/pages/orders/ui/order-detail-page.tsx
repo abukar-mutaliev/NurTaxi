@@ -32,7 +32,7 @@ import { PageHeader, PageLoader, OrderStatusTag, getOrderStatusLabel, getOrderSt
 import { OrderRouteMap } from '@/widgets/order-route-map';
 import { formatDistance } from '@/shared/lib/polyline';
 import { createIdempotencyKey, formatCurrency, formatDate, getErrorMessage } from '@/shared/lib/utils';
-import { palette } from '@/shared/config/theme';
+import { palette, typeScale } from '@/shared/config/theme';
 
 const { Text } = Typography;
 
@@ -242,7 +242,7 @@ export function OrderDetailPage() {
                         <Text type="secondary"> ← {getOrderStatusLabel(log.fromStatus)}</Text>
                       ) : null}
                     </div>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
+                    <Text type="secondary" style={{ fontSize: typeScale.xs }}>
                       {formatDate(log.createdAt)}
                       {log.actorLabel ? ` · ${log.actorLabel}` : ''}
                       {log.reason ? ` · ${log.reason}` : ''}

@@ -50,7 +50,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: var(--nur-font-xl);
   color: var(--nur-primary);
   flex-shrink: 0;
   box-shadow: 0 2px 8px var(--nur-shadow);
@@ -60,14 +60,14 @@
   display: block;
   color: var(--nur-text) !important;
   font-weight: 700;
-  font-size: 16px;
+  font-size: var(--nur-font-base);
   line-height: 1.2;
 }
 
 .brandSubtitle {
   display: block;
   color: var(--nur-text-muted) !important;
-  font-size: 12px;
+  font-size: var(--nur-font-xs);
 }
 
 .menu {
@@ -123,7 +123,7 @@
 }
 
 .menuToggle {
-  font-size: 18px;
+  font-size: var(--nur-font-lg);
 }
 
 .userChip {
@@ -144,7 +144,7 @@
 }
 
 .userRole {
-  font-size: 12px;
+  font-size: var(--nur-font-xs);
 }
 
 .content {

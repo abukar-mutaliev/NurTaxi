@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -77,7 +77,7 @@ export function CodeOtpInput({
                 },
               ]}
             >
-              <Text style={[styles.cellText, { fontSize: scale * 22 }]}>{char}</Text>
+              <Text style={[styles.cellText, { fontSize: scale * typeScale.xxl }]}>{char}</Text>
             </View>
           );
         })}
@@ -99,7 +99,9 @@ export function CodeOtpInput({
         value={value}
       />
 
-      {error ? <Text style={[styles.error, { fontSize: scale * 13 }]}>{error}</Text> : null}
+      {error ? (
+        <Text style={[styles.error, { fontSize: scale * typeScale.sm }]}>{error}</Text>
+      ) : null}
     </View>
   );
 }

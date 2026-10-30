@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -72,11 +72,11 @@ const styles = StyleSheet.create({
   },
   date: {
     color: colors.date,
-    fontSize: 11,
+    fontSize: typeScale.xs,
   },
   dropoff: {
     color: colors.dropoff,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '500',
     marginTop: 6,
   },
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   },
   pickup: {
     color: colors.pickup,
-    fontSize: 13,
+    fontSize: typeScale.sm,
     marginTop: 4,
   },
   pressed: {
@@ -98,13 +98,13 @@ const styles = StyleSheet.create({
   },
   price: {
     color: colors.price,
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
     textAlign: 'right',
   },
   rating: {
     color: colors.rating,
-    fontSize: 11,
+    fontSize: typeScale.xs,
     marginTop: 8,
     textAlign: 'right',
   },

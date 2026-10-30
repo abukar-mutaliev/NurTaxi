@@ -10,7 +10,7 @@ import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 're
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, showAlert, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, showAlert, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { GlassAddIconButton, GlassConfirmDialog, GlassScreenHeader } from '@/shared/ui';
@@ -110,7 +110,9 @@ export function PaymentMethodsScreen() {
       onPress={finishEditing}
       style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}
     >
-      <Text style={[styles.headerActionText, { fontSize: scale * 15 }]}>{t('common.done')}</Text>
+      <Text style={[styles.headerActionText, { fontSize: scale * typeScale.base }]}>
+        {t('common.done')}
+      </Text>
     </Pressable>
   ) : (
     <View style={styles.headerActions}>
@@ -121,7 +123,7 @@ export function PaymentMethodsScreen() {
           onPress={() => setIsEditing(true)}
           style={({ pressed }) => [styles.headerAction, pressed && styles.pressed]}
         >
-          <Text style={[styles.headerActionText, { fontSize: scale * 15 }]}>
+          <Text style={[styles.headerActionText, { fontSize: scale * typeScale.base }]}>
             {t('common.edit')}
           </Text>
         </Pressable>
@@ -197,7 +199,7 @@ export function PaymentMethodsScreen() {
                 },
               ]}
             >
-              <Text style={[styles.addButtonText, { fontSize: scale * 16 }]}>
+              <Text style={[styles.addButtonText, { fontSize: scale * typeScale.base }]}>
                 {t('payment.addCard')}
               </Text>
             </LinearGradient>

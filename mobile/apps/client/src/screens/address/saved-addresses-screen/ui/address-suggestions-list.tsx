@@ -2,7 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import type { AddressSuggestion } from '@nurtaxi/shared-core/shared/model';
-import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS } from '@/shared/ui';
 
@@ -38,7 +38,7 @@ export function AddressSuggestionsList({
 
   return (
     <View style={{ gap: scale * 10 }}>
-      <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
+      <Text style={[styles.sectionLabel, { fontSize: scale * typeScale.sm }]}>
         {t('addresses.searchResults')}
       </Text>
       {suggestions.map((item) => (

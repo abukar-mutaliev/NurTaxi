@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatCountdown, formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
@@ -201,11 +201,14 @@ export function CodeScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View collapsable={false} ref={ceilingRef} style={styles.header}>
-            <Text style={[styles.title, { fontSize: sx(22), lineHeight: sx(28) }]}>
+            <Text style={[styles.title, { fontSize: sx(typeScale.xxl), lineHeight: sx(32) }]}>
               {t('auth.codeTitle')}
             </Text>
             <Text
-              style={[styles.subtitle, { fontSize: sx(14), lineHeight: sx(20), marginTop: sy(8) }]}
+              style={[
+                styles.subtitle,
+                { fontSize: sx(typeScale.md), lineHeight: sx(20), marginTop: sy(8) },
+              ]}
             >
               {t('auth.codeSubtitle', { phone: phone ? formatPhone(phone) : '' })}
             </Text>
@@ -225,19 +228,24 @@ export function CodeScreen() {
             {isFinished ? (
               <Pressable disabled={isRequestingOtp} onPress={resend}>
                 <Text
-                  style={[styles.link, { fontSize: sx(14), opacity: isRequestingOtp ? 0.5 : 1 }]}
+                  style={[
+                    styles.link,
+                    { fontSize: sx(typeScale.md), opacity: isRequestingOtp ? 0.5 : 1 },
+                  ]}
                 >
                   {t('auth.resend')}
                 </Text>
               </Pressable>
             ) : (
-              <Text style={[styles.hint, { fontSize: sx(13) }]}>
+              <Text style={[styles.hint, { fontSize: sx(typeScale.sm) }]}>
                 {t('auth.resendIn', { time: formatCountdown(secondsLeft) })}
               </Text>
             )}
 
             <Pressable onPress={() => router.replace('/(auth)/phone')}>
-              <Text style={[styles.hint, { fontSize: sx(13) }]}>{t('auth.changeNumber')}</Text>
+              <Text style={[styles.hint, { fontSize: sx(typeScale.sm) }]}>
+                {t('auth.changeNumber')}
+              </Text>
             </Pressable>
 
             {!isProdEnvironment && devCode ? (
@@ -252,7 +260,7 @@ export function CodeScreen() {
                   },
                 ]}
               >
-                <Text style={[styles.devCardText, { fontSize: sx(13) }]}>
+                <Text style={[styles.devCardText, { fontSize: sx(typeScale.sm) }]}>
                   {t('auth.devCodeHint', { code: devCode })}
                 </Text>
               </View>
@@ -285,7 +293,7 @@ export function CodeScreen() {
                 },
               ]}
             >
-              <Text style={[styles.buttonText, { fontSize: sx(16) }]}>
+              <Text style={[styles.buttonText, { fontSize: sx(typeScale.base) }]}>
                 {isVerifyingOtp ? t('common.loading') : t('common.confirm')}
               </Text>
             </LinearGradient>

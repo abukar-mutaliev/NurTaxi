@@ -21,6 +21,7 @@ import {
 } from './alert-store';
 
 import { brandColors } from '../theme/brand';
+import { typeScale } from '../theme/fonts';
 /** Кремовая карточка, как листы заказа; в тёмной теме — поверхность темы. */
 const LIGHT_CARD = brandColors.surface;
 const LIGHT_CARD_BORDER = brandColors.divider;
@@ -176,7 +177,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonText: {
-    fontSize: 16,
+    fontSize: typeScale.base,
     fontWeight: '600',
     textAlign: 'center',
   },

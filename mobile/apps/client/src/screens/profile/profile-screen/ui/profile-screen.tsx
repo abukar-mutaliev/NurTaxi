@@ -10,7 +10,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatPhone } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, ErrorView, Loader, showAlert, Text } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  ErrorView,
+  Loader,
+  showAlert,
+  Text,
+  typeScale,
+} from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
@@ -136,10 +143,10 @@ export function ProfileScreen() {
           )}
 
           <View style={styles.profileText}>
-            <Text numberOfLines={1} style={[styles.name, { fontSize: scale * 22 }]}>
+            <Text numberOfLines={1} style={[styles.name, { fontSize: scale * typeScale.xxl }]}>
               {displayName}
             </Text>
-            <Text style={[styles.phone, { fontSize: scale * 13 }]}>
+            <Text style={[styles.phone, { fontSize: scale * typeScale.sm }]}>
               {formatPhone(profile.phone)}
             </Text>
           </View>
@@ -211,7 +218,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     color: colors.avatarText,
-    fontSize: 24,
+    fontSize: typeScale.xxl,
     fontWeight: '600',
   },
   ellipse: {
@@ -235,7 +242,7 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: colors.logoutText,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
   name: {

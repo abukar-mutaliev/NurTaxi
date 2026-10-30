@@ -7,6 +7,7 @@
  * разные экраны (`M11.5`).
  */
 import { brandColors, brandPalette, mixColors, withAlpha } from './brand';
+import { typeScale } from './fonts';
 
 export const spacing = {
   none: 0,
@@ -31,15 +32,19 @@ export const radius = {
 } as const;
 export type RadiusToken = keyof typeof radius;
 
+/**
+ * Варианты текста на шкале `typeScale` (Manrope). Высота строки — около 1.3–1.5 кегля:
+ * у Manrope высокие выносные, при меньшей строке Android срезает верх букв.
+ */
 export const typography = {
-  display: { fontSize: 32, lineHeight: 40, fontWeight: '700' },
-  title: { fontSize: 24, lineHeight: 32, fontWeight: '700' },
-  subtitle: { fontSize: 19, lineHeight: 26, fontWeight: '600' },
-  body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
-  bodyStrong: { fontSize: 16, lineHeight: 24, fontWeight: '600' },
-  caption: { fontSize: 14, lineHeight: 20, fontWeight: '400' },
-  label: { fontSize: 13, lineHeight: 18, fontWeight: '600' },
-  micro: { fontSize: 11, lineHeight: 16, fontWeight: '500' },
+  display: { fontSize: typeScale.display, lineHeight: 40, fontWeight: '700' },
+  title: { fontSize: typeScale.xxl, lineHeight: 32, fontWeight: '700' },
+  subtitle: { fontSize: typeScale.xl, lineHeight: 28, fontWeight: '600' },
+  body: { fontSize: typeScale.base, lineHeight: 24, fontWeight: '400' },
+  bodyStrong: { fontSize: typeScale.base, lineHeight: 24, fontWeight: '600' },
+  caption: { fontSize: typeScale.md, lineHeight: 20, fontWeight: '400' },
+  label: { fontSize: typeScale.sm, lineHeight: 18, fontWeight: '600' },
+  micro: { fontSize: typeScale.xs, lineHeight: 16, fontWeight: '500' },
 } as const;
 export type TypographyToken = keyof typeof typography;
 

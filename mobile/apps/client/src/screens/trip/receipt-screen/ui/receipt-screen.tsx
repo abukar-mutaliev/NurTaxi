@@ -6,7 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { formatDateTime, formatMoney } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { useGetReceiptQuery } from '@nurtaxi/shared-core/entities/order';
 
 import {
@@ -54,13 +54,15 @@ export function ReceiptScreen() {
   return (
     <GlassScreenShell title={t('order.receipt')}>
       <GlassCard>
-        <Text style={{ color: GLASS_COLORS.title, fontSize: scale * 15, fontWeight: '600' }}>
+        <Text
+          style={{ color: GLASS_COLORS.title, fontSize: scale * typeScale.base, fontWeight: '600' }}
+        >
           {t('payment.receiptNumber', { number: receipt.receiptNumber })}
         </Text>
         <Text
           style={{
             color: GLASS_COLORS.title,
-            fontSize: scale * 28,
+            fontSize: scale * typeScale.display,
             fontWeight: '600',
             paddingTop: scale * 8,
           }}

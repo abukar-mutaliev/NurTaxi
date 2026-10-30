@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatShortDisplayAddress, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import type { GeoLocation, GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { brandColors, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   MIN_GEO_QUERY_LENGTH,
   toAddressSuggestion,
@@ -510,7 +510,7 @@ export function AddressSearchScreen() {
 
             {canSearch && !leavingToOrder ? (
               <View style={{ gap: scale * 10 }}>
-                <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
+                <Text style={[styles.sectionLabel, { fontSize: scale * typeScale.sm }]}>
                   {t('addresses.searchResults')}
                 </Text>
                 {isFetching ? (
@@ -519,7 +519,7 @@ export function AddressSearchScreen() {
                   </View>
                 ) : null}
                 {!isFetching && suggestions.length === 0 ? (
-                  <Text style={[styles.emptyHint, { fontSize: scale * 14 }]}>
+                  <Text style={[styles.emptyHint, { fontSize: scale * typeScale.md }]}>
                     {t('addresses.noResults')}
                   </Text>
                 ) : null}
@@ -537,7 +537,7 @@ export function AddressSearchScreen() {
                 ))}
               </View>
             ) : query.trim().length > 0 && query.trim().length < MIN_GEO_QUERY_LENGTH ? (
-              <Text style={[styles.typeMoreHint, { fontSize: scale * 13 }]}>
+              <Text style={[styles.typeMoreHint, { fontSize: scale * typeScale.sm }]}>
                 {t('addresses.typeMore', { count: MIN_GEO_QUERY_LENGTH })}
               </Text>
             ) : null}
@@ -562,7 +562,7 @@ export function AddressSearchScreen() {
 
             {savedAddresses.length > 0 && !leavingToOrder ? (
               <View style={{ gap: scale * 10 }}>
-                <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
+                <Text style={[styles.sectionLabel, { fontSize: scale * typeScale.sm }]}>
                   {t('addresses.favorites')}
                 </Text>
                 {savedAddresses.map((address) => (
@@ -588,7 +588,7 @@ export function AddressSearchScreen() {
 
             {mode === 'order' && !canSearch && !leavingToOrder && recentAddresses.length > 0 ? (
               <View style={{ gap: scale * 10 }}>
-                <Text style={[styles.sectionLabel, { fontSize: scale * 13 }]}>
+                <Text style={[styles.sectionLabel, { fontSize: scale * typeScale.sm }]}>
                   {t('addresses.recent')}
                 </Text>
                 {recentAddresses.map((address) => (

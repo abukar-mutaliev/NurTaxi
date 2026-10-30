@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatShortDisplayAddress } from '@nurtaxi/shared-core/shared/lib';
-import { brandColors, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, ErrorView, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   useDeleteSavedAddressMutation,
   useGetSavedAddressesQuery,
@@ -132,7 +132,7 @@ export function SavedAddressesScreen({ variant = 'stack' }: SavedAddressesScreen
         />
 
         {addresses.length === 0 ? (
-          <Text style={[styles.empty, { fontSize: scale * 14, marginBottom: scale * 6 }]}>
+          <Text style={[styles.empty, { fontSize: scale * typeScale.md, marginBottom: scale * 6 }]}>
             {t('addresses.empty')}
           </Text>
         ) : (

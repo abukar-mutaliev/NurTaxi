@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   isTripRecordingAllowed,
   useActivateSosMutation,
@@ -195,11 +195,14 @@ export function SafetyScreen() {
             style={[styles.panicCard, { borderRadius: scale * 28, height: scale * 132 }]}
           >
             <View style={styles.panicText}>
-              <Text style={[styles.panicTitle, { fontSize: scale * 17 }]}>
+              <Text style={[styles.panicTitle, { fontSize: scale * typeScale.base }]}>
                 {t('safety.panicTitle')}
               </Text>
               <Text
-                style={[styles.panicSubtitle, { fontSize: scale * 13, lineHeight: scale * 18 }]}
+                style={[
+                  styles.panicSubtitle,
+                  { fontSize: scale * typeScale.sm, lineHeight: scale * 18 },
+                ]}
               >
                 {t('safety.panicSubtitle')}
               </Text>

@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -81,7 +81,7 @@ export function SafetyFeatureRow({
 const styles = StyleSheet.create({
   chevron: {
     color: colors.chevron,
-    fontSize: 17,
+    fontSize: typeScale.base,
     lineHeight: 22,
   },
   iconInner: {
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: colors.subtitle,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     lineHeight: 16,
     marginTop: 2,
   },
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.title,
-    fontSize: 14,
+    fontSize: typeScale.md,
     fontWeight: '600',
   },
 });

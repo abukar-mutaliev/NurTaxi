@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Loader, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { rejectedDocuments, useGetDriverProfileQuery } from '@nurtaxi/shared-core/entities/driver';
 
 import { GlowIcon } from '@/shared/ui/glow-icon';
@@ -159,10 +159,10 @@ export function VerificationStatusScreen() {
         >
           <View style={styles.center}>
             <GlowIcon glyph="🚗" size={sx(92)} />
-            <Text style={[styles.title, { fontSize: sx(20), marginTop: sy(24) }]}>
+            <Text style={[styles.title, { fontSize: sx(typeScale.xl), marginTop: sy(24) }]}>
               Станьте водителем Нур
             </Text>
-            <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(8) }]}>
+            <Text style={[styles.subtitle, { fontSize: sx(typeScale.sm), marginTop: sy(8) }]}>
               Заполните анкету и загрузите документы — после проверки сможете принимать заказы.
             </Text>
           </View>
@@ -208,8 +208,10 @@ export function VerificationStatusScreen() {
       >
         <View style={{ alignItems: 'center' }}>
           <GlowIcon glyph={view.glyph} size={sx(92)} />
-          <Text style={[styles.title, { fontSize: sx(20), marginTop: sy(26) }]}>{view.title}</Text>
-          <Text style={[styles.subtitle, { fontSize: sx(13), marginTop: sy(8) }]}>
+          <Text style={[styles.title, { fontSize: sx(typeScale.xl), marginTop: sy(26) }]}>
+            {view.title}
+          </Text>
+          <Text style={[styles.subtitle, { fontSize: sx(typeScale.sm), marginTop: sy(8) }]}>
             {view.subtitle}
           </Text>
         </View>
@@ -228,16 +230,20 @@ export function VerificationStatusScreen() {
               },
             ]}
           >
-            <Text style={{ color: c.dangerText, fontSize: sx(14), fontWeight: '600' }}>
+            <Text style={{ color: c.dangerText, fontSize: sx(typeScale.md), fontWeight: '600' }}>
               Нужно заменить
             </Text>
             {rejectedDocs.map((doc) => (
               <View key={doc.id} style={{ marginTop: sy(10) }}>
-                <Text style={{ color: c.dangerText, fontSize: sx(13), fontWeight: '600' }}>
+                <Text
+                  style={{ color: c.dangerText, fontSize: sx(typeScale.sm), fontWeight: '600' }}
+                >
                   {t(`documents.${doc.type}`, { defaultValue: doc.type })}
                 </Text>
                 {doc.rejectionReason ? (
-                  <Text style={{ color: c.dangerText, fontSize: sx(13), marginTop: sy(2) }}>
+                  <Text
+                    style={{ color: c.dangerText, fontSize: sx(typeScale.sm), marginTop: sy(2) }}
+                  >
                     {doc.rejectionReason}
                   </Text>
                 ) : null}
@@ -258,10 +264,10 @@ export function VerificationStatusScreen() {
               },
             ]}
           >
-            <Text style={{ color: c.dangerText, fontSize: sx(14), fontWeight: '600' }}>
+            <Text style={{ color: c.dangerText, fontSize: sx(typeScale.md), fontWeight: '600' }}>
               Причина отклонения
             </Text>
-            <Text style={{ color: c.dangerText, fontSize: sx(13), marginTop: sy(4) }}>
+            <Text style={{ color: c.dangerText, fontSize: sx(typeScale.sm), marginTop: sy(4) }}>
               {profile.rejectionReason}
             </Text>
           </View>
@@ -283,7 +289,12 @@ export function VerificationStatusScreen() {
           >
             <Text
               numberOfLines={1}
-              style={{ color: c.cardText, flex: 1, fontSize: sx(15), fontWeight: '500' }}
+              style={{
+                color: c.cardText,
+                flex: 1,
+                fontSize: sx(typeScale.base),
+                fontWeight: '500',
+              }}
             >
               {documentSummary}
             </Text>
@@ -295,7 +306,9 @@ export function VerificationStatusScreen() {
                 paddingVertical: sy(5),
               }}
             >
-              <Text style={{ color: view.badgeText, fontSize: sx(12), fontWeight: '600' }}>
+              <Text
+                style={{ color: view.badgeText, fontSize: sx(typeScale.xs), fontWeight: '600' }}
+              >
                 {view.badge}
               </Text>
             </View>

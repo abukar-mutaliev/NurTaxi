@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 
-import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS } from './glass-theme';
 
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: GLASS_COLORS.subtitle,
-    fontSize: 12,
+    fontSize: typeScale.xs,
     marginTop: 2,
   },
   textBlock: {
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: GLASS_COLORS.title,
-    fontSize: 15,
+    fontSize: typeScale.base,
     fontWeight: '500',
   },
 });

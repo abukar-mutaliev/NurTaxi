@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatShortDisplayAddress } from '@nurtaxi/shared-core/shared/lib';
-import { ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   useDeleteSavedAddressMutation,
   useGetSavedAddressesQuery,
@@ -26,8 +26,8 @@ import { getSavedAddressLabelKind, isPrimaryAddressLabel } from './saved-address
 import { SavedAddressCard } from './saved-address-card';
 
 const colors = {
-  background: '#F8F4EF',
-  empty: '#7A6E78',
+  background: brandColors.background,
+  empty: brandColors.textMuted,
 } as const;
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');

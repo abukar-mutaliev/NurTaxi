@@ -2,6 +2,7 @@ import type { LatLngExpression, LatLngTuple } from 'leaflet';
 import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
 import { decodePolyline } from '@/shared/lib/polyline';
+import { palette } from '@/shared/config/theme';
 import 'leaflet/dist/leaflet.css';
 import styles from './order-route-map.module.css';
 
@@ -71,11 +72,11 @@ export function OrderRouteMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <FitBounds points={allPoints} />
-        <Polyline positions={routePoints} pathOptions={{ color: '#1B6B5A', weight: 4, opacity: 0.85 }} />
+        <Polyline positions={routePoints} pathOptions={{ color: palette.primary, weight: 4, opacity: 0.85 }} />
         <CircleMarker
           center={[pickup.lat, pickup.lng]}
           radius={10}
-          pathOptions={{ color: '#2E7D48', fillColor: '#2E7D48', fillOpacity: 1 }}
+          pathOptions={{ color: palette.primary, fillColor: palette.primary, fillOpacity: 1 }}
         >
           <Tooltip permanent direction="top" offset={[0, -8]}>
             {pickup.label ?? 'Откуда'}
@@ -84,7 +85,7 @@ export function OrderRouteMap({
         <CircleMarker
           center={[dropoff.lat, dropoff.lng]}
           radius={10}
-          pathOptions={{ color: '#C0392B', fillColor: '#C0392B', fillOpacity: 1 }}
+          pathOptions={{ color: palette.text, fillColor: palette.text, fillOpacity: 1 }}
         >
           <Tooltip permanent direction="top" offset={[0, -8]}>
             {dropoff.label ?? 'Куда'}
@@ -94,7 +95,7 @@ export function OrderRouteMap({
           <CircleMarker
             center={[driver.lat, driver.lng]}
             radius={11}
-            pathOptions={{ color: '#1565C0', fillColor: '#1976D2', fillOpacity: 1 }}
+            pathOptions={{ color: palette.primary, fillColor: palette.secondary, fillOpacity: 1 }}
           >
             <Tooltip direction="top">{driver.label ?? 'Водитель'}</Tooltip>
           </CircleMarker>

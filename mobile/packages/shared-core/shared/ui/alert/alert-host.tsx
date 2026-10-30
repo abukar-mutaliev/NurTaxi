@@ -20,9 +20,10 @@ import {
   type AlertRequest,
 } from './alert-store';
 
+import { brandColors } from '../theme/brand';
 /** Кремовая карточка, как листы заказа; в тёмной теме — поверхность темы. */
-const LIGHT_CARD = '#FFFBF7';
-const LIGHT_CARD_BORDER = 'rgba(255,255,255,0.9)';
+const LIGHT_CARD = brandColors.surface;
+const LIGHT_CARD_BORDER = brandColors.divider;
 const CARD_MAX_WIDTH = 360;
 const BUTTON_HEIGHT = 50;
 
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     borderWidth: 1,
     elevation: 12,
-    shadowColor: 'rgba(42,19,48,0.25)',
+    shadowColor: brandColors.shadowStrong,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 1,
     shadowRadius: 24,

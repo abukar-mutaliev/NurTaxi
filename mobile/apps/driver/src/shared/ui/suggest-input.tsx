@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 
-import { Input, Text, useTheme, type InputProps } from '@nurtaxi/shared-core/shared/ui';
+import {
+  brandColors,
+  Input,
+  type InputProps,
+  Text,
+  useTheme,
+} from '@nurtaxi/shared-core/shared/ui';
 
 export interface SuggestOption {
   /** Стабильный ключ элемента списка. */
@@ -83,7 +89,7 @@ export function SuggestInput({
             elevation: 4,
             maxHeight: 232,
             overflow: 'hidden',
-            shadowColor: 'rgba(89,71,31,0.14)',
+            shadowColor: brandColors.shadowStrong,
             shadowOffset: { width: 0, height: 6 },
             shadowOpacity: 1,
             shadowRadius: 12,

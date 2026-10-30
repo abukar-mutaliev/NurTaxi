@@ -1,6 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -8,13 +8,13 @@ import type { SavedAddressLabelKind } from './saved-address-label';
 import { SavedAddressIcon } from './saved-address-icon';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  star: '#C99A54',
-  chevron: '#A99FA6',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  star: brandColors.primary,
+  chevron: brandColors.textMuted,
 } as const;
 
 export interface SavedAddressCardProps {

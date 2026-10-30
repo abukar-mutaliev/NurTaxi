@@ -240,7 +240,7 @@ export function AppLayout() {
             )}
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
               <Space className={styles.userChip}>
-                <Avatar style={{ backgroundColor: palette.gold }}>
+                <Avatar style={{ backgroundColor: palette.primary, color: palette.onPrimary }}>
                   {(user?.name ?? user?.phone ?? '?').charAt(0).toUpperCase()}
                 </Avatar>
                 <div className={styles.userMeta}>

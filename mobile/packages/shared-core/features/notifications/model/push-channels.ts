@@ -4,6 +4,8 @@
  */
 import { Platform } from 'react-native';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
+
 import { loadExpoNotifications } from './expo-notifications-runtime';
 
 export async function ensurePushChannels(): Promise<void> {
@@ -20,12 +22,12 @@ export async function ensurePushChannels(): Promise<void> {
     name: 'Заказы',
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
-    lightColor: '#1B6B5A',
+    lightColor: brandColors.primary,
   });
 
   await Notifications.setNotificationChannelAsync('promo', {
     name: 'Акции и бонусы',
     importance: Notifications.AndroidImportance.DEFAULT,
-    lightColor: '#1B6B5A',
+    lightColor: brandColors.primary,
   });
 }

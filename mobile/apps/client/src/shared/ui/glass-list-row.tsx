@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS } from './glass-theme';
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   },
   iconOuter: {
     alignItems: 'center',
-    backgroundColor: 'rgba(252,244,228,0.95)',
+    backgroundColor: brandColors.secondarySoft,
     borderRadius: 999,
     height: 36,
     justifyContent: 'center',

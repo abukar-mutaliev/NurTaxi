@@ -1,20 +1,20 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  chevron: '#A99FA6',
-  iconOuterDefault: 'rgba(252,244,228,0.95)',
-  iconInnerDefault: '#E8C882',
-  iconOuterSafety: 'rgba(231,238,227,0.95)',
-  iconInnerSafety: '#6B9B6E',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  chevron: brandColors.textMuted,
+  iconOuterDefault: brandColors.primary,
+  iconInnerDefault: brandColors.primary,
+  iconOuterSafety: brandColors.primary,
+  iconInnerSafety: brandColors.primary,
 } as const;
 
 export type SafetyFeatureIconTone = 'default' | 'safety';
@@ -59,7 +59,10 @@ export function SafetyFeatureRow({
     >
       <View style={[styles.iconOuter, { backgroundColor: iconColors.outer }]}>
         <View
-          style={[styles.iconInner, { backgroundColor: active ? '#E85D4A' : iconColors.inner }]}
+          style={[
+            styles.iconInner,
+            { backgroundColor: active ? brandColors.danger : iconColors.inner },
+          ]}
         />
       </View>
       <View style={styles.textBlock}>
@@ -100,7 +103,7 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
   rowActive: {
-    borderColor: 'rgba(232,93,74,0.35)',
+    borderColor: brandColors.dangerSoft,
   },
   row: {
     alignItems: 'center',

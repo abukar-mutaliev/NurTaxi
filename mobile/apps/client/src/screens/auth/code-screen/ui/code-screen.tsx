@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatCountdown, formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
@@ -32,18 +32,18 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const codeColors = {
-  background: '#F8F4EF',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  link: '#3A1D3F',
-  hint: '#A99FA6',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  devCardBg: 'rgba(255,248,230,0.85)',
-  devCardBorder: 'rgba(201,154,84,0.35)',
-  devCardText: '#7A6E78',
+  background: brandColors.background,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  link: brandColors.primary,
+  hint: brandColors.textMuted,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  buttonShadow: brandColors.shadow,
+  devCardBg: brandColors.secondarySoft,
+  devCardBorder: brandColors.secondary,
+  devCardText: brandColors.textMuted,
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');

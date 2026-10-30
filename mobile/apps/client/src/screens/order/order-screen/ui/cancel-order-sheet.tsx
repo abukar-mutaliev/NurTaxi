@@ -9,17 +9,17 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Sheet, Text } from '@nurtaxi/shared-core/shared/ui';
 
 const colors = {
-  text: '#2E2331',
-  label: '#7A6E78',
-  placeholder: '#A99FA6',
-  fieldBg: '#FBF7F1',
-  fieldBorder: '#EFE9DC',
-  keepBg: 'rgba(252,244,228,0.85)',
-  cancelBg: 'rgba(253,239,236,0.85)',
-  cancelText: '#E0705F',
+  text: brandColors.text,
+  label: brandColors.textMuted,
+  placeholder: brandColors.textMuted,
+  fieldBg: brandColors.background,
+  fieldBorder: brandColors.divider,
+  keepBg: brandColors.secondarySoft,
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
 } as const;
 
 const CANCEL_ICON: SymbolViewProps['name'] = { android: 'close', ios: 'xmark', web: 'close' };

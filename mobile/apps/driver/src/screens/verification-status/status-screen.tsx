@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
 import { rejectedDocuments, useGetDriverProfileQuery } from '@nurtaxi/shared-core/entities/driver';
 
 import { GlowIcon } from '@/shared/ui/glow-icon';
@@ -36,18 +36,18 @@ const DESIGN_HEIGHT = 844;
 const SUPPORT_WHATSAPP_URL = 'https://wa.me/79286970697';
 
 const c = {
-  title: '#2E2331',
-  subtitle: '#8A7E88',
-  cardBg: '#FFFFFF',
-  cardBorder: '#F2E9E0',
-  cardText: '#2E2331',
-  shadow: 'rgba(89,71,31,0.08)',
-  pendingBg: '#F8E7C4',
-  pendingText: '#A2761F',
-  successBg: '#DFF1E4',
-  successText: '#2E7D48',
-  dangerBg: '#FBE3E0',
-  dangerText: '#B42318',
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.surfaceMuted,
+  cardText: brandColors.text,
+  shadow: brandColors.shadow,
+  pendingBg: brandColors.secondarySoft,
+  pendingText: brandColors.primary,
+  successBg: brandColors.primarySoft,
+  successText: brandColors.primary,
+  dangerBg: brandColors.dangerSoft,
+  dangerText: brandColors.danger,
 } as const;
 
 type StatusView = {
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   spacer: {

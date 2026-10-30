@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 
 import { glassShadow } from './glass-shadow';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 const SNAP_MS = 240;
 
 export interface CollapsibleSheetProps {
@@ -192,19 +193,19 @@ const styles = StyleSheet.create({
   floatingHandle: {
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: brandColors.surface,
+    borderColor: brandColors.divider,
     borderRadius: 18,
     borderWidth: 1,
     height: 36,
     justifyContent: 'center',
-    ...glassShadow({ color: 'rgba(89,71,31,0.12)', offset: { width: 0, height: 4 }, radius: 8 }),
+    ...glassShadow({ color: brandColors.shadowStrong, offset: { width: 0, height: 4 }, radius: 8 }),
   },
   floatingPeek: {
     paddingBottom: 8,
   },
   grabber: {
-    backgroundColor: '#D9D0C4',
+    backgroundColor: brandColors.border,
     borderRadius: 2,
     height: 4,
     width: 36,

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Avatar, Text } from '@nurtaxi/shared-core/shared/ui';
+import { Avatar, brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
 import { useProfilePhotoUpload, useProfileUpdate } from '@/features/profile';
@@ -92,7 +92,7 @@ export function EditProfileScreen() {
               <View
                 style={{
                   alignItems: 'center',
-                  backgroundColor: 'rgba(46,35,49,0.45)',
+                  backgroundColor: brandColors.overlay,
                   borderRadius: 48,
                   bottom: 0,
                   justifyContent: 'center',
@@ -102,7 +102,7 @@ export function EditProfileScreen() {
                   top: 0,
                 }}
               >
-                <ActivityIndicator color="#F7F3EE" />
+                <ActivityIndicator color={brandColors.onPrimary} />
               </View>
             ) : null}
           </View>

@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 const c = {
-  cellBg: '#FDFBF9',
-  cellBorder: '#F2E9E0',
-  cellBorderActive: '#DFAE5C',
-  cellBorderError: '#B42318',
-  shadow: 'rgba(89,71,31,0.07)',
-  text: '#2E2331',
-  error: '#B42318',
+  cellBg: brandColors.background,
+  cellBorder: brandColors.surfaceMuted,
+  cellBorderActive: brandColors.primary,
+  cellBorderError: brandColors.danger,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  error: brandColors.danger,
 } as const;
 
 export interface CodeOtpInputProps {

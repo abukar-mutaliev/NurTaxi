@@ -3,6 +3,7 @@ import medium from 'expo-symbols/androidWeights/medium';
 import regular from 'expo-symbols/androidWeights/regular';
 import { StyleSheet, View } from 'react-native';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 type TabIconName = NonNullable<SymbolViewProps['name']>;
 
 type TabRouteName = 'index' | 'history' | 'favorites' | 'profile';
@@ -27,9 +28,9 @@ const tabIcons: Record<TabRouteName, { active: TabIconName; inactive: TabIconNam
 };
 
 const colors = {
-  activeIcon: '#C99A54',
-  inactiveIcon: '#B5ABB2',
-  indicator: '#E8C882',
+  activeIcon: brandColors.primary,
+  inactiveIcon: brandColors.icon,
+  indicator: brandColors.secondary,
 } as const;
 
 export interface TabBarIconProps {

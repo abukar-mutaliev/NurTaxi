@@ -13,7 +13,7 @@ import Animated from 'react-native-reanimated';
 
 import type { OrderEstimate, PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 import { formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { CollapsibleSheet } from '@/shared/ui';
@@ -23,29 +23,29 @@ import { PaymentMethodIcon } from './payment-method-icon';
 import { TariffIcon, resolveTariffIconVariant } from './tariff-icon';
 
 const sheetColors = {
-  background: '#FFFBF7',
-  border: 'rgba(255,255,255,0.95)',
-  shadow: 'rgba(89,71,31,0.12)',
-  label: '#7A6E78',
-  text: '#2E2331',
-  divider: '#E8E0D4',
-  pickupDot: '#E8C882',
-  stopDot: '#C99A54',
-  dropoffDot: '#2E2331',
-  tariffSelectedBg: '#FCF4E4',
-  tariffSelectedBorder: '#E8C882',
-  tariffBg: '#FFFFFF',
-  tariffBorder: 'rgba(232,224,212,0.9)',
-  paymentBg: '#FFFFFF',
-  paymentBorder: 'rgba(232,224,212,0.9)',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  buttonShadow: 'rgba(89,71,31,0.1)',
+  background: brandColors.surface,
+  border: brandColors.divider,
+  shadow: brandColors.shadowStrong,
+  label: brandColors.textMuted,
+  text: brandColors.text,
+  divider: brandColors.border,
+  pickupDot: brandColors.secondary,
+  stopDot: brandColors.primary,
+  dropoffDot: brandColors.text,
+  tariffSelectedBg: brandColors.secondarySoft,
+  tariffSelectedBorder: brandColors.primary,
+  tariffBg: brandColors.surface,
+  tariffBorder: brandColors.border,
+  paymentBg: brandColors.surface,
+  paymentBorder: brandColors.border,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  buttonShadow: brandColors.shadow,
   // Как «Отменить» на экране поездки — одно действие выглядит одинаково на всех шагах.
-  cancelBg: 'rgba(253,239,236,0.85)',
-  cancelText: '#E0705F',
-  error: '#B42318',
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
+  error: brandColors.danger,
 } as const;
 
 const SHEET_MARGIN = 16;

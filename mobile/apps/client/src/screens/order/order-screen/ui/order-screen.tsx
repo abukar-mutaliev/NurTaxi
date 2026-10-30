@@ -18,7 +18,7 @@ import {
 } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { OrderStatus, ReviewTarget, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Badge, Screen, Text, showAlert } from '@nurtaxi/shared-core/shared/ui';
+import { Badge, brandColors, Screen, showAlert, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   isCancellableByClient,
   isSosAllowed,
@@ -87,15 +87,15 @@ import { TripInProgressOverlay } from './trip-in-progress-overlay';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const summaryColors = {
-  sheetBg: '#FFFBF7',
-  sheetBorder: 'rgba(255,255,255,0.95)',
-  shadow: 'rgba(89,71,31,0.12)',
-  text: '#2E2331',
-  muted: '#7A6E78',
-  divider: '#EFE9DC',
-  secondaryBg: 'rgba(252,244,228,0.85)',
-  cancelBg: 'rgba(253,239,236,0.85)',
-  cancelText: '#E0705F',
+  sheetBg: brandColors.surface,
+  sheetBorder: brandColors.divider,
+  shadow: brandColors.shadowStrong,
+  text: brandColors.text,
+  muted: brandColors.textMuted,
+  divider: brandColors.divider,
+  secondaryBg: brandColors.secondarySoft,
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
 } as const;
 
 /** Второстепенное действие внутри карточки поездки: «Чек», «Закрыть», «Отменить заказ». */

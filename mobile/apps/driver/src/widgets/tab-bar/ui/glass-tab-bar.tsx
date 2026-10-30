@@ -2,18 +2,18 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_TAB_BAR_HEIGHT, GLASS_TAB_BAR_MARGIN } from '@/shared/constants/glass-tab-bar';
 
 import { TabBarIcon } from './tab-bar-icon';
 
 const colors = {
-  barBg: 'rgba(255,255,255,0.88)',
-  barBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  activeLabel: '#3A1D3F',
-  inactiveLabel: '#A99FA6',
+  barBg: brandColors.surface,
+  barBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  activeLabel: brandColors.primary,
+  inactiveLabel: brandColors.textMuted,
 } as const;
 
 /**

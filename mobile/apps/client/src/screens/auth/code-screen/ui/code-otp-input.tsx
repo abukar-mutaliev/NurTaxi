@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cellBg: 'rgba(255,255,255,0.72)',
-  cellBorder: 'rgba(255,255,255,0.9)',
-  cellBorderActive: '#C99A54',
-  cellBorderError: '#B42318',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
-  error: '#B42318',
+  cellBg: brandColors.surface,
+  cellBorder: brandColors.divider,
+  cellBorderActive: brandColors.primary,
+  cellBorderError: brandColors.danger,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  error: brandColors.danger,
 } as const;
 
 export interface CodeOtpInputProps {

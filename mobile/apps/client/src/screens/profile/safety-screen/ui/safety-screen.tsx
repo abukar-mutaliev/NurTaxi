@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   isTripRecordingAllowed,
   useActivateSosMutation,
@@ -35,13 +35,13 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welcome-gradient-background';
 
 const colors = {
-  background: '#F8F4EF',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  panicGlow: 'rgba(232,93,74,0.22)',
-  panicButton: '#E85D4A',
-  panicButtonInner: '#FFFFFF',
-  panicShadow: 'rgba(232,93,74,0.35)',
+  background: brandColors.background,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  panicGlow: brandColors.dangerSoft,
+  panicButton: brandColors.danger,
+  panicButtonInner: brandColors.surface,
+  panicShadow: brandColors.shadowStrong,
 } as const;
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');
@@ -189,7 +189,7 @@ export function SafetyScreen() {
           style={({ pressed }) => [{ opacity: pressed || sosState.isLoading ? 0.94 : 1 }]}
         >
           <LinearGradient
-            colors={['#FDF0EC', '#FADDD6']}
+            colors={[brandColors.danger, brandColors.dangerSoft]}
             end={{ x: 1, y: 0.5 }}
             start={{ x: 0, y: 0.5 }}
             style={[styles.panicCard, { borderRadius: scale * 28, height: scale * 132 }]}
@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   },
   panicCard: {
     overflow: 'hidden',
-    ...glassShadow({ color: 'rgba(89,71,31,0.08)', radius: 26 }),
+    ...glassShadow({ color: brandColors.shadow, radius: 26 }),
   },
   panicGlow: {
     backgroundColor: colors.panicGlow,

@@ -2,16 +2,16 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const headerColors = {
-  glassBg: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  icon: '#2E2331',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  icon: brandColors.text,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
 } as const;
 
 export interface HomeMapHeaderProps {

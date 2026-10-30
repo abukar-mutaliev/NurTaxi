@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatRating } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -14,24 +14,24 @@ import { DriverAvatar } from './driver-avatar';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
-  glassBg: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  sheetBg: 'rgba(255,255,255,0.82)',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
-  muted: '#7A6E78',
-  rating: '#C99A54',
-  plateBg: '#FCF4E4',
-  divider: '#EFE9DC',
-  actionBg: 'rgba(252,244,228,0.85)',
-  actionIcon: '#C99A54',
-  cancelBg: 'rgba(253,239,236,0.85)',
-  cancelText: '#E0705F',
-  safetyBg: 'rgba(255,255,255,0.82)',
-  safetyIconOuter: 'rgba(231,238,227,0.95)',
-  safetyIconInner: '#6B9B6E',
-  etaBadge: 'rgba(46,35,49,0.88)',
-  etaShadow: 'rgba(89,71,31,0.16)',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  sheetBg: brandColors.surface,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  muted: brandColors.textMuted,
+  rating: brandColors.primary,
+  plateBg: brandColors.secondarySoft,
+  divider: brandColors.divider,
+  actionBg: brandColors.secondarySoft,
+  actionIcon: brandColors.primary,
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
+  safetyBg: brandColors.surface,
+  safetyIconOuter: brandColors.primary,
+  safetyIconInner: brandColors.primary,
+  etaBadge: brandColors.scrim,
+  etaShadow: brandColors.shadowStrong,
 } as const;
 
 export interface DriverEnRouteOverlayProps {
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     ...glassShadow({ color: colors.etaShadow, offset: { width: 0, height: 3 }, radius: 10 }),
   },
   etaText: {
-    color: '#FFFFFF',
+    color: brandColors.onPrimary,
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',

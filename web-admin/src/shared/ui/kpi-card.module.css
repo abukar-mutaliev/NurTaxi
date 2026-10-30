@@ -19,7 +19,7 @@
 
 .icon {
   font-size: 20px;
-  color: #c99a54;
+  color: var(--nur-primary);
   opacity: 0.85;
 }
 
@@ -27,7 +27,7 @@
   font-size: 28px;
   font-weight: 700;
   line-height: 1.2;
-  color: #2e2331;
+  color: var(--nur-text);
   margin-bottom: 4px;
 }
 

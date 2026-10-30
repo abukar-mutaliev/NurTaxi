@@ -10,7 +10,7 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDate, formatMoney, formatPrice } from '@nurtaxi/shared-core/shared/lib';
-import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import {
   useGetDriverEarningsQuery,
   useGetDriverOrderHistoryQuery,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: 'rgba(89,71,31,0.07)',
+    shadowColor: brandColors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   tripRow: {

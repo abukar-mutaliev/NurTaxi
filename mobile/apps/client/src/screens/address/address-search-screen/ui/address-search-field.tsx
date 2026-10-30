@@ -1,20 +1,20 @@
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  cardBorderActive: 'rgba(201,154,84,0.55)',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
-  placeholder: '#A99FA6',
-  iconOuter: 'rgba(252,244,228,0.95)',
-  iconPickup: '#E8C882',
-  iconStop: '#C99A54',
-  iconDropoff: '#2E2331',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  cardBorderActive: brandColors.primary,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  placeholder: brandColors.textMuted,
+  iconOuter: brandColors.primary,
+  iconPickup: brandColors.primary,
+  iconStop: brandColors.primary,
+  iconDropoff: brandColors.text,
 } as const;
 
 export interface AddressSearchFieldProps {

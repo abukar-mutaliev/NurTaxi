@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatShortDisplayAddress, toApiGeoLocation } from '@nurtaxi/shared-core/shared/lib';
 import type { GeoLocation, GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   MIN_GEO_QUERY_LENGTH,
   toAddressSuggestion,
@@ -68,9 +68,9 @@ import { SavedAddressCard } from '../../saved-addresses-screen/ui/saved-address-
 import { AddressSearchField } from './address-search-field';
 
 const colors = {
-  background: '#F8F4EF',
-  section: '#7A6E78',
-  hint: '#A99FA6',
+  background: brandColors.background,
+  section: brandColors.textMuted,
+  hint: brandColors.textMuted,
 } as const;
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');

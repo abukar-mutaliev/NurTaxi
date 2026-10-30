@@ -3,11 +3,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { glassShadow } from './glass-shadow';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 const colors = {
-  glassBg: 'rgba(255,255,255,0.85)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  icon: '#2E2331',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  icon: brandColors.text,
 } as const;
 
 export interface GlassIconButtonProps {

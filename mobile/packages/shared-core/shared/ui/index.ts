@@ -1,12 +1,13 @@
 export { ThemeProvider, useTheme } from './theme/theme-provider';
 export type { ThemeProviderProps } from './theme/theme-provider';
+export { brandColors, brandPalette, mixColors, withAlpha } from './theme/brand';
+export type { BrandColor } from './theme/brand';
 export {
   MIN_TOUCH_SIZE,
   darkColors,
   darkTheme,
   lightColors,
   lightTheme,
-  palette,
   radius,
   spacing,
   typography,

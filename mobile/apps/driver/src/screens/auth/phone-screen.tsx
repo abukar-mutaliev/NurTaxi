@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
 import { PillButton } from '@/shared/ui/pill-button';
@@ -39,14 +39,14 @@ const LOGO_DESIGN_WIDTH = 164;
 const LOGO_DESIGN_HEIGHT = 199;
 
 const c = {
-  title: '#2E2331',
-  subtitle: '#9A8F98',
-  inputBg: '#FFFFFF',
-  inputBorder: '#F0E7DC',
-  inputText: '#2E2331',
-  placeholder: '#B9AFB6',
-  shadow: 'rgba(89,71,31,0.10)',
-  danger: '#B42318',
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  inputBg: brandColors.surface,
+  inputBorder: brandColors.surfaceMuted,
+  inputText: brandColors.text,
+  placeholder: brandColors.textMuted,
+  shadow: brandColors.shadow,
+  danger: brandColors.danger,
 } as const;
 
 /** Пустая маска не должна оставлять в поле висящий префикс «+7 ». */
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     borderColor: c.danger,
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   subtitle: {

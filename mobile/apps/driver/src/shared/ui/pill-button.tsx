@@ -6,16 +6,16 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 const c = {
-  primaryBg: '#472451',
-  primaryPressed: '#33193A',
-  primaryText: '#F7F3EE',
-  surfaceBg: '#FFFFFF',
-  surfaceBorder: '#F0E7DC',
-  surfaceText: '#2E2331',
-  shadow: 'rgba(89,71,31,0.10)',
+  primaryBg: brandColors.primary,
+  primaryPressed: brandColors.primaryPressed,
+  primaryText: brandColors.onPrimary,
+  surfaceBg: brandColors.surface,
+  surfaceBorder: brandColors.surfaceMuted,
+  surfaceText: brandColors.text,
+  shadow: brandColors.shadow,
 } as const;
 
 export type PillButtonVariant = 'gradient' | 'surface';

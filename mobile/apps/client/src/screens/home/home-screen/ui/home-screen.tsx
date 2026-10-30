@@ -13,7 +13,7 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatDistance } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
 import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 import {
   formatOrderStatusLabel,
   orderStage,
@@ -551,27 +551,27 @@ const styles = StyleSheet.create({
     right: 16,
   },
   activeOrderCard: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: brandColors.surface,
+    borderColor: brandColors.divider,
     borderRadius: 18,
     borderWidth: 1,
     elevation: 2,
     gap: 2,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    ...glassShadow({ color: 'rgba(89,71,31,0.06)' }),
+    ...glassShadow({ color: brandColors.shadow }),
   },
   activeOrderSubtitle: {
-    color: '#7A6E78',
+    color: brandColors.textMuted,
     fontSize: 13,
   },
   activeOrderTitle: {
-    color: '#2E2331',
+    color: brandColors.text,
     fontSize: 14,
     fontWeight: '600',
   },
   permissionBanner: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: brandColors.surface,
     borderRadius: 16,
     left: 16,
     padding: 12,
@@ -579,12 +579,12 @@ const styles = StyleSheet.create({
     right: 16,
   },
   permissionText: {
-    color: '#2E2331',
+    color: brandColors.text,
     fontSize: 13,
     textAlign: 'center',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   mapLayer: {

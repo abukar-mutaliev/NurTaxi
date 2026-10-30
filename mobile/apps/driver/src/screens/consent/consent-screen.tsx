@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useOnboarding } from '@nurtaxi/shared-core/features/auth';
 
 import { PillButton } from '@/shared/ui/pill-button';
@@ -39,18 +39,18 @@ const MIN_NAME_LENGTH = 2;
 const logoMarkAsset = require('@/assets/images/welcome/logo-mark.png');
 
 const c = {
-  title: '#2E2331',
-  subtitle: '#9A8F98',
-  inputBg: '#FFFFFF',
-  inputBorder: '#F0E7DC',
-  inputText: '#2E2331',
-  placeholder: '#B9AFB6',
-  shadow: 'rgba(89,71,31,0.10)',
-  danger: '#B42318',
-  consentBorder: '#EFE4D6',
-  consentBorderActive: '#3A1D3F',
-  consentText: '#7A6E78',
-  checkBg: '#3A1D3F',
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  inputBg: brandColors.surface,
+  inputBorder: brandColors.surfaceMuted,
+  inputText: brandColors.text,
+  placeholder: brandColors.textMuted,
+  shadow: brandColors.shadow,
+  danger: brandColors.danger,
+  consentBorder: brandColors.surfaceMuted,
+  consentBorderActive: brandColors.primary,
+  consentText: brandColors.textMuted,
+  checkBg: brandColors.primary,
 } as const;
 
 export function ConsentScreen() {
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkMark: {
-    color: '#FFFFFF',
+    color: brandColors.onPrimary,
     fontWeight: '700',
   },
   consentActionRow: {
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   spacer: {

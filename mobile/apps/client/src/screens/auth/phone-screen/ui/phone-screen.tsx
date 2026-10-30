@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -25,21 +25,21 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const phoneColors = {
-  background: '#F8F4EF',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  inputText: '#2E2331',
-  inputPlaceholder: '#A99FA6',
-  inputBg: 'rgba(255,255,255,0.72)',
-  inputBorder: 'rgba(255,255,255,0.9)',
-  iconOuter: 'rgba(252,244,228,0.95)',
-  iconAccent: '#E8C882',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  inputShadow: 'rgba(89,71,31,0.06)',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  error: '#B42318',
+  background: brandColors.background,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  inputText: brandColors.text,
+  inputPlaceholder: brandColors.textMuted,
+  inputBg: brandColors.surface,
+  inputBorder: brandColors.divider,
+  iconOuter: brandColors.primary,
+  iconAccent: brandColors.primary,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  inputShadow: brandColors.shadow,
+  buttonShadow: brandColors.shadow,
+  error: brandColors.danger,
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');

@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { PillButton } from '@/shared/ui/pill-button';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
@@ -18,8 +18,8 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const c = {
-  link: '#7A6E78',
-  linkAction: '#2E2331',
+  link: brandColors.textMuted,
+  linkAction: brandColors.text,
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
 });

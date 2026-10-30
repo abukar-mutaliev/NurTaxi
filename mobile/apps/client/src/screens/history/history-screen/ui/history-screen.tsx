@@ -11,7 +11,7 @@ import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { ReviewTarget } from '@nurtaxi/shared-core/shared/model';
 import type { OrderHistoryItem } from '@nurtaxi/shared-core/shared/model';
-import { EmptyState, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, EmptyState, ErrorView, Loader, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useGetOrderHistoryQuery } from '@nurtaxi/shared-core/entities/order';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
@@ -24,9 +24,9 @@ import { TripHistoryCard } from './trip-history-card';
 const PAGE_SIZE = 20;
 
 const colors = {
-  background: '#F8F4EF',
-  brand: '#3A1D3F',
-  title: '#2E2331',
+  background: brandColors.background,
+  brand: brandColors.primary,
+  title: brandColors.text,
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');

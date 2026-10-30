@@ -1,24 +1,24 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 export type PaymentCardBrand = 'visa' | 'mastercard';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  cardBorderPrimary: 'rgba(201,154,84,0.5)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  cardBorderPrimary: brandColors.primary,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
   visaBg: 'rgba(26,31,113,0.1)',
   visaText: '#1A1F71',
   mastercardBg: 'rgba(235,0,27,0.1)',
   mastercardText: '#EB001B',
-  radioOuter: 'rgba(231,238,227,0.95)',
-  radioInner: '#6B9B6E',
+  radioOuter: brandColors.primarySoft,
+  radioInner: brandColors.primary,
 } as const;
 
 const brandStyles: Record<
@@ -155,17 +155,17 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     alignItems: 'center',
-    backgroundColor: '#E85D4A',
+    backgroundColor: brandColors.danger,
     borderRadius: 999,
     height: 24,
     justifyContent: 'center',
     width: 24,
   },
   deleteButtonDisabled: {
-    backgroundColor: 'rgba(232,93,74,0.35)',
+    backgroundColor: brandColors.dangerSoft,
   },
   deleteIcon: {
-    color: '#FFFFFF',
+    color: brandColors.onPrimary,
     fontSize: 18,
     fontWeight: '600',
     lineHeight: 20,
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
   radioOuterEmpty: {
     backgroundColor: 'transparent',
-    borderColor: 'rgba(169,159,166,0.55)',
+    borderColor: brandColors.border,
     borderWidth: 1.5,
   },
   subtitle: {

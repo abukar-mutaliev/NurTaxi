@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { OrderDriver } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron, CollapsibleSheet } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -11,22 +11,22 @@ import { DriverAvatar } from './driver-avatar';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
-  glassBg: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  sheetBg: 'rgba(255,255,255,0.82)',
-  shadow: 'rgba(89,71,31,0.06)',
-  text: '#2E2331',
-  muted: '#A99FA6',
-  label: '#A99FA6',
-  pickupDot: '#E8C882',
-  stopDot: '#C99A54',
-  dropoffDot: '#2E2331',
-  connector: '#EFE9DC',
-  divider: '#EFE9DC',
-  shareBg: 'rgba(255,255,255,0.82)',
-  contactBg: 'rgba(252,244,228,0.85)',
-  cancelBg: 'rgba(253,239,236,0.9)',
-  cancelText: '#E0705F',
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  sheetBg: brandColors.surface,
+  shadow: brandColors.shadow,
+  text: brandColors.text,
+  muted: brandColors.textMuted,
+  label: brandColors.textMuted,
+  pickupDot: brandColors.secondary,
+  stopDot: brandColors.primary,
+  dropoffDot: brandColors.text,
+  connector: brandColors.divider,
+  divider: brandColors.divider,
+  shareBg: brandColors.surface,
+  contactBg: brandColors.secondarySoft,
+  cancelBg: brandColors.dangerSoft,
+  cancelText: brandColors.danger,
 } as const;
 
 export interface TripInProgressOverlayProps {

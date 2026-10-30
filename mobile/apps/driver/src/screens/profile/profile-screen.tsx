@@ -14,7 +14,7 @@ import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, View } f
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatMoney, formatRating } from '@nurtaxi/shared-core/shared/lib';
-import { Loader, Text, useTheme, showAlert } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Loader, showAlert, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { DriverRequirementKey, RequirementMode } from '@nurtaxi/shared-core/shared/model';
 import {
   requirementMode,
@@ -134,7 +134,7 @@ export function ProfileScreen() {
               )}
               {isUploading ? (
                 <View style={[StyleSheet.absoluteFill, styles.avatarBusy]}>
-                  <ActivityIndicator color="#FFFFFF" />
+                  <ActivityIndicator color={brandColors.onPrimary} />
                 </View>
               ) : null}
             </View>
@@ -279,18 +279,18 @@ const styles = StyleSheet.create({
   },
   avatarBusy: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: brandColors.overlay,
     justifyContent: 'center',
   },
   avatarText: {
-    color: '#FFFFFF',
+    color: brandColors.onPrimary,
     fontSize: 24,
     fontWeight: '700',
   },
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: 'rgba(89,71,31,0.07)',
+    shadowColor: brandColors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
 });

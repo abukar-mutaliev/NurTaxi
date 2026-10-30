@@ -1,7 +1,10 @@
 import { ConfigProvider } from 'antd';
 import ruRU from 'antd/locale/ru_RU';
-import { antTheme } from '@/shared/config/theme';
+import { antTheme, applyCssVariables } from '@/shared/config/theme';
 import type { ReactNode } from 'react';
+
+// CSS-модули берут цвета из переменных `--nur-*` — ставим их до первой отрисовки.
+applyCssVariables();
 
 interface AppThemeProviderProps {
   children: ReactNode;

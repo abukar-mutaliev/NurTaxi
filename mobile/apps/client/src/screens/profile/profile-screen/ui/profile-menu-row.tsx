@@ -2,24 +2,24 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  chevron: '#A99FA6',
-  iconOuterDefault: 'rgba(252,244,228,0.95)',
-  iconInnerDefault: '#E8C882',
-  iconOuterSafety: 'rgba(231,238,227,0.95)',
-  iconInnerSafety: '#6B9B6E',
-  iconOuterSettings: 'rgba(240,238,236,0.95)',
-  iconInnerSettings: '#A99FA6',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  chevron: brandColors.textMuted,
+  iconOuterDefault: brandColors.primary,
+  iconInnerDefault: brandColors.primary,
+  iconOuterSafety: brandColors.primary,
+  iconInnerSafety: brandColors.primary,
+  iconOuterSettings: brandColors.surfaceMuted,
+  iconInnerSettings: brandColors.icon,
 } as const;
 
 export type ProfileMenuIconTone = 'default' | 'safety' | 'settings';

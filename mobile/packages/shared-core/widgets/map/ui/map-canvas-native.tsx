@@ -28,8 +28,10 @@ import type { MapCanvasHandle, MapCanvasProps, MapMarker } from './map-canvas';
 import { MAP_MARKER_SOURCES } from './map-marker.assets';
 import { MAP_MARKER_ICON_SCALE, getMarkerAnchor } from './map-marker.constants';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
-const ROUTE_STROKE_COLOR = '#C99A54';
+// Маршрут — основной цвет: на светлой карте он читается лучше пудры.
+const ROUTE_STROKE_COLOR = brandColors.primary;
 
 /**
  * Якоря — константы, а не новый объект на каждый рендер: любой пересланный проп нативная
@@ -306,7 +308,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
         {routePoints.length > 1 ? (
           <Polyline
             key={`${routePoints[0]?.lat}:${routePoints[routePoints.length - 1]?.lng}:${routePoints.length}`}
-            outlineColor="#FFFFFF"
+            outlineColor={brandColors.onPrimary}
             outlineWidth={2}
             points={polylinePoints}
             strokeColor={ROUTE_STROKE_COLOR}

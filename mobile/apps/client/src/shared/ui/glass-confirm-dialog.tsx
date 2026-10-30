@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from './glass-shadow';
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH } from './glass-theme';
@@ -137,7 +137,7 @@ export function GlassConfirmDialog({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(46,35,49,0.35)',
+    backgroundColor: brandColors.overlay,
   },
   backdropPressable: {
     ...StyleSheet.absoluteFill,

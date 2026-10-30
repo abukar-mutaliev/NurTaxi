@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import type { SavedAddressLabelKind } from './saved-address-label';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const iconNames: Record<SavedAddressLabelKind, SymbolName> = {
@@ -15,8 +16,8 @@ const iconNames: Record<SavedAddressLabelKind, SymbolName> = {
 };
 
 const colors = {
-  iconOuter: 'rgba(252,244,228,0.95)',
-  iconAccent: '#C99A54',
+  iconOuter: brandColors.primary,
+  iconAccent: brandColors.primary,
 } as const;
 
 export interface SavedAddressIconProps {

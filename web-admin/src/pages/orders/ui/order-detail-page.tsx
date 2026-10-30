@@ -32,6 +32,7 @@ import { PageHeader, PageLoader, OrderStatusTag, getOrderStatusLabel, getOrderSt
 import { OrderRouteMap } from '@/widgets/order-route-map';
 import { formatDistance } from '@/shared/lib/polyline';
 import { createIdempotencyKey, formatCurrency, formatDate, getErrorMessage } from '@/shared/lib/utils';
+import { palette } from '@/shared/config/theme';
 
 const { Text } = Typography;
 
@@ -87,7 +88,7 @@ export function OrderDetailPage() {
             id: d.driverId,
             lat: d.lat,
             lng: d.lng,
-            color: selectedDriverId === d.driverId ? '#E0A008' : '#7B61FF',
+            color: selectedDriverId === d.driverId ? palette.primary : palette.textMuted,
             label: `${d.fullName} · ${formatDistance(d.distanceM)}`,
             onClick: () => {
               setSelectedDriverId(d.driverId);

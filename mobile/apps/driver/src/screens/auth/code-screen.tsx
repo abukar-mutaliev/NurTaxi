@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
@@ -38,11 +38,11 @@ const OTP_LENGTH = 4;
 const DEFAULT_RESEND_SECONDS = 30;
 
 const c = {
-  title: '#2E2331',
-  subtitle: '#8A7E88',
-  strong: '#2E2331',
-  hint: '#B5AAB2',
-  link: '#3A1D3F',
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  strong: brandColors.text,
+  hint: brandColors.textMuted,
+  link: brandColors.primary,
 } as const;
 
 export function CodeScreen() {
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   strong: {

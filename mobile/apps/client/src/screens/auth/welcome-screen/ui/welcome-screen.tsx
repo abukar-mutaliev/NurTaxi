@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -16,14 +16,14 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const welcomeColors = {
-  gradientBottom: '#F8F4EF',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonBorder: 'rgba(255,255,255,0.9)',
-  buttonText: '#F7F3EE',
-  link: '#7A6E78',
-  linkAction: '#2E2331',
-  shadow: 'rgba(89,71,31,0.06)',
+  gradientBottom: brandColors.background,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonBorder: brandColors.divider,
+  buttonText: brandColors.onPrimary,
+  link: brandColors.textMuted,
+  linkAction: brandColors.text,
+  shadow: brandColors.shadow,
 } as const;
 
 const logoAsset = require('@/assets/images/welcome/logo.png');

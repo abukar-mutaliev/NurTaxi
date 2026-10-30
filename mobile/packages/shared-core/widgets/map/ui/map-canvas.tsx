@@ -15,6 +15,7 @@ import { hasMapKitApiKey, hasNativeMapModule } from '../model/map-provider';
 import { useMapKitInit } from '../model/use-mapkit-init';
 import type { MapCanvasNative } from './map-canvas-native';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 export interface MapMarker {
   id: string;
   point: GeoPoint;
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
   },
   loadingSurface: {
     alignItems: 'center',
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     justifyContent: 'center',
   },
   placeholder: {

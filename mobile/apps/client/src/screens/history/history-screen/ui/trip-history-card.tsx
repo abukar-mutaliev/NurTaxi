@@ -1,18 +1,18 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  date: '#A99FA6',
-  dropoff: '#2E2331',
-  pickup: '#7A6E78',
-  price: '#2E2331',
-  rating: '#C99A54',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  date: brandColors.textMuted,
+  dropoff: brandColors.text,
+  pickup: brandColors.textMuted,
+  price: brandColors.text,
+  rating: brandColors.primary,
 } as const;
 
 export interface TripHistoryCardProps {

@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
 
+import { brandColors } from '@nurtaxi/shared-core/shared/ui';
 type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const paymentSymbols: Record<PaymentMethod, SymbolName> = {
@@ -12,9 +13,9 @@ const paymentSymbols: Record<PaymentMethod, SymbolName> = {
 };
 
 const colors = {
-  icon: '#3A1D3F',
-  ring: '#E8C882',
-  background: 'rgba(252,244,228,0.98)',
+  icon: brandColors.primary,
+  ring: brandColors.secondary,
+  background: brandColors.secondarySoft,
 } as const;
 
 export interface PaymentMethodIconProps {

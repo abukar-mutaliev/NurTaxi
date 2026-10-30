@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { DriverOnlineStatus } from '@nurtaxi/shared-core/shared/model';
-import { useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { selectSessionStatus } from '@nurtaxi/shared-core/entities/session';
 import {
   useAcceptDriverOrderMutation,
@@ -105,7 +105,7 @@ function OfferModal() {
 
 const styles = StyleSheet.create({
   backdrop: {
-    backgroundColor: 'rgba(26,18,28,0.45)',
+    backgroundColor: brandColors.overlay,
     flex: 1,
     justifyContent: 'flex-end',
   },

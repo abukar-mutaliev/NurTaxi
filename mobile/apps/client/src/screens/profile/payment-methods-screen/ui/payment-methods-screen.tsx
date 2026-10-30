@@ -10,7 +10,7 @@ import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 're
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text, showAlert } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, showAlert, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { GlassAddIconButton, GlassConfirmDialog, GlassScreenHeader } from '@/shared/ui';
@@ -20,12 +20,12 @@ import { WelcomeGradientBackground } from '../../../auth/welcome-screen/ui/welco
 import { PaymentMethodCard, type PaymentCardBrand } from './payment-method-card';
 
 const colors = {
-  background: '#F8F4EF',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  editText: '#5A2E60',
+  background: brandColors.background,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  buttonShadow: brandColors.shadow,
+  editText: brandColors.primary,
 } as const;
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');

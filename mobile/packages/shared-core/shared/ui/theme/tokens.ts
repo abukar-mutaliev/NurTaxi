@@ -1,50 +1,12 @@
 /**
  * Дизайн-токены Nur Taxi (M0.7).
  *
- * Палитра подобрана с учётом культурных особенностей региона (`requirements.md §6.3`):
- * сдержанный глубокий изумруд как основной цвет, тёплое золото как акцент, отсутствие
- * агрессивных «таксишных» жёлто-чёрных сочетаний. Все размеры кратны 4 — это упрощает
- * вёрстку и адаптацию под разные экраны (`M11.5`).
+ * Цвета — палитра «Слива и пудра» из `brand.ts`: четыре приглушённых цвета без золота и
+ * многоцветных градиентов, отсутствие агрессивных «таксишных» жёлто-чёрных сочетаний
+ * (`requirements.md §6.3`). Все размеры кратны 4 — это упрощает вёрстку и адаптацию под
+ * разные экраны (`M11.5`).
  */
-
-export const palette = {
-  // Бренд «Нур» — глубокий фиолетовый (свет = نور). Заменил прежний изумруд
-  // после переработки дизайна в Figma (M11): кнопки/акценты стали фиолетовыми,
-  // фон — тёплый кремовый, акцент — мягкое золото.
-  brand900: '#2A1330',
-  brand700: '#3A1D3F',
-  brand500: '#6A3E6F',
-  brand300: '#9B6FA0',
-  brand100: '#EDE0EF',
-
-  gold600: '#B8871F',
-  gold500: '#D9B57C',
-  gold100: '#F3E6CE',
-
-  rose500: '#C25B7C',
-  rose100: '#FBE7EE',
-
-  red600: '#C0392B',
-  red500: '#E04A3A',
-  red100: '#FDE7E4',
-
-  green600: '#2E7D48',
-  green100: '#E3F3E8',
-
-  amber500: '#E0A008',
-  amber100: '#FCF1D6',
-
-  neutral0: '#FFFFFF',
-  // Тёплая кремовая нейтраль вместо холодной серой — под фон макета #F7F3EE.
-  cream50: '#F7F3EE',
-  cream100: '#EFE7DC',
-  neutral200: '#E4DACE',
-  neutral300: '#CFC4B6',
-  neutral500: '#8A8079',
-  neutral700: '#5A524B',
-  neutral900: '#333333',
-  black: '#000000',
-} as const;
+import { brandColors, brandPalette, mixColors, withAlpha } from './brand';
 
 export const spacing = {
   none: 0,
@@ -106,48 +68,53 @@ export interface ThemeColors {
   overlay: string;
 }
 
+/**
+ * Успех и предупреждение отдельных цветов не получают: «готово» — основной цвет,
+ * «внимание» — вторичный. Так в палитре остаются четыре цвета плюс системный `danger`.
+ */
 export const lightColors: ThemeColors = {
-  background: palette.cream50,
-  surface: palette.neutral0,
-  surfaceMuted: palette.cream100,
-  border: palette.neutral200,
-  primary: palette.brand700,
-  primaryPressed: palette.brand900,
-  onPrimary: palette.neutral0,
-  accent: palette.gold500,
-  onAccent: palette.brand900,
-  text: palette.neutral900,
-  textMuted: palette.neutral500,
-  textInverse: palette.neutral0,
-  danger: palette.red500,
-  dangerSurface: palette.red100,
-  success: palette.green600,
-  successSurface: palette.green100,
-  warning: palette.amber500,
-  warningSurface: palette.amber100,
-  overlay: 'rgba(42, 19, 48, 0.45)',
+  background: brandColors.background,
+  surface: brandColors.surface,
+  surfaceMuted: brandColors.surfaceMuted,
+  border: brandColors.border,
+  primary: brandColors.primary,
+  primaryPressed: brandColors.primaryPressed,
+  onPrimary: brandColors.onPrimary,
+  accent: brandColors.secondary,
+  onAccent: brandColors.onSecondary,
+  text: brandColors.text,
+  textMuted: brandColors.textMuted,
+  textInverse: brandColors.textOnDark,
+  danger: brandColors.danger,
+  dangerSurface: brandColors.dangerSoft,
+  success: brandColors.primary,
+  successSurface: brandColors.primarySoft,
+  warning: brandColors.primary,
+  warningSurface: brandColors.secondarySoft,
+  overlay: brandColors.overlay,
 };
 
+/** Тёмная схема из тех же четырёх цветов: фон — цвет текста, основной — пудра. */
 export const darkColors: ThemeColors = {
-  background: '#15101A',
-  surface: '#1D1626',
-  surfaceMuted: '#271E32',
-  border: '#372B43',
-  primary: palette.brand300,
-  primaryPressed: palette.brand500,
-  onPrimary: palette.brand900,
-  accent: palette.gold500,
-  onAccent: palette.brand900,
-  text: '#F1ECEF',
-  textMuted: '#A99FB0',
-  textInverse: palette.neutral900,
-  danger: '#FF7A6B',
-  dangerSurface: '#3A1F1C',
-  success: '#65C08A',
-  successSurface: '#17321F',
-  warning: '#F0C05A',
-  warningSurface: '#332A15',
-  overlay: 'rgba(0, 0, 0, 0.6)',
+  background: brandPalette.text,
+  surface: mixColors(brandPalette.text, brandPalette.background, 0.06),
+  surfaceMuted: mixColors(brandPalette.text, brandPalette.background, 0.12),
+  border: mixColors(brandPalette.text, brandPalette.background, 0.2),
+  primary: brandPalette.secondary,
+  primaryPressed: mixColors(brandPalette.secondary, brandPalette.background, 0.2),
+  onPrimary: brandPalette.text,
+  accent: brandPalette.primary,
+  onAccent: brandPalette.background,
+  text: brandPalette.background,
+  textMuted: mixColors(brandPalette.background, brandPalette.text, 0.32),
+  textInverse: brandPalette.text,
+  danger: mixColors(brandColors.danger, brandPalette.background, 0.35),
+  dangerSurface: mixColors(brandColors.danger, brandPalette.text, 0.7),
+  success: brandPalette.secondary,
+  successSurface: mixColors(brandPalette.primary, brandPalette.text, 0.6),
+  warning: brandPalette.secondary,
+  warningSurface: mixColors(brandPalette.secondary, brandPalette.text, 0.8),
+  overlay: withAlpha('#000000', 0.6),
 };
 
 export interface Theme {

@@ -22,7 +22,7 @@ import {
   formatPrice,
 } from '@nurtaxi/shared-core/shared/lib';
 import { DriverOrderAction, OrderStatus } from '@nurtaxi/shared-core/shared/model';
-import { Loader, Text, useTheme, showAlert } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Loader, showAlert, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useUpdateDriverOrderStatusMutation } from '@nurtaxi/shared-core/entities/driver';
 import {
   isCancelled,
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: 'rgba(89,71,31,0.07)',
+    shadowColor: brandColors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   sheet: {
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     maxHeight: '62%',
     position: 'absolute',
     right: 0,
-    shadowColor: 'rgba(89,71,31,0.16)',
+    shadowColor: brandColors.shadowStrong,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 1,
     shadowRadius: 16,
@@ -558,7 +558,7 @@ const styles = StyleSheet.create({
   statusPill: {
     borderWidth: 1,
     elevation: 2,
-    shadowColor: 'rgba(89,71,31,0.12)',
+    shadowColor: brandColors.shadowStrong,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,

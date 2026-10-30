@@ -11,6 +11,7 @@ import { OrderStatus } from '@/shared/model/enums';
 import { RegionScopeBanner } from '@/widgets/region-scope-banner';
 import { PageHeader, OrderStatusTag, QueryState, getOrderStatusSelectOptions } from '@/shared/ui';
 import { formatCurrency, formatDate, getErrorMessage } from '@/shared/lib/utils';
+import { palette } from '@/shared/config/theme';
 
 const PAGE_SIZE = 20;
 const { RangePicker } = DatePicker;
@@ -146,7 +147,7 @@ export function OrdersPage() {
           ) : null}
           {items.length > 0 ? (
             <Space style={{ marginTop: 12 }}>
-              <span style={{ color: '#666' }}>
+              <span style={{ color: palette.textMuted }}>
                 {t('orders.shown')}: {items.length}
               </span>
             </Space>

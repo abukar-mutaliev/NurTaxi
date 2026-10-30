@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { formatDistance, formatDuration, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
-import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import type { OrderOfferEvent } from '@nurtaxi/shared-core/features/realtime';
 
 import { OrderExtrasNotice } from '@/features/order-extras';
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 6,
-    shadowColor: 'rgba(89,71,31,0.20)',
+    shadowColor: brandColors.shadowStrong,
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 1,
     shadowRadius: 18,

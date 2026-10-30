@@ -19,7 +19,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -31,31 +31,31 @@ const DESIGN_WIDTH = 390;
 const DESIGN_HEIGHT = 844;
 
 const onboardingColors = {
-  background: '#F8F4EF',
-  brand: '#3A1D3F',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  label: '#7A6E78',
-  inputText: '#2E2331',
-  inputPlaceholder: '#A99FA6',
-  inputBg: 'rgba(255,255,255,0.72)',
-  inputBorder: 'rgba(255,255,255,0.9)',
-  dot: '#E8C882',
-  buttonStart: '#5A2E60',
-  buttonEnd: '#3A1D3F',
-  buttonText: '#F7F3EE',
-  inputShadow: 'rgba(89,71,31,0.06)',
-  buttonShadow: 'rgba(89,71,31,0.1)',
-  error: '#B42318',
-  cardBg: 'rgba(255,255,255,0.82)',
-  cardBorder: 'rgba(255,255,255,0.9)',
-  cardBorderChecked: 'rgba(201,154,84,0.55)',
-  cardShadow: 'rgba(89,71,31,0.06)',
-  consentTitle: '#2E2331',
-  consentText: '#7A6E78',
-  consentAction: '#3A1D3F',
-  checkBg: 'rgba(201,154,84,0.18)',
-  checkMark: '#C99A54',
+  background: brandColors.background,
+  brand: brandColors.primary,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  label: brandColors.textMuted,
+  inputText: brandColors.text,
+  inputPlaceholder: brandColors.textMuted,
+  inputBg: brandColors.surface,
+  inputBorder: brandColors.divider,
+  dot: brandColors.secondary,
+  buttonStart: brandColors.primary,
+  buttonEnd: brandColors.primary,
+  buttonText: brandColors.onPrimary,
+  inputShadow: brandColors.shadow,
+  buttonShadow: brandColors.shadow,
+  error: brandColors.danger,
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.divider,
+  cardBorderChecked: brandColors.primary,
+  cardShadow: brandColors.shadow,
+  consentTitle: brandColors.text,
+  consentText: brandColors.textMuted,
+  consentAction: brandColors.primary,
+  checkBg: brandColors.secondarySubtle,
+  checkMark: brandColors.primary,
 } as const;
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');

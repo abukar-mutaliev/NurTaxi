@@ -12,7 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -20,18 +20,18 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
-  overlay: 'rgba(248,244,239,0.72)',
-  glassBg: 'rgba(255,255,255,0.8)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  subtitle: '#7A6E78',
-  ringOuter: 'rgba(247,220,168,0.35)',
-  ringMid: 'rgba(247,220,168,0.5)',
-  ringInner: 'rgba(252,239,214,0.75)',
-  core: '#FCEFD6',
-  coreBorder: 'rgba(247,220,168,0.9)',
-  car: 'rgba(58,29,63,0.6)',
+  overlay: brandColors.background,
+  glassBg: brandColors.surface,
+  glassBorder: brandColors.divider,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  subtitle: brandColors.textMuted,
+  ringOuter: brandColors.secondarySoft,
+  ringMid: brandColors.secondarySoft,
+  ringInner: brandColors.secondarySoft,
+  core: brandColors.secondarySoft,
+  coreBorder: brandColors.secondarySoft,
+  car: brandColors.primary,
 } as const;
 
 const RING_COUNT = 3;
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 3,
     justifyContent: 'center',
-    ...glassShadow({ color: 'rgba(247,220,168,0.45)', radius: 16 }),
+    ...glassShadow({ color: brandColors.primary, radius: 16 }),
     zIndex: 2,
   },
   footer: {
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     right: 16,
   },
   grabber: {
-    backgroundColor: '#D9D0C4',
+    backgroundColor: brandColors.border,
     borderRadius: 2,
     height: 4,
     width: 36,

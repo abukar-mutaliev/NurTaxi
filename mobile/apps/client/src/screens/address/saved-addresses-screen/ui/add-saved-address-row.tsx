@@ -1,16 +1,16 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  cardBg: 'rgba(255,255,255,0.62)',
-  cardBorder: 'rgba(201,154,84,0.35)',
-  shadow: 'rgba(89,71,31,0.06)',
-  title: '#2E2331',
-  iconOuter: 'rgba(252,244,228,0.95)',
-  iconAccent: 'rgba(201,154,84,0.8)',
+  cardBg: brandColors.surface,
+  cardBorder: brandColors.secondary,
+  shadow: brandColors.shadow,
+  title: brandColors.text,
+  iconOuter: brandColors.primary,
+  iconAccent: brandColors.primary,
 } as const;
 
 export interface AddSavedAddressRowProps {

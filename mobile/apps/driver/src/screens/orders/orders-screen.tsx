@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatDateTime, formatPrice } from '@nurtaxi/shared-core/shared/lib';
 import type { OrderHistoryItem } from '@nurtaxi/shared-core/shared/model';
-import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 import { useGetDriverOrderHistoryQuery } from '@nurtaxi/shared-core/entities/driver';
 import { formatOrderStatusLabel, isActiveOrder } from '@nurtaxi/shared-core/entities/order';
 
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
     elevation: 1,
-    shadowColor: 'rgba(89,71,31,0.07)',
+    shadowColor: brandColors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   root: {
-    backgroundColor: '#F8F4EF',
+    backgroundColor: brandColors.background,
     flex: 1,
   },
   title: {

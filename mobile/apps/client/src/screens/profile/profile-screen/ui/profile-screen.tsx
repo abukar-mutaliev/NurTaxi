@@ -10,7 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import { formatPhone } from '@nurtaxi/shared-core/shared/lib';
-import { ErrorView, Loader, Text, showAlert } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, ErrorView, Loader, showAlert, Text } from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { useGetMeQuery } from '@nurtaxi/shared-core/entities/user';
 
@@ -21,15 +21,15 @@ import { useGlassTabBarInset } from '@/shared/hooks/use-glass-tab-bar-inset';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
-  background: '#F8F4EF',
-  name: '#2E2331',
-  phone: '#7A6E78',
-  avatarBg: '#3A1D3F',
-  avatarText: '#F7F3EE',
-  logoutBg: 'rgba(255,255,255,0.85)',
-  logoutBorder: 'rgba(255,255,255,0.9)',
-  logoutText: '#7A6E78',
-  shadow: 'rgba(89,71,31,0.06)',
+  background: brandColors.background,
+  name: brandColors.text,
+  phone: brandColors.textMuted,
+  avatarBg: brandColors.primary,
+  avatarText: brandColors.onPrimary,
+  logoutBg: brandColors.surface,
+  logoutBorder: brandColors.divider,
+  logoutText: brandColors.textMuted,
+  shadow: brandColors.shadow,
 } as const;
 
 const ellipseTopAsset = require('@/assets/images/welcome/ellipse-top.png');

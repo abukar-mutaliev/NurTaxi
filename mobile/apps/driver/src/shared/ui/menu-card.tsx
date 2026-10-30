@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import medium from 'expo-symbols/androidWeights/medium';
 
-import { Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text, useTheme } from '@nurtaxi/shared-core/shared/ui';
 
 import { Chevron } from './chevron';
 
@@ -34,7 +34,7 @@ export interface MenuCardProps {
 export function MenuCard({ title, subtitle, icon, dotTone = 'primary', onPress }: MenuCardProps) {
   const theme = useTheme();
 
-  const dotBg = dotTone === 'accent' ? 'rgba(232,197,143,0.28)' : 'rgba(58,29,63,0.10)';
+  const dotBg = dotTone === 'accent' ? brandColors.secondarySoft : brandColors.primarySoft;
   const dotColor = dotTone === 'accent' ? theme.colors.accent : theme.colors.primary;
 
   return (
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     elevation: 1,
     flexDirection: 'row',
-    shadowColor: 'rgba(89,71,31,0.07)',
+    shadowColor: brandColors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 10,

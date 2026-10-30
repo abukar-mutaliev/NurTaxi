@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethod } from '@nurtaxi/shared-core/shared/model';
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GLASS_DESIGN_WIDTH, GlassCard } from '@/shared/ui';
 import { glassShadow } from '@/shared/ui/glass-shadow';
@@ -103,7 +103,7 @@ export function PaymentMethodSheet({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(46,35,49,0.35)',
+    backgroundColor: brandColors.overlay,
   },
   backdropPressable: {
     ...StyleSheet.absoluteFill,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(169,159,166,0.45)',
+    backgroundColor: brandColors.border,
     borderRadius: 999,
     height: 4,
     width: 40,

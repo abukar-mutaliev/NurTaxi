@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Text } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, Text } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_COLORS, GlassCaption, GlassTextField } from '@/shared/ui';
 
@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipActive: {
-    backgroundColor: 'rgba(201,154,84,0.12)',
-    borderColor: 'rgba(201,154,84,0.45)',
+    backgroundColor: brandColors.secondarySubtle,
+    borderColor: brandColors.primary,
   },
   chipText: {
     color: GLASS_COLORS.title,

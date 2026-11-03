@@ -1,7 +1,8 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { EventBusService } from '../../messaging/event-bus.service';
-import { getOrderStatusLabelRu } from './notification-templates';
+import { FREE_WAITING_SECONDS, WAITING_PRICE_PER_MINUTE } from '../orders/waiting';
 import { NotificationsService } from './notifications.service';
+import { getOrderStatusLabelRu } from './notification-templates';
 
 @Injectable()
 export class NotificationEventListener implements OnModuleInit {
@@ -51,6 +52,13 @@ export class NotificationEventListener implements OnModuleInit {
 
   private bodyFor(eventType: string, data: Record<string, unknown>): string | undefined {
     if (eventType === 'order.status_changed' && typeof data.toStatus === 'string') {
+      if (data.toStatus === 'driver_arrived') {
+        const freeMinutes = FREE_WAITING_SECONDS / 60;
+        return (
+          `Водитель на месте. ${freeMinutes} минут бесплатно, ` +
+          `дальше ${WAITING_PRICE_PER_MINUTE} ₽ за каждую минуту`
+        );
+      }
       return getOrderStatusLabelRu(data.toStatus);
     }
     if (eventType === 'payment.completed' && typeof data.amount === 'number') {

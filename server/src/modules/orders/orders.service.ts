@@ -42,6 +42,7 @@ import { Receipt } from '../payments/entities/receipt.entity';
 import { AssignmentSnapshotService } from '../carriers/assignment-snapshot.service';
 import { OfferJournalService } from './offer-journal.service';
 import { TripTrackService } from './trip-track.service';
+import { moneyAmount, quoteWaiting } from './waiting';
 import { OfferOutcome } from '../../common/enums/compliance.enum';
 import { UsersService } from '../users/users.service';
 import type { CreateOrderDto, OrderEstimateDto } from './dto/orders.dto';
@@ -570,13 +571,22 @@ export class OrdersService {
       toStatus,
       actorId: driverUserId,
       mutate: (o) => {
-        if (action === 'start') o.tripStartedAt = new Date();
+        if (action === 'arrived') {
+          o.driverArrivedAt = new Date();
+        }
+        if (action === 'start') {
+          const now = new Date();
+          o.tripStartedAt = now;
+          const waiting = o.driverArrivedAt ? quoteWaiting(o.driverArrivedAt, now).amount : 0;
+          o.waitingFee = moneyAmount(waiting);
+        }
         if (action === 'complete') o.tripEndedAt = new Date();
       },
     });
 
     if (toStatus === OrderStatus.Completed) {
-      updated.priceFinal = updated.priceEstimated;
+      const waiting = Number(updated.waitingFee ?? 0);
+      updated.priceFinal = moneyAmount(Number(updated.priceEstimated) + waiting);
       await this.orders.save(updated);
       return this.paymentsService.settleCompletedOrder(updated.id, driverUserId);
     }

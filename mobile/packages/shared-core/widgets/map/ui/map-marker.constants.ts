@@ -33,6 +33,15 @@ export function getMarkerAnchor(kind: MapMarker['kind']): { x: number; y: number
   };
 }
 
+/** Смещение якоря от левого верхнего угла иконки, dp. Для пина над картой, не внутри MapKit. */
+export function getMarkerAnchorOffset(kind: MapMarker['kind']): { x: number; y: number } {
+  if (kind === 'driver') {
+    return { x: MAP_CAR_SIZE.width / 2, y: MAP_CAR_SIZE.height / 2 };
+  }
+
+  return { x: MAP_PIN_DOT_CENTER.x, y: MAP_PIN_DOT_CENTER.y };
+}
+
 /**
  * Масштаб иконки для MapKit, чтобы растр @3x занимал на экране ровно свой размер в dp.
  *

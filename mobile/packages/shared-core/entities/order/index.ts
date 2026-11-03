@@ -34,3 +34,11 @@ export {
 export type { OrderStage } from './model/order-status';
 export { formatPassengerPhone, hasOrderExtras, resolveOrderExtras } from './model/order-extras';
 export type { OrderExtrasSource, OrderExtrasView } from './model/order-extras';
+export {
+  FREE_WAITING_SECONDS,
+  WAITING_PRICE_PER_MINUTE,
+  describeWaiting,
+  formatTripTotal,
+} from './model/waiting';
+export type { WaitingClock } from './model/waiting';
+export { useWaitingClock } from './model/use-waiting-clock';

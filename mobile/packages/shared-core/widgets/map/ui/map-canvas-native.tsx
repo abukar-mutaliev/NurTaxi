@@ -14,6 +14,7 @@ import {
 import { StyleSheet, View } from 'react-native';
 
 import { decodePolyline } from '../../../shared/lib';
+import { carMarkerDirection, shortestRotationTarget } from '../model/car-marker-direction';
 import {
   DEFAULT_CAMERA,
   isValidGeoPoint,
@@ -26,6 +27,10 @@ import { useGlidingMarker } from '../model/use-gliding-point';
 import type { MapCanvasHandle, MapCanvasProps, MapMarker } from './map-canvas';
 import { MAP_MARKER_SOURCES } from './map-marker.assets';
 import { MAP_MARKER_ICON_SCALE, getMarkerAnchor } from './map-marker.constants';
+
+/** Как у скольжения позиции: слишком быстрые повороты сглаживаем, редкие — не растягиваем. */
+const MIN_ROTATE_MS = 300;
+const MAX_ROTATE_MS = 3000;
 
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 const ROUTE_STROKE_COLOR = '#C99A54';
@@ -86,7 +91,13 @@ function ignoreCameraRejection(result: Promise<unknown> | undefined): void {
  *
  * Машина между GPS-точками не прыгает, а скользит — см. `CarPlacemark`.
  */
-function MapPlacemark({ marker }: { marker: MapMarker }) {
+function MapPlacemark({
+  marker,
+  onPress,
+}: {
+  marker: MapMarker;
+  onPress?: (marker: MapMarker) => void;
+}) {
   if (marker.kind === 'driver') {
     return <CarPlacemark marker={marker} />;
   }
@@ -94,6 +105,8 @@ function MapPlacemark({ marker }: { marker: MapMarker }) {
   return (
     <Marker
       anchor={MARKER_ANCHORS[marker.kind]}
+      handled={Boolean(onPress)}
+      onPress={onPress ? () => onPress(marker) : undefined}
       point={toMapPoint(normalizeGeoPoint(marker.point))}
       scale={MAP_MARKER_ICON_SCALE}
       source={MAP_MARKER_SOURCES[marker.kind]}
@@ -104,10 +117,13 @@ function MapPlacemark({ marker }: { marker: MapMarker }) {
 
 /**
  * Машина: проп `point` задаётся один раз, дальше метку ведёт нативная анимация
- * (`useGlidingMarker`). Все пропы стабильны по ссылке, чтобы React их не пересылал.
+ * (`useGlidingMarker`). Поворот — отдельным `animatedRotateTo`: без `rotated` MapKit
+ * игнорирует direction, и иконка остаётся горизонтальной.
  */
 function CarPlacemark({ marker }: { marker: MapMarker }) {
   const markerRef = useRef<NativeMarker>(null);
+  const directionRef = useRef(0);
+  const headingAtRef = useRef<number | null>(null);
   const moveTo = useCallback(
     (point: { lat: number; lng: number }, durationMs: number) =>
       markerRef.current?.animatedMoveTo(toMapPoint(point), durationMs),
@@ -116,11 +132,29 @@ function CarPlacemark({ marker }: { marker: MapMarker }) {
   const initial = useGlidingMarker(normalizeGeoPoint(marker.point), moveTo);
   const point = useMemo(() => toMapPoint(initial), [initial]);
 
+  useEffect(() => {
+    const heading = marker.heading;
+    if (heading == null || !Number.isFinite(heading)) {
+      return;
+    }
+
+    const now = Date.now();
+    const sinceLast = headingAtRef.current == null ? null : now - headingAtRef.current;
+    headingAtRef.current = now;
+    const duration =
+      sinceLast == null ? 0 : Math.min(MAX_ROTATE_MS, Math.max(MIN_ROTATE_MS, sinceLast));
+
+    const target = shortestRotationTarget(directionRef.current, carMarkerDirection(heading));
+    directionRef.current = target;
+    void markerRef.current?.animatedRotateTo(target, duration)?.catch(() => undefined);
+  }, [marker.heading]);
+
   return (
     <Marker
       anchor={MARKER_ANCHORS.driver}
       point={point}
       ref={markerRef}
+      rotated
       scale={MAP_MARKER_ICON_SCALE}
       source={MAP_MARKER_SOURCES.driver}
       zIndex={3}
@@ -135,7 +169,11 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
     routePoints: explicitRoutePoints,
     initialPoint,
     showsUserLocation = false,
+    autoFit = true,
+    initialZoomDelta,
     onPress,
+    onCameraChange,
+    onMarkerPress,
   },
   ref,
 ) {
@@ -148,7 +186,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
    */
   const [lockedCamera, setLockedCamera] = useState<CameraPosition | null>(null);
   if (lockedCamera == null && initialPoint) {
-    setLockedCamera(toCameraPosition(initialPoint, 0.02));
+    setLockedCamera(toCameraPosition(initialPoint, initialZoomDelta ?? 0.02));
   }
   const initialCamera = lockedCamera ?? DEFAULT_CAMERA;
 
@@ -230,7 +268,8 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
     // Кадр строим, когда есть хотя бы две опорные точки (подача + Б). Раньше подгонка
     // ждала готовый маршрут (≥2 точек), и пока он строился, камера стояла на старте —
     // машинка оставалась в центре, а точки A/B уезжали за край экрана.
-    if (fitPoints.length < 2 || !anchorSignature) {
+    // Пока точку подачи ставит метка в центре, подгонка сбивала бы жест.
+    if (!autoFit || fitPoints.length < 2 || !anchorSignature) {
       return;
     }
 
@@ -246,7 +285,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
       clearTimeout(retry);
       clearTimeout(retryLater);
     };
-  }, [fitCameraToContent, fitPoints.length, anchorSignature]);
+  }, [autoFit, fitCameraToContent, fitPoints.length, anchorSignature]);
 
   useImperativeHandle(
     ref,
@@ -269,6 +308,19 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
     <View style={styles.map}>
       <YandexMapView
         cameraPosition={initialCamera}
+        onCameraPositionChanged={
+          onCameraChange
+            ? ({ nativeEvent }) =>
+                onCameraChange({
+                  finished: nativeEvent.finished,
+                  point: {
+                    lat: nativeEvent.cameraPosition.latitude,
+                    lng: nativeEvent.cameraPosition.longitude,
+                  },
+                  reason: nativeEvent.reason,
+                })
+            : undefined
+        }
         onMapPress={
           onPress
             ? ({ nativeEvent }) =>
@@ -291,7 +343,7 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
           />
         ) : null}
         {placedMarkers.map((marker) => (
-          <MapPlacemark key={marker.id} marker={marker} />
+          <MapPlacemark key={marker.id} marker={marker} onPress={onMarkerPress} />
         ))}
       </YandexMapView>
     </View>

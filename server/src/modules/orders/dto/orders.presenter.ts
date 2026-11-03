@@ -6,6 +6,7 @@ import type { Order } from '../entities/order.entity';
 import type { OrderStatusLog } from '../entities/order-status-log.entity';
 import { OrderStatus, PaymentMethod } from '../../../common/enums/order-status.enum';
 import { VehicleResponse } from '../../drivers/dto/driver.presenter';
+import { toWaitingView, type WaitingView } from '../waiting';
 
 /** Статусы, на которых водителю и клиенту может понадобиться связаться друг с другом. */
 const CONTACT_STATUSES: ReadonlySet<OrderStatus> = new Set([
@@ -130,6 +131,39 @@ export class OrderStopResponse {
   address!: string;
 }
 
+/** Ожидание пассажира с момента «Я на месте». */
+export class OrderWaitingResponse {
+  @ApiProperty({ description: 'Момент нажатия «Я на месте»' })
+  startedAt!: string;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Начало поездки. Пока null — бесплатные 5 минут ещё идут или уже стали платными',
+  })
+  endedAt!: string | null;
+
+  @ApiProperty({ description: 'Бесплатное окно, секунды' })
+  freeSeconds!: number;
+
+  @ApiProperty({ description: 'Цена каждой начатой минуты после бесплатного окна, ₽' })
+  pricePerMinute!: number;
+
+  @ApiProperty()
+  paidMinutes!: number;
+
+  @ApiProperty({ description: 'Начисленная плата за ожидание' })
+  amount!: number;
+
+  static fromView(order: {
+    driverArrivedAt: Date | null;
+    tripStartedAt: Date | null;
+    waitingFee: string | null;
+  }): OrderWaitingResponse | null {
+    const view: WaitingView | null = toWaitingView(order);
+    return view ? { ...view } : null;
+  }
+}
+
 export class OrderResponse {
   @ApiProperty()
   id!: string;
@@ -208,6 +242,14 @@ export class OrderResponse {
   @ApiPropertyOptional({ type: AssignedDriverResponse })
   driver!: AssignedDriverResponse | null;
 
+  @ApiPropertyOptional({
+    type: OrderWaitingResponse,
+    nullable: true,
+    description:
+      'Ожидание с момента «Я на месте»: 5 минут бесплатно, дальше 15 ₽ за каждую начатую минуту',
+  })
+  waiting!: OrderWaitingResponse | null;
+
   @ApiProperty()
   createdAt!: string;
 
@@ -259,6 +301,7 @@ export class OrderResponse {
             lng: driverPoint?.lng ?? null,
           }
         : null,
+      waiting: OrderWaitingResponse.fromView(order),
       createdAt: order.createdAt.toISOString(),
     };
   }

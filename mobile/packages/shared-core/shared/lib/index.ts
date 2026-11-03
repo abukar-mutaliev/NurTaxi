@@ -30,6 +30,7 @@ export type { MapAddressComponent, MapGeocodeHit } from './geo/exact-map-address
 export { PLATE_PATTERN, formatIsoDateInput, formatPlateInput } from './format/input-masks';
 
 export {
+  bearingDegrees,
   boundsOf,
   decodePolyline,
   encodePolyline,

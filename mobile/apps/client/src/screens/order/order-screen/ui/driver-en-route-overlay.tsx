@@ -33,10 +33,18 @@ const colors = {
   etaShadow: 'rgba(89,71,31,0.16)',
 } as const;
 
+export interface DriverWaitingCard {
+  title: string;
+  clockLabel: string;
+  hint: string;
+}
+
 export interface DriverEnRouteOverlayProps {
   driver: OrderDriver;
   statusLabel: string;
   etaLabel?: string | null;
+  /** Живые часы с момента «Я на месте». */
+  waiting?: DriverWaitingCard | null;
   /** «Связаться с водителем»: звонок или SMS — см. `contactByPhone`. */
   contactLabel: string;
   cancelLabel: string;
@@ -90,6 +98,7 @@ export function DriverEnRouteOverlay({
   driver,
   statusLabel,
   etaLabel,
+  waiting,
   contactLabel,
   cancelLabel,
   femaleDriverTitle,
@@ -188,6 +197,14 @@ export function DriverEnRouteOverlay({
             </View>
 
             <View style={styles.divider} />
+
+            {waiting ? (
+              <View style={styles.waitingBox}>
+                <Text style={styles.waitingTitle}>{waiting.title}</Text>
+                <Text style={styles.waitingClock}>{waiting.clockLabel}</Text>
+                <Text style={styles.waitingHint}>{waiting.hint}</Text>
+              </View>
+            ) : null}
 
             <View style={styles.actionsRow}>
               <ActionButton label={contactLabel} onPress={onContact} wide />
@@ -432,5 +449,25 @@ const styles = StyleSheet.create({
   vehicleLine: {
     color: colors.muted,
     fontSize: 13,
+  },
+  waitingBox: {
+    gap: 2,
+    marginHorizontal: 19,
+    marginTop: 14,
+  },
+  waitingClock: {
+    color: colors.text,
+    fontSize: 28,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+  },
+  waitingHint: {
+    color: colors.muted,
+    fontSize: 13,
+  },
+  waitingTitle: {
+    color: colors.rating,
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

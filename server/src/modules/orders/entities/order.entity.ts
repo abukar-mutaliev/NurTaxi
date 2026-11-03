@@ -130,6 +130,14 @@ export class Order {
   @Column({ name: 'trip_ended_at', type: 'timestamptz', nullable: true })
   tripEndedAt!: Date | null;
 
+  /** Момент, когда водитель нажал «Я на месте». С него идёт бесплатные 5 минут. */
+  @Column({ name: 'driver_arrived_at', type: 'timestamptz', nullable: true })
+  driverArrivedAt!: Date | null;
+
+  /** Плата за ожидание, зафиксированная в момент начала поездки. */
+  @Column({ name: 'waiting_fee', type: 'decimal', precision: 12, scale: 2, nullable: true })
+  waitingFee!: string | null;
+
   @Column({
     name: 'completeness_status',
     type: 'varchar',

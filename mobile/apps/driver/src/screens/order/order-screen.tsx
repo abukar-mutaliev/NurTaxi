@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
   encodeRoadPolyline,
+  formatCountdown,
   formatDistance,
   formatDuration,
   formatMoney,
@@ -28,6 +29,7 @@ import {
   isCancelled,
   useGetOrderQuery,
   useGetReceiptQuery,
+  useWaitingClock,
 } from '@nurtaxi/shared-core/entities/order';
 import { contactByPhone } from '@nurtaxi/shared-core/features/contact';
 import { openExternalNavigator } from '@nurtaxi/shared-core/features/navigation';
@@ -99,6 +101,9 @@ export function OrderScreen({ orderId }: { orderId: string }) {
   const insets = useSafeAreaInsets();
 
   const { data: order, isLoading, refetch } = useGetOrderQuery(orderId, { skip: !orderId });
+  const waitingClock = useWaitingClock(
+    order?.status === OrderStatus.DriverArrived ? order.waiting : null,
+  );
   const [updateStatus, { isLoading: updating }] = useUpdateDriverOrderStatusMutation();
   const [error, setError] = useState<string | null>(null);
 
@@ -226,6 +231,14 @@ export function OrderScreen({ orderId }: { orderId: string }) {
                 },
               ]}
             >
+              {(order.waiting?.amount ?? 0) > 0 ? (
+                <View style={styles.moneyRow}>
+                  <Text tone="muted" variant="caption">
+                    {t('waiting.paidTitle')}
+                  </Text>
+                  <Text variant="bodyStrong">{formatMoney(order.waiting?.amount ?? 0)}</Text>
+                </View>
+              ) : null}
               <View style={styles.moneyRow}>
                 <Text tone="muted" variant="caption">
                   Стоимость поездки
@@ -264,6 +277,12 @@ export function OrderScreen({ orderId }: { orderId: string }) {
 
   // ---------- Активная поездка ----------
   const step = nextStep(order.status, t);
+  const waitingAmount =
+    order.status === OrderStatus.DriverArrived
+      ? (waitingClock?.amount ?? order.waiting?.amount ?? 0)
+      : (order.waiting?.amount ?? 0);
+  const charge = order.priceFinal ?? order.priceEstimated + waitingAmount;
+  const chargeLabel = waitingAmount > 0 ? formatMoney(charge) : formatPrice(charge);
 
   const advance = async () => {
     if (!step) {
@@ -472,6 +491,34 @@ export function OrderScreen({ orderId }: { orderId: string }) {
 
           <OrderExtrasNotice canCallPassenger source={order} />
 
+          {waitingClock ? (
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.surfaceMuted,
+                  borderColor: 'transparent',
+                  borderRadius: theme.radius.lg,
+                  gap: theme.spacing.xs,
+                  padding: theme.spacing.lg,
+                },
+              ]}
+            >
+              <Text tone="muted" variant="caption">
+                {t(waitingClock.phase === 'paid' ? 'waiting.paidTitle' : 'waiting.freeTitle')}
+              </Text>
+              <Text variant="subtitle">{formatCountdown(waitingClock.clockSeconds)}</Text>
+              <Text variant="caption">
+                {waitingClock.phase === 'paid'
+                  ? t('waiting.paidRate', {
+                      price: formatMoney(waitingClock.pricePerMinute),
+                      amount: formatMoney(waitingClock.amount),
+                    })
+                  : t('waiting.thenPaid', { price: formatMoney(waitingClock.pricePerMinute) })}
+              </Text>
+            </View>
+          ) : null}
+
           {/*
             «В пути» и «Расстояние» — маршрут заказа от точки А до точки Б, тот же снимок,
             что видит клиент. Живые минуты «до клиента» — отдельная плитка, пока машина едет
@@ -479,7 +526,9 @@ export function OrderScreen({ orderId }: { orderId: string }) {
           */}
           <StatTiles
             tiles={[
-              ...(route.leg === 'to-pickup' && route.duration
+              ...(route.leg === 'to-pickup' &&
+              route.duration &&
+              order.status !== OrderStatus.DriverArrived
                 ? [{ label: 'До клиента', value: route.duration }]
                 : []),
               {
@@ -492,7 +541,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
               },
               {
                 label: 'Стоимость',
-                value: formatPrice(order.priceFinal ?? order.priceEstimated),
+                value: chargeLabel,
               },
             ]}
           />

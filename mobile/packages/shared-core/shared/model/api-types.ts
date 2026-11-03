@@ -415,6 +415,20 @@ export interface OrderDriver {
   lng?: number | null;
 }
 
+/**
+ * Ожидание пассажира с момента «Я на месте».
+ * Первые `freeSeconds` бесплатны, дальше каждая начатая минута стоит `pricePerMinute`.
+ */
+export interface OrderWaiting {
+  startedAt: string;
+  /** Начало поездки. Пока null — счётчик ещё идёт. */
+  endedAt: string | null;
+  freeSeconds: number;
+  pricePerMinute: number;
+  paidMinutes: number;
+  amount: number;
+}
+
 export interface Order {
   id: string;
   status: OrderStatus;
@@ -441,6 +455,8 @@ export interface Order {
   route: OrderRoute | null;
   tariff: TariffRef | null;
   driver: OrderDriver | null;
+  /** Нет, пока водитель не нажал «Я на месте». */
+  waiting?: OrderWaiting | null;
   createdAt: string;
 }
 

@@ -309,6 +309,7 @@ export class PaymentsService {
     }
 
     const receiptNumber = this.buildReceiptNumber(order.id);
+    const waitingFee = roundMoney(Number(order.waitingFee ?? 0));
     return this.receipts.save(
       this.receipts.create({
         orderId: order.id,
@@ -325,6 +326,8 @@ export class PaymentsService {
           commission,
           driverNet,
           tariffName: order.tariff?.name,
+          tripAmount: roundMoney(gross - waitingFee),
+          waitingFee,
         },
       }),
     );

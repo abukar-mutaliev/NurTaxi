@@ -61,6 +61,12 @@ export const en: DeepPartial<TranslationResources> = {
     changeNumber: 'Change number',
     logout: 'Sign out',
   },
+  addresses: {
+    pickHint: 'Move the map to place the point',
+    movePickupHint: 'Move the map — the taxi will arrive at this point',
+    changePickup: 'Change the pickup point',
+    movePickupDone: 'Done',
+  },
   order: {
     where: 'Where to?',
     stop: 'Stop',
@@ -167,5 +173,12 @@ export const en: DeepPartial<TranslationResources> = {
     cancelled_by_driver: 'Driver cancelled the order',
     cancelled_system: 'Order cancelled',
     failed_payment: 'Payment failed',
+  },
+  waiting: {
+    freeTitle: 'Free waiting',
+    paidTitle: 'Paid waiting',
+    freeLeft: '{{time}} of free waiting left',
+    thenPaid: 'Then {{price}} per minute',
+    paidRate: '{{price}} per minute · {{amount}} so far',
   },
 };

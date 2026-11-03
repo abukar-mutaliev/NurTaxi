@@ -38,6 +38,9 @@ function applyOrderStatusToCache(dispatch: SharedDispatch, event: OrderStatusEve
   dispatch(
     orderApi.util.updateQueryData('getOrder', event.orderId, (draft) => {
       draft.status = event.toStatus;
+      if (event.waiting) {
+        draft.waiting = event.waiting;
+      }
     }),
   );
   // Полная карточка меняется вместе со статусом (водитель, цена, чек).

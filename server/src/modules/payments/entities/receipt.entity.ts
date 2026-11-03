@@ -10,6 +10,10 @@ export interface ReceiptPayload {
   commission: number;
   driverNet: number;
   tariffName?: string;
+  /** Стоимость маршрута без ожидания. */
+  tripAmount?: number;
+  /** Зафиксированная плата за ожидание пассажира. */
+  waitingFee?: number;
 }
 
 @Entity('receipts')

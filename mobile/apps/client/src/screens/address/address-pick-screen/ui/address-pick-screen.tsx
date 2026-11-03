@@ -1,7 +1,7 @@
 /**
- * Выбор точки на карте (M3.5): tap → подтверждение адреса.
+ * Выбор точки на карте (M3.5): карту двигают под меткой в центре, затем подтверждают адрес.
  */
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -15,6 +15,7 @@ import {
   useLocationPermission,
 } from '@nurtaxi/shared-core/features/geolocation';
 
+import { useAppSelector } from '@/app/store/hooks';
 import {
   parseAddressFieldParam,
   parseAddressModeParam,
@@ -23,6 +24,7 @@ import {
   useExactMapAddress,
   useSavedAddressUpdate,
 } from '@/features/address';
+import { selectOrderDraft, selectOrderStop } from '@/processes/order-flow';
 import {
   GLASS_COLORS,
   GLASS_DESIGN_WIDTH,
@@ -31,7 +33,13 @@ import {
   GlassPrimaryButton,
   GlassScreenHeader,
 } from '@/shared/ui';
-import { MapCanvas, MapCenterButton, type MapCanvasHandle, type MapMarker } from '@/widgets/map';
+import {
+  MapCanvas,
+  MapCenterButton,
+  MapCenterPin,
+  type MapCameraChange,
+  type MapCanvasHandle,
+} from '@/widgets/map';
 
 import { geoLocationForSave } from '../../saved-addresses-screen/ui/format-suggestion-address';
 import { SaveAddressSheet } from '../../saved-addresses-screen/ui/save-address-sheet';
@@ -52,9 +60,19 @@ export function AddressPickScreen() {
   const { position } = useCurrentPosition(permission.state === 'granted');
   const { selectAddress, saveAddress, isSaving, regionId } = useAddressSelection();
   const { updateAddress, isUpdating } = useSavedAddressUpdate();
+  const draft = useAppSelector(selectOrderDraft);
+  const stop = useAppSelector(selectOrderStop);
+  const fieldPoint =
+    mode === 'order'
+      ? field === 'pickup'
+        ? draft.pickup
+        : field === 'stop'
+          ? stop
+          : draft.dropoff
+      : null;
 
-  const [selectedPoint, setSelectedPoint] = useState<GeoPoint | null>(null);
-  const [exactAddress, setExactAddress] = useState<string | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<GeoPoint | null>(fieldPoint);
+  const [exactAddress, setExactAddress] = useState<string | null>(fieldPoint?.address ?? null);
   const [resolvingAddress, setResolvingAddress] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const resolveExactAddress = useExactMapAddress();
@@ -68,32 +86,70 @@ export function AddressPickScreen() {
   const [pickError, setPickError] = useState<string | null>(null);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(0);
 
-  // Поле адреса и вид метки совпадают: pickup, stop, dropoff.
-  const markers: MapMarker[] = selectedPoint
-    ? [{ id: 'picked', point: selectedPoint, kind: field }]
-    : [];
-
   const mapPointAddress = (point: GeoPoint) =>
     t('addresses.mapPoint', {
       lat: point.lat.toFixed(5),
       lng: point.lng.toFixed(5),
     });
 
-  const rememberPoint = (point: GeoPoint) => {
-    const key = `${point.lat},${point.lng}`;
-    setSelectedPoint(point);
-    setExactAddress(null);
-    setResolvingAddress(true);
-    const promise = resolveExactAddress(point);
-    resolveRequest.current = { key, promise };
-    void promise.then((address) => {
-      if (resolveRequest.current?.key !== key) {
-        return;
-      }
-      setExactAddress(address);
-      setResolvingAddress(false);
-    });
-  };
+  const rememberPoint = useCallback(
+    (point: GeoPoint) => {
+      const key = `${point.lat},${point.lng}`;
+      setSelectedPoint(point);
+      setExactAddress(null);
+      setResolvingAddress(true);
+      const promise = resolveExactAddress(point);
+      resolveRequest.current = { key, promise };
+      void promise.then((address) => {
+        if (resolveRequest.current?.key !== key) {
+          return;
+        }
+        setExactAddress(address);
+        setResolvingAddress(false);
+      });
+    },
+    [resolveExactAddress],
+  );
+
+  const rememberPointRef = useRef(rememberPoint);
+  const selectedPointRef = useRef(selectedPoint);
+  useEffect(() => {
+    rememberPointRef.current = rememberPoint;
+    selectedPointRef.current = selectedPoint;
+  }, [rememberPoint, selectedPoint]);
+
+  const onCameraChange = useCallback((change: MapCameraChange) => {
+    if (!change.finished || change.reason !== 'gestures' || confirmingRef.current) {
+      return;
+    }
+    rememberPointRef.current(change.point);
+  }, []);
+
+  const seededFromGpsRef = useRef(fieldPoint != null);
+  useEffect(() => {
+    if (seededFromGpsRef.current || !position) {
+      return;
+    }
+    seededFromGpsRef.current = true;
+    rememberPointRef.current(position);
+    mapRef.current?.centerOn(position, 0.008);
+  }, [position]);
+
+  const alignedPanelRef = useRef(false);
+  useEffect(() => {
+    if (alignedPanelRef.current || bottomPanelHeight <= 0) {
+      return;
+    }
+    const point = selectedPointRef.current;
+    if (!point) {
+      return;
+    }
+    alignedPanelRef.current = true;
+    const center = () => mapRef.current?.centerOn(point, 0.008);
+    center();
+    const retry = setTimeout(center, 350);
+    return () => clearTimeout(retry);
+  }, [bottomPanelHeight]);
 
   const locationForPoint = async (point: GeoPoint): Promise<GeoLocation> => {
     const key = `${point.lat},${point.lng}`;
@@ -185,7 +241,8 @@ export function AddressPickScreen() {
     if (!position) {
       return;
     }
-    mapRef.current?.centerOn(position, 0.01);
+    mapRef.current?.centerOn(position, 0.008);
+    rememberPoint(position);
   };
 
   const title =
@@ -202,17 +259,27 @@ export function AddressPickScreen() {
       <View style={styles.root}>
         <StatusBar style="dark" />
         <View style={styles.mapWrap}>
-          <MapCanvas
-            initialPoint={position}
-            markers={markers}
-            onPress={(point) => {
-              if (!confirming) {
-                rememberPoint(point);
-              }
-            }}
-            ref={mapRef}
-            showsUserLocation={permission.state === 'granted'}
-          />
+          <View
+            style={[
+              styles.mapCanvas,
+              bottomPanelHeight > 0 ? { marginBottom: bottomPanelHeight } : null,
+            ]}
+          >
+            <MapCanvas
+              initialPoint={fieldPoint ?? position}
+              initialZoomDelta={0.008}
+              onCameraChange={onCameraChange}
+              onPress={(point) => {
+                if (!confirming) {
+                  mapRef.current?.centerOn(point, 0.008);
+                  rememberPoint(point);
+                }
+              }}
+              ref={mapRef}
+              showsUserLocation={permission.state === 'granted'}
+            />
+            <MapCenterPin kind={field} />
+          </View>
 
           <View
             pointerEvents="box-none"
@@ -321,6 +388,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: 0,
+  },
+  mapCanvas: {
+    flex: 1,
   },
   mapWrap: {
     flex: 1,

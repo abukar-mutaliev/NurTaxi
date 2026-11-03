@@ -20,7 +20,11 @@ export {
   parseAddressModeParam,
   parseRouteParam,
 } from './model/parse-address-route-params';
-export { isAutoPickupLocation, shouldSyncAutoPickup } from './model/is-auto-pickup-location';
+export {
+  decidePickupFromCamera,
+  isAutoPickupLocation,
+  shouldSyncAutoPickup,
+} from './model/is-auto-pickup-location';
 export { useExactMapAddress } from './model/use-exact-map-address';
 export {
   useResolvedLocationAddress,

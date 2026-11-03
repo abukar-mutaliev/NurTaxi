@@ -144,3 +144,20 @@ export function haversineDistance(a: GeoPoint, b: GeoPoint): number {
   const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
   return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
 }
+
+/**
+ * Азимут движения от `from` к `to`, градусы от севера по часовой (0…360).
+ * Нужен, когда GPS не отдаёт `heading` (стоит на месте или Balanced accuracy).
+ */
+export function bearingDegrees(from: GeoPoint, to: GeoPoint): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const toDeg = (rad: number) => (rad * 180) / Math.PI;
+
+  const lat1 = toRad(from.lat);
+  const lat2 = toRad(to.lat);
+  const dLng = toRad(to.lng - from.lng);
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+
+  return ((toDeg(Math.atan2(y, x)) % 360) + 360) % 360;
+}

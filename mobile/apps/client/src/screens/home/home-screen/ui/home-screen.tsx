@@ -10,15 +10,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { formatDistance } from '@nurtaxi/shared-core/shared/lib';
+import { formatCountdown, formatDistance, formatMoney } from '@nurtaxi/shared-core/shared/lib';
 import { buildDrivingRoute } from '@nurtaxi/shared-core/shared/lib/yandex-geo';
-import { PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
+import { OrderStatus, PaymentMethod, type GeoPoint } from '@nurtaxi/shared-core/shared/model';
 import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import {
   formatOrderStatusLabel,
   orderStage,
   useCreateOrderMutation,
   useGetOrderQuery,
+  useWaitingClock,
 } from '@nurtaxi/shared-core/entities/order';
 import {
   useCurrentPosition,
@@ -29,6 +30,7 @@ import { selectDriverPosition, useOrderRealtime } from '@nurtaxi/shared-core/fea
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import {
+  decidePickupFromCamera,
   isAutoPickupLocation,
   shouldSyncAutoPickup,
   useOrderRegion,
@@ -65,6 +67,8 @@ import {
 import {
   MapCanvas,
   MapCenterButton,
+  MapCenterPin,
+  type MapCameraChange,
   type MapCanvasHandle,
   type MapMarker,
   resolveOrderMapMarkers,
@@ -125,10 +129,21 @@ export function HomeScreen() {
   const [paymentSheetVisible, setPaymentSheetVisible] = useState(false);
   const [orderSheetHeight, setOrderSheetHeight] = useState(0);
   const [isHomeFocused, setIsHomeFocused] = useState(true);
+  /**
+   * Маршрут уже построен, но пассажир двигает карту, чтобы переставить точку подачи.
+   * Ключ «Куда» хранится вместе с режимом: смена точки назначения сама выключает подстройку,
+   * без эффекта, который синхронно сбрасывал бы state.
+   */
+  const dropoffKey = dropoff ? `${dropoff.lat.toFixed(5)},${dropoff.lng.toFixed(5)}` : '';
+  const [pickupAdjustKey, setPickupAdjustKey] = useState<string | null>(null);
+  const adjustingPickup = pickupAdjustKey !== null && pickupAdjustKey === dropoffKey;
 
   const { data: activeOrder } = useGetOrderQuery(effectiveActiveId ?? '', {
     skip: !effectiveActiveId,
   });
+  const waitingClock = useWaitingClock(
+    activeOrder?.status === OrderStatus.DriverArrived ? activeOrder.waiting : null,
+  );
   const driverPosition = useAppSelector(selectDriverPosition(effectiveActiveId ?? ''));
   const reportedDriverPoint =
     activeOrder?.driver?.lat != null && activeOrder.driver.lng != null
@@ -188,6 +203,65 @@ export function HomeScreen() {
 
     dispatch(pickupSelected(nextPickup));
   }, [dispatch, hasActiveOrder, isHomeFocused, myLocationLabel, pickup, position]);
+
+  /**
+   * До «Куда» метка в центре карты и есть точка подачи: карту двигают, такси приедет туда.
+   * Когда маршрут уже есть, тот же режим включается кнопкой — иначе осмотр пути сдвигал бы подачу.
+   */
+  const showPickupPin = !hasActiveOrder && (!dropoff || adjustingPickup);
+  const followGpsPickupRef = useRef(true);
+  const pickupRef = useRef(pickup);
+  const positionRef = useRef(position);
+  const dropoffRef = useRef(dropoff);
+  const showPickupPinRef = useRef(showPickupPin);
+  useEffect(() => {
+    pickupRef.current = pickup;
+    positionRef.current = position;
+    dropoffRef.current = dropoff;
+    showPickupPinRef.current = showPickupPin;
+  }, [dropoff, pickup, position, showPickupPin]);
+
+  const onPickupCameraChange = useCallback(
+    (change: MapCameraChange) => {
+      if (!showPickupPinRef.current || change.reason !== 'gestures') {
+        return;
+      }
+
+      if (!change.finished) {
+        followGpsPickupRef.current = false;
+        return;
+      }
+
+      const decision = decidePickupFromCamera({
+        current: pickupRef.current,
+        finished: true,
+        mapPointAddress: t('addresses.mapPoint', {
+          lat: change.point.lat.toFixed(5),
+          lng: change.point.lng.toFixed(5),
+        }),
+        myLocationLabel,
+        next: change.point,
+      });
+      followGpsPickupRef.current = decision.followGps;
+      if (decision.pickup) {
+        dispatch(pickupSelected(decision.pickup));
+        return;
+      }
+
+      if (decision.followGps && !dropoffRef.current && positionRef.current) {
+        mapRef.current?.centerOn(positionRef.current, 0.008);
+      }
+    },
+    [dispatch, myLocationLabel, t],
+  );
+
+  const beginPickupAdjust = () => {
+    if (!pickupRef.current || hasActiveOrder) {
+      return;
+    }
+    followGpsPickupRef.current = false;
+    setPickupAdjustKey(dropoffKey);
+  };
 
   const nearbyCenter = pickup ?? (position ? { lat: position.lat, lng: position.lng } : null);
   const nearbyDrivers = useNearbyDrivers({
@@ -289,19 +363,21 @@ export function HomeScreen() {
     }, []),
   );
 
-  const mapMarkers = isHomeFocused ? markers : frozenMapState.markers;
+  const mapMarkers = isHomeFocused
+    ? showPickupPin
+      ? markers.filter((marker) => marker.kind !== 'pickup')
+      : markers
+    : frozenMapState.markers;
   const mapPolyline = isHomeFocused ? routePolyline : frozenMapState.routePolyline;
   const mapRoutePoints = isHomeFocused ? routePoints : frozenMapState.routePoints;
 
   useEffect(() => {
-    if (!isHomeFocused) {
+    if (!isHomeFocused || showPickupPin) {
       return;
     }
 
     if (activeOrder?.id || (pickup && dropoff)) {
       mapRef.current?.fitToRoute();
-    } else if (position) {
-      mapRef.current?.centerOn(position, 0.01);
     }
   }, [
     activeOrder?.id,
@@ -309,10 +385,39 @@ export function HomeScreen() {
     estimate?.route.polyline,
     isHomeFocused,
     pickup,
-    position,
     routePoints,
+    showPickupPin,
     stop,
   ]);
+
+  useEffect(() => {
+    // Пока пассажир не схватил карту, метка стоит на уже выбранной подаче,
+    // а если её не выбирали — на GPS.
+    if (!isHomeFocused || !showPickupPin || dropoff || !followGpsPickupRef.current) {
+      return;
+    }
+    const pickupNow = pickupRef.current;
+    const target =
+      pickupNow && !isAutoPickupLocation(pickupNow, myLocationLabel) ? pickupNow : position;
+    if (!target) {
+      return;
+    }
+    mapRef.current?.centerOn(target, 0.008);
+  }, [dropoff, isHomeFocused, myLocationLabel, pickup, position, showPickupPin]);
+
+  useEffect(() => {
+    if (!adjustingPickup) {
+      return;
+    }
+    const point = pickupRef.current;
+    if (!point) {
+      return;
+    }
+    const center = () => mapRef.current?.centerOn(point, 0.006);
+    center();
+    const retry = setTimeout(center, 350);
+    return () => clearTimeout(retry);
+  }, [adjustingPickup]);
 
   const centerOnMyLocation = () => {
     // Без разрешения кнопка не должна молчать: спрашиваем, а после отказа навсегда — в настройки.
@@ -323,7 +428,20 @@ export function HomeScreen() {
     if (!position) {
       return;
     }
-    mapRef.current?.centerOn(position, 0.01);
+    if (showPickupPin) {
+      followGpsPickupRef.current = true;
+      dispatch(
+        pickupSelected({
+          lat: position.lat,
+          lng: position.lng,
+          address: myLocationLabel,
+        }),
+      );
+      if (dropoff) {
+        setPickupAdjustKey(null);
+      }
+    }
+    mapRef.current?.centerOn(position, showPickupPin ? 0.008 : 0.01);
   };
 
   const openSearch = (field: AddressField = 'dropoff') => {
@@ -413,16 +531,42 @@ export function HomeScreen() {
     <View style={styles.root}>
       <StatusBar style="dark" />
 
-      <View style={styles.mapLayer}>
+      <View
+        style={[
+          styles.mapLayer,
+          showPickupPin && isHomeFocused
+            ? {
+                marginBottom:
+                  showOrderSheet && orderSheetHeight > 0 ? orderSheetHeight : tabBarInset,
+              }
+            : null,
+        ]}
+      >
         <MapCanvas
-          initialPoint={position}
+          autoFit={!showPickupPin}
+          initialPoint={
+            showPickupPin && pickup && !isAutoPickupLocation(pickup, myLocationLabel)
+              ? pickup
+              : position
+          }
           markers={mapMarkers}
+          onCameraChange={isHomeFocused && showPickupPin ? onPickupCameraChange : undefined}
+          onMarkerPress={
+            hasActiveOrder
+              ? undefined
+              : (marker) => {
+                  if (marker.kind === 'pickup') {
+                    beginPickupAdjust();
+                  }
+                }
+          }
           ref={mapRef}
           routePoints={mapRoutePoints}
           routePolyline={mapPolyline}
           // Метка «я здесь», как у водителя. Без разрешения слою MapKit нечего показать.
           showsUserLocation={permission.state === 'granted'}
         />
+        {isHomeFocused && showPickupPin ? <MapCenterPin /> : null}
       </View>
 
       <HomeMapHeader
@@ -430,6 +574,32 @@ export function HomeScreen() {
         onSearchPress={() => openSearch('dropoff')}
         searchLabel={hasActiveOrder ? t('order.goToActive') : t('order.where')}
       />
+
+      {isHomeFocused && showPickupPin ? (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.pickupHint,
+            { top: insets.top + (permission.state === 'denied' && !showOrderSheet ? 128 : 64) },
+          ]}
+        >
+          <Text style={styles.pickupHintText}>{t('addresses.movePickupHint')}</Text>
+        </View>
+      ) : null}
+
+      {isHomeFocused && showOrderSheet ? (
+        <Pressable
+          onPress={showPickupPin ? () => setPickupAdjustKey(null) : beginPickupAdjust}
+          style={[
+            styles.pickupAdjustButton,
+            { bottom: Math.max(orderSheetHeight, bottomInset) + 12 },
+          ]}
+        >
+          <Text style={styles.pickupAdjustText}>
+            {showPickupPin ? t('addresses.movePickupDone') : t('addresses.changePickup')}
+          </Text>
+        </Pressable>
+      ) : null}
 
       {activeOrder ? (
         <Pressable
@@ -440,8 +610,15 @@ export function HomeScreen() {
             <Text style={styles.activeOrderTitle}>
               {formatOrderStatusLabel(activeOrder.status)}
             </Text>
-            <Text numberOfLines={1} style={styles.activeOrderSubtitle}>
-              {activeOrder.dropoffAddress}
+            <Text numberOfLines={waitingClock ? 2 : 1} style={styles.activeOrderSubtitle}>
+              {waitingClock
+                ? waitingClock.phase === 'free'
+                  ? t('waiting.freeLeft', { time: formatCountdown(waitingClock.clockSeconds) })
+                  : t('waiting.paidRate', {
+                      price: formatMoney(waitingClock.pricePerMinute),
+                      amount: formatMoney(waitingClock.amount),
+                    })
+                : activeOrder.dropoffAddress}
             </Text>
           </View>
         </Pressable>
@@ -589,5 +766,37 @@ const styles = StyleSheet.create({
   },
   mapLayer: {
     flex: 1,
+  },
+  pickupAdjustButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    borderRadius: 18,
+    left: 16,
+    maxWidth: '70%',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    elevation: 4,
+    position: 'absolute',
+    zIndex: 6,
+    ...glassShadow({ color: 'rgba(89,71,31,0.08)' }),
+  },
+  pickupAdjustText: {
+    color: '#2E2331',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pickupHint: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 16,
+    left: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    position: 'absolute',
+    right: 72,
+  },
+  pickupHintText: {
+    color: '#2E2331',
+    fontSize: 13,
+    textAlign: 'center',
   },
 });

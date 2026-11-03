@@ -5,7 +5,11 @@
  * (`server/src/modules/realtime/realtime.gateway.ts`). Комнаты назначаются автоматически:
  * `client:{userId}` либо `driver:{userId}`; на `order:{orderId}` подписываемся явно.
  */
-import type { DriverOrderOffer, OrderStatus } from '@nurtaxi/shared-core/shared/model';
+import type {
+  DriverOrderOffer,
+  OrderStatus,
+  OrderWaiting,
+} from '@nurtaxi/shared-core/shared/model';
 
 export const RealtimeEvent = {
   OrderStatus: 'order.status',
@@ -21,6 +25,8 @@ export interface OrderStatusEvent {
   fromStatus: OrderStatus | null;
   toStatus: OrderStatus;
   at: string;
+  /** Приходит вместе со статусом, начиная с «Я на месте». */
+  waiting?: OrderWaiting | null;
 }
 
 export interface DriverLocationEvent {

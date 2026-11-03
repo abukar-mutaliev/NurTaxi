@@ -21,6 +21,11 @@ export interface MapMarker {
   point: GeoPoint;
   title?: string;
   kind: 'pickup' | 'stop' | 'dropoff' | 'driver';
+  /**
+   * Азимут машины, градусы от севера по часовой (как GPS `heading`).
+   * Только для `kind: 'driver'` — без него иконка остаётся горизонтальной.
+   */
+  heading?: number | null;
 }
 
 export interface MapCanvasProps {
@@ -36,7 +41,24 @@ export interface MapCanvasProps {
   initialPoint?: GeoPoint | null;
   /** Синяя точка MapKit отключена по умолчанию — используем свои маркеры A/B. */
   showsUserLocation?: boolean;
+  /**
+   * Подгонять кадр под маркеры и маршрут. Выключается, когда точку задаёт метка
+   * в центре экрана: иначе каждый сдвиг подачи возвращал бы камеру на весь маршрут.
+   */
+  autoFit?: boolean;
+  /** Зум первого кадра. По умолчанию городской; для выбора подъезда нужен ближе. */
+  initialZoomDelta?: number;
   onPress?: (point: GeoPoint) => void;
+  /** Жест или программный сдвиг камеры. `point` — географический центр кадра. */
+  onCameraChange?: (change: MapCameraChange) => void;
+  /** Нажатие на свою метку (подача, остановка, точка Б). Машины не нажимаются. */
+  onMarkerPress?: (marker: MapMarker) => void;
+}
+
+export interface MapCameraChange {
+  point: GeoPoint;
+  reason: 'gestures' | 'application';
+  finished: boolean;
 }
 
 export interface MapCanvasHandle {

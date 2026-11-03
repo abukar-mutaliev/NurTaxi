@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNearbyDrivers } from '@nurtaxi/shared-core/entities/geo';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
 import {
+  formatCountdown,
   formatDistance,
   formatDuration,
   formatMoney,
@@ -28,6 +29,9 @@ import {
   typeScale,
 } from '@nurtaxi/shared-core/shared/ui';
 import {
+  FREE_WAITING_SECONDS,
+  WAITING_PRICE_PER_MINUTE,
+  formatTripTotal,
   isCancellableByClient,
   isSosAllowed,
   isTerminalOrder,
@@ -39,6 +43,7 @@ import {
   useCancelOrderMutation,
   useGetOrderHistoryQuery,
   useGetOrderQuery,
+  useWaitingClock,
 } from '@nurtaxi/shared-core/entities/order';
 import {
   useCurrentPosition,
@@ -171,6 +176,10 @@ export function OrderScreen() {
     // событие о назначении и точку машины легко потерять, когда приложение водителя в фоне.
     pollingInterval: isOnline && !stillSearching && !followDriver ? 0 : 5000,
   });
+
+  const waitingClock = useWaitingClock(
+    order?.status === OrderStatus.DriverArrived ? order.waiting : null,
+  );
 
   useOrderRealtime(orderId ?? null);
 
@@ -444,7 +453,29 @@ export function OrderScreen() {
   // у водителя в карточке те же цифры, и они не должны сжиматься по ходу поездки.
   const tripDuration = order.route?.durationS ? formatDuration(order.route.durationS) : '—';
   const tripDistance = order.route?.distanceM ? formatDistance(order.route.distanceM) : '—';
-  const tripPrice = formatPrice(order.priceFinal ?? order.priceEstimated, 'RUB');
+  const tripPrice = formatTripTotal(order);
+  const driverHasArrived = order.status === OrderStatus.DriverArrived;
+  const waitingCard = driverHasArrived
+    ? {
+        title: t(waitingClock?.phase === 'paid' ? 'waiting.paidTitle' : 'waiting.freeTitle'),
+        clockLabel: formatCountdown(
+          waitingClock?.clockSeconds ?? order.waiting?.freeSeconds ?? FREE_WAITING_SECONDS,
+        ),
+        hint:
+          waitingClock?.phase === 'paid'
+            ? t('waiting.paidRate', {
+                price: formatMoney(waitingClock.pricePerMinute),
+                amount: formatMoney(waitingClock.amount),
+              })
+            : t('waiting.thenPaid', {
+                price: formatMoney(
+                  waitingClock?.pricePerMinute ??
+                    order.waiting?.pricePerMinute ??
+                    WAITING_PRICE_PER_MINUTE,
+                ),
+              }),
+      }
+    : null;
 
   return (
     <>
@@ -480,7 +511,8 @@ export function OrderScreen() {
               cancelLabel={t('order.cancelAction')}
               contactLabel={t('contact.driver')}
               driver={order.driver}
-              etaLabel={etaLabel}
+              etaLabel={driverHasArrived ? null : etaLabel}
+              waiting={waitingCard}
               femaleDriverSubtitle={t('order.femaleDriverSubtitle')}
               femaleDriverTitle={t('order.femaleDriverTitle')}
               onCancel={() => setCancelVisible(true)}

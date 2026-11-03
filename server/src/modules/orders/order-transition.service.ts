@@ -12,6 +12,7 @@ import { assertTransitionAllowed } from './state/order-state-machine';
 import { CompletenessStatus } from '../../common/enums/compliance.enum';
 import { evaluateOrderCompleteness } from './order-completeness';
 import { appendOrderStatusLog } from './append-order-status-log';
+import { toWaitingView } from './waiting';
 import { RisService } from '../ris/ris.service';
 
 const CANCELLED: OrderStatus[] = [
@@ -126,6 +127,7 @@ export class OrderTransitionService {
       });
     }
 
+    const waiting = toWaitingView(saved);
     await this.realtime?.publishOrderStatus(
       saved.id,
       saved.clientId,
@@ -136,6 +138,7 @@ export class OrderTransitionService {
         fromStatus,
         toStatus: options.toStatus,
         at: new Date().toISOString(),
+        ...(waiting ? { waiting } : {}),
       },
     );
 

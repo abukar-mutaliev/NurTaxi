@@ -83,7 +83,6 @@ export function OrdersScreen() {
               styles.card,
               {
                 backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
                 borderRadius: theme.radius.lg,
                 padding: theme.spacing.lg,
               },
@@ -119,7 +118,6 @@ function OrderCard({ item, onPress }: OrderCardProps) {
         styles.card,
         {
           backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
           borderRadius: theme.radius.lg,
           gap: theme.spacing.sm,
           opacity: pressed ? 0.9 : 1,
@@ -156,9 +154,7 @@ function OrderCard({ item, onPress }: OrderCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    elevation: 1,
-    ...shadows.sm,
+    ...shadows.md,
   },
   cardHeader: {
     alignItems: 'center',

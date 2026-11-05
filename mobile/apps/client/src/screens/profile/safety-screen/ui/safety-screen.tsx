@@ -361,7 +361,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.panicButton,
     borderRadius: radius.pill,
-    elevation: 6,
     justifyContent: 'center',
     position: 'absolute',
     ...glassShadow({ color: colors.panicShadow, radius: 16 }),

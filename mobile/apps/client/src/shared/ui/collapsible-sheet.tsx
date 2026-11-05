@@ -24,6 +24,11 @@ import { glassShadow } from './glass-shadow';
 
 import { brandColors, radius } from '@nurtaxi/shared-core/shared/ui';
 const SNAP_MS = 240;
+/**
+ * Запас вокруг карточек внутри шторки. Рамка обрезает содержимое, чтобы сворачиваться, и без
+ * запаса срезала бы их тень прямой линией. Столько занимает размытие и смещение `shadows.md`.
+ */
+const SHADOW_BLEED = 32;
 
 export interface CollapsibleSheetProps {
   /**
@@ -46,6 +51,7 @@ export function CollapsibleSheet({
 }: CollapsibleSheetProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
+  const embedsHandle = typeof children === 'function';
 
   const contentHeight = useSharedValue(0);
   const collapsedHeight = useSharedValue(0);
@@ -140,13 +146,26 @@ export function CollapsibleSheet({
       return { overflow: 'hidden' as const };
     }
 
+    if (!embedsHandle) {
+      return {
+        height: visible.value,
+        overflow: 'hidden' as const,
+      };
+    }
+
+    // Снизу запас растёт по мере раскрытия: свёрнутая шторка обрезается ровно по низу ручки.
+    const range = contentHeight.value - collapsedHeight.value;
+    const openedShare =
+      range > 0 ? Math.min(Math.max((visible.value - collapsedHeight.value) / range, 0), 1) : 1;
+    const bottomBleed = SHADOW_BLEED * openedShare;
+
     return {
-      height: visible.value,
+      height: visible.value + SHADOW_BLEED + bottomBleed,
+      marginBottom: -bottomBleed,
       overflow: 'hidden' as const,
     };
   });
 
-  const embedsHandle = typeof children === 'function';
   const floating = variant === 'floating' && !embedsHandle;
 
   const handle = (
@@ -166,7 +185,11 @@ export function CollapsibleSheet({
   );
 
   return (
-    <Animated.View style={[styles.clip, style, frameStyle]}>
+    <Animated.View
+      // Запас под тень прозрачен: нажатия по нему должны доходить до карты под шторкой.
+      pointerEvents={embedsHandle ? 'box-none' : 'auto'}
+      style={[styles.clip, embedsHandle && styles.clipBleed, style, frameStyle]}
+    >
       <View onLayout={onContentLayout} style={styles.content}>
         {typeof children === 'function' ? (
           // Ручка внутри карточки: обёртку с `pointerEvents="none"` здесь ставить нельзя —
@@ -187,6 +210,12 @@ const styles = StyleSheet.create({
   clip: {
     overflow: 'hidden',
   },
+  clipBleed: {
+    marginHorizontal: -SHADOW_BLEED,
+    marginTop: -SHADOW_BLEED,
+    paddingHorizontal: SHADOW_BLEED,
+    paddingTop: SHADOW_BLEED,
+  },
   content: {
     flexShrink: 0,
   },
@@ -194,9 +223,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'stretch',
     backgroundColor: brandColors.surface,
-    borderColor: brandColors.divider,
     borderRadius: radius.lg,
-    borderWidth: 1,
     height: 36,
     justifyContent: 'center',
     ...glassShadow({ color: brandColors.shadowStrong, offset: { width: 0, height: 4 }, radius: 8 }),

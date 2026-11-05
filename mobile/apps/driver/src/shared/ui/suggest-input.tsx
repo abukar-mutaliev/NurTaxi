@@ -77,10 +77,7 @@ export function SuggestInput({
         <View
           style={{
             backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
             borderRadius: theme.radius.md,
-            borderWidth: 1,
-            elevation: 4,
             maxHeight: 232,
             overflow: 'hidden',
             ...shadows.md,

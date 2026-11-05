@@ -7,7 +7,7 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
   cellBg: brandColors.surface,
-  cellBorder: brandColors.divider,
+  cellBorder: 'transparent',
   cellBorderActive: brandColors.primary,
   cellBorderError: brandColors.danger,
   shadow: brandColors.shadow,
@@ -110,7 +110,6 @@ const styles = StyleSheet.create({
   cell: {
     alignItems: 'center',
     borderWidth: 1,
-    elevation: 2,
     justifyContent: 'center',
     ...glassShadow({ color: colors.shadow }),
   },

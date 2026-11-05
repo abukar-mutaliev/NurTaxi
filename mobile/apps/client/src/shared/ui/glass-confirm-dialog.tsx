@@ -146,9 +146,6 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: GLASS_COLORS.cardBg,
-    borderColor: GLASS_COLORS.cardBorder,
-    borderWidth: 1,
-    elevation: 8,
     ...glassShadow({ color: GLASS_COLORS.shadow, offset: { width: 0, height: 12 }, radius: 24 }),
     width: '100%',
   },

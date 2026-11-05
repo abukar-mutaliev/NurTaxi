@@ -10,7 +10,6 @@ type SymbolName = NonNullable<SymbolViewProps['name']>;
 
 const colors = {
   cardBg: brandColors.surface,
-  cardBorder: brandColors.divider,
   shadow: brandColors.shadow,
   title: brandColors.text,
   chevron: brandColors.textMuted,
@@ -88,10 +87,7 @@ const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
     backgroundColor: colors.cardBg,
-    borderColor: colors.cardBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     gap: 14,
     height: 66,

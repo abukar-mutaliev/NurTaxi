@@ -42,7 +42,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderStyle: 'dashed',
     borderWidth: 1.5,
-    elevation: 2,
     flexDirection: 'row',
     gap: 16,
     minHeight: 72,

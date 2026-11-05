@@ -80,7 +80,6 @@
   border-radius: var(--nur-radius-xl);
   padding: 32px;
   box-shadow: var(--nur-shadow-md);
-  border: 1px solid var(--nur-divider);
 }
 
 .hint {

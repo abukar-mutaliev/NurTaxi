@@ -59,7 +59,6 @@ export function RoundButton({
         styles.circle,
         {
           backgroundColor: background,
-          borderColor: variant === 'surface' ? theme.colors.border : 'transparent',
           borderRadius: size / 2,
           height: size,
           width: size,
@@ -91,8 +90,6 @@ export function RoundButton({
 const styles = StyleSheet.create({
   circle: {
     alignItems: 'center',
-    borderWidth: 1,
-    elevation: 2,
     justifyContent: 'center',
     ...shadows.sm,
   },

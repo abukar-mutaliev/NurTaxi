@@ -5,7 +5,7 @@ import { brandColors, shadows, Text, typeScale } from '@nurtaxi/shared-core/shar
 
 const c = {
   cellBg: brandColors.background,
-  cellBorder: brandColors.surfaceMuted,
+  cellBorder: 'transparent',
   cellBorderActive: brandColors.primary,
   cellBorderError: brandColors.danger,
   shadow: brandColors.shadow,
@@ -109,7 +109,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: c.cellBg,
     borderWidth: 1,
-    elevation: 2,
     justifyContent: 'center',
     ...shadows.md,
   },

@@ -222,7 +222,6 @@ export function ShiftScreen() {
               styles.statusPill,
               {
                 backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
                 borderRadius: theme.radius.pill,
                 paddingHorizontal: theme.spacing.lg,
                 paddingVertical: theme.spacing.sm,
@@ -284,7 +283,6 @@ export function ShiftScreen() {
           styles.sheet,
           {
             backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
             borderTopLeftRadius: theme.radius.xl,
             borderTopRightRadius: theme.radius.xl,
             gap: theme.spacing.md,
@@ -430,7 +428,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheet: {
-    borderWidth: StyleSheet.hairlineWidth,
     bottom: 0,
     left: 0,
     position: 'absolute',
@@ -438,8 +435,6 @@ const styles = StyleSheet.create({
     ...shadows.up,
   },
   statusPill: {
-    borderWidth: 1,
-    elevation: 2,
     ...shadows.sm,
   },
   switchRow: {

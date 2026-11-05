@@ -26,7 +26,6 @@ import { radius } from '../theme/tokens';
 import { shadows } from '../theme/elevation';
 /** Кремовая карточка, как листы заказа; в тёмной теме — поверхность темы. */
 const LIGHT_CARD = brandColors.surface;
-const LIGHT_CARD_BORDER = brandColors.divider;
 const CARD_MAX_WIDTH = 360;
 const BUTTON_HEIGHT = 50;
 
@@ -121,7 +120,6 @@ function AlertCard({ alert }: { alert: AlertRequest }) {
           styles.card,
           {
             backgroundColor: isLight ? LIGHT_CARD : theme.colors.surface,
-            borderColor: isLight ? LIGHT_CARD_BORDER : theme.colors.border,
             gap: theme.spacing.lg,
             padding: theme.spacing.xl,
             width: Math.min(CARD_MAX_WIDTH, width - theme.spacing.xl * 2),
@@ -185,8 +183,6 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: radius.xxl,
-    borderWidth: 1,
-    elevation: 12,
     ...shadows.lg,
   },
   column: {

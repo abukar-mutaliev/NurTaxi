@@ -32,11 +32,7 @@ export function Input({
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
 
-  const borderColor = error
-    ? theme.colors.danger
-    : focused
-      ? theme.colors.primary
-      : theme.colors.border;
+  const borderColor = error ? theme.colors.danger : focused ? theme.colors.primary : 'transparent';
 
   return (
     <View style={[{ gap: theme.spacing.xs }, containerStyle]}>
@@ -61,9 +57,9 @@ export function Input({
           styles.input,
           theme.typography.body,
           {
-            backgroundColor: theme.colors.surface,
+            backgroundColor: theme.colors.surfaceMuted,
             borderColor,
-            borderRadius: theme.radius.md,
+            borderRadius: theme.radius.lg,
             color: theme.colors.text,
             paddingHorizontal: theme.spacing.lg,
           },

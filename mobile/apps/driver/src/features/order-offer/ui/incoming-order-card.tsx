@@ -46,7 +46,6 @@ export function IncomingOrderCard({
         styles.card,
         {
           backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
           borderRadius: theme.radius.xl,
           gap: theme.spacing.md,
           padding: theme.spacing.lg,
@@ -111,12 +110,7 @@ export function IncomingOrderCard({
 
       <View style={[styles.actions, { gap: theme.spacing.sm }]}>
         <View style={{ flex: 1 }}>
-          <PillButton
-            disabled={accepting}
-            onPress={onDecline}
-            title="Отклонить"
-            variant="surface"
-          />
+          <PillButton disabled={accepting} onPress={onDecline} title="Отклонить" variant="soft" />
         </View>
         <View style={{ flex: 1.4 }}>
           <PillButton
@@ -136,8 +130,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   card: {
-    borderWidth: 1,
-    elevation: 6,
     ...shadows.up,
   },
   headerRow: {

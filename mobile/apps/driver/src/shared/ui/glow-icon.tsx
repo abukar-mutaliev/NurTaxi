@@ -31,7 +31,6 @@ const styles = StyleSheet.create({
   inner: {
     alignItems: 'center',
     backgroundColor: brandColors.surface,
-    elevation: 3,
     justifyContent: 'center',
     ...shadows.md,
   },

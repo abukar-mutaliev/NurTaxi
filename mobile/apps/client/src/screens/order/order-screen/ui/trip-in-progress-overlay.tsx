@@ -12,7 +12,6 @@ import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
   glassBg: brandColors.surface,
-  glassBorder: brandColors.divider,
   sheetBg: brandColors.surface,
   shadow: brandColors.shadow,
   text: brandColors.text,
@@ -286,10 +285,7 @@ const styles = StyleSheet.create({
   cancelButton: {
     alignItems: 'center',
     backgroundColor: colors.cancelBg,
-    borderColor: colors.glassBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     flex: 1,
     height: 56,
     justifyContent: 'center',
@@ -346,9 +342,6 @@ const styles = StyleSheet.create({
   },
   glassButton: {
     backgroundColor: colors.glassBg,
-    borderColor: colors.glassBorder,
-    borderWidth: 1,
-    elevation: 2,
     ...glassShadow({ color: colors.shadow }),
   },
   centerSlot: {
@@ -381,10 +374,7 @@ const styles = StyleSheet.create({
   shareButton: {
     alignItems: 'center',
     backgroundColor: colors.shareBg,
-    borderColor: colors.glassBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     flex: 1,
     height: 56,
     justifyContent: 'center',
@@ -449,10 +439,7 @@ const styles = StyleSheet.create({
   },
   tripSheet: {
     backgroundColor: colors.sheetBg,
-    borderColor: colors.glassBorder,
     borderRadius: radius.xxl,
-    borderWidth: 1,
-    elevation: 4,
     ...glassShadow({ color: colors.shadow }),
   },
 });

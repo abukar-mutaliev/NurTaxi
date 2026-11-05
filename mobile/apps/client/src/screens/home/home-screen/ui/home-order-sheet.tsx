@@ -23,7 +23,6 @@ import { TariffIcon, resolveTariffIconVariant } from './tariff-icon';
 
 const sheetColors = {
   background: brandColors.surface,
-  border: brandColors.divider,
   shadow: brandColors.shadowStrong,
   label: brandColors.textMuted,
   text: brandColors.text,
@@ -32,11 +31,8 @@ const sheetColors = {
   stopDot: brandColors.primary,
   dropoffDot: brandColors.text,
   tariffSelectedBg: brandColors.secondarySoft,
-  tariffSelectedBorder: brandColors.primary,
-  tariffBg: brandColors.surface,
-  tariffBorder: brandColors.border,
-  paymentBg: brandColors.surface,
-  paymentBorder: brandColors.border,
+  tariffBg: brandColors.surfaceMuted,
+  paymentBg: brandColors.surfaceMuted,
   buttonStart: brandColors.primary,
   buttonEnd: brandColors.primary,
   buttonText: brandColors.onPrimary,
@@ -459,7 +455,6 @@ const styles = StyleSheet.create({
   orderButton: {
     alignItems: 'center',
     borderRadius: radius.xl,
-    elevation: 3,
     height: 48,
     justifyContent: 'center',
     ...glassShadow({ color: sheetColors.buttonShadow, offset: { width: 0, height: 4 }, radius: 8 }),
@@ -485,9 +480,7 @@ const styles = StyleSheet.create({
   paymentRow: {
     alignItems: 'center',
     backgroundColor: sheetColors.paymentBg,
-    borderColor: sheetColors.paymentBorder,
     borderRadius: radius.md,
-    borderWidth: 1,
     flexDirection: 'row',
     gap: 8,
     marginHorizontal: 16,
@@ -524,9 +517,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: sheetColors.background,
-    borderColor: sheetColors.border,
     borderRadius: radius.xl,
-    borderWidth: 1,
     overflow: 'hidden',
   },
   stopMain: {
@@ -538,7 +529,6 @@ const styles = StyleSheet.create({
   },
   sheetFrame: {
     borderRadius: radius.xl,
-    elevation: 8,
     marginHorizontal: 16,
     ...glassShadow({ color: sheetColors.shadow, radius: 16 }),
   },
@@ -559,13 +549,9 @@ const styles = StyleSheet.create({
   },
   tariffCardDefault: {
     backgroundColor: sheetColors.tariffBg,
-    borderColor: sheetColors.tariffBorder,
-    borderWidth: 1,
   },
   tariffCardSelected: {
     backgroundColor: sheetColors.tariffSelectedBg,
-    borderColor: sheetColors.tariffSelectedBorder,
-    borderWidth: 1.5,
   },
   tariffEta: {
     color: sheetColors.label,

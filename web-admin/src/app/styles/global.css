@@ -1,62 +1,61 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  margin: 0;
-  min-height: 100%;
-}
-
-body {
-  font-family: var(--nur-font-family);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: var(--nur-background);
-  color: var(--nur-text);
-}
-
-.ant-layout {
-  background: var(--nur-background);
-}
-
-.ant-card {
-  box-shadow: var(--nur-shadow-sm);
-}
-
-.ant-table-wrapper .ant-table-thead > tr > th {
-  font-weight: 600;
-}
-
-.ant-statistic-title {
-  font-size: var(--nur-font-sm);
-  color: var(--nur-text-muted);
-}
-
-.ant-modal-content {
-  border-radius: var(--nur-radius-xl) !important;
-}
-
-.ant-btn-primary {
-  box-shadow: var(--nur-shadow-sm);
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--nur-border);
-  border-radius: var(--nur-radius-sm);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--nur-icon);
-}
-
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--nur-font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--nur-background);
+  color: var(--nur-text);
+}
+
+.ant-layout {
+  background: var(--nur-background);
+}
+
+.ant-card {
+  box-shadow: var(--nur-shadow-md);
+}
+
+.ant-table-wrapper .ant-table-thead > tr > th {
+  font-weight: 600;
+}
+
+.ant-statistic-title {
+  font-size: var(--nur-font-sm);
+  color: var(--nur-text-muted);
+}
+
+.ant-modal-content {
+  border-radius: var(--nur-radius-xl) !important;
+}
+
+.ant-btn-primary {
+  box-shadow: var(--nur-shadow-sm);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nur-border);
+  border-radius: var(--nur-radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nur-icon);
+}

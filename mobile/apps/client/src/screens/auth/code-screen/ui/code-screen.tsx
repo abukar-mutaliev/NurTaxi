@@ -41,7 +41,6 @@ const codeColors = {
   buttonText: brandColors.onPrimary,
   buttonShadow: brandColors.shadow,
   devCardBg: brandColors.secondarySoft,
-  devCardBorder: brandColors.secondary,
   devCardText: brandColors.textMuted,
 } as const;
 
@@ -246,7 +245,6 @@ export function CodeScreen() {
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    elevation: 3,
     justifyContent: 'center',
     ...glassShadow({ color: codeColors.buttonShadow, offset: { width: 0, height: 6 }, radius: 9 }),
   },
@@ -263,8 +261,6 @@ const styles = StyleSheet.create({
   },
   devCard: {
     backgroundColor: codeColors.devCardBg,
-    borderColor: codeColors.devCardBorder,
-    borderWidth: 1,
   },
   devCardText: {
     color: codeColors.devCardText,

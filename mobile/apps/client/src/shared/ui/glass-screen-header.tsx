@@ -10,7 +10,6 @@ import { glassShadow } from './glass-shadow';
 
 const colors = {
   glassBg: brandColors.surface,
-  glassBorder: brandColors.divider,
   shadow: brandColors.shadow,
   title: brandColors.text,
 } as const;
@@ -60,10 +59,7 @@ const styles = StyleSheet.create({
   backButton: {
     alignItems: 'center',
     backgroundColor: colors.glassBg,
-    borderColor: colors.glassBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     height: 44,
     justifyContent: 'center',
     ...glassShadow({ color: colors.shadow }),

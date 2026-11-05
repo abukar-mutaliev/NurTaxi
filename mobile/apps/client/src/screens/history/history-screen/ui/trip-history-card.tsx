@@ -6,7 +6,6 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
   cardBg: brandColors.surface,
-  cardBorder: brandColors.divider,
   shadow: brandColors.shadow,
   date: brandColors.textMuted,
   dropoff: brandColors.text,
@@ -61,10 +60,7 @@ export function TripHistoryCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.cardBg,
-    borderColor: colors.cardBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     minHeight: 104,
     paddingHorizontal: 19,
     paddingVertical: 17,

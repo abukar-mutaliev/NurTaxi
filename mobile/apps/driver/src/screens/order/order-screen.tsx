@@ -230,7 +230,6 @@ export function OrderScreen({ orderId }: { orderId: string }) {
                 styles.card,
                 {
                   backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
                   borderRadius: theme.radius.lg,
                   gap: theme.spacing.sm,
                   marginTop: theme.spacing.xl,
@@ -392,7 +391,6 @@ export function OrderScreen({ orderId }: { orderId: string }) {
             styles.statusPill,
             {
               backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
               borderRadius: theme.radius.pill,
               paddingHorizontal: theme.spacing.lg,
               paddingVertical: theme.spacing.sm,
@@ -424,7 +422,6 @@ export function OrderScreen({ orderId }: { orderId: string }) {
           styles.sheet,
           {
             backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border,
             borderTopLeftRadius: theme.radius.xl,
             borderTopRightRadius: theme.radius.xl,
             paddingBottom: insets.bottom + theme.spacing.lg,
@@ -439,16 +436,12 @@ export function OrderScreen({ orderId }: { orderId: string }) {
         >
           {/* Маршрут */}
           <View
-            style={[
-              styles.card,
-              {
-                backgroundColor: theme.colors.surfaceMuted,
-                borderColor: 'transparent',
-                borderRadius: theme.radius.lg,
-                gap: theme.spacing.md,
-                padding: theme.spacing.lg,
-              },
-            ]}
+            style={{
+              backgroundColor: theme.colors.surfaceMuted,
+              borderRadius: theme.radius.lg,
+              gap: theme.spacing.md,
+              padding: theme.spacing.lg,
+            }}
           >
             <View style={[styles.addressRow, { gap: theme.spacing.sm }]}>
               <View
@@ -501,16 +494,12 @@ export function OrderScreen({ orderId }: { orderId: string }) {
 
           {waitingClock ? (
             <View
-              style={[
-                styles.card,
-                {
-                  backgroundColor: theme.colors.surfaceMuted,
-                  borderColor: 'transparent',
-                  borderRadius: theme.radius.lg,
-                  gap: theme.spacing.xs,
-                  padding: theme.spacing.lg,
-                },
-              ]}
+              style={{
+                backgroundColor: theme.colors.surfaceMuted,
+                borderRadius: theme.radius.lg,
+                gap: theme.spacing.xs,
+                padding: theme.spacing.lg,
+              }}
             >
               <Text tone="muted" variant="caption">
                 {t(waitingClock.phase === 'paid' ? 'waiting.paidTitle' : 'waiting.freeTitle')}
@@ -564,7 +553,7 @@ export function OrderScreen({ orderId }: { orderId: string }) {
             height={50}
             onPress={contactPassenger}
             title={t('contact.passenger')}
-            variant="surface"
+            variant="soft"
           />
 
           {step ? <PillButton loading={updating} onPress={advance} title={step.label} /> : null}
@@ -580,9 +569,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   card: {
-    borderWidth: 1,
-    elevation: 1,
-    ...shadows.sm,
+    ...shadows.md,
   },
   finishedBody: {
     alignItems: 'center',
@@ -598,7 +585,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheet: {
-    borderWidth: StyleSheet.hairlineWidth,
     bottom: 0,
     left: 0,
     maxHeight: '62%',
@@ -607,8 +593,6 @@ const styles = StyleSheet.create({
     ...shadows.up,
   },
   statusPill: {
-    borderWidth: 1,
-    elevation: 2,
     ...shadows.sm,
   },
   topBar: {

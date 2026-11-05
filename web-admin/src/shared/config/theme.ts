@@ -77,8 +77,6 @@ export const palette = {
   dangerSoft: mixColors(DANGER, background, 0.88),
 
   overlay: withAlpha(text, 0.4),
-  shadow: withAlpha(text, 0.08),
-  shadowStrong: withAlpha(text, 0.14),
 } as const;
 
 export type PaletteToken = keyof typeof palette;
@@ -109,11 +107,16 @@ export const radius = {
   pill: 999,
 } as const;
 
-/** Спокойные тени из цвета текста, без цветных ореолов. */
+const ink = (alpha: number) => withAlpha(text, alpha);
+
+/**
+ * Мягкие тени из цвета текста, без цветных ореолов: карточки без рамок парят над фоном.
+ * Те же значения, что `shadows` в мобильных приложениях.
+ */
 export const shadows = {
-  sm: `0 2px 8px ${palette.shadow}`,
-  md: `0 6px 16px ${palette.shadow}`,
-  lg: `0 12px 28px ${palette.shadowStrong}`,
+  sm: `0 2px 8px ${ink(0.08)}`,
+  md: `0 8px 24px ${ink(0.08)}, 0 1px 3px ${ink(0.04)}`,
+  lg: `0 16px 40px ${ink(0.16)}, 0 2px 8px ${ink(0.06)}`,
 } as const;
 
 const toKebab = (name: string) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
@@ -207,8 +210,12 @@ export const antTheme = {
       headerBg: palette.surfaceMuted,
       rowHoverBg: palette.secondarySubtle,
     },
+    // Карточки без рамок: парят над фоном на тени, при наведении поднимаются выше.
     Card: {
       borderRadiusLG: radius.xl,
+      boxShadowCard: shadows.lg,
+      boxShadowTertiary: shadows.md,
+      colorBorderSecondary: 'transparent',
     },
     // Плоские кнопки: тень только у основной, и спокойная.
     Button: {

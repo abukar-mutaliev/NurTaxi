@@ -729,10 +729,7 @@ const styles = StyleSheet.create({
   },
   activeOrderCard: {
     backgroundColor: brandColors.surface,
-    borderColor: brandColors.divider,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    elevation: 2,
     gap: 2,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -775,7 +772,6 @@ const styles = StyleSheet.create({
     maxWidth: '70%',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    elevation: 4,
     position: 'absolute',
     zIndex: 6,
     ...glassShadow({ color: 'rgba(89,71,31,0.08)' }),

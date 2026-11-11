@@ -41,3 +41,9 @@ infra/**/*.tfstate.*
 infra/**/.terraform.lock.hcl
 minio-data/
 pg-data/
+
+# Generated native projects. Also ignored under mobile/, but repeated here so
+# EAS Build on Windows skips them: eas-cli only applies nested .gitignore
+# rules when the path uses forward slashes, and the copy step does not.
+mobile/apps/*/android/
+mobile/apps/*/ios/

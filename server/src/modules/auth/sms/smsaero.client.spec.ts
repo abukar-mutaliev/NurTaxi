@@ -1,4 +1,10 @@
-import { SmsAeroClient, SmsAeroRequestError, toMsisdn } from './smsaero.client';
+import {
+  SmsAeroClient,
+  SmsAeroRequestError,
+  parseSmsAeroSigns,
+  pickActiveSign,
+  toMsisdn,
+} from './smsaero.client';
 
 const config = {
   email: 'ops@nurtaxi.ru',
@@ -83,6 +89,40 @@ describe('SmsAeroClient', () => {
     await expect(client.mobileIdSend('+79280000001', 'http://localhost/cb')).rejects.toThrow(
       'Validation error. (callbackUrl: incorrect; sign: required)',
     );
+  });
+});
+
+describe('parseSmsAeroSigns', () => {
+  it('читает объект с числовыми ключами и пропускает totalCount', () => {
+    expect(
+      parseSmsAeroSigns({
+        totalCount: '2',
+        0: { id: 1, name: 'GOOD SIGN', status: 1, extendStatus: 'active' },
+        1: { id: 2, name: 'BAD SIGN', status: 2, extendStatus: 'reject' },
+      }),
+    ).toEqual([
+      { name: 'GOOD SIGN', status: 1, extendStatus: 'active' },
+      { name: 'BAD SIGN', status: 2, extendStatus: 'reject' },
+    ]);
+  });
+});
+
+describe('pickActiveSign', () => {
+  const signs = [
+    { name: 'SMS Aero', status: 2, extendStatus: 'reject' },
+    { name: 'Nur Taxi', status: 1, extendStatus: 'active' },
+  ];
+
+  it('берёт настроенное имя, если оно активно', () => {
+    expect(pickActiveSign(signs, 'nur taxi')).toBe('Nur Taxi');
+  });
+
+  it('берёт первое активное, если настроенное отклонено', () => {
+    expect(pickActiveSign(signs, 'SMS Aero')).toBe('Nur Taxi');
+  });
+
+  it('возвращает null, когда активных имён нет', () => {
+    expect(pickActiveSign([{ name: 'SMS Aero', status: 2, extendStatus: 'reject' }], 'SMS Aero')).toBeNull();
   });
 });
 

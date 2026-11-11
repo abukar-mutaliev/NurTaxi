@@ -10,6 +10,12 @@ export class SmsAeroRequestError extends Error {
   }
 }
 
+export interface SmsAeroSign {
+  name: string;
+  status: number;
+  extendStatus: string;
+}
+
 export interface MobileIdRecord {
   id: number;
   status: number;
@@ -32,12 +38,20 @@ export class SmsAeroClient {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  async sendSms(phone: string, text: string): Promise<void> {
+  get configuredSign(): string {
+    return this.config.sign;
+  }
+
+  async sendSms(phone: string, text: string, sign = this.config.sign): Promise<void> {
     await this.post('sms/send', {
       number: toMsisdn(phone),
-      sign: this.config.sign,
+      sign,
       text,
     });
+  }
+
+  async listSigns(): Promise<SmsAeroSign[]> {
+    return parseSmsAeroSigns(await this.post('sign/list', {}));
   }
 
   async mobileIdSend(phone: string, callbackUrl: string): Promise<MobileIdRecord> {
@@ -116,6 +130,32 @@ export function formatSmsAeroDetails(data: unknown): string {
       return `${key}: ${text.replace(/\d{7,}/g, '***').slice(0, 180)}`;
     })
     .join('; ');
+}
+
+/** Ответ sign/list — объект с числовыми ключами, не массив. */
+export function parseSmsAeroSigns(data: unknown): SmsAeroSign[] {
+  if (!data || typeof data !== 'object') return [];
+  const rows = Array.isArray(data) ? data : Object.values(data as Record<string, unknown>);
+  const signs: SmsAeroSign[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object' || !('name' in row)) continue;
+    const name = String((row as { name?: unknown }).name ?? '').trim();
+    if (!name) continue;
+    signs.push({
+      name,
+      status: Number((row as { status?: unknown }).status ?? -1),
+      extendStatus: String((row as { extendStatus?: unknown }).extendStatus ?? ''),
+    });
+  }
+  return signs;
+}
+
+/** Активное имя: сначала совпадение с настройкой, иначе первое активное. */
+export function pickActiveSign(signs: SmsAeroSign[], preferred: string): string | null {
+  const active = signs.filter((sign) => sign.status === 1 || sign.extendStatus === 'active');
+  const wanted = preferred.trim().toLowerCase();
+  const match = active.find((sign) => sign.name.trim().toLowerCase() === wanted);
+  return match?.name ?? active[0]?.name ?? null;
 }
 
 /** SMS Aero ждёт MSISDN без «+»: 79990000000. */

@@ -51,6 +51,17 @@ describe('OtpService', () => {
     await expect(service.verify(phone, '9999')).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('снимает паузу, если SMS не ушло', async () => {
+    redis.hset.mockResolvedValue(1);
+    redis.expire.mockResolvedValue(1);
+    redis.set.mockResolvedValue('OK');
+    redis.del.mockResolvedValue(1);
+    sms.sendCode.mockRejectedValueOnce(new Error('sign'));
+
+    await expect(service.request('+79280000001')).rejects.toThrow('sign');
+    expect(redis.del).toHaveBeenCalledWith('otp:cooldown:+79280000001');
+  });
+
   it('блокирует при превышении cooldown', async () => {
     redis.ttl.mockResolvedValue(30);
 

@@ -54,7 +54,13 @@ export class OtpService {
     await this.redis.expire(this.codeKey(phone), this.ttlSec);
     await this.redis.set(cooldownKey, '1', 'EX', this.resendCooldownSec);
 
-    await this.sms.sendCode(phone, code);
+    try {
+      await this.sms.sendCode(phone, code);
+    } catch (error) {
+      // Иначе отказ SMS Aero блокирует повтор на минуту, хотя код не ушёл.
+      await this.redis.del(cooldownKey);
+      throw error;
+    }
 
     return {
       expiresInSec: this.ttlSec,

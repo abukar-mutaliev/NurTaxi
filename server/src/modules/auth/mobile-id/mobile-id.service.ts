@@ -66,6 +66,12 @@ export class MobileIdService {
     return this.config.mobileId;
   }
 
+  /** Сессия есть, только если mobile-id/send успел создать её. Иначе код лежит в обычном OTP. */
+  async hasSession(phone: string): Promise<boolean> {
+    const session = await this.read(phone);
+    return session !== null && session.status !== 'failed';
+  }
+
   async request(phone: string): Promise<MobileIdRequestResult> {
     await this.assertCanRequest(phone);
 

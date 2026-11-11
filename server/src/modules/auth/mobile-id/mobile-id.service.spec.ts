@@ -100,6 +100,18 @@ describe('MobileIdService', () => {
 
     expect(lastSession(redis.set.mock.calls).status).toBe('confirmed');
   });
+
+  it('не считает сессией номер, для которого Mobile ID не стартовал', async () => {
+    redis.get.mockResolvedValue(null);
+    await expect(service.hasSession('+79280000001')).resolves.toBe(false);
+  });
+
+  it('видит живую сессию Mobile ID', async () => {
+    redis.get.mockResolvedValue(
+      JSON.stringify({ id: 17, phone: '+79280000001', status: 'pending', attempts: 0 }),
+    );
+    await expect(service.hasSession('+79280000001')).resolves.toBe(true);
+  });
 });
 
 function lastSession(calls: unknown[][]): { status: string; attempts: number } {

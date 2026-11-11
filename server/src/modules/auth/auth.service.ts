@@ -105,7 +105,8 @@ export class AuthService {
    */
   async verifyOtp(phone: string, code: string, meta?: RequestMeta): Promise<AuthResult> {
     try {
-      if (this.mobileId.isEnabled()) {
+      // После отката Mobile ID код лежит в Redis OTP, сессии Mobile ID нет.
+      if (this.mobileId.isEnabled() && (await this.mobileId.hasSession(phone))) {
         await this.mobileId.verifyCode(phone, code);
         const claimed = await this.mobileId.claimConfirmed(phone);
         if (!claimed) {

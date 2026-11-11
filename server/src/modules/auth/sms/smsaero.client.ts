@@ -113,7 +113,7 @@ export function formatSmsAeroDetails(data: unknown): string {
   return Object.entries(data as Record<string, unknown>)
     .map(([key, value]) => {
       const text = Array.isArray(value) ? value.map(String).join(',') : String(value ?? '');
-      return `${key}: ${text.replace(/\d{7,}/g, '***').slice(0, 80)}`;
+      return `${key}: ${text.replace(/\d{7,}/g, '***').slice(0, 180)}`;
     })
     .join('; ');
 }

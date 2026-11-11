@@ -105,6 +105,31 @@ export interface RoutingConfig {
   fallbackToStub: boolean;
 }
 
+export type SmsProviderKind = 'stub' | 'smsaero';
+
+export interface SmsConfig {
+  /** `smsaero`, когда заданы почта и API-ключ. Иначе заглушка (код только в логе). */
+  provider: SmsProviderKind;
+  email: string;
+  apiKey: string;
+  /** Имя отправителя. Для тестового ключа SMS Aero допустимо `SMS Aero`. */
+  sign: string;
+  baseUrl: string;
+  timeoutMs: number;
+  /**
+   * Вход через Mobile ID SMS Aero (SIM-push, затем SMS-код).
+   * Включается, когда есть ключ, секрет вебхука и публичный адрес API.
+   */
+  mobileId: boolean;
+  /** Полный URL, который SMS Aero вызывает при смене статуса. Включает секрет. */
+  callbackUrl: string;
+  callbackSecret: string;
+  /** Тестовый ключ SMS Aero: SMS не уходят, код Mobile ID всегда 1234. */
+  testMode: boolean;
+  /** Сколько ждать финальный статус после ввода SMS-кода, мс. */
+  verifyWaitMs: number;
+}
+
 export interface Configuration {
   app: AppConfig;
   database: DatabaseConfig;
@@ -116,6 +141,7 @@ export interface Configuration {
   observability: ObservabilityConfig;
   maps: MapsConfig;
   routing: RoutingConfig;
+  sms: SmsConfig;
 }
 
 export default (): Configuration => ({
@@ -191,4 +217,41 @@ export default (): Configuration => ({
     requestTimeoutMs: toInt(process.env.OSRM_TIMEOUT_MS, 8000),
     fallbackToStub: toBool(process.env.OSRM_FALLBACK_TO_STUB, true),
   },
+  sms: readSmsConfig(),
 });
+
+function readSmsConfig(): SmsConfig {
+  const email = (process.env.SMSAERO_EMAIL ?? '').trim();
+  const apiKey = (process.env.SMSAERO_API_KEY ?? '').trim();
+  const sign = (process.env.SMSAERO_SIGN ?? '').trim() || 'SMS Aero';
+  const callbackSecret = (process.env.SMSAERO_CALLBACK_SECRET ?? '').trim();
+  const callbackUrl = buildMobileIdCallbackUrl(callbackSecret);
+  const hasCredentials = Boolean(email && apiKey);
+  const mobileIdRequested = process.env.SMSAERO_MOBILE_ID !== 'false';
+
+  return {
+    provider: hasCredentials ? 'smsaero' : 'stub',
+    email,
+    apiKey,
+    sign,
+    baseUrl: (process.env.SMSAERO_BASE_URL ?? 'https://gate.smsaero.ru/v2').replace(/\/$/, ''),
+    timeoutMs: toInt(process.env.SMSAERO_TIMEOUT_MS, 10_000),
+    mobileId: hasCredentials && mobileIdRequested && Boolean(callbackUrl && callbackSecret),
+    callbackUrl,
+    callbackSecret,
+    testMode: toBool(process.env.SMSAERO_TEST_MODE),
+    verifyWaitMs: toInt(process.env.SMSAERO_VERIFY_WAIT_MS, 5_000),
+  };
+}
+
+/** URL вебхука Mobile ID. Секрет в query: SMS Aero присылает его обратно как есть. */
+function buildMobileIdCallbackUrl(secret: string): string {
+  const explicit = (process.env.SMSAERO_CALLBACK_URL ?? '').trim();
+  const publicApi = (process.env.PUBLIC_API_URL ?? '').trim().replace(/\/$/, '');
+  const prefix = (process.env.API_PREFIX ?? 'api/v1').replace(/^\/|\/$/g, '');
+  const base = explicit || (publicApi ? `${publicApi}/${prefix}/auth/mobile-id/callback` : '');
+  if (!base) return '';
+  if (!secret || /[?&]token=/.test(base)) return base;
+  const join = base.includes('?') ? '&' : '?';
+  return `${base}${join}token=${encodeURIComponent(secret)}`;
+}

@@ -9,7 +9,13 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 import { sessionUnauthorized } from '@nurtaxi/shared-core/shared/api';
 import { tokenStorage } from '@nurtaxi/shared-core/shared/lib';
-import type { OtpVerifyResponse, Role, UserProfile } from '@nurtaxi/shared-core/shared/model';
+import type {
+  AuthChallengeMethod,
+  AuthChallengeStatus,
+  OtpVerifyResponse,
+  Role,
+  UserProfile,
+} from '@nurtaxi/shared-core/shared/model';
 
 /**
  * `unknown` — приложение ещё не прочитало SecureStore. Навигация в этом состоянии показывает
@@ -24,6 +30,9 @@ export interface SessionState {
   requiresConsent: boolean;
   /** Телефон, на который отправлен OTP, — нужен экрану ввода кода. */
   pendingPhone: string | null;
+  /** `mobile-id` ждёт подтверждение на телефоне, затем код из SMS. */
+  authMethod: AuthChallengeMethod | null;
+  challengeStatus: AuthChallengeStatus | null;
   /** Только для dev-окружения: код из ответа сервера. */
   devCode: string | null;
 }
@@ -33,6 +42,8 @@ const initialState: SessionState = {
   user: null,
   requiresConsent: false,
   pendingPhone: null,
+  authMethod: null,
+  challengeStatus: null,
   devCode: null,
 };
 
@@ -44,14 +55,30 @@ export const sessionSlice = createSlice({
     sessionRestored(state, action: PayloadAction<{ hasTokens: boolean }>) {
       state.status = action.payload.hasTokens ? 'authenticated' : 'anonymous';
     },
-    otpRequested(state, action: PayloadAction<{ phone: string; devCode?: string }>) {
+    otpRequested(
+      state,
+      action: PayloadAction<{
+        phone: string;
+        devCode?: string;
+        method?: AuthChallengeMethod;
+        status?: AuthChallengeStatus;
+      }>,
+    ) {
       state.pendingPhone = action.payload.phone;
       state.devCode = action.payload.devCode ?? null;
+      state.authMethod = action.payload.method ?? 'sms';
+      state.challengeStatus = action.payload.status ?? 'otp_required';
+    },
+    challengeUpdated(state, action: PayloadAction<{ status: AuthChallengeStatus }>) {
+      state.challengeStatus = action.payload.status;
     },
     signedIn(state, action: PayloadAction<OtpVerifyResponse>) {
       state.status = 'authenticated';
       state.user = action.payload.user;
       state.requiresConsent = action.payload.requiresConsent || !action.payload.user.name;
+      state.pendingPhone = null;
+      state.authMethod = null;
+      state.challengeStatus = null;
       state.devCode = null;
     },
     profileLoaded(state, action: PayloadAction<UserProfile>) {
@@ -75,6 +102,7 @@ export const sessionSlice = createSlice({
 export const {
   sessionRestored,
   otpRequested,
+  challengeUpdated,
   signedIn,
   profileLoaded,
   onboardingCompleted,
@@ -106,4 +134,8 @@ export const selectRequiresOnboarding = (state: WithSessionState): boolean =>
   state.session.status === 'authenticated' && state.session.requiresConsent;
 export const selectPendingPhone = (state: WithSessionState): string | null =>
   state.session.pendingPhone;
+export const selectAuthMethod = (state: WithSessionState): AuthChallengeMethod | null =>
+  state.session.authMethod;
+export const selectChallengeStatus = (state: WithSessionState): AuthChallengeStatus | null =>
+  state.session.challengeStatus;
 export const selectDevCode = (state: WithSessionState): string | null => state.session.devCode;

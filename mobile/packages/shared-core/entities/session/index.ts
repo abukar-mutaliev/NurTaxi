@@ -1,8 +1,11 @@
 export {
+  challengeUpdated,
   onboardingCompleted,
   otpRequested,
   profileLoaded,
   restoreSession,
+  selectAuthMethod,
+  selectChallengeStatus,
   selectCurrentUser,
   selectDevCode,
   selectIsAuthenticated,

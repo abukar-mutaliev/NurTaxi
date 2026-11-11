@@ -52,8 +52,30 @@ describe('assertProductionSecurity', () => {
         S3_ACCESS_KEY: 'prod-s3-access-key',
         S3_SECRET_KEY: 'prod-s3-secret-key-not-from-repo',
         FIELD_ENCRYPTION_KEY: 'nurtaxi-prod-field-encryption-key-32ch',
+        SMSAERO_EMAIL: 'ops@nurtaxi.ru',
+        SMSAERO_API_KEY: 'smsaero-api-key',
+        SMSAERO_SIGN: 'NurTaxi',
+        SMSAERO_CALLBACK_SECRET: 'callback-secret',
+        PUBLIC_API_URL: 'https://taxi.rulplus.ru',
       }),
     ).not.toThrow();
+  });
+
+  it('refuses production without SMS Aero', () => {
+    expect(() =>
+      assertProductionSecurity({
+        NODE_ENV: Environment.Production,
+        JWT_ACCESS_SECRET: 'a-long-enough-access-secret-value',
+        JWT_REFRESH_SECRET: 'a-long-enough-refresh-secret-value',
+        DB_PASSWORD: 'strong-db-password',
+        DB_SSL: 'true',
+        CORS_ORIGINS: 'https://admin.nurtaxi.ru',
+        S3_REGION: 'ru-central-1',
+        S3_ACCESS_KEY: 'prod-s3-access-key',
+        S3_SECRET_KEY: 'prod-s3-secret-key-not-from-repo',
+        FIELD_ENCRYPTION_KEY: 'nurtaxi-prod-field-encryption-key-32ch',
+      }),
+    ).toThrow(/SMSAERO_EMAIL/);
   });
 
   it('refuses production with published S3 credentials', () => {

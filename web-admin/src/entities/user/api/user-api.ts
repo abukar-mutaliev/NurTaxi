@@ -1,6 +1,6 @@
 import { baseApi } from '@/shared/api';
 import { API_TAGS } from '@/shared/api/tags';
-import type { AuthResult, OtpRequestResponse, TokenPair, User } from '../model/types';
+import type { AuthResult, OtpRequestResponse, OtpStatusResponse, TokenPair, User } from '../model/types';
 
 export const userApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -9,6 +9,9 @@ export const userApi = baseApi.injectEndpoints({
     }),
     verifyOtp: build.mutation<AuthResult, { phone: string; code: string }>({
       query: (body) => ({ url: '/auth/otp/verify', method: 'POST', body }),
+    }),
+    otpStatus: build.mutation<OtpStatusResponse, { phone: string }>({
+      query: (body) => ({ url: '/auth/otp/status', method: 'POST', body }),
     }),
     refresh: build.mutation<TokenPair, { refreshToken: string }>({
       query: (body) => ({ url: '/auth/refresh', method: 'POST', body }),
@@ -26,6 +29,7 @@ export const userApi = baseApi.injectEndpoints({
 export const {
   useRequestOtpMutation,
   useVerifyOtpMutation,
+  useOtpStatusMutation,
   useLogoutMutation,
   useGetMeQuery,
   useLazyGetMeQuery,

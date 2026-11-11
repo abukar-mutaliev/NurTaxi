@@ -24,7 +24,7 @@ import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
 import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
-import { useAuth } from '@nurtaxi/shared-core/features/auth';
+import { useAuth, useMobileIdWait } from '@nurtaxi/shared-core/features/auth';
 
 import { useAppSelector } from '@/app/store/hooks';
 import { RoundButton } from '@/shared/ui/round-button';
@@ -55,10 +55,13 @@ export function CodeScreen() {
   const devCode = useAppSelector(selectDevCode);
 
   const { verifyOtp, requestOtp, isVerifyingOtp, isRequestingOtp } = useAuth();
+  const mobileId = useMobileIdWait();
   const { secondsLeft, isFinished, restart } = useCountdown(DEFAULT_RESEND_SECONDS);
 
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [enterCode, setEnterCode] = useState(false);
+  const showCode = !mobileId.pushPending || enterCode;
 
   const scale = width / DESIGN_WIDTH;
   const sx = (value: number) => value * scale;
@@ -93,6 +96,7 @@ export function CodeScreen() {
     setError(null);
     setCode('');
     const result = await requestOtp(phone);
+    setEnterCode(false);
     restart(result.resendAfterSec || DEFAULT_RESEND_SECONDS);
   };
 
@@ -123,27 +127,42 @@ export function CodeScreen() {
 
         <View style={{ marginTop: sy(28) }}>
           <Text style={[styles.title, { fontSize: sx(typeScale.xxl), lineHeight: sx(32) }]}>
-            {t('auth.codeTitle')}
+            {showCode ? t('auth.codeTitle') : t('auth.mobileIdTitle')}
           </Text>
           <Text style={[styles.subtitleLeft, { fontSize: sx(typeScale.md), marginTop: sy(6) }]}>
-            Отправили SMS на{' '}
-            <Text style={[styles.strong, { fontSize: sx(typeScale.md) }]}>
-              {phone ? formatPhone(phone) : ''}
-            </Text>
+            {showCode
+              ? t('auth.codeSubtitle', { phone: phone ? formatPhone(phone) : '' })
+              : t('auth.mobileIdSubtitle', { phone: phone ? formatPhone(phone) : '' })}
           </Text>
         </View>
 
         <View style={{ marginTop: sy(30) }}>
-          <CodeOtpInput
-            autoFocus
-            editable={!isVerifyingOtp}
-            error={error ?? undefined}
-            length={OTP_LENGTH}
-            onChange={setCode}
-            onComplete={submit}
-            scale={scale}
-            value={code}
-          />
+          {showCode ? (
+            <CodeOtpInput
+              autoFocus
+              editable={!isVerifyingOtp}
+              error={
+                error ?? mobileId.error ?? (mobileId.failed ? t('auth.mobileIdFailed') : undefined)
+              }
+              length={OTP_LENGTH}
+              onChange={setCode}
+              onComplete={submit}
+              scale={scale}
+              value={code}
+            />
+          ) : (
+            <Text style={[styles.hint, { fontSize: sx(typeScale.sm), textAlign: 'left' }]}>
+              {mobileId.error ??
+                (mobileId.failed ? t('auth.mobileIdFailed') : t('auth.mobileIdSmsHint'))}
+            </Text>
+          )}
+          {mobileId.pushPending && !enterCode ? (
+            <Pressable hitSlop={8} onPress={() => setEnterCode(true)} style={{ marginTop: sy(16) }}>
+              <Text style={[styles.link, { fontSize: sx(typeScale.md), textAlign: 'left' }]}>
+                {t('auth.mobileIdEnterCode')}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={{ alignItems: 'center', marginTop: sy(24) }}>

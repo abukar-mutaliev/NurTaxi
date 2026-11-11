@@ -33,4 +33,17 @@ export interface OtpRequestResponse {
   resendAfterSec: number;
   /** Возвращается сервером только вне production — для локальной разработки. */
   devCode?: string;
+  method?: 'sms' | 'mobile-id';
+  status?: 'pending' | 'otp_required' | 'confirmed' | 'failed';
+}
+
+export interface OtpStatusResponse {
+  method: 'sms' | 'mobile-id';
+  status: 'pending' | 'otp_required' | 'confirmed' | 'failed';
+  accessToken?: string;
+  refreshToken?: string;
+  expiresInSec?: number;
+  user?: User;
+  isNewUser?: boolean;
+  requiresConsent?: boolean;
 }

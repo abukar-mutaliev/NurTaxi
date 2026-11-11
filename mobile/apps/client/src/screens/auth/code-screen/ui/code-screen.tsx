@@ -18,7 +18,7 @@ import { isProdEnvironment } from '@nurtaxi/shared-core/shared/config';
 import { formatCountdown, formatPhone, useCountdown } from '@nurtaxi/shared-core/shared/lib';
 import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 import { selectDevCode, selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
-import { useAuth } from '@nurtaxi/shared-core/features/auth';
+import { useAuth, useMobileIdWait } from '@nurtaxi/shared-core/features/auth';
 
 import { useAppSelector } from '@/app/store/hooks';
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
@@ -59,10 +59,13 @@ export function CodeScreen() {
   const devCode = useAppSelector(selectDevCode);
 
   const { verifyOtp, requestOtp, isVerifyingOtp, isRequestingOtp } = useAuth();
+  const mobileId = useMobileIdWait();
   const { secondsLeft, isFinished, restart } = useCountdown(DEFAULT_RESEND_SECONDS);
 
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [enterCode, setEnterCode] = useState(false);
+  const showCode = !mobileId.pushPending || enterCode;
   // Поле и кнопка — над клавиатурой, заголовок — не выше статус-бара (`useKeyboardLift`).
   const { anchorRef, ceilingRef, liftStyle } = useKeyboardLift();
 
@@ -74,7 +77,7 @@ export function CodeScreen() {
   const logoHeight = sx(199);
   const logoLeft = (width - logoWidth) / 2;
   const logoTop = Math.max(insets.top, sy(20)) + sy(76);
-  const canSubmit = code.length >= OTP_LENGTH && !isVerifyingOtp;
+  const canSubmit = showCode && code.length >= OTP_LENGTH && !isVerifyingOtp;
 
   useEffect(() => {
     if (!phone) {
@@ -105,6 +108,7 @@ export function CodeScreen() {
     setError(null);
     setCode('');
     const result = await requestOtp(phone);
+    setEnterCode(false);
     restart(result.resendAfterSec || DEFAULT_RESEND_SECONDS);
   };
 
@@ -143,7 +147,7 @@ export function CodeScreen() {
         >
           <View collapsable={false} ref={ceilingRef} style={styles.header}>
             <Text style={[styles.title, { fontSize: sx(typeScale.xxl), lineHeight: sx(32) }]}>
-              {t('auth.codeTitle')}
+              {showCode ? t('auth.codeTitle') : t('auth.mobileIdTitle')}
             </Text>
             <Text
               style={[
@@ -151,20 +155,41 @@ export function CodeScreen() {
                 { fontSize: sx(typeScale.md), lineHeight: sx(20), marginTop: sy(8) },
               ]}
             >
-              {t('auth.codeSubtitle', { phone: phone ? formatPhone(phone) : '' })}
+              {showCode
+                ? t('auth.codeSubtitle', { phone: phone ? formatPhone(phone) : '' })
+                : t('auth.mobileIdSubtitle', { phone: phone ? formatPhone(phone) : '' })}
             </Text>
           </View>
 
           <View style={{ gap: sy(16), marginTop: sy(40) }}>
-            <CodeOtpInput
-              autoFocus
-              error={error ?? undefined}
-              length={OTP_LENGTH}
-              onChange={setCode}
-              onComplete={submit}
-              scale={scale}
-              value={code}
-            />
+            {showCode ? (
+              <CodeOtpInput
+                autoFocus
+                error={
+                  error ??
+                  mobileId.error ??
+                  (mobileId.failed ? t('auth.mobileIdFailed') : undefined)
+                }
+                length={OTP_LENGTH}
+                onChange={setCode}
+                onComplete={submit}
+                scale={scale}
+                value={code}
+              />
+            ) : (
+              <Text style={[styles.hint, { fontSize: sx(typeScale.sm) }]}>
+                {mobileId.error ??
+                  (mobileId.failed ? t('auth.mobileIdFailed') : t('auth.mobileIdSmsHint'))}
+              </Text>
+            )}
+
+            {mobileId.pushPending && !enterCode ? (
+              <Pressable onPress={() => setEnterCode(true)}>
+                <Text style={[styles.link, { fontSize: sx(typeScale.md) }]}>
+                  {t('auth.mobileIdEnterCode')}
+                </Text>
+              </Pressable>
+            ) : null}
 
             {isFinished ? (
               <Pressable disabled={isRequestingOtp} onPress={resend}>
@@ -217,6 +242,7 @@ export function CodeScreen() {
             style={({ pressed }) => [
               styles.buttonWrap,
               {
+                display: showCode ? 'flex' : 'none',
                 marginTop: sy(48),
                 opacity: !canSubmit ? 0.45 : pressed ? 0.92 : 1,
               },

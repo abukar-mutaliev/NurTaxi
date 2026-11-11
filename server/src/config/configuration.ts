@@ -236,7 +236,13 @@ function readSmsConfig(): SmsConfig {
     sign,
     baseUrl: (process.env.SMSAERO_BASE_URL ?? 'https://gate.smsaero.ru/v2').replace(/\/$/, ''),
     timeoutMs: toInt(process.env.SMSAERO_TIMEOUT_MS, 10_000),
-    mobileId: hasCredentials && mobileIdRequested && Boolean(callbackUrl && callbackSecret),
+    // localhost и http SMS Aero отклоняет как Validation error, поэтому Mobile ID
+    // включается только с публичным https. Иначе код уходит обычным SMS.
+    mobileId:
+      hasCredentials &&
+      mobileIdRequested &&
+      Boolean(callbackSecret) &&
+      isPublicHttpsUrl(callbackUrl),
     callbackUrl,
     callbackSecret,
     testMode: toBool(process.env.SMSAERO_TEST_MODE),
@@ -244,13 +250,50 @@ function readSmsConfig(): SmsConfig {
   };
 }
 
+/**
+ * SMS Aero принимает callback только как публичный https с доменом.
+ * `http://localhost` и адрес без точки в хосте дают 400 Validation error.
+ */
+export function isPublicHttpsUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== 'https:') return false;
+    const host = url.hostname.toLowerCase();
+    if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.localhost'))
+      return false;
+    if (!host.includes('.')) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** URL вебхука Mobile ID. Секрет в query: SMS Aero присылает его обратно как есть. */
 function buildMobileIdCallbackUrl(secret: string): string {
   const explicit = (process.env.SMSAERO_CALLBACK_URL ?? '').trim();
-  const publicApi = (process.env.PUBLIC_API_URL ?? '').trim().replace(/\/$/, '');
+  const publicApi = (process.env.PUBLIC_API_URL ?? '').trim();
   const prefix = (process.env.API_PREFIX ?? 'api/v1').replace(/^\/|\/$/g, '');
-  const base = explicit || (publicApi ? `${publicApi}/${prefix}/auth/mobile-id/callback` : '');
+  return resolveMobileIdCallbackUrl({ explicit, publicApi, apiPrefix: prefix, secret });
+}
+
+export function resolveMobileIdCallbackUrl(input: {
+  explicit?: string;
+  publicApi?: string;
+  apiPrefix?: string;
+  secret?: string;
+}): string {
+  const explicit = (input.explicit ?? '').trim();
+  const publicApi = (input.publicApi ?? '').trim().replace(/\/$/, '');
+  const prefix = (input.apiPrefix ?? 'api/v1').replace(/^\/|\/$/g, '');
+  const base =
+    explicit ||
+    (publicApi
+      ? publicApi.endsWith(`/${prefix}`)
+        ? `${publicApi}/auth/mobile-id/callback`
+        : `${publicApi}/${prefix}/auth/mobile-id/callback`
+      : '');
   if (!base) return '';
+  const secret = (input.secret ?? '').trim();
   if (!secret || /[?&]token=/.test(base)) return base;
   const join = base.includes('?') ? '&' : '?';
   return `${base}${join}token=${encodeURIComponent(secret)}`;

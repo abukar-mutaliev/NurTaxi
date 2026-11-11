@@ -96,11 +96,26 @@ export class SmsAeroClient {
         typeof parsed.message === 'string' && parsed.message.trim()
           ? parsed.message.trim()
           : `SMS Aero HTTP ${response.status}`;
-      throw new SmsAeroRequestError(message, response.status || 502);
+      const details = formatSmsAeroDetails(parsed.data);
+      throw new SmsAeroRequestError(
+        details ? `${message} (${details})` : message,
+        response.status || 502,
+      );
     }
 
     return parsed.data;
   }
+}
+
+/** Поля вроде `callbackUrl: incorrect` — без номера и без секретов. */
+export function formatSmsAeroDetails(data: unknown): string {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return '';
+  return Object.entries(data as Record<string, unknown>)
+    .map(([key, value]) => {
+      const text = Array.isArray(value) ? value.map(String).join(',') : String(value ?? '');
+      return `${key}: ${text.replace(/\d{7,}/g, '***').slice(0, 80)}`;
+    })
+    .join('; ');
 }
 
 /** SMS Aero ждёт MSISDN без «+»: 79990000000. */

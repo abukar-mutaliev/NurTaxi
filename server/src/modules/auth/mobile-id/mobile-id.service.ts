@@ -55,6 +55,11 @@ export class MobileIdService {
     private readonly client: SmsAeroClient,
   ) {
     this.config = configService.get<SmsConfig>('sms')!;
+    if (this.config.provider === 'smsaero' && !this.config.mobileId) {
+      this.logger.warn(
+        `Mobile ID выключен: нужен публичный https callback, сейчас ${callbackHost(this.config.callbackUrl) || 'пусто'}. Код входа уйдёт SMS`,
+      );
+    }
   }
 
   isEnabled(): boolean {
@@ -347,4 +352,13 @@ function sleep(ms: number): Promise<void> {
 
 function maskPhone(phone: string): string {
   return phone.length > 4 ? `***${phone.slice(-4)}` : '***';
+}
+
+function callbackHost(raw: string): string {
+  try {
+    const url = new URL(raw);
+    return `${url.protocol}//${url.host}${url.pathname}`;
+  } catch {
+    return '';
+  }
 }

@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { UserResponse } from '../users/dto/user.presenter';
 import type { AuthenticatedUser } from '../../common/auth/jwt-payload.interface';
@@ -30,6 +35,8 @@ interface RequestMeta {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly otpService: OtpService,
     private readonly mobileId: MobileIdService,
@@ -38,10 +45,24 @@ export class AuthService {
     private readonly authEvents: AuthEventsService,
   ) {}
 
-  requestOtp(phone: string): Promise<AuthChallenge> {
+  async requestOtp(phone: string): Promise<AuthChallenge> {
     if (this.mobileId.isEnabled()) {
-      return this.mobileId.request(phone);
+      try {
+        return await this.mobileId.request(phone);
+      } catch (error) {
+        // Неверный callback или имя отправителя не должны оставлять вход в 503:
+        // SMS Aero всё ещё может доставить обычный код.
+        if (error instanceof ServiceUnavailableException) {
+          this.logger.warn('Mobile ID не запустил проверку, отправляем SMS-код');
+          return this.requestSms(phone);
+        }
+        throw error;
+      }
     }
+    return this.requestSms(phone);
+  }
+
+  private requestSms(phone: string): Promise<AuthChallenge> {
     return this.otpService.request(phone).then((result) => ({
       ...result,
       method: 'sms' as const,

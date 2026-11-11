@@ -66,6 +66,24 @@ describe('SmsAeroClient', () => {
       httpStatus: 400,
     } satisfies Partial<SmsAeroRequestError>);
   });
+
+  it('добавляет в ошибку поле, которое отклонил SMS Aero', async () => {
+    const fetchImpl = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: async () =>
+        JSON.stringify({
+          success: false,
+          data: { callbackUrl: 'incorrect', sign: ['required'] },
+          message: 'Validation error.',
+        }),
+    });
+    const client = new SmsAeroClient(config, fetchImpl as unknown as typeof fetch);
+
+    await expect(client.mobileIdSend('+79280000001', 'http://localhost/cb')).rejects.toThrow(
+      'Validation error. (callbackUrl: incorrect; sign: required)',
+    );
+  });
 });
 
 describe('toMsisdn', () => {

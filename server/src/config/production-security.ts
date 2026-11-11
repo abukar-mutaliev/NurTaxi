@@ -1,3 +1,4 @@
+import { isPublicHttpsUrl } from './configuration';
 import { Environment } from './env.validation';
 
 const DEFAULT_SECRETS = new Set([
@@ -97,9 +98,11 @@ export function assertProductionSecurity(env: Record<string, string | undefined>
         'SMSAERO_CALLBACK_SECRET не задан: вебхук Mobile ID нельзя отличить от чужого запроса',
       );
     }
-    if (!(env.SMSAERO_CALLBACK_URL ?? '').trim() && !(env.PUBLIC_API_URL ?? '').trim()) {
+    const callbackBase = (env.SMSAERO_CALLBACK_URL || env.PUBLIC_API_URL || '').trim();
+    if (!isPublicHttpsUrl(callbackBase)) {
       problems.push(
-        'Задайте PUBLIC_API_URL или SMSAERO_CALLBACK_URL, чтобы SMS Aero мог сообщить результат Mobile ID',
+        'PUBLIC_API_URL или SMSAERO_CALLBACK_URL должен быть публичным https. ' +
+          'http://localhost SMS Aero отклоняет, и вход по Mobile ID не начинается',
       );
     }
   }

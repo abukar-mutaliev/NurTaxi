@@ -65,6 +65,11 @@ export interface LimitQuery {
 // Auth — POST /auth/* (§14.1)
 // ---------------------------------------------------------------------------
 
+export type AuthChallengeMethod = 'sms' | 'mobile-id';
+
+/** `pending` — ждём SIM-push, `otp_required` — нужен код из SMS. */
+export type AuthChallengeStatus = 'pending' | 'otp_required' | 'confirmed' | 'failed';
+
 export interface OtpRequestPayload {
   phone: string;
 }
@@ -74,7 +79,18 @@ export interface OtpRequestResponse {
   resendAfterSec: number;
   /** Возвращается сервером только вне production — удобно для локальной разработки. */
   devCode?: string;
+  /** `mobile-id` — сначала запрос оператора, затем SMS-код. `sms` — сразу код. */
+  method?: AuthChallengeMethod;
+  status?: AuthChallengeStatus;
 }
+
+export type OtpStatusPayload = OtpRequestPayload;
+
+/** Пока вход не подтверждён — только статус. После SIM-push приходят токены, как у verify. */
+export type OtpStatusResponse = {
+  method: AuthChallengeMethod;
+  status: AuthChallengeStatus;
+} & Partial<OtpVerifyResponse>;
 
 export interface OtpVerifyPayload {
   phone: string;

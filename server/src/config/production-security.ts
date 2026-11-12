@@ -1,3 +1,4 @@
+import { isPublicHttpsUrl } from './configuration';
 import { Environment } from './env.validation';
 
 const DEFAULT_SECRETS = new Set([
@@ -83,6 +84,26 @@ export function assertProductionSecurity(env: Record<string, string | undefined>
     }
     if (usesPublishedS3Defaults(env)) {
       problems.push('S3_ACCESS_KEY/S3_SECRET_KEY не заданы или равны значениям по умолчанию');
+    }
+    if (!(env.SMSAERO_EMAIL ?? '').trim() || !(env.SMSAERO_API_KEY ?? '').trim()) {
+      problems.push(
+        'SMSAERO_EMAIL и SMSAERO_API_KEY обязательны: без них код входа не уходит абоненту',
+      );
+    }
+    if (!(env.SMSAERO_SIGN ?? '').trim()) {
+      problems.push('SMSAERO_SIGN не задан (имя отправителя из кабинета SMS Aero)');
+    }
+    if (!(env.SMSAERO_CALLBACK_SECRET ?? '').trim()) {
+      problems.push(
+        'SMSAERO_CALLBACK_SECRET не задан: вебхук Mobile ID нельзя отличить от чужого запроса',
+      );
+    }
+    const callbackBase = (env.SMSAERO_CALLBACK_URL || env.PUBLIC_API_URL || '').trim();
+    if (!isPublicHttpsUrl(callbackBase)) {
+      problems.push(
+        'PUBLIC_API_URL или SMSAERO_CALLBACK_URL должен быть публичным https. ' +
+          'http://localhost SMS Aero отклоняет, и вход по Mobile ID не начинается',
+      );
     }
   }
 

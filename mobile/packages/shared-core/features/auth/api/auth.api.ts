@@ -9,6 +9,8 @@ import type {
   LogoutPayload,
   OtpRequestPayload,
   OtpRequestResponse,
+  OtpStatusPayload,
+  OtpStatusResponse,
   OtpVerifyPayload,
   OtpVerifyResponse,
   RefreshPayload,
@@ -27,6 +29,10 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: ['Profile', 'DriverProfile'],
     }),
 
+    otpStatus: build.mutation<OtpStatusResponse, OtpStatusPayload>({
+      query: (body) => ({ url: '/auth/otp/status', method: 'POST', body }),
+    }),
+
     refreshTokens: build.mutation<RefreshResponse, RefreshPayload>({
       query: (body) => ({ url: '/auth/refresh', method: 'POST', body }),
     }),
@@ -40,6 +46,7 @@ export const authApi = baseApi.injectEndpoints({
 export const {
   useRequestOtpMutation,
   useVerifyOtpMutation,
+  useOtpStatusMutation,
   useRefreshTokensMutation,
   useLogoutMutation,
 } = authApi;

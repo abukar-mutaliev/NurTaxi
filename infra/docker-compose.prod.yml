@@ -54,3 +54,31 @@ services:
   osrm:
     ports: !override
       - '127.0.0.1:5001:5000'
+
+  # API только на сервере (вместе с этим файлом). Слушает 127.0.0.1:3000,
+  # снаружи его отдаёт nginx. Секреты — из server/.env; адреса соседних
+  # контейнеров переопределены, даже если в .env написано localhost.
+  api:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    container_name: nurtaxi-api
+    env_file:
+      - ../server/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: '5432'
+      REDIS_HOST: redis
+      REDIS_PORT: '6379'
+      NATS_URL: nats://nats:4222
+      S3_ENDPOINT: http://minio:9000
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+    restart: unless-stopped

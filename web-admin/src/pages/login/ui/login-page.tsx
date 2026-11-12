@@ -1,9 +1,10 @@
 import { SafetyCertificateOutlined, TeamOutlined } from '@ant-design/icons';
 import { Alert, Button, Form, Input, Steps, Typography, message } from 'antd';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useRequestOtpMutation, useVerifyOtpMutation } from '@/entities/user';
+import { useOtpStatusMutation, useRequestOtpMutation, useVerifyOtpMutation } from '@/entities/user';
+import type { User } from '@/entities/user';
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { setUser, setBootstrapped } from '@/features/auth';
 import { tokenStorage } from '@/shared/lib/token-storage';
@@ -22,10 +23,74 @@ export function LoginPage() {
   const [step, setStep] = useState(0);
   const [phone, setPhone] = useState('');
   const [devCode, setDevCode] = useState<string | null>(null);
+  const [method, setMethod] = useState<'sms' | 'mobile-id'>('sms');
+  const [challenge, setChallenge] = useState<'pending' | 'otp_required'>('otp_required');
   const [requestOtp, { isLoading: sending }] = useRequestOtpMutation();
   const [verifyOtp, { isLoading: verifying }] = useVerifyOtpMutation();
+  const [pollStatus] = useOtpStatusMutation();
   const [error, setError] = useState<string | null>(null);
+  const finished = useRef(false);
   const isDev = import.meta.env.DEV;
+
+  const acceptSession = useCallback(
+    (result: { accessToken: string; refreshToken: string; user: User }) => {
+      if (!isAdminRole(result.user.role)) {
+        setError(t('auth.accessDeniedHint'));
+        return;
+      }
+      tokenStorage.save({
+        accessToken: result.accessToken,
+        refreshToken: result.refreshToken,
+      });
+      dispatch(setUser(result.user));
+      dispatch(setBootstrapped(true));
+      navigate('/', { replace: true });
+    },
+    [dispatch, navigate, t],
+  );
+
+  useEffect(() => {
+    if (step !== 1 || method !== 'mobile-id' || !phone) return;
+
+    let cancelled = false;
+    const tick = async () => {
+      if (finished.current || cancelled) return;
+      try {
+        const result = await pollStatus({ phone }).unwrap();
+        if (cancelled || finished.current) return;
+        if (result.status === 'pending' || result.status === 'otp_required') {
+          setChallenge(result.status);
+        }
+        if (result.status === 'failed') {
+          finished.current = true;
+          setError(t('auth.mobileIdFailed'));
+          return;
+        }
+        if (result.accessToken && result.refreshToken && result.user) {
+          finished.current = true;
+          acceptSession({
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+            user: result.user,
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          finished.current = true;
+          setError(getErrorMessage(err, 'Не удалось проверить подтверждение'));
+        }
+      }
+    };
+
+    void tick();
+    const timer = window.setInterval(() => {
+      void tick();
+    }, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [acceptSession, step, method, phone, pollStatus, t]);
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;
@@ -38,8 +103,11 @@ export function LoginPage() {
       const result = await requestOtp({ phone: normalized }).unwrap();
       setPhone(normalized);
       setDevCode(result.devCode ?? null);
+      setMethod(result.method ?? 'sms');
+      setChallenge(result.status === 'pending' ? 'pending' : 'otp_required');
+      finished.current = false;
       setStep(1);
-      message.success('Код отправлен');
+      message.success(result.method === 'mobile-id' ? 'Запрос отправлен' : 'Код отправлен');
     } catch (err) {
       setError(getErrorMessage(err, 'Не удалось отправить код'));
     }
@@ -49,17 +117,8 @@ export function LoginPage() {
     setError(null);
     try {
       const result = await verifyOtp({ phone, code: String(values.code) }).unwrap();
-      if (!isAdminRole(result.user.role)) {
-        setError(t('auth.accessDeniedHint'));
-        return;
-      }
-      tokenStorage.save({
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      });
-      dispatch(setUser(result.user));
-      dispatch(setBootstrapped(true));
-      navigate('/', { replace: true });
+      finished.current = true;
+      acceptSession(result);
     } catch (err) {
       setError(getErrorMessage(err, 'Неверный код'));
     }
@@ -129,6 +188,14 @@ export function LoginPage() {
             </Form>
           ) : (
             <Form layout="vertical" onFinish={handleCodeSubmit} requiredMark={false}>
+              {method === 'mobile-id' && challenge === 'pending' ? (
+                <Alert
+                  type="info"
+                  showIcon
+                  message={t('auth.mobileIdHint')}
+                  style={{ marginBottom: 16 }}
+                />
+              ) : null}
               {isDev && devCode ? (
                 <Alert
                   type="info"

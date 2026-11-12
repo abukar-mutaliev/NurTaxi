@@ -3,6 +3,7 @@ export {
   userApi,
   useRequestOtpMutation,
   useVerifyOtpMutation,
+  useOtpStatusMutation,
   useLogoutMutation,
   useGetMeQuery,
   useLazyGetMeQuery,

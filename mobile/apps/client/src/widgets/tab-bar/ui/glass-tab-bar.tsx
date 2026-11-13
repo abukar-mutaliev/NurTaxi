@@ -2,17 +2,14 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
+import { brandColors, radius, shadows, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
 import { GLASS_TAB_BAR_HEIGHT, GLASS_TAB_BAR_MARGIN } from '@/shared/constants/glass-tab-bar';
-import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { TabBarIcon } from './tab-bar-icon';
 
 const colors = {
   barBg: brandColors.surface,
-  barBorder: brandColors.divider,
-  shadow: brandColors.shadow,
   activeLabel: brandColors.primary,
   inactiveLabel: brandColors.textMuted,
 } as const;
@@ -78,14 +75,11 @@ const styles = StyleSheet.create({
   bar: {
     alignItems: 'center',
     backgroundColor: colors.barBg,
-    borderColor: colors.barBorder,
     borderRadius: radius.xxl,
-    borderWidth: 1,
-    elevation: 4,
     flexDirection: 'row',
     height: GLASS_TAB_BAR_HEIGHT,
     marginHorizontal: 16,
-    ...glassShadow({ color: colors.shadow }),
+    ...shadows.lg,
   },
   label: {
     fontSize: typeScale.xs,

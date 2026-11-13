@@ -351,9 +351,6 @@ const styles = StyleSheet.create({
   },
   panel: {
     backgroundColor: GLASS_COLORS.background,
-    borderColor: GLASS_COLORS.cardBorder,
-    borderTopWidth: 1,
-    elevation: 8,
     maxHeight: '92%',
     ...glassShadow({ color: GLASS_COLORS.shadow, offset: { width: 0, height: -8 }, radius: 24 }),
   },

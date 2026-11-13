@@ -6,7 +6,8 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
   cardBg: brandColors.surface,
-  cardBorder: brandColors.divider,
+  // Рамка только у поля в фокусе: без неё поле парит, как карточка.
+  cardBorder: 'transparent',
   cardBorderActive: brandColors.primary,
   shadow: brandColors.shadow,
   text: brandColors.text,
@@ -123,7 +124,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.cardBg,
     borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     ...glassShadow({ color: colors.shadow }),
   },

@@ -124,7 +124,7 @@ export function NotificationsScreen() {
                 void openNotification(item.id, item.type, item.data);
               }}
             >
-              <GlassCard tone={item.readAt ? 'default' : 'selected'}>
+              <GlassCard>
                 <View
                   style={{
                     alignItems: 'center',
@@ -142,7 +142,7 @@ export function NotificationsScreen() {
                   >
                     {copy.title}
                   </Text>
-                  {!item.readAt ? <Badge label={t('notifications.unread')} tone="primary" /> : null}
+                  {!item.readAt ? <Badge label={t('notifications.unread')} tone="accent" /> : null}
                 </View>
                 <GlassCaption>{copy.body}</GlassCaption>
                 <Text style={{ color: GLASS_COLORS.hint, fontSize: scale * typeScale.xs }}>
@@ -159,9 +159,6 @@ export function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  ellipse: {
-    position: 'absolute',
-  },
   root: {
     backgroundColor: GLASS_COLORS.background,
     flex: 1,

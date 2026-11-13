@@ -49,13 +49,11 @@ const c = {
   title: brandColors.text,
   subtitle: brandColors.textMuted,
   inputBg: brandColors.surface,
-  inputBorder: brandColors.surfaceMuted,
   inputText: brandColors.text,
   placeholder: brandColors.textMuted,
   shadow: brandColors.shadow,
   danger: brandColors.danger,
   consentBorder: brandColors.surfaceMuted,
-  consentBorderActive: brandColors.primary,
   consentText: brandColors.textMuted,
   checkBg: brandColors.primary,
 } as const;
@@ -144,7 +142,6 @@ export function ConsentScreen() {
           style={[
             styles.consentCard,
             {
-              borderColor: consent ? c.consentBorderActive : c.consentBorder,
               borderRadius: sx(radius.lg),
               gap: sy(8),
               marginTop: sy(24),
@@ -221,7 +218,6 @@ const styles = StyleSheet.create({
   },
   consentCard: {
     backgroundColor: c.inputBg,
-    borderWidth: 1.5,
   },
   consentText: {
     color: c.consentText,
@@ -246,9 +242,6 @@ const styles = StyleSheet.create({
   inputShell: {
     alignItems: 'center',
     backgroundColor: c.inputBg,
-    borderColor: c.inputBorder,
-    borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     ...shadows.md,
   },

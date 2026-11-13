@@ -64,7 +64,6 @@ export function EarningsScreen() {
             styles.card,
             {
               backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
               borderRadius: theme.radius.lg,
               gap: theme.spacing.md,
               padding: theme.spacing.lg,
@@ -95,7 +94,6 @@ export function EarningsScreen() {
               styles.card,
               {
                 backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
                 borderRadius: theme.radius.lg,
                 padding: theme.spacing.lg,
               },
@@ -114,7 +112,6 @@ export function EarningsScreen() {
                 styles.tripRow,
                 {
                   backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
                   borderRadius: theme.radius.lg,
                   gap: theme.spacing.md,
                   padding: theme.spacing.lg,
@@ -142,9 +139,7 @@ export function EarningsScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    elevation: 1,
-    ...shadows.sm,
+    ...shadows.md,
   },
   headerTitle: {
     textAlign: 'center',

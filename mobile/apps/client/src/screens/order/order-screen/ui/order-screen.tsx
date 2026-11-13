@@ -101,7 +101,6 @@ import { useOrderTopInset } from './use-order-top-inset';
 
 const summaryColors = {
   sheetBg: brandColors.surface,
-  sheetBorder: brandColors.divider,
   shadow: brandColors.shadowStrong,
   text: brandColors.text,
   muted: brandColors.textMuted,
@@ -811,10 +810,7 @@ const styles = StyleSheet.create({
   },
   summarySheet: {
     backgroundColor: summaryColors.sheetBg,
-    borderColor: summaryColors.sheetBorder,
     borderRadius: radius.xxl,
-    borderWidth: 1,
-    elevation: 8,
     ...glassShadow({ color: summaryColors.shadow, radius: 16 }),
   },
   totalAddress: {

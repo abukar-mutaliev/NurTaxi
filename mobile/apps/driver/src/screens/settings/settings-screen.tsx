@@ -161,7 +161,6 @@ export function SettingsScreen() {
             styles.card,
             {
               backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
               borderRadius: theme.radius.lg,
               gap: theme.spacing.xs,
               padding: theme.spacing.lg,
@@ -189,7 +188,6 @@ export function SettingsScreen() {
             styles.card,
             {
               backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
               borderRadius: theme.radius.lg,
               gap: theme.spacing.xs,
               padding: theme.spacing.lg,
@@ -219,9 +217,7 @@ export function SettingsScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    borderWidth: 1,
-    elevation: 1,
-    ...shadows.sm,
+    ...shadows.md,
   },
   root: {
     backgroundColor: brandColors.background,

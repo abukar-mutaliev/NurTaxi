@@ -87,6 +87,7 @@ export function OrderExtrasFields({
         <>
           <GlassTextField
             autoCapitalize="words"
+            inset
             label={t('order.passengerName')}
             onChangeText={onPassengerNameChange}
             placeholder={t('order.passengerNamePlaceholder')}
@@ -95,6 +96,7 @@ export function OrderExtrasFields({
           />
           <GlassTextField
             autoComplete="tel"
+            inset
             keyboardType="phone-pad"
             label={t('order.passengerPhone')}
             onChangeText={(value) => onPassengerPhoneChange(applyPhoneMask(value))}
@@ -108,6 +110,7 @@ export function OrderExtrasFields({
         <>
           <GlassTextField
             autoCapitalize="words"
+            inset
             onChangeText={onPassengerNameChange}
             placeholder={t('order.passengerName')}
             scale={0.86}
@@ -115,6 +118,7 @@ export function OrderExtrasFields({
           />
           <GlassTextField
             autoComplete="tel"
+            inset
             keyboardType="phone-pad"
             onChangeText={(value) => onPassengerPhoneChange(applyPhoneMask(value))}
             placeholder={t('order.passengerPhone')}
@@ -185,6 +189,7 @@ export function OrderExtrasFields({
         />
         {passengerFields}
         <GlassTextField
+          inset
           multiline
           numberOfLines={2}
           onChangeText={onCommentChange}

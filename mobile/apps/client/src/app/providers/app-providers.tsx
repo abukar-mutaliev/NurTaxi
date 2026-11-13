@@ -40,7 +40,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <PersistGate loading={<Loader />} persistor={persistor}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaProvider>
-            <ThemeProvider>
+            {/*
+              Экраны клиента свёрстаны только в светлой схеме. Без явной схемы на телефоне с
+              тёмной темой общие компоненты (шторки, значки, текст) становились тёмными, а экраны
+              оставались светлыми: например, окно отмены с белым полем на тёмном фоне.
+            */}
+            <ThemeProvider scheme="light">
               <I18nextProvider i18n={i18n}>
                 <AppErrorBoundary>
                   <View style={{ flex: 1 }}>

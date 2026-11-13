@@ -37,7 +37,7 @@ const phoneColors = {
   inputText: brandColors.text,
   inputPlaceholder: brandColors.textMuted,
   inputBg: brandColors.surface,
-  inputBorder: brandColors.divider,
+  inputBorder: 'transparent',
   iconOuter: brandColors.secondarySoft,
   iconAccent: brandColors.primary,
   buttonStart: brandColors.primary,
@@ -296,7 +296,6 @@ export function PhoneScreen() {
 const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
-    elevation: 3,
     justifyContent: 'center',
     ...glassShadow({ color: phoneColors.buttonShadow, offset: { width: 0, height: 6 }, radius: 9 }),
   },
@@ -338,7 +337,6 @@ const styles = StyleSheet.create({
   inputShell: {
     alignItems: 'center',
     borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     ...glassShadow({ color: phoneColors.inputShadow }),
     width: '100%',

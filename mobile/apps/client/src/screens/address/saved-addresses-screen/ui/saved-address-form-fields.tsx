@@ -159,13 +159,10 @@ function PresetChip({ label, active, scale, onPress }: PresetChipProps) {
 
 const styles = StyleSheet.create({
   chip: {
-    backgroundColor: GLASS_COLORS.cardBg,
-    borderColor: GLASS_COLORS.cardBorder,
-    borderWidth: 1,
+    backgroundColor: brandColors.surfaceMuted,
   },
   chipActive: {
-    backgroundColor: brandColors.secondarySubtle,
-    borderColor: brandColors.primary,
+    backgroundColor: brandColors.secondarySoft,
   },
   chipText: {
     color: GLASS_COLORS.title,

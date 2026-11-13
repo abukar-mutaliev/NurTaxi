@@ -6,7 +6,6 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const colors = {
   cardBg: brandColors.surface,
-  cardBorder: brandColors.divider,
   shadow: brandColors.shadow,
   title: brandColors.text,
   subtitle: brandColors.textMuted,
@@ -103,15 +102,12 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
   rowActive: {
-    borderColor: brandColors.dangerSoft,
+    backgroundColor: brandColors.dangerSoft,
   },
   row: {
     alignItems: 'center',
     backgroundColor: colors.cardBg,
-    borderColor: colors.cardBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     gap: 14,
     minHeight: 84,

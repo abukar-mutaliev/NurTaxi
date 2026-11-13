@@ -22,7 +22,6 @@ const welcomeColors = {
   gradientBottom: brandColors.background,
   buttonStart: brandColors.primary,
   buttonEnd: brandColors.primary,
-  buttonBorder: brandColors.divider,
   buttonText: brandColors.onPrimary,
   link: brandColors.textMuted,
   linkAction: brandColors.text,
@@ -88,7 +87,6 @@ export function WelcomeScreen() {
             styles.primaryButton,
             {
               backgroundColor: pressed ? welcomeColors.buttonEnd : welcomeColors.buttonStart,
-              borderColor: welcomeColors.buttonBorder,
               height: sx(60),
               opacity: pressed ? 0.92 : 1,
             },
@@ -158,8 +156,6 @@ const styles = StyleSheet.create({
   primaryButton: {
     alignItems: 'center',
     borderRadius: radius.xxl,
-    borderWidth: 1,
-    elevation: 2,
     justifyContent: 'center',
     ...glassShadow({ color: welcomeColors.shadow }),
   },

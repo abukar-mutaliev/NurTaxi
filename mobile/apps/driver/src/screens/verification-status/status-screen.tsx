@@ -46,7 +46,6 @@ const c = {
   title: brandColors.text,
   subtitle: brandColors.textMuted,
   cardBg: brandColors.surface,
-  cardBorder: brandColors.surfaceMuted,
   cardText: brandColors.text,
   shadow: brandColors.shadow,
   pendingBg: brandColors.secondarySoft,
@@ -229,7 +228,6 @@ export function VerificationStatusScreen() {
               styles.card,
               {
                 backgroundColor: c.dangerBg,
-                borderColor: c.dangerBg,
                 borderRadius: sx(radius.lg),
                 marginTop: sy(24),
                 paddingHorizontal: sx(20),
@@ -263,7 +261,6 @@ export function VerificationStatusScreen() {
               styles.card,
               {
                 backgroundColor: c.dangerBg,
-                borderColor: c.dangerBg,
                 borderRadius: sx(radius.lg),
                 marginTop: sy(24),
                 paddingHorizontal: sx(20),
@@ -362,9 +359,6 @@ export function VerificationStatusScreen() {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: c.cardBg,
-    borderColor: c.cardBorder,
-    borderWidth: 1,
-    elevation: 2,
     ...shadows.md,
   },
   cardRow: {

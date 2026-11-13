@@ -209,7 +209,6 @@ export function PaymentMethodsScreen() {
 const styles = StyleSheet.create({
   addButton: {
     alignItems: 'center',
-    elevation: 3,
     justifyContent: 'center',
     ...glassShadow({ color: colors.buttonShadow, offset: { width: 0, height: 6 }, radius: 9 }),
   },

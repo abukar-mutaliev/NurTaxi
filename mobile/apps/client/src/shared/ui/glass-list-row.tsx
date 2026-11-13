@@ -80,10 +80,7 @@ const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
     backgroundColor: GLASS_COLORS.cardBg,
-    borderColor: GLASS_COLORS.cardBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     gap: 14,
     minHeight: 72,

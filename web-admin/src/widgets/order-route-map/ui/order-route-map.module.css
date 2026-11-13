@@ -1,7 +1,6 @@
 .wrap {
   border-radius: var(--nur-radius-md);
   overflow: hidden;
-  border: 1px solid var(--nur-border);
 }
 
 .map {

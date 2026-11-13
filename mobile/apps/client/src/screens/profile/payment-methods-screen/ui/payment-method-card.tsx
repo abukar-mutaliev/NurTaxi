@@ -8,8 +8,6 @@ export type PaymentCardBrand = 'visa' | 'mastercard';
 
 const colors = {
   cardBg: brandColors.surface,
-  cardBorder: brandColors.divider,
-  cardBorderPrimary: brandColors.primary,
   shadow: brandColors.shadow,
   title: brandColors.text,
   subtitle: brandColors.textMuted,
@@ -68,11 +66,7 @@ export function PaymentMethodCard({
       accessibilityState={{ selected: isPrimary }}
       disabled={editMode}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        isPrimary && !editMode ? styles.cardPrimary : null,
-        pressed && !editMode && styles.pressed,
-      ]}
+      style={({ pressed }) => [styles.card, pressed && !editMode && styles.pressed]}
     >
       <View style={[styles.badge, { backgroundColor: brandStyle.badgeBg }]}>
         <Text
@@ -138,20 +132,13 @@ const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     backgroundColor: colors.cardBg,
-    borderColor: colors.cardBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     gap: 14,
     minHeight: 84,
     paddingHorizontal: 18,
     paddingVertical: 20,
     ...glassShadow({ color: colors.shadow }),
-  },
-  cardPrimary: {
-    borderColor: colors.cardBorderPrimary,
-    borderWidth: 1.5,
   },
   deleteButton: {
     alignItems: 'center',

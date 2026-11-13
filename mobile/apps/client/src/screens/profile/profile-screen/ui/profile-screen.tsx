@@ -35,7 +35,6 @@ const colors = {
   avatarBg: brandColors.primary,
   avatarText: brandColors.onPrimary,
   logoutBg: brandColors.surface,
-  logoutBorder: brandColors.divider,
   logoutText: brandColors.textMuted,
   shadow: brandColors.shadow,
 } as const;
@@ -216,10 +215,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     alignItems: 'center',
     backgroundColor: colors.logoutBg,
-    borderColor: colors.logoutBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     height: 58,
     justifyContent: 'center',
     ...glassShadow({ color: colors.shadow }),

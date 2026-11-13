@@ -195,7 +195,6 @@ export function ProfileScreen() {
             styles.card,
             {
               backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
               borderRadius: theme.radius.lg,
               gap: theme.spacing.md,
               padding: theme.spacing.lg,
@@ -297,9 +296,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   card: {
-    borderWidth: 1,
-    elevation: 1,
-    ...shadows.sm,
+    ...shadows.md,
   },
   headerTitle: {
     textAlign: 'center',

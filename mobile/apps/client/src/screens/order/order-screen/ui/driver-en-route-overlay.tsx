@@ -15,7 +15,6 @@ import { useOrderTopInset } from './use-order-top-inset';
 
 const colors = {
   glassBg: brandColors.surface,
-  glassBorder: brandColors.divider,
   sheetBg: brandColors.surface,
   shadow: brandColors.shadow,
   text: brandColors.text,
@@ -307,10 +306,7 @@ const styles = StyleSheet.create({
   },
   driverSheet: {
     backgroundColor: colors.sheetBg,
-    borderColor: colors.glassBorder,
     borderRadius: radius.xxl,
-    borderWidth: 1,
-    elevation: 4,
     paddingBottom: 19,
     ...glassShadow({ color: colors.shadow }),
   },
@@ -334,9 +330,6 @@ const styles = StyleSheet.create({
   },
   glassButton: {
     backgroundColor: colors.glassBg,
-    borderColor: colors.glassBorder,
-    borderWidth: 1,
-    elevation: 2,
     ...glassShadow({ color: colors.shadow }),
   },
   centerSlot: {
@@ -394,10 +387,7 @@ const styles = StyleSheet.create({
   safetyBanner: {
     alignItems: 'center',
     backgroundColor: colors.safetyBg,
-    borderColor: colors.glassBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 3,
     flexDirection: 'row',
     gap: 14,
     marginTop: 12,

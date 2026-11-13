@@ -9,7 +9,6 @@ import { SavedAddressIcon } from './saved-address-icon';
 
 const colors = {
   cardBg: brandColors.surface,
-  cardBorder: brandColors.divider,
   shadow: brandColors.shadow,
   title: brandColors.text,
   subtitle: brandColors.textMuted,
@@ -77,10 +76,7 @@ const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     backgroundColor: colors.cardBg,
-    borderColor: colors.cardBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     flexDirection: 'row',
     gap: 14,
     minHeight: 84,

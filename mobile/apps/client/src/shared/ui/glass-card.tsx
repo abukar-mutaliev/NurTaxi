@@ -11,24 +11,21 @@ export interface GlassCardProps {
   tone?: 'default' | 'warning' | 'selected';
 }
 
+/** Карточка без рамки: парит над фоном на тени, а состояние передаёт цвет заливки. */
 export function GlassCard({ children, style, tone = 'default' }: GlassCardProps) {
-  const borderColor =
+  const backgroundColor =
     tone === 'selected'
-      ? GLASS_COLORS.cardBorderSelected
+      ? GLASS_COLORS.cardBgSelected
       : tone === 'warning'
-        ? GLASS_COLORS.warningBorder
-        : GLASS_COLORS.cardBorder;
+        ? GLASS_COLORS.warningBg
+        : GLASS_COLORS.cardBg;
 
-  const backgroundColor = tone === 'warning' ? GLASS_COLORS.warningBg : GLASS_COLORS.cardBg;
-
-  return <View style={[styles.card, { backgroundColor, borderColor }, style]}>{children}</View>;
+  return <View style={[styles.card, { backgroundColor }, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
   card: {
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     gap: 8,
     paddingHorizontal: 18,
     paddingVertical: 16,

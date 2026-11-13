@@ -8,7 +8,6 @@ import { glassShadow } from '@/shared/ui/glass-shadow';
 
 const headerColors = {
   glassBg: brandColors.surface,
-  glassBorder: brandColors.divider,
   icon: brandColors.text,
   shadow: brandColors.shadow,
   text: brandColors.text,
@@ -73,10 +72,7 @@ const styles = StyleSheet.create({
   glassButton: {
     alignItems: 'center',
     backgroundColor: headerColors.glassBg,
-    borderColor: headerColors.glassBorder,
     borderRadius: radius.xl,
-    borderWidth: 1,
-    elevation: 2,
     justifyContent: 'center',
     ...glassShadow({ color: headerColors.shadow }),
   },

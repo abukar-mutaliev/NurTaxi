@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useTheme } from '../theme/theme-provider';
 import { Text } from './text';
 
-export type BadgeTone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
+export type BadgeTone = 'neutral' | 'primary' | 'accent' | 'success' | 'warning' | 'danger';
 
 export interface BadgeProps {
   label: string;
@@ -17,6 +17,7 @@ export function Badge({ label, tone = 'neutral' }: BadgeProps) {
   const { backgroundColor, color } = {
     neutral: { backgroundColor: theme.colors.surfaceMuted, color: theme.colors.text },
     primary: { backgroundColor: theme.colors.primary, color: theme.colors.onPrimary },
+    accent: { backgroundColor: theme.colors.accent, color: theme.colors.onAccent },
     success: { backgroundColor: theme.colors.successSurface, color: theme.colors.success },
     warning: { backgroundColor: theme.colors.warningSurface, color: theme.colors.warning },
     danger: { backgroundColor: theme.colors.dangerSurface, color: theme.colors.danger },

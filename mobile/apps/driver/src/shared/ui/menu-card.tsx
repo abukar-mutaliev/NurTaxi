@@ -48,7 +48,6 @@ export function MenuCard({ title, subtitle, icon, dotTone = 'primary', onPress }
         styles.card,
         {
           backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
           borderRadius: theme.radius.lg,
           gap: theme.spacing.md,
           opacity: pressed ? 0.9 : 1,
@@ -95,10 +94,8 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: 'center',
-    borderWidth: 1,
-    elevation: 1,
     flexDirection: 'row',
-    ...shadows.sm,
+    ...shadows.md,
   },
   dotWrap: {
     alignItems: 'center',

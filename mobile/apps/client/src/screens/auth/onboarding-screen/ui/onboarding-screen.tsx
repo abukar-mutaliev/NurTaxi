@@ -37,7 +37,6 @@ const onboardingColors = {
   inputText: brandColors.text,
   inputPlaceholder: brandColors.textMuted,
   inputBg: brandColors.surface,
-  inputBorder: brandColors.divider,
   dot: brandColors.secondary,
   buttonStart: brandColors.primary,
   buttonEnd: brandColors.primary,
@@ -46,8 +45,6 @@ const onboardingColors = {
   buttonShadow: brandColors.shadow,
   error: brandColors.danger,
   cardBg: brandColors.surface,
-  cardBorder: brandColors.divider,
-  cardBorderChecked: brandColors.primary,
   cardShadow: brandColors.shadow,
   consentTitle: brandColors.text,
   consentText: brandColors.textMuted,
@@ -136,7 +133,6 @@ export function OnboardingScreen() {
                   styles.inputShell,
                   {
                     backgroundColor: onboardingColors.inputBg,
-                    borderColor: onboardingColors.inputBorder,
                     borderRadius: sx(radius.lg),
                     height: sx(58),
                     paddingHorizontal: sx(21),
@@ -183,9 +179,6 @@ export function OnboardingScreen() {
                 style={[
                   styles.consentCard,
                   {
-                    borderColor: consent
-                      ? onboardingColors.cardBorderChecked
-                      : onboardingColors.cardBorder,
                     borderRadius: sx(radius.xl),
                     gap: sy(10),
                     paddingHorizontal: sx(18),
@@ -275,7 +268,6 @@ const styles = StyleSheet.create({
   },
   button: {
     alignItems: 'center',
-    elevation: 3,
     justifyContent: 'center',
     ...glassShadow({
       color: onboardingColors.buttonShadow,
@@ -311,8 +303,6 @@ const styles = StyleSheet.create({
   },
   consentCard: {
     backgroundColor: onboardingColors.cardBg,
-    borderWidth: 1,
-    elevation: 2,
     ...glassShadow({ color: onboardingColors.cardShadow }),
   },
   consentText: {
@@ -356,8 +346,6 @@ const styles = StyleSheet.create({
     top: 0,
   },
   inputShell: {
-    borderWidth: 1,
-    elevation: 2,
     ...glassShadow({ color: onboardingColors.inputShadow }),
     width: '100%',
   },

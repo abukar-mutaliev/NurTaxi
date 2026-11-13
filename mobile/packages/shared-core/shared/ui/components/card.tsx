@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { shadows } from '../theme/elevation';
 import { useTheme } from '../theme/theme-provider';
 
 export interface CardProps {
@@ -25,12 +26,12 @@ export function Card({ children, tone = 'surface', style }: CardProps) {
       style={[
         {
           backgroundColor,
-          borderColor: theme.colors.border,
           borderRadius: theme.radius.lg,
-          borderWidth: tone === 'surface' ? 1 : 0,
           gap: theme.spacing.sm,
           padding: theme.spacing.lg,
         },
+        // Белая карточка парит над фоном; цветные подложки — плоские.
+        tone === 'surface' ? shadows.md : null,
         style,
       ]}
     >

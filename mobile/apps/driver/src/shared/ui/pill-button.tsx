@@ -14,22 +14,27 @@ import {
   typeScale,
 } from '@nurtaxi/shared-core/shared/ui';
 
-const primary = controlColors.primary;
-const surface = {
-  background: brandColors.surface,
-  pressed: brandColors.secondarySubtle,
-  disabled: brandColors.surfaceMuted,
-  border: brandColors.border,
-  text: brandColors.text,
-  disabledText: brandColors.textMuted,
+const variantColors = {
+  gradient: controlColors.primary,
+  surface: {
+    background: brandColors.surface,
+    pressed: brandColors.secondarySubtle,
+    disabled: brandColors.surfaceMuted,
+    text: brandColors.text,
+    disabledText: brandColors.textMuted,
+  },
+  soft: controlColors.secondary,
 } as const;
 
-export type PillButtonVariant = 'gradient' | 'surface';
+export type PillButtonVariant = keyof typeof variantColors;
 
 export interface PillButtonProps {
   title: string;
   onPress?: () => void;
-  /** `gradient` — основное действие, `surface` — второстепенное (белая кнопка). */
+  /**
+   * `gradient` — основное действие, `surface` — второстепенное на фоне экрана (белая кнопка),
+   * `soft` — второстепенное на белой карточке: белая кнопка на белом сливалась бы с ней.
+   */
   variant?: PillButtonVariant;
   disabled?: boolean;
   loading?: boolean;
@@ -51,8 +56,7 @@ export function PillButton({
   style,
 }: PillButtonProps) {
   const isDisabled = disabled || loading;
-  const isPrimary = variant === 'gradient';
-  const colors = isPrimary ? primary : surface;
+  const colors = variantColors[variant];
   const textColor = isDisabled && !loading ? colors.disabledText : colors.text;
 
   return (
@@ -63,15 +67,14 @@ export function PillButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
+        variant !== 'soft' && styles.raised,
         {
           backgroundColor: isDisabled
             ? colors.disabled
             : pressed
               ? colors.pressed
               : colors.background,
-          borderColor: isPrimary ? 'transparent' : surface.border,
           borderRadius: height / 2,
-          borderWidth: isPrimary ? 0 : 1,
           height,
         },
         style,
@@ -90,10 +93,12 @@ const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.sm,
   },
   label: {
     fontSize: typeScale.base,
     fontWeight: '600',
+  },
+  raised: {
+    ...shadows.sm,
   },
 });

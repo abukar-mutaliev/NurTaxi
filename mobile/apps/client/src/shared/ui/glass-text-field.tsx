@@ -8,11 +8,14 @@ import { GLASS_COLORS } from './glass-theme';
 export interface GlassTextFieldProps extends Omit<TextInputProps, 'style'> {
   label?: string;
   scale?: number;
+  /** Поле на белой карточке или шторке: приглушённая заливка без тени, а не белая парящая. */
+  inset?: boolean;
 }
 
 export function GlassTextField({
   label,
   scale = 1,
+  inset = false,
   value,
   placeholder,
   ...inputProps
@@ -26,7 +29,7 @@ export function GlassTextField({
       ) : null}
       <View
         style={[
-          styles.shell,
+          inset ? styles.shellInset : styles.shell,
           {
             borderRadius: scale * radius.lg,
             minHeight: inputProps.multiline ? scale * 96 : scale * 58,
@@ -85,10 +88,11 @@ const styles = StyleSheet.create({
   },
   shell: {
     backgroundColor: GLASS_COLORS.inputBg,
-    borderColor: GLASS_COLORS.inputBorder,
-    borderWidth: 1,
-    elevation: 2,
     ...glassShadow({ color: GLASS_COLORS.shadow }),
+    width: '100%',
+  },
+  shellInset: {
+    backgroundColor: GLASS_COLORS.inputBgInset,
     width: '100%',
   },
 });

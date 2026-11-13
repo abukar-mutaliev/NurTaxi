@@ -10,11 +10,18 @@ import { Pressable, StyleSheet, TextInput, useWindowDimensions, View } from 'rea
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
+import {
+  applyPhoneMask,
+  formatPhone,
+  isMobilePhone,
+  normalizePhone,
+} from '@nurtaxi/shared-core/shared/lib';
 import { brandColors, fontFamily, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
+import { useAppSelector } from '@/app/store/hooks';
 import { useKeyboardLift } from '@/shared/hooks/use-keyboard-lift';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
@@ -54,8 +61,9 @@ export function PhoneScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const { requestOtp, isRequestingOtp } = useAuth();
+  const pendingPhone = useAppSelector(selectPendingPhone);
 
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(() => (pendingPhone ? applyPhoneMask(pendingPhone) : ''));
   const [error, setError] = useState<string | null>(null);
   const [formatError, setFormatError] = useState(false);
   // Поле и кнопка должны оставаться над клавиатурой — см. `useKeyboardLift`.
@@ -99,12 +107,21 @@ export function PhoneScreen() {
       return;
     }
     setError(null);
+    // Код на этот номер уже запрошен: возврат к вводу, без нового SMS и без паузы сервера.
+    if (pendingPhone && normalizePhone(phone) === pendingPhone) {
+      router.push('/(auth)/code');
+      return;
+    }
     try {
       await requestOtp(phone);
       router.push('/(auth)/code');
     } catch (cause) {
       setError(toAppError(cause as never).message);
     }
+  };
+
+  const returnToCode = () => {
+    router.push('/(auth)/code');
   };
 
   return (
@@ -258,6 +275,18 @@ export function PhoneScreen() {
               </Text>
             </View>
           </Pressable>
+
+          {pendingPhone ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={returnToCode}
+              style={[styles.returnLink, { marginTop: sy(16) }]}
+            >
+              <Text style={[styles.returnLinkText, { fontSize: sx(typeScale.md) }]}>
+                {t('auth.enterSentCode', { phone: formatPhone(pendingPhone) })}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </Animated.View>
     </View>
@@ -320,6 +349,14 @@ const styles = StyleSheet.create({
   logoClip: {
     overflow: 'hidden',
     position: 'absolute',
+  },
+  returnLink: {
+    alignItems: 'center',
+  },
+  returnLinkText: {
+    color: phoneColors.iconAccent,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   root: {
     backgroundColor: phoneColors.background,

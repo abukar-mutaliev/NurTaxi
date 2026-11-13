@@ -6,8 +6,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
+import { formatPhone } from '@nurtaxi/shared-core/shared/lib';
 import { brandColors, radius, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
+import { useAppSelector } from '@/app/store/hooks';
 import { glassShadow } from '@/shared/ui/glass-shadow';
 
 import { WelcomeGradientBackground } from './welcome-gradient-background';
@@ -31,6 +34,7 @@ const logoAsset = require('@/assets/images/welcome/logo.png');
 export function WelcomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const pendingPhone = useAppSelector(selectPendingPhone);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
@@ -94,6 +98,19 @@ export function WelcomeScreen() {
             {t('welcome.start')}
           </Text>
         </Pressable>
+
+        {pendingPhone ? (
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => router.push('/(auth)/code')}
+            style={styles.loginLink}
+          >
+            <Text align="center" style={styles.loginAction} variant="caption">
+              {t('auth.enterSentCode', { phone: formatPhone(pendingPhone) })}
+            </Text>
+          </Pressable>
+        ) : null}
 
         <Pressable
           accessibilityRole="link"

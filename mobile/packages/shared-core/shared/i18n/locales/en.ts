@@ -53,6 +53,7 @@ export const en: DeepPartial<TranslationResources> = {
     phonePlaceholder: '+7 (___) ___-__-__',
     phoneInvalid: 'Invalid phone number format',
     getCode: 'Continue',
+    enterSentCode: 'Enter the code for {{phone}}',
     codeTitle: 'Enter the code from SMS',
     codeSubtitle: 'Code sent to {{phone}}',
     mobileIdTitle: 'Confirm sign-in',

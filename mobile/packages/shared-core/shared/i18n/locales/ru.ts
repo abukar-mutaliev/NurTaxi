@@ -51,6 +51,7 @@ export const ru = {
     phonePlaceholder: '+7 (___) ___-__-__',
     phoneInvalid: 'Неверный формат номера',
     getCode: 'Продолжить',
+    enterSentCode: 'Ввести код для {{phone}}',
     codeTitle: 'Введите код из SMS',
     codeSubtitle: 'Код отправлен на номер {{phone}}',
     mobileIdTitle: 'Подтвердите вход',

@@ -9,8 +9,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
+import { formatPhone } from '@nurtaxi/shared-core/shared/lib';
 import { brandColors, Text, typeScale } from '@nurtaxi/shared-core/shared/ui';
 
+import { useAppSelector } from '@/app/store/hooks';
 import { PillButton } from '@/shared/ui/pill-button';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 
@@ -30,6 +33,7 @@ const LOGO_DESIGN_HEIGHT = 199;
 export function WelcomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const pendingPhone = useAppSelector(selectPendingPhone);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 
@@ -69,6 +73,19 @@ export function WelcomeScreen() {
         </View>
 
         <PillButton height={sx(58)} onPress={goToLogin} title={t('welcome.start')} />
+
+        {pendingPhone ? (
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => router.push('/(auth)/code')}
+            style={{ marginTop: sy(18) }}
+          >
+            <Text style={[styles.linkAction, { fontSize: sx(typeScale.md) }]}>
+              {t('auth.enterSentCode', { phone: formatPhone(pendingPhone) })}
+            </Text>
+          </Pressable>
+        ) : null}
 
         <Pressable hitSlop={8} onPress={goToLogin} style={{ marginTop: sy(18) }}>
           <Text style={[styles.link, { fontSize: sx(typeScale.md) }]}>

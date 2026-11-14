@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -20,8 +21,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { selectPendingPhone } from '@nurtaxi/shared-core/entities/session';
 import { toAppError } from '@nurtaxi/shared-core/shared/api';
-import { applyPhoneMask, isMobilePhone, normalizePhone } from '@nurtaxi/shared-core/shared/lib';
+import {
+  applyPhoneMask,
+  formatPhone,
+  isMobilePhone,
+  normalizePhone,
+} from '@nurtaxi/shared-core/shared/lib';
 import {
   brandColors,
   fontFamily,
@@ -32,6 +39,7 @@ import {
 } from '@nurtaxi/shared-core/shared/ui';
 import { useAuth } from '@nurtaxi/shared-core/features/auth';
 
+import { useAppSelector } from '@/app/store/hooks';
 import { PillButton } from '@/shared/ui/pill-button';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 
@@ -68,8 +76,9 @@ export function PhoneScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const { requestOtp, isRequestingOtp } = useAuth();
+  const pendingPhone = useAppSelector(selectPendingPhone);
 
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(() => (pendingPhone ? applyPhoneMask(pendingPhone) : ''));
   const [error, setError] = useState<string | null>(null);
   const [formatError, setFormatError] = useState(false);
 
@@ -102,12 +111,21 @@ export function PhoneScreen() {
       return;
     }
     setError(null);
+    // Код на этот номер уже запрошен: возврат к вводу, без нового SMS и без паузы сервера.
+    if (pendingPhone && normalizePhone(phone) === pendingPhone) {
+      router.push('/(auth)/code');
+      return;
+    }
     try {
       await requestOtp(phone);
       router.push('/(auth)/code');
     } catch (cause) {
       setError(toAppError(cause as never).message);
     }
+  };
+
+  const returnToCode = () => {
+    router.push('/(auth)/code');
   };
 
   return (
@@ -199,6 +217,18 @@ export function PhoneScreen() {
           style={{ marginTop: sy(56) }}
           title={t('auth.getCode')}
         />
+
+        {pendingPhone ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={returnToCode}
+            style={[styles.returnLink, { marginTop: sy(16) }]}
+          >
+            <Text style={[styles.returnLinkText, { fontSize: sx(typeScale.md) }]}>
+              {t('auth.enterSentCode', { phone: formatPhone(pendingPhone) })}
+            </Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -228,6 +258,14 @@ const styles = StyleSheet.create({
   },
   inputShellInvalid: {
     borderColor: c.danger,
+  },
+  returnLink: {
+    alignItems: 'center',
+  },
+  returnLinkText: {
+    color: brandColors.primary,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   root: {
     backgroundColor: brandColors.background,

@@ -30,6 +30,31 @@ export interface CreateUploadUrlParams {
 const UPLOAD_TTL_SEC = 900;
 const DOWNLOAD_TTL_SEC = 300;
 
+function s3ErrorCode(error: unknown): string {
+  if (!error || typeof error !== 'object') return '';
+  const value = error as { name?: unknown; Code?: unknown };
+  if (typeof value.Code === 'string' && value.Code) return value.Code;
+  if (typeof value.name === 'string') return value.name;
+  return '';
+}
+
+function httpStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const status = (error as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+  return typeof status === 'number' ? status : undefined;
+}
+
+/** Бакет ещё не создан. Selectel и MinIO отвечают 404 NotFound. */
+function isMissingBucket(error: unknown): boolean {
+  const code = s3ErrorCode(error);
+  return code === 'NotFound' || code === 'NoSuchBucket' || httpStatus(error) === 404;
+}
+
+function isBucketAlreadyExists(error: unknown): boolean {
+  const code = s3ErrorCode(error);
+  return code === 'BucketAlreadyOwnedByYou' || code === 'BucketAlreadyExists';
+}
+
 /** Частные сети: такой адрес недостижим ни для одного телефона за их пределами. */
 const LAN_HOST = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
 /** Сама машина. Локально это верное значение: телефон приходит через `adb reverse`. */
@@ -121,15 +146,27 @@ export class S3StorageService {
     try {
       await this.client.send(new HeadBucketCommand({ Bucket: this.bucket }));
       this.bucketReady = true;
-    } catch {
-      try {
-        await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
-        this.bucketReady = true;
-        this.logger.log(`Создан bucket "${this.bucket}"`);
-      } catch (error) {
-        this.logger.warn(`S3 bucket "${this.bucket}" недоступен — presigned URL могут не работать`);
+      return;
+    } catch (error) {
+      if (!isMissingBucket(error)) {
         this.logger.debug(error);
       }
+    }
+
+    try {
+      await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
+      this.bucketReady = true;
+      this.logger.log(`Создан bucket "${this.bucket}"`);
+    } catch (error) {
+      if (isBucketAlreadyExists(error)) {
+        this.bucketReady = true;
+        return;
+      }
+      const region = this.config.get<S3Config>('s3')?.region;
+      this.logger.warn(
+        `S3 bucket "${this.bucket}" недоступен (регион клиента "${region ?? '?'}") — presigned URL могут не работать`,
+      );
+      this.logger.debug(error);
     }
   }
 

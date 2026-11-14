@@ -71,7 +71,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: '6379'
       NATS_URL: nats://nats:4222
-      S3_ENDPOINT: http://minio:9000
+      # S3 не подменяем на minio: адрес, регион и бакет берутся из server/.env
+      # (Selectel s3.ru-7.storage.selcloud.ru, регион ru-7, бакет nurtaxi).
     ports:
       - '127.0.0.1:3000:3000'
     depends_on:

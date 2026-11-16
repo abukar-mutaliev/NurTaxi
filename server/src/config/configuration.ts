@@ -179,7 +179,7 @@ export default (): Configuration => ({
     region: process.env.S3_REGION ?? 'ru-central-1',
     accessKey: process.env.S3_ACCESS_KEY ?? 'nurtaxi',
     secretKey: process.env.S3_SECRET_KEY ?? 'nurtaxi123',
-    bucket: process.env.S3_BUCKET ?? 'nurtaxi-documents',
+    bucket: process.env.S3_BUCKET ?? 'nurtaxi',
     forcePathStyle: toBool(process.env.S3_FORCE_PATH_STYLE, true),
   },
   jwt: {

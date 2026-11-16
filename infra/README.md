@@ -42,7 +42,7 @@ ufw deny 9000; ufw deny 9001; ufw deny 5433; ufw deny 6380; ufw deny 4222; ufw d
 `S3_PUBLIC_ENDPOINT=https://taxi.rulplus.ru` — именно домен без пути: presigned URL
 подписан по пути запроса, и любой префикс, который nginx срезает, ломает подпись
 (MinIO отвечает 403 SignatureDoesNotMatch). Телефоны ходят на
-`https://taxi.rulplus.ru/nurtaxi-documents/...`, nginx проксирует путь как есть.
+`https://taxi.rulplus.ru/nurtaxi/...`, nginx проксирует путь как есть.
 В nginx сайта подключите `infra/nginx/s3-proxy.conf`, затем `nginx -t && systemctl reload nginx`
 и перезапуск API. Пока ключи из репозитория и публичный адрес хранилища совпадают,
 backend отказывается стартовать.

@@ -93,8 +93,8 @@ services:
     entrypoint: >
       /bin/sh -c "
       mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
-      mc mb --ignore-existing local/nurtaxi-documents &&
-      mc anonymous set none local/nurtaxi-documents &&
+      mc mb --ignore-existing local/nurtaxi &&
+      mc anonymous set none local/nurtaxi &&
       echo 'MinIO bucket ready';
       "
 

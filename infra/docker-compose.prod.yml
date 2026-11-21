@@ -68,6 +68,9 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: '5432'
+      # Postgres из этого compose не отдаёт сертификат публичного CA.
+      # DB_SSL=true из server/.env даёт «unable to verify the first certificate».
+      DB_SSL: 'false'
       REDIS_HOST: redis
       REDIS_PORT: '6379'
       NATS_URL: nats://nats:4222

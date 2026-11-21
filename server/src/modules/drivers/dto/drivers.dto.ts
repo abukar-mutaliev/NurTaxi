@@ -165,6 +165,28 @@ export class UpdateDriverStatusDto {
   @ApiProperty({ enum: ['online', 'offline'], description: 'На линии / офлайн' })
   @IsEnum(['online', 'offline'] as const)
   status!: 'online' | 'offline';
+
+  @ApiPropertyOptional({
+    example: 43.2167,
+    description: 'Широта в момент выхода на линию — чтобы сразу искать активные заказы',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-90)
+  @Max(90)
+  lat?: number;
+
+  @ApiPropertyOptional({
+    example: 44.7667,
+    description: 'Долгота в момент выхода на линию — чтобы сразу искать активные заказы',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(-180)
+  @Max(180)
+  lng?: number;
 }
 
 export class UpdateWorkScheduleDto {

@@ -31,6 +31,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     'carriers.manage',
     'sites.manage',
     'analytics.view',
+    'appeals.manage',
     'audit.view',
   ],
   [R.RegionalAdmin]: [

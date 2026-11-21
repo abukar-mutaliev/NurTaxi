@@ -184,7 +184,10 @@ describe('DriversService', () => {
     ),
   };
 
-  const eventBusMock = { publish: jest.fn() };
+  const eventBusMock = {
+    publish: jest.fn(),
+    publishAndWait: jest.fn(() => Promise.resolve()),
+  };
 
   beforeEach(async () => {
     driverStore = null;
@@ -252,6 +255,38 @@ describe('DriversService', () => {
     driverStore!.verificationStatus = VerificationStatus.Approved;
     const profile = await service.updateOnlineStatus(userId, 'online');
     expect(profile.onlineStatus).toBe(DriverOnlineStatus.Online);
+  });
+
+  it('перед поиском заказов записывает точку выхода на линию', async () => {
+    await service.register(userId, registerDto);
+    driverStore!.verificationStatus = VerificationStatus.Approved;
+
+    const order: string[] = [];
+    driverLocationMock.updateLocation.mockImplementationOnce(() => {
+      order.push('location');
+      return Promise.resolve();
+    });
+    eventBusMock.publishAndWait.mockImplementationOnce(() => {
+      order.push('match');
+      return Promise.resolve();
+    });
+
+    await service.updateOnlineStatus(userId, 'online', { lat: 43.22, lng: 44.77 });
+
+    expect(driverLocationMock.updateLocation).toHaveBeenCalledWith(
+      regionId,
+      'driver-1',
+      userId,
+      43.22,
+      44.77,
+      expect.any(Number),
+    );
+    expect(eventBusMock.publishAndWait).toHaveBeenCalledWith('driver.available', {
+      driverId: 'driver-1',
+      regionId,
+      notify: true,
+    });
+    expect(order).toEqual(['location', 'match']);
   });
 
   it('требует полный комплект документов перед submit', async () => {
@@ -433,5 +468,88 @@ describe('DriversService', () => {
       { id: 'online-1', lat: 43.22, lng: 44.77 },
     ]);
     expect(driverLocationMock.findNearby).toHaveBeenCalledWith(regionId, 43.21, 44.76, 10, 50);
+  });
+
+  describe('возврат на линию после поездки', () => {
+    const putDriver = (
+      onlineStatus: DriverOnlineStatus,
+      verificationStatus = VerificationStatus.Approved,
+    ) => {
+      driverStore = {
+        id: 'driver-1',
+        userId,
+        regionId,
+        onlineStatus,
+        verificationStatus,
+      } as DriverProfile;
+    };
+
+    it('занятого водителя возвращает на линию и ищет ему заказ', async () => {
+      putDriver(DriverOnlineStatus.Busy);
+
+      await service.markOnlineAfterTrip(userId);
+
+      expect(driverStore!.onlineStatus).toBe(DriverOnlineStatus.Online);
+      expect(eventBusMock.publishAndWait).toHaveBeenCalledWith(
+        'driver.available',
+        expect.objectContaining({ driverId: 'driver-1' }),
+      );
+    });
+
+    it('не поднимает на линию водителя, который уже ушёл с неё', async () => {
+      putDriver(DriverOnlineStatus.Offline);
+
+      await service.markOnlineAfterTrip(userId);
+
+      expect(driverStore!.onlineStatus).toBe(DriverOnlineStatus.Offline);
+      expect(eventBusMock.publishAndWait).not.toHaveBeenCalled();
+    });
+
+    it('водителя без допуска снимает с линии, а не оставляет занятым', async () => {
+      putDriver(DriverOnlineStatus.Busy, VerificationStatus.Rejected);
+
+      await service.markOnlineAfterTrip(userId);
+
+      expect(driverStore!.onlineStatus).toBe(DriverOnlineStatus.Offline);
+      expect(driverLocationMock.removeLocation).toHaveBeenCalledWith(regionId, 'driver-1');
+      expect(eventBusMock.publishAndWait).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('точка водителя', () => {
+    it('не принимает точку от водителя, который не на линии', async () => {
+      driverStore = {
+        id: 'driver-1',
+        userId,
+        regionId,
+        onlineStatus: DriverOnlineStatus.Offline,
+      } as DriverProfile;
+
+      await expect(service.updateLocation(userId, 43.22, 44.77)).rejects.toMatchObject({
+        response: { code: 'DRIVER_NOT_ONLINE' },
+      });
+      expect(driverLocationMock.updateLocation).not.toHaveBeenCalled();
+    });
+
+    it('пишет точку занятого водителя', async () => {
+      driverStore = {
+        id: 'driver-1',
+        userId,
+        regionId,
+        onlineStatus: DriverOnlineStatus.Busy,
+        rating: '4.8',
+      } as DriverProfile;
+
+      await service.updateLocation(userId, 43.22, 44.77);
+
+      expect(driverLocationMock.updateLocation).toHaveBeenCalledWith(
+        regionId,
+        'driver-1',
+        userId,
+        43.22,
+        44.77,
+        4.8,
+      );
+    });
   });
 });

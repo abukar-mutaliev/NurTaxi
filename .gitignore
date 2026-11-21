@@ -15,6 +15,7 @@ build/
 *.pem
 *.key
 secrets/
+*firebase-adminsdk*.json
 
 # Logs
 logs/

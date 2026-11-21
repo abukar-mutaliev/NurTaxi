@@ -45,6 +45,12 @@ const templates: Record<string, NotificationTemplate> = {
     body: 'Статус верификации документов обновлён',
     channels: ['push', 'in_app'],
   },
+  'order.offer': {
+    type: 'order.offer',
+    title: 'Новый заказ',
+    body: 'Рядом с вами новый заказ. Откройте приложение, чтобы принять его',
+    channels: ['push'],
+  },
   'promo.redeemed': {
     type: 'promo.redeemed',
     title: 'Промокод применён',
@@ -74,6 +80,11 @@ export function getOrderStatusLabelRu(status: string): string {
 
 export function getNotificationTemplate(eventType: string): NotificationTemplate | null {
   return templates[eventType] ?? null;
+}
+
+/** Канал Android, в который приложение уже создало notification channel. */
+export function pushChannelForEvent(eventType: string): 'orders' | 'promo' {
+  return eventType.startsWith('promo.') ? 'promo' : 'orders';
 }
 
 export function isChannelEnabled(

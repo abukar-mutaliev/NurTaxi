@@ -1,7 +1,10 @@
 /**
  * Deep-link маршруты из push/in-app уведомлений (M10.2, Req §23).
+ *
+ * Возвращает обычную строку или pathname, а не `Href` Expo Router: у водителя
+ * нет клиентских маршрутов, и типизированный `Href` валит сборку его приложения.
  */
-import type { Href } from 'expo-router';
+export type NotificationHref = string | { pathname: string; params?: Record<string, string> };
 
 function readString(data: Record<string, unknown>, ...keys: string[]): string | null {
   for (const key of keys) {
@@ -17,9 +20,10 @@ function readString(data: Record<string, unknown>, ...keys: string[]): string | 
 export function resolveNotificationHref(
   type: string | undefined,
   data: Record<string, unknown>,
-): Href | null {
+): NotificationHref | null {
   const orderId = readString(data, 'orderId', 'order_id');
-  const eventType = type ?? readString(data, 'type', 'eventType') ?? '';
+  // Push с сервера несёт только eventId (FZ-02.4), без type и orderId.
+  const eventType = type ?? readString(data, 'type', 'eventType', 'eventId') ?? '';
 
   if (eventType === 'promo.redeemed') {
     return '/profile/promo';

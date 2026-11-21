@@ -30,6 +30,10 @@ import { OrderTrackingService } from '../orders/order-tracking.service';
 import { RealtimeLocationBridge } from './realtime-location.bridge';
 import { UsersService } from '../users/users.service';
 
+function isValidCoordinate(value: unknown, limit: number): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= limit;
+}
+
 @WebSocketGateway({
   namespace: '/ws',
   cors: {
@@ -65,8 +69,9 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     const io = (server as unknown as Namespace).server ?? server;
     io.adapter(createAdapter(pub, sub));
 
+    // Адаптер сам доставит событие сокетам на остальных инстансах.
     this.broadcast.setHandler((envelope) => {
-      server.to(envelope.room).emit(envelope.event, envelope.data);
+      server.to(envelope.rooms).emit(envelope.event, envelope.data);
     });
   }
 
@@ -120,7 +125,8 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     @MessageBody() body: { orderId: string },
   ): Promise<{ success: boolean; room?: string }> {
     const user = client.data.user;
-    if (!user) {
+    // Без строки-идентификатора запрос к базе ушёл бы без условия и вернул чужой заказ.
+    if (!user || typeof body?.orderId !== 'string' || body.orderId.length === 0) {
       return { success: false };
     }
 
@@ -145,21 +151,35 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   @SubscribeMessage('driver.location')
   async onDriverLocation(
     @ConnectedSocket() client: Socket,
-    @MessageBody() body: { lat: number; lng: number; eta?: string | null; route?: string | null },
+    @MessageBody()
+    body: {
+      lat: number;
+      lng: number;
+      eta?: string | null;
+      route?: string | null;
+      /** Курс по GPS, градусы от севера. */
+      heading?: number | null;
+      /** Радиус погрешности точки, м. */
+      accuracy?: number | null;
+    },
   ): Promise<{ success: boolean }> {
     const user = client.data.user;
-    if (user.role !== Role.Driver) {
+    if (user?.role !== Role.Driver) {
+      return { success: false };
+    }
+    // Тело сокета, в отличие от REST, не проходит ValidationPipe. Мусорная координата
+    // попала бы в Redis GEO и на карту клиента.
+    if (!isValidCoordinate(body?.lat, 90) || !isValidCoordinate(body?.lng, 180)) {
       return { success: false };
     }
 
     try {
-      await this.locationBridge.updateAndBroadcast(
-        user.id,
-        body.lat,
-        body.lng,
-        body.eta,
-        body.route,
-      );
+      await this.locationBridge.updateAndBroadcast(user.id, body.lat, body.lng, {
+        accuracy: body.accuracy,
+        eta: body.eta,
+        heading: body.heading,
+        route: body.route,
+      });
       return { success: true };
     } catch {
       return { success: false };

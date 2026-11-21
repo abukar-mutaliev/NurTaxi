@@ -13,6 +13,7 @@ import { decodePolyline, formatDuration, haversineDistance } from '@nurtaxi/shar
 import type { GeoPoint } from '@nurtaxi/shared-core/shared/model';
 
 import { orderRouteLeg, orderRouteWaypoints, type OrderRouteLeg } from './order-route-leg';
+import { NO_STOPS_PASSED, advanceStopProgress } from './stop-progress';
 
 /** Насколько машина должна сместиться, чтобы имело смысл перестраивать путь. */
 const REBUILD_THRESHOLD_M = 150;
@@ -26,8 +27,6 @@ const ROAD_MIN_POINTS = 3;
  */
 const ROAD_RETRY_MS = 6000;
 const ROAD_RETRY_LIMIT = 5;
-/** Машина подъехала к остановке ближе этого — остановка пройдена, ведём к следующей точке. */
-const STOP_REACHED_M = 150;
 
 function pointsKey(points: GeoPoint[]): string {
   return points.map((point) => `${point.lat},${point.lng}`).join(';');
@@ -89,6 +88,8 @@ export interface LiveOrderRouteResult {
   leg: OrderRouteLeg;
   /** Ближайшая цель участка: клиент, следующая непройденная остановка или точка Б. */
   target: GeoPoint | null;
+  /** Сколько остановок с начала маршрута машина уже проехала. */
+  passedStopCount: number;
 }
 
 function useStableOrigin(origin: GeoPoint | null): GeoPoint | null {
@@ -115,17 +116,16 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
    * Сколько остановок машина уже проехала. Держим в состоянии: проехав остановку, машина
    * от неё удаляется, и по одной текущей позиции этого уже не понять.
    */
-  const [passedStops, setPassedStops] = useState({ count: 0, scope });
-  const passedCount = passedStops.scope === scope ? passedStops.count : 0;
-  const nextStop = stops[passedCount];
-  if (
-    leg === 'to-dropoff' &&
-    nextStop &&
-    input.origin &&
-    haversineDistance(input.origin, nextStop) < STOP_REACHED_M
-  ) {
-    setPassedStops({ count: passedCount + 1, scope });
+  const [passedStops, setPassedStops] = useState({ progress: NO_STOPS_PASSED, scope });
+  const stopProgress = passedStops.scope === scope ? passedStops.progress : NO_STOPS_PASSED;
+  // Когда именно остановка считается пройденной — см. `stop-progress.ts`.
+  if (enabled && leg === 'to-dropoff' && input.origin) {
+    const advanced = advanceStopProgress(stopProgress, input.origin, stops);
+    if (advanced !== stopProgress) {
+      setPassedStops({ progress: advanced, scope });
+    }
   }
+  const passedCount = stopProgress.count;
 
   const waypoints = orderRouteWaypoints({
     dropoff: input.dropoff,
@@ -312,6 +312,7 @@ export function useLiveOrderRoute(input: LiveOrderRouteInput): LiveOrderRouteRes
     duration: visible?.duration ?? null,
     isBuilding: enabled && Boolean(routeKey) && visible?.key !== routeKey,
     leg,
+    passedStopCount: passedCount,
     points: visible?.points ?? null,
     target: waypoints?.[1] ?? null,
   };

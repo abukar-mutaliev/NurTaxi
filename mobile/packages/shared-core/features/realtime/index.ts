@@ -3,6 +3,7 @@ export { RealtimeEvent } from './model/realtime-events';
 export type {
   ClientToServerEvents,
   DriverLocationEvent,
+  DriverLocationPayload,
   OrderOfferEvent,
   OrderStatusEvent,
   RealtimeStatus,
@@ -10,6 +11,7 @@ export type {
   SosActivatedEvent,
 } from './model/realtime-events';
 export {
+  driverPositionCleared,
   driverPositionReceived,
   realtimeReducer,
   realtimeReset,

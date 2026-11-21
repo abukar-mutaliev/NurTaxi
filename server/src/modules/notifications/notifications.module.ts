@@ -9,13 +9,13 @@ import { NotificationEventListener } from './notification-event.listener';
 import { NotificationsController } from './notifications.controller';
 import { PushTokensController } from './push-tokens.controller';
 import { PushTokensService } from './push-tokens.service';
-import { StubPushProvider } from './push/stub-push.provider';
 import { HttpPushProvider } from './push/http-push.provider';
+import { ExpoPushProvider } from './push/expo-push.provider';
 import { PUSH_PROVIDER } from './push/push-provider.interface';
 
 /**
- * Notifications (Des §2.3, §10): push (FCM/APNs), SMS, in-app; шаблоны и настройки;
- * подписка на доменные события.
+ * Notifications (Des §2.3, §10): push (Expo → FCM), SMS, in-app; шаблоны и настройки;
+ * подписка на доменные события. Свой шлюз подключается через PUSH_ENDPOINT.
  */
 @Module({
   imports: [
@@ -28,13 +28,19 @@ import { PUSH_PROVIDER } from './push/push-provider.interface';
     NotificationsService,
     PushTokensService,
     NotificationEventListener,
-    StubPushProvider,
     HttpPushProvider,
+    ExpoPushProvider,
     {
       provide: PUSH_PROVIDER,
-      useFactory: (http: HttpPushProvider, stub: StubPushProvider) =>
-        process.env.PUSH_ENDPOINT ? http : stub,
-      inject: [HttpPushProvider, StubPushProvider],
+      useFactory: (expo: ExpoPushProvider, http: HttpPushProvider) => {
+        const endpoint = process.env.PUSH_ENDPOINT?.trim();
+        // Приложения отдают Expo-токен. Свой шлюз — только если задан и это не Expo.
+        if (endpoint && !endpoint.includes('exp.host')) {
+          return http;
+        }
+        return expo;
+      },
+      inject: [ExpoPushProvider, HttpPushProvider],
     },
   ],
   exports: [NotificationsService, PushTokensService],

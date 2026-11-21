@@ -92,7 +92,7 @@ export class DriverLocationService {
   async getLocation(
     regionId: string,
     driverId: string,
-  ): Promise<{ lat: number; lng: number } | null> {
+  ): Promise<{ lat: number; lng: number; updatedAt?: string } | null> {
     const result = await this.redis.geopos(this.geoKey(regionId), driverId);
     const coords = result[0];
     if (!coords || coords[0] == null || coords[1] == null) {
@@ -105,6 +105,13 @@ export class DriverLocationService {
       return null;
     }
 
-    return { lat, lng };
+    // Время записи — для снимка при подписке: «сейчас» там подменяло бы живые точки,
+    // ушедшие чуть раньше, и клиент их отбрасывал как устаревшие.
+    const updatedAt = await this.redis.hget(`driver:meta:${driverId}`, 'updatedAt');
+    return {
+      lat,
+      lng,
+      ...(updatedAt ? { updatedAt } : {}),
+    };
   }
 }

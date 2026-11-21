@@ -43,12 +43,22 @@ export function resolveOrderMapMarkers(options: {
   stops?: GeoLocation[] | null;
   routePolyline?: string | null;
   driver?: GeoPoint | null;
+  /** Курс назначенной машины по GPS, градусы от севера. Нет — направление берётся из движения. */
+  driverHeading?: number | null;
   /** Свободные машины вокруг точки. Назначенного водителя сюда не кладём — он приходит отдельно. */
   nearbyDrivers?: NearbyMapDriver[] | null;
   assignedDriverId?: string | null;
 }): MapMarker[] {
-  const { pickup, dropoff, stops, routePolyline, driver, nearbyDrivers, assignedDriverId } =
-    options;
+  const {
+    pickup,
+    dropoff,
+    stops,
+    routePolyline,
+    driver,
+    driverHeading,
+    nearbyDrivers,
+    assignedDriverId,
+  } = options;
   const items: MapMarker[] = [];
 
   const pickupPoint = pickup && isValidGeoPoint(pickup) ? normalizeGeoPoint(pickup) : null;
@@ -70,14 +80,17 @@ export function resolveOrderMapMarkers(options: {
     });
   }
 
-  (stops ?? []).forEach((stop, index) => {
+  (stops ?? []).forEach((stop) => {
     if (!isValidGeoPoint(stop)) {
       return;
     }
+    const point = normalizeGeoPoint(stop);
     items.push({
-      id: `stop-${index}`,
+      // Координаты, а не порядковый номер: иначе снятие первой остановки
+      // переименовывает следующую в `stop-0`, и нативная метка остаётся на старом месте.
+      id: `stop-${point.lat.toFixed(5)},${point.lng.toFixed(5)}`,
       kind: 'stop',
-      point: normalizeGeoPoint(stop),
+      point,
       title: stop.address,
     });
   });
@@ -95,6 +108,9 @@ export function resolveOrderMapMarkers(options: {
 
   if (driverPoint) {
     items.push({
+      ...(driverHeading != null && Number.isFinite(driverHeading)
+        ? { heading: driverHeading }
+        : {}),
       id: 'driver',
       kind: 'driver',
       point: driverPoint,

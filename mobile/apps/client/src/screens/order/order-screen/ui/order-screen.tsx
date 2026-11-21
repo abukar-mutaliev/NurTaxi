@@ -50,7 +50,7 @@ import {
   useLocationPermission,
 } from '@nurtaxi/shared-core/features/geolocation';
 import { contactByPhone } from '@nurtaxi/shared-core/features/contact';
-import { useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
+import { snapToRoute, useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
 import {
   selectDriverPosition,
   selectIsRealtimeOnline,
@@ -223,30 +223,6 @@ export function OrderScreen() {
   const carPoint = driverPosition ?? reportedDriverPoint;
   const driverIsComing = order != null && orderStage(order.status) === 'waiting-driver';
 
-  const markers = useMemo(
-    () =>
-      order
-        ? resolveOrderMapMarkers({
-            assignedDriverId: order.driver?.id,
-            driver: carPoint,
-            dropoff: {
-              address: order.dropoffAddress,
-              lat: order.dropoffLat,
-              lng: order.dropoffLng,
-            },
-            nearbyDrivers,
-            pickup: {
-              address: order.pickupAddress,
-              lat: order.pickupLat,
-              lng: order.pickupLng,
-            },
-            routePolyline: order.route?.polyline,
-            stops: order.stops,
-          })
-        : [],
-    [carPoint, nearbyDrivers, order],
-  );
-
   const liveRoute = useLiveOrderRoute({
     buildLocalRoute: buildDrivingRoute,
     dropoff: { lat: order?.dropoffLat ?? 0, lng: order?.dropoffLng ?? 0 },
@@ -260,6 +236,43 @@ export function OrderScreen() {
     status: order?.status ?? '',
     stops: order?.stops,
   });
+  const driverRoad = roadFromPolyline(driverPosition?.route);
+  const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
+  /**
+   * Машину рисуем на той же линии, что видит клиент: GPS ошибается на 5–15 метров и без
+   * привязки ставит её то на тротуар, то во двор рядом с маршрутом. Маршрут и время при
+   * этом считаются от настоящей точки (`carPoint`) — привязка только для картинки.
+   */
+  const carRoad = driverIsComing ? (driverRoad ?? liveRoad) : liveRoad;
+  const carOnRoad = useMemo(
+    () => (carPoint ? snapToRoute(carPoint, carRoad) : null),
+    [carPoint, carRoad],
+  );
+  const carHeading = driverPosition?.heading ?? null;
+  const markers = useMemo(
+    () =>
+      order
+        ? resolveOrderMapMarkers({
+            assignedDriverId: order.driver?.id,
+            driver: carOnRoad,
+            driverHeading: carHeading,
+            dropoff: {
+              address: order.dropoffAddress,
+              lat: order.dropoffLat,
+              lng: order.dropoffLng,
+            },
+            nearbyDrivers,
+            pickup: {
+              address: order.pickupAddress,
+              lat: order.pickupLat,
+              lng: order.pickupLng,
+            },
+            routePolyline: order.route?.polyline,
+            stops: order.stops?.slice(liveRoute.passedStopCount),
+          })
+        : [],
+    [carHeading, carOnRoad, liveRoute.passedStopCount, nearbyDrivers, order],
+  );
   const etaLabel =
     liveRoute.leg === 'to-pickup' ? driverPosition?.eta || liveRoute.duration || null : null;
   const tripWaypoints = useMemo((): GeoPoint[] | null => {
@@ -272,8 +285,6 @@ export function OrderScreen() {
       { lat: order.dropoffLat, lng: order.dropoffLng },
     ];
   }, [order]);
-  const driverRoad = roadFromPolyline(driverPosition?.route);
-  const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
   const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
   // Пока машина едет на подачу, кадр — путь к клиенту, а не поездка А→Б:
   // иначе камера обрезает водителя за краем маршрута заказа. Точку машины

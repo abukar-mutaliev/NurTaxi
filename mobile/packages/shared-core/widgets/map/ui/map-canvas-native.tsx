@@ -14,7 +14,6 @@ import {
 import { StyleSheet, View } from 'react-native';
 
 import { decodePolyline } from '../../../shared/lib';
-import { carMarkerDirection, shortestRotationTarget } from '../model/car-marker-direction';
 import {
   DEFAULT_CAMERA,
   isValidGeoPoint,
@@ -30,10 +29,6 @@ import { MAP_MARKER_SOURCES } from './map-marker.assets';
 import { MAP_MARKER_ICON_SCALE, getMarkerAnchor } from './map-marker.constants';
 
 import { brandColors } from '@nurtaxi/shared-core/shared/ui';
-
-/** Как у скольжения позиции: слишком быстрые повороты сглаживаем, редкие — не растягиваем. */
-const MIN_ROTATE_MS = 300;
-const MAX_ROTATE_MS = 3000;
 
 const MAP_EDGE_PADDING = { top: 120, right: 48, bottom: 280, left: 48 };
 // Маршрут — основной цвет: на светлой карте он читается лучше пудры.
@@ -96,22 +91,44 @@ function ignoreCameraRejection(result: Promise<unknown> | undefined): void {
  * Машина между GPS-точками не прыгает, а скользит — см. `CarPlacemark`.
  */
 function MapPlacemark({
+  followKey = '',
+  marker,
+  onPress,
+}: {
+  /** Меняется, когда линия маршрута перестроена — машинку нужно догнать до GPS. */
+  followKey?: string;
+  marker: MapMarker;
+  onPress?: (marker: MapMarker) => void;
+}) {
+  if (marker.kind === 'driver') {
+    return <CarPlacemark followKey={followKey} marker={marker} />;
+  }
+
+  return <PinPlacemark marker={marker} onPress={onPress} />;
+}
+
+/**
+ * Пин подачи, остановки или точки Б. Координата для натива — один объект, пока точка
+ * не сдвинулась: иначе каждый тик GPS заново вызывает `setPoint`, а тот через
+ * `updateMarker` переписывает геометрию метки. После проезда остановки это возвращало
+ * машинку водителя на место остановки.
+ */
+function PinPlacemark({
   marker,
   onPress,
 }: {
   marker: MapMarker;
   onPress?: (marker: MapMarker) => void;
 }) {
-  if (marker.kind === 'driver') {
-    return <CarPlacemark marker={marker} />;
-  }
+  const { lat, lng } = marker.point;
+  const point = useMemo(() => toMapPoint(normalizeGeoPoint({ lat, lng })), [lat, lng]);
 
   return (
     <Marker
       anchor={MARKER_ANCHORS[marker.kind]}
       handled={Boolean(onPress)}
       onPress={onPress ? () => onPress(marker) : undefined}
-      point={toMapPoint(normalizeGeoPoint(marker.point))}
+      point={point}
       scale={MAP_MARKER_ICON_SCALE}
       source={MAP_MARKER_SOURCES[marker.kind]}
       zIndex={2}
@@ -120,17 +137,16 @@ function MapPlacemark({
 }
 
 /**
- * Машина: проп `point` задаётся один раз, дальше метку ведёт нативная анимация
- * (`useGlidingMarker`). Все пропы стабильны по ссылке, чтобы React их не пересылал.
+ * Машина: между тиками GPS проп `point` не меняется, метку ведёт нативная анимация
+ * (`useGlidingMarker`). Опора обновляется только вместе с `followKey` — когда
+ * перестроена линия, — иначе каждый тик возвращал бы иконку назад.
  *
  * `rotated` — иконка поворачивается вместе с меткой по ходу движения и остаётся вдоль дороги,
  * даже если карту повернуть. Поворот задаётся отдельным `animatedRotateTo`: без `rotated`
  * MapKit игнорирует direction, и иконка остаётся горизонтальной.
  */
-function CarPlacemark({ marker }: { marker: MapMarker }) {
+function CarPlacemark({ followKey, marker }: { followKey: string; marker: MapMarker }) {
   const markerRef = useRef<NativeMarker>(null);
-  const directionRef = useRef(0);
-  const headingAtRef = useRef<number | null>(null);
   const moveTo = useCallback(
     (point: { lat: number; lng: number }, durationMs: number) =>
       markerRef.current?.animatedMoveTo(toMapPoint(point), durationMs),
@@ -141,25 +157,17 @@ function CarPlacemark({ marker }: { marker: MapMarker }) {
       markerRef.current?.animatedRotateTo(direction, durationMs),
     [],
   );
-  const initial = useGlidingMarker(normalizeGeoPoint(marker.point), moveTo, rotateTo);
-  const point = useMemo(() => toMapPoint(initial), [initial]);
-
-  useEffect(() => {
-    const heading = marker.heading;
-    if (heading == null || !Number.isFinite(heading)) {
-      return;
-    }
-
-    const now = Date.now();
-    const sinceLast = headingAtRef.current == null ? null : now - headingAtRef.current;
-    headingAtRef.current = now;
-    const duration =
-      sinceLast == null ? 0 : Math.min(MAX_ROTATE_MS, Math.max(MIN_ROTATE_MS, sinceLast));
-
-    const target = shortestRotationTarget(directionRef.current, carMarkerDirection(heading));
-    directionRef.current = target;
-    void markerRef.current?.animatedRotateTo(target, duration)?.catch(() => undefined);
-  }, [marker.heading]);
+  // Поворот — в том же хуке, что и движение: курс GPS и направление по смещению точки
+  // делят один угол. Раньше курс крутил метку отдельным эффектом со своим углом, и два
+  // источника разворачивали машину каждый от своего «текущего» положения.
+  const anchor = useGlidingMarker(
+    normalizeGeoPoint(marker.point),
+    moveTo,
+    rotateTo,
+    followKey,
+    marker.heading,
+  );
+  const point = useMemo(() => toMapPoint(anchor), [anchor]);
 
   return (
     <Marker
@@ -203,6 +211,10 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
   const initialCamera = lockedCamera ?? DEFAULT_CAMERA;
 
   const pinMarkers = useMemo(() => markers.filter((marker) => marker.kind !== 'driver'), [markers]);
+  const driverMarkers = useMemo(
+    () => markers.filter((marker) => marker.kind === 'driver' && isValidGeoPoint(marker.point)),
+    [markers],
+  );
   const placedMarkers = useMemo(
     () => markers.filter((marker) => isValidGeoPoint(marker.point)),
     [markers],
@@ -223,6 +235,18 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
    * потоке. Приложение зависало.
    */
   const polylinePoints = useMemo(() => thinRoute(routePoints).map(toMapPoint), [routePoints]);
+  /**
+   * Подпись линии, а не ссылка на массив: массив часто новый, хотя дорога та же.
+   * Меняется, когда участок перестроен — в том числе после проезда остановки.
+   * По этой подписи машинку ещё раз ставим на актуальный GPS, иначе она остаётся
+   * там, где линия только что заканчивалась.
+   */
+  const firstRoutePoint = routePoints[0];
+  const lastRoutePoint = routePoints.length > 1 ? routePoints[routePoints.length - 1] : undefined;
+  const routeFollowKey =
+    firstRoutePoint && lastRoutePoint
+      ? `${firstRoutePoint.lat.toFixed(5)},${firstRoutePoint.lng.toFixed(5)}>${lastRoutePoint.lat.toFixed(5)},${lastRoutePoint.lng.toFixed(5)}:${routePoints.length}`
+      : '';
 
   const fitPoints = useMemo(() => {
     if (polylinePoints.length > 1) {
@@ -356,9 +380,16 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
         userLocationAccuracyStrokeColor="transparent"
         userLocationAccuracyStrokeWidth={0}
       >
+        {/*
+          Машинки — первыми и отдельно от пинов. Остановка появляется и исчезает
+          в середине списка, и нативная карта тогда путает метки: иконка машины
+          остаётся на координате снятой остановки.
+        */}
+        {driverMarkers.map((marker) => (
+          <MapPlacemark followKey={routeFollowKey} key={marker.id} marker={marker} />
+        ))}
         {routePoints.length > 1 ? (
           <Polyline
-            key={`${routePoints[0]?.lat}:${routePoints[routePoints.length - 1]?.lng}:${routePoints.length}`}
             outlineColor={brandColors.onPrimary}
             outlineWidth={2}
             points={polylinePoints}
@@ -367,9 +398,11 @@ export const MapCanvasNative = forwardRef<MapCanvasHandle, MapCanvasProps>(funct
             zIndex={1}
           />
         ) : null}
-        {placedMarkers.map((marker) => (
-          <MapPlacemark key={marker.id} marker={marker} onPress={onMarkerPress} />
-        ))}
+        {pinMarkers.map((marker) =>
+          isValidGeoPoint(marker.point) ? (
+            <MapPlacemark key={marker.id} marker={marker} onPress={onMarkerPress} />
+          ) : null,
+        )}
       </YandexMapView>
     </View>
   );

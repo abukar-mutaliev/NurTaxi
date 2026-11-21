@@ -58,7 +58,7 @@ export function NotificationsScreen() {
     }
     const href = resolveNotificationHref(type, payload);
     if (href) {
-      router.push(href);
+      router.push(href as never);
     }
   };
 

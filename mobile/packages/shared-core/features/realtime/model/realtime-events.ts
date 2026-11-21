@@ -39,8 +39,29 @@ export interface DriverLocationEvent {
    * `null` — подача закончилась, время больше не актуально.
    */
   eta?: string | null;
-  /** Уличный маршрут водителя до клиента, Google Encoded Polyline. `null` — линия больше не нужна. */
+  /**
+   * Уличный маршрут водителя до клиента, Google Encoded Polyline. `null` — линия больше не нужна.
+   * Приходит не с каждой точкой, а когда водитель её прислал: прошлая линия остаётся в силе.
+   */
   route?: string | null;
+  /**
+   * Курс машины по GPS, градусы от севера по часовой. Нет поля или `null` — машина стоит
+   * либо курс неизвестен; направление тогда берётся из самого смещения точки.
+   */
+  heading?: number | null;
+}
+
+/** Что водитель шлёт вместе с точкой. Сервер прежней версии лишние поля просто не читает. */
+export interface DriverLocationPayload {
+  lat: number;
+  lng: number;
+  eta?: string | null;
+  route?: string | null;
+  heading?: number | null;
+  /** Скорость, м/с. */
+  speed?: number | null;
+  /** Радиус погрешности точки, м. */
+  accuracy?: number | null;
 }
 
 export interface SosActivatedEvent {
@@ -81,7 +102,7 @@ export interface ClientToServerEvents {
     ack?: (response: { success: boolean; room?: string }) => void,
   ) => void;
   'driver.location': (
-    payload: { lat: number; lng: number; eta?: string | null; route?: string | null },
+    payload: DriverLocationPayload,
     ack?: (response: { success: boolean }) => void,
   ) => void;
 }

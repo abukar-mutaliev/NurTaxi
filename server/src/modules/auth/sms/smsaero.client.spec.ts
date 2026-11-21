@@ -122,7 +122,9 @@ describe('pickActiveSign', () => {
   });
 
   it('возвращает null, когда активных имён нет', () => {
-    expect(pickActiveSign([{ name: 'SMS Aero', status: 2, extendStatus: 'reject' }], 'SMS Aero')).toBeNull();
+    expect(
+      pickActiveSign([{ name: 'SMS Aero', status: 2, extendStatus: 'reject' }], 'SMS Aero'),
+    ).toBeNull();
   });
 });
 

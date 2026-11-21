@@ -9,10 +9,11 @@ import { WsSubscriptionService } from './ws-subscription.service';
 import { WsAuthService } from './ws-auth.service';
 import { RealtimeLocationBridge } from './realtime-location.bridge';
 import { RealtimeStaffBridge } from './realtime-staff.bridge';
+import { PickupProgressStore } from './pickup-progress.store';
 
 /**
  * WebSocket real-time (Des §10, Фаза 5).
- * Каналы client:/driver:/order: + Redis pub/sub для масштабирования.
+ * Каналы client:/driver:/order:; между инстансами события разносит Redis-адаптер Socket.IO.
  */
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { RealtimeStaffBridge } from './realtime-staff.bridge';
     WsAuthService,
     RealtimeLocationBridge,
     RealtimeStaffBridge,
+    PickupProgressStore,
   ],
   exports: [RealtimeBroadcastService, RealtimeLocationBridge],
 })

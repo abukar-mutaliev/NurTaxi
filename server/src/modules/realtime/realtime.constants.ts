@@ -27,9 +27,8 @@ export enum RealtimeEvent {
 }
 
 export interface RealtimeEnvelope {
-  room: RealtimeRoom;
+  /** Сокет, состоящий в нескольких комнатах из списка, получит событие один раз. */
+  rooms: RealtimeRoom[];
   event: RealtimeEvent | string;
   data: Record<string, unknown>;
 }
-
-export const REALTIME_REDIS_CHANNEL = 'realtime:broadcast';

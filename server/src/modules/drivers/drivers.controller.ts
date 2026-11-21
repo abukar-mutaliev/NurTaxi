@@ -105,7 +105,10 @@ export class DriversController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateDriverStatusDto,
   ): Promise<DriverProfileResponse> {
-    const profile = await this.driversService.updateOnlineStatus(user.id, dto.status);
+    const profile = await this.driversService.updateOnlineStatus(user.id, dto.status, {
+      lat: dto.lat,
+      lng: dto.lng,
+    });
     return DriverProfileResponse.from(profile);
   }
 

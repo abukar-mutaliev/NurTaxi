@@ -110,8 +110,18 @@ export function ShiftScreen() {
    * переживает перезапуск приложения посреди смены и не запускается по одному лишь
    * оптимистичному переключателю. Задача фоновая, поэтому координаты уходят и когда
    * водитель свернул приложение.
+   *
+   * `busy` — водитель везёт заказ. Именно тогда клиент смотрит на машину, поэтому задача
+   * не останавливается, а переходит в точный режим: иначе, стоило водителю открыть
+   * навигатор, клиент переставал видеть движение до самого «Я на месте».
    */
-  useDriverLocationTracking(profile?.onlineStatus === 'online');
+  useDriverLocationTracking(
+    profile?.onlineStatus === 'busy'
+      ? 'order'
+      : profile?.onlineStatus === 'online'
+        ? 'online'
+        : 'off',
+  );
 
   /**
    * Позиция для карты — отдельная забота: фоновая задача отправляет координаты серверу,
@@ -174,7 +184,20 @@ export function ShiftScreen() {
     setPendingOnline(next);
     dispatch(onlineIntentChanged(next));
     try {
-      const updated = await updateStatus({ status: next ? 'online' : 'offline' }).unwrap();
+      // Точка нужна в том же запросе, что и статус: сервер сразу ищет активные заказы,
+      // а без координат водителя ещё нет в геоиндексе и заказ ему не предлагается.
+      let coords: { lat: number; lng: number } | undefined;
+      if (next) {
+        const permitted = await requestLocation();
+        const point = position ?? (permitted ? await resolveCurrentPosition() : null);
+        if (point) {
+          coords = { lat: point.lat, lng: point.lng };
+        }
+      }
+      const updated = await updateStatus({
+        status: next ? 'online' : 'offline',
+        ...coords,
+      }).unwrap();
       // Сервер мог оставить другой статус (например, `busy`) — тогда ждать нечего.
       if ((updated.onlineStatus === 'online') !== next) {
         setPendingOnline(null);

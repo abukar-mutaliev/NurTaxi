@@ -7,6 +7,7 @@ describe('RBAC permissions', () => {
     const perms = getPermissions(Role.SuperAdmin);
     expect(perms).toContain('regions.manage');
     expect(perms).toContain('orders.manage');
+    expect(perms).toContain('appeals.manage');
     expect(can(Role.SuperAdmin, 'providers.manage')).toBe(true);
   });
 

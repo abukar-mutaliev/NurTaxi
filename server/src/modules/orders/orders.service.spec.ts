@@ -330,6 +330,91 @@ describe('OrdersService', () => {
     );
   });
 
+  it('не перебивает предложение водителю, который всё ещё на линии', async () => {
+    repoMock.find.mockResolvedValue([
+      {
+        id: 'order-1',
+        clientId: 'client-1',
+        regionId: region.id,
+        status: OrderStatus.SearchingDriver,
+        pickupLat: 43.2167,
+        pickupLng: 44.7667,
+      },
+    ]);
+
+    const matching = moduleRef.get(MatchingService);
+    jest.spyOn(matching, 'getOffer').mockResolvedValue({
+      orderId: 'order-1',
+      driverId: 'driver-1',
+      candidateIndex: 0,
+      candidates: ['driver-1'],
+      expiresAt: new Date(Date.now() + 20_000).toISOString(),
+    });
+
+    const drivers = moduleRef.get(DriversService);
+    jest.spyOn(drivers, 'getOnlineDriverIds').mockResolvedValue(new Set(['driver-1']));
+
+    await service.rematchSearchingOrders();
+
+    expect(matching.clearOffer).not.toHaveBeenCalled();
+    expect(matching.createOffer).not.toHaveBeenCalled();
+  });
+
+  it('отдаёт заказ вышедшего с линии водителю, который только вышел', async () => {
+    const waiting = {
+      id: 'order-1',
+      clientId: 'client-1',
+      regionId: region.id,
+      pickupLat: 43.2167,
+      pickupLng: 44.7667,
+      pickupAddress: 'Назрань',
+      dropoffLat: 43.1667,
+      dropoffLng: 44.8,
+      dropoffAddress: 'Магас',
+      status: OrderStatus.SearchingDriver,
+      createdAt: new Date(),
+    };
+    repoMock.find.mockResolvedValue([waiting]);
+
+    const matching = moduleRef.get(MatchingService);
+    jest.spyOn(matching, 'getOffer').mockResolvedValue({
+      orderId: 'order-1',
+      driverId: 'driver-offline',
+      candidateIndex: 0,
+      candidates: ['driver-offline'],
+      expiresAt: new Date(Date.now() + 20_000).toISOString(),
+    });
+    jest.spyOn(matching, 'findCandidates').mockResolvedValue([
+      {
+        driverId: 'driver-new',
+        userId: 'driver-user',
+        lat: 43.22,
+        lng: 44.77,
+        rating: 5,
+        distanceM: 200,
+        score: 90,
+      },
+    ]);
+    jest.spyOn(matching, 'createOffer').mockResolvedValue({
+      orderId: 'order-1',
+      driverId: 'driver-new',
+      candidateIndex: 0,
+      candidates: ['driver-new'],
+      expiresAt: new Date(Date.now() + 30_000).toISOString(),
+    });
+
+    const drivers = moduleRef.get(DriversService);
+    jest.spyOn(drivers, 'getOnlineDriverIds').mockResolvedValue(new Set(['driver-new']));
+
+    await service.rematchSearchingOrders('driver-new');
+
+    expect(matching.clearOffer).toHaveBeenCalledWith('order-1');
+    expect(matching.createOffer).toHaveBeenCalledWith(
+      'order-1',
+      expect.arrayContaining([expect.objectContaining({ driverId: 'driver-new' })]),
+    );
+  });
+
   it('отменяет поиск, если водитель так и не появился', async () => {
     repoMock.find.mockResolvedValue([
       {
@@ -356,5 +441,153 @@ describe('OrdersService', () => {
         reason: 'NO_DRIVERS_FOUND',
       }),
     );
+  });
+
+  it('доставляет предложение водителю, который вышел на линию в самом конце подбора', async () => {
+    let releaseFind!: () => void;
+    const findGate = new Promise<void>((resolve) => {
+      releaseFind = resolve;
+    });
+    repoMock.find.mockImplementation(async () => {
+      await findGate;
+      return [];
+    });
+    repoMock.findOne.mockResolvedValue({
+      id: 'order-1',
+      status: OrderStatus.SearchingDriver,
+    });
+
+    const matching = moduleRef.get(MatchingService);
+    const getOfferForDriver = jest.spyOn(matching, 'getOfferForDriver').mockResolvedValue({
+      orderId: 'order-1',
+      driverId: 'driver-late',
+      candidateIndex: 0,
+      candidates: ['driver-late'],
+      expiresAt: new Date(Date.now() + 30_000).toISOString(),
+    });
+
+    const first = service.rematchSearchingOrders();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+
+    const second = service.rematchSearchingOrders('driver-late');
+    releaseFind();
+    await Promise.all([first, second]);
+
+    expect(getOfferForDriver).toHaveBeenCalledWith('driver-late');
+  });
+
+  describe('заказ, который водитель выполняет сейчас', () => {
+    it('завершённый, но не закрытый заказ текущим не считает', async () => {
+      repoMock.findOne.mockResolvedValue(null);
+
+      await service.getActiveOrderForDriver('driver-1');
+
+      const query = repoMock.findOne.mock.calls.at(-1)?.[0] as {
+        where: { driverId: string; status: { value: OrderStatus[] } };
+        order: unknown;
+      };
+      expect(query.where.driverId).toBe('driver-1');
+      expect(query.where.status.value).toEqual([
+        OrderStatus.DriverAssigned,
+        OrderStatus.DriverEnRoute,
+        OrderStatus.DriverArrived,
+        OrderStatus.InProgress,
+      ]);
+      expect(query.order).toEqual({ createdAt: 'DESC' });
+    });
+
+    it('позицию машины по завершённому заказу не отдаёт', async () => {
+      repoMock.findOne.mockResolvedValue(null);
+
+      await expect(service.getActiveOrderLocationContext('order-1')).resolves.toBeNull();
+
+      const query = repoMock.findOne.mock.calls.at(-1)?.[0] as {
+        where: { status: { value: OrderStatus[] } };
+      };
+      expect(query.where.status.value).not.toContain(OrderStatus.Completed);
+      expect(query.where.status.value).not.toContain(OrderStatus.FailedPayment);
+    });
+  });
+
+  describe('освобождение водителя', () => {
+    const driverProfile = { id: 'driver-1', userId: 'driver-user-1' };
+
+    /** `current` — заказ, который водитель выполняет на момент освобождения. */
+    const setUp = (order: Record<string, unknown>, current: { id: string } | null = null) => {
+      repoMock.findOne.mockImplementation(async ({ where }: { where: { id?: string } }) =>
+        where.id ? order : current,
+      );
+      repoMock.findOneOrFail.mockResolvedValue(order);
+
+      const drivers = moduleRef.get(DriversService) as unknown as Record<string, jest.Mock>;
+      drivers.getProfileByUserId.mockResolvedValue(driverProfile);
+      drivers.getProfileByDriverId = jest.fn().mockResolvedValue(driverProfile);
+      drivers.incrementTripsCount = jest.fn().mockResolvedValue(undefined);
+      return drivers;
+    };
+
+    const inProgress = {
+      id: 'order-1',
+      driverId: 'driver-1',
+      status: OrderStatus.InProgress,
+      priceEstimated: '300',
+    };
+
+    it('освобождает водителя, когда оплата поездки не прошла', async () => {
+      const drivers = setUp(inProgress);
+      const payments = moduleRef.get(PaymentsService);
+      jest
+        .spyOn(payments, 'settleCompletedOrder')
+        .mockResolvedValue({ id: 'order-1', status: OrderStatus.FailedPayment } as never);
+
+      const result = await service.advanceDriverStatus('driver-user-1', 'order-1', 'complete');
+
+      expect(result.status).toBe(OrderStatus.FailedPayment);
+      expect(drivers.markOnlineAfterTrip).toHaveBeenCalledWith('driver-user-1');
+    });
+
+    it('освобождает водителя, даже если расчёт упал с ошибкой', async () => {
+      const drivers = setUp(inProgress);
+      const payments = moduleRef.get(PaymentsService);
+      jest.spyOn(payments, 'settleCompletedOrder').mockRejectedValue(new Error('TIMEOUT'));
+
+      await expect(
+        service.advanceDriverStatus('driver-user-1', 'order-1', 'complete'),
+      ).rejects.toThrow('TIMEOUT');
+
+      expect(drivers.markOnlineAfterTrip).toHaveBeenCalledWith('driver-user-1');
+    });
+
+    it('позднее закрытие не снимает «занят» с водителя, который везёт следующий заказ', async () => {
+      const drivers = setUp(
+        { id: 'order-1', driverId: 'driver-1', status: OrderStatus.FailedPayment },
+        { id: 'order-2' },
+      );
+      const transitions = moduleRef.get(OrderTransitionService);
+      jest
+        .spyOn(transitions, 'transition')
+        .mockResolvedValue({ id: 'order-1', driverId: 'driver-1' } as never);
+
+      await service.closeOrder('order-1');
+
+      expect(drivers.markOnlineAfterTrip).not.toHaveBeenCalled();
+      expect(drivers.incrementTripsCount).toHaveBeenCalledWith('driver-1');
+    });
+
+    it('закрытие заказа возвращает свободного водителя на линию', async () => {
+      const drivers = setUp({
+        id: 'order-1',
+        driverId: 'driver-1',
+        status: OrderStatus.Completed,
+      });
+      const transitions = moduleRef.get(OrderTransitionService);
+      jest
+        .spyOn(transitions, 'transition')
+        .mockResolvedValue({ id: 'order-1', driverId: 'driver-1' } as never);
+
+      await service.closeOrder('order-1');
+
+      expect(drivers.markOnlineAfterTrip).toHaveBeenCalledWith('driver-user-1');
+    });
   });
 });

@@ -8,8 +8,8 @@ export const MAP_MARKER_ASSET_SCALE = 3;
 /** Логический размер пина A/B в dp; растр — 144×180 px. */
 export const MAP_PIN_SIZE = { width: 48, height: 60 } as const;
 
-/** Логический размер машинки в dp; растр — 156×78 px. */
-export const MAP_CAR_SIZE = { width: 52, height: 26 } as const;
+/** Логический размер машинки в dp; растр — 192×120 px. */
+export const MAP_CAR_SIZE = { width: 64, height: 40 } as const;
 
 /**
  * Центр точки под кружком пина, dp. Именно эта точка ложится на координату —

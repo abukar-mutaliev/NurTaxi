@@ -29,6 +29,7 @@ import { OrdersController } from './orders.controller';
 import { DriverOrdersController } from './driver-orders.controller';
 import { CarriersModule } from '../carriers/carriers.module';
 import { RisModule } from '../ris/ris.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
  * Orders & Matching (Des §2.3, §5, §6). Фазы 4–5.
@@ -56,6 +57,7 @@ import { RisModule } from '../ris/ris.module';
     forwardRef(() => SosModule),
     forwardRef(() => PaymentsModule),
     forwardRef(() => ReviewsModule),
+    NotificationsModule,
   ],
   controllers: [OrdersController, DriverOrdersController],
   providers: [

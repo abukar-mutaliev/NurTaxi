@@ -40,7 +40,7 @@ import {
   useWaitingClock,
 } from '@nurtaxi/shared-core/entities/order';
 import { contactByPhone } from '@nurtaxi/shared-core/features/contact';
-import { openExternalNavigator } from '@nurtaxi/shared-core/features/navigation';
+import { openExternalNavigator, snapToRoute } from '@nurtaxi/shared-core/features/navigation';
 import { useOrderRealtime } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppSelector } from '@/app/store/hooks';
@@ -55,6 +55,9 @@ import { RoundButton } from '@/shared/ui/round-button';
 import { ScreenGradientBackground } from '@/shared/ui/screen-gradient-background';
 import { StatTiles } from '@/shared/ui/stat-tiles';
 import { MapCanvas } from '@/widgets/map';
+
+/** Как часто повторяем клиенту неизменившуюся линию подачи — см. отправку позиции ниже. */
+const ROUTE_RESEND_MS = 30_000;
 
 /** Следующий шаг водителя по текущему статусу заказа. */
 function nextStep(status: string, t: (key: string) => string) {
@@ -153,7 +156,9 @@ export function OrderScreen({ orderId }: { orderId: string }) {
   // Маршрут строится от живой позиции машины: слежение, как на смене, плюс последняя
   // точка фонового трекинга — чтобы линия появилась сразу после принятия заказа.
   const routeActive = Boolean(order) && !orderFinished;
-  const { position } = useDriverPosition(routeActive);
+  // `precise` — навигационная точность и шаг в секунду: эту точку видит клиент, и от неё же
+  // строится путь к подаче и остановкам.
+  const { position, heading } = useDriverPosition(routeActive, { precise: true });
   const lastSentPosition = useAppSelector(selectShift).lastSentPosition;
   const driverPosition = position ?? lastSentPosition ?? null;
   const route = useOrderRoute({
@@ -169,14 +174,34 @@ export function OrderScreen({ orderId }: { orderId: string }) {
   const pickupRoute =
     route.leg === 'to-pickup' ? (encodeRoadPolyline(route.points) ?? undefined) : null;
 
+  /**
+   * Линия подачи весит килобайты, а точка уходит каждую секунду. Шлём линию, только когда
+   * она изменилась, и изредка повторяем — на случай, если сервер её забыл (перезапуск)
+   * или сообщение не дошло. Сервер и клиент между линиями держат последнюю.
+   */
+  const sentRouteRef = useRef<{ route: string | null; at: number } | null>(null);
+
   useEffect(() => {
     const lat = driverPosition?.lat;
     const lng = driverPosition?.lng;
     if (!routeActive || lat == null || lng == null) {
       return;
     }
-    sendDriverLocationUpdate(lat, lng, pickupEta, pickupRoute);
-  }, [driverPosition?.lat, driverPosition?.lng, pickupEta, pickupRoute, routeActive]);
+
+    const now = Date.now();
+    const sent = sentRouteRef.current;
+    const routeDue =
+      pickupRoute !== undefined &&
+      (!sent || sent.route !== pickupRoute || now - sent.at > ROUTE_RESEND_MS);
+    if (routeDue) {
+      sentRouteRef.current = { at: now, route: pickupRoute };
+    }
+
+    sendDriverLocationUpdate(
+      { heading, lat, lng },
+      { eta: pickupEta, route: routeDue ? pickupRoute : undefined },
+    );
+  }, [driverPosition?.lat, driverPosition?.lng, heading, pickupEta, pickupRoute, routeActive]);
 
   if (isLoading || !order) {
     return (
@@ -327,6 +352,10 @@ export function OrderScreen({ orderId }: { orderId: string }) {
     }
   };
 
+  // Свою машину водитель видит на линии маршрута: сырая точка GPS стоит в 5–15 метрах от
+  // дороги. Маршрут, навигатор и отправка клиенту берут настоящую точку (`driverPosition`).
+  const carOnRoad = driverPosition ? snapToRoute(driverPosition, route.points) : null;
+
   const mapMarkers = [
     {
       id: 'pickup',
@@ -334,8 +363,8 @@ export function OrderScreen({ orderId }: { orderId: string }) {
       point: { lat: order.pickupLat, lng: order.pickupLng },
       title: order.pickupAddress,
     },
-    ...(order.stops ?? []).map((stop, index) => ({
-      id: `stop-${index}`,
+    ...(order.stops ?? []).slice(route.passedStopCount).map((stop) => ({
+      id: `stop-${stop.lat.toFixed(5)},${stop.lng.toFixed(5)}`,
       kind: 'stop' as const,
       point: { lat: stop.lat, lng: stop.lng },
       title: stop.address,
@@ -346,12 +375,14 @@ export function OrderScreen({ orderId }: { orderId: string }) {
       point: { lat: order.dropoffLat, lng: order.dropoffLng },
       title: order.dropoffAddress,
     },
-    ...(driverPosition
+    ...(carOnRoad
       ? [
           {
+            // Курс GPS разворачивает машинку носом по ходу; без него — по смещению точки.
+            heading,
             id: 'driver',
             kind: 'driver' as const,
-            point: { lat: driverPosition.lat, lng: driverPosition.lng },
+            point: { lat: carOnRoad.lat, lng: carOnRoad.lng },
           },
         ]
       : []),

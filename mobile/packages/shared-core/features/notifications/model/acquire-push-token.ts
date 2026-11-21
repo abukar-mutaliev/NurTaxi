@@ -21,7 +21,8 @@ function resolveProjectId(): string | undefined {
 }
 
 export async function acquirePushToken(): Promise<PushTokenResult | null> {
-  if (!Device.isDevice || Platform.OS === 'web' || isExpoGo()) {
+  // На iOS-симуляторе токена нет. Android-эмулятор с Google Play токен получить может.
+  if (Platform.OS === 'web' || isExpoGo() || (Platform.OS === 'ios' && !Device.isDevice)) {
     return null;
   }
 
@@ -39,6 +40,7 @@ export async function acquirePushToken(): Promise<PushTokenResult | null> {
     finalStatus = status;
   }
   if (finalStatus !== Notifications.PermissionStatus.GRANTED) {
+    console.warn('[push] notification permission was not granted');
     return null;
   }
 

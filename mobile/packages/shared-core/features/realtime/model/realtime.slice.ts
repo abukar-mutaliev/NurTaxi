@@ -5,17 +5,10 @@
  */
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
+import { mergeDriverPosition, type DriverPosition } from './merge-driver-position';
 import type { DriverLocationEvent, RealtimeStatus, SosActivatedEvent } from './realtime-events';
 
-export interface DriverPosition {
-  lat: number;
-  lng: number;
-  at: string;
-  /** Та же строка, что на плитке «До клиента» у водителя. */
-  eta?: string | null;
-  /** Улицы, по которым водитель едет к клиенту. */
-  route?: string | null;
-}
+export type { DriverPosition };
 
 export interface RealtimeState {
   status: RealtimeStatus;
@@ -38,15 +31,16 @@ export const realtimeSlice = createSlice({
       state.status = action.payload;
     },
     driverPositionReceived(state, action: PayloadAction<DriverLocationEvent>) {
-      const { orderId, lat, lng, at, eta, route } = action.payload;
-      const previous = state.driverPositions[orderId];
-      state.driverPositions[orderId] = {
-        at,
-        eta: eta === undefined ? previous?.eta : eta,
-        lat,
-        lng,
-        route: route === undefined ? previous?.route : route,
-      };
+      const { orderId } = action.payload;
+      const next = mergeDriverPosition(state.driverPositions[orderId], action.payload);
+      if (!next) {
+        return;
+      }
+      state.driverPositions[orderId] = next;
+    },
+    /** Заказ закрыт — точку больше некому показывать. */
+    driverPositionCleared(state, action: PayloadAction<string>) {
+      delete state.driverPositions[action.payload];
     },
     sosReceived(state, action: PayloadAction<SosActivatedEvent>) {
       state.lastSos = action.payload;
@@ -57,8 +51,13 @@ export const realtimeSlice = createSlice({
   },
 });
 
-export const { realtimeStatusChanged, driverPositionReceived, sosReceived, realtimeReset } =
-  realtimeSlice.actions;
+export const {
+  realtimeStatusChanged,
+  driverPositionReceived,
+  driverPositionCleared,
+  sosReceived,
+  realtimeReset,
+} = realtimeSlice.actions;
 
 export const realtimeReducer = realtimeSlice.reducer;
 

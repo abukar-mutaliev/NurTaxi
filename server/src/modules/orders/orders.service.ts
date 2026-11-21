@@ -45,6 +45,7 @@ import { TripTrackService } from './trip-track.service';
 import { moneyAmount, quoteWaiting } from './waiting';
 import { OfferOutcome } from '../../common/enums/compliance.enum';
 import { UsersService } from '../users/users.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import type { CreateOrderDto, OrderEstimateDto } from './dto/orders.dto';
 import type { OrderEstimateResponse } from './dto/orders.presenter';
 import {
@@ -106,12 +107,16 @@ export class OrdersService {
     @Optional() private readonly offerJournal?: OfferJournalService,
     @Optional() private readonly usersService?: UsersService,
     @Optional() private readonly tripTrack?: TripTrackService,
+    @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
   private readonly logger = new Logger(OrdersService.name);
   private readonly orderMatchLocks = new Set<string>();
   private rematchRunning = false;
   private rematchQueued = false;
+  /** Водители, которым после подбора нужно ещё раз отдать уже созданное предложение. */
+  private readonly rematchNotifyDrivers = new Set<string>();
+  private rematchWaiters: Array<() => void> = [];
 
   async recordTrackPoint(
     orderId: string,
@@ -248,21 +253,65 @@ export class OrdersService {
    * никого нет, заказ раньше отменялся сразу — вышедший следом водитель его уже не
    * получал, и у клиента поиск висел. Теперь предложение уходит, как только рядом
    * появляется свободный водитель, либо заказ закрывается по таймауту поиска.
+   *
+   * `preferredDriverId` — водитель, который только что нажал «Выйти на линию».
+   * Ему предложение доставляется ещё раз: событие `order.offer` могло уйти до того,
+   * как приложение начало его слушать.
    */
-  async rematchSearchingOrders(): Promise<void> {
+  async rematchSearchingOrders(preferredDriverId?: string): Promise<void> {
+    if (preferredDriverId) {
+      this.rematchNotifyDrivers.add(preferredDriverId);
+    }
+
     if (this.rematchRunning) {
       this.rematchQueued = true;
-      return;
+      // Выход на линию не должен отвечать, пока идущий подбор не дойдёт до этого водителя.
+      return this.waitForRematch();
     }
 
     this.rematchRunning = true;
     try {
-      do {
+      for (;;) {
         this.rematchQueued = false;
         await this.runRematch();
-      } while (this.rematchQueued);
+        const notify = [...this.rematchNotifyDrivers];
+        this.rematchNotifyDrivers.clear();
+        for (const driverId of notify) {
+          await this.deliverPendingOffer(driverId);
+        }
+        // Пока доставляли предложения, мог прийти новый выход на линию — без `rematchQueued`.
+        if (!this.rematchQueued && this.rematchNotifyDrivers.size === 0) {
+          break;
+        }
+      }
     } finally {
       this.rematchRunning = false;
+      try {
+        /**
+         * Между последней проверкой очереди и сбросом флага кто-то мог поставить задачу и
+         * начать ждать. Раньше мы будили ожидающих сразу, а их водитель так и оставался в
+         * `rematchNotifyDrivers` — предложение не уходило, пока не сработает следующий тик.
+         */
+        if (this.rematchQueued || this.rematchNotifyDrivers.size > 0) {
+          await this.rematchSearchingOrders();
+        }
+      } finally {
+        // Ждущих будим даже если повторный проход упал — иначе «Выйти на линию» зависнет.
+        this.resolveRematchWaiters();
+      }
+    }
+  }
+
+  private waitForRematch(): Promise<void> {
+    return new Promise((resolve) => {
+      this.rematchWaiters.push(resolve);
+    });
+  }
+
+  private resolveRematchWaiters(): void {
+    const waiters = this.rematchWaiters.splice(0);
+    for (const resolve of waiters) {
+      resolve();
     }
   }
 
@@ -305,8 +354,15 @@ export class OrdersService {
         return;
       }
 
+      const onlineIds = new Set(await this.driversService.getOnlineDriverIds(order.regionId));
       const current = await this.matching.getOffer(order.id);
-      if (current && this.matching.canAcceptOffer(current, current.driverId)) {
+      // Предложение держим, только пока адресат на линии. У вышедшего заказ иначе
+      // висит до TTL и не достаётся водителю, который только что вышел.
+      if (
+        current &&
+        this.matching.canAcceptOffer(current, current.driverId) &&
+        onlineIds.has(current.driverId)
+      ) {
         return;
       }
 
@@ -317,14 +373,13 @@ export class OrdersService {
         await this.offerJournal?.expireStalePending(order.id);
       }
 
-      await this.offerToBestDriver(order);
+      await this.offerToBestDriver(order, onlineIds);
     } finally {
       this.orderMatchLocks.delete(order.id);
     }
   }
 
-  private async offerToBestDriver(order: Order): Promise<void> {
-    const onlineIds = new Set(await this.driversService.getOnlineDriverIds(order.regionId));
+  private async offerToBestDriver(order: Order, onlineIds: Set<string>): Promise<void> {
     const selfDriver = await this.driversService.findProfileByUserId(order.clientId);
     if (selfDriver) {
       onlineIds.delete(selfDriver.id);
@@ -435,23 +490,68 @@ export class OrdersService {
     };
   }
 
-  private async sendOfferToDriver(order: Order, offer: MatchOffer): Promise<void> {
-    if (!this.realtime) {
-      return;
-    }
+  /** Повторная доставка предложения водителю, который только что вышел на линию. */
+  private async deliverPendingOffer(driverId: string): Promise<void> {
+    try {
+      const offer = await this.matching.getOfferForDriver(driverId);
+      if (!offer || !this.matching.canAcceptOffer(offer, driverId)) {
+        return;
+      }
 
+      const order = await this.orders.findOne({ where: { id: offer.orderId } });
+      if (!order || order.status !== OrderStatus.SearchingDriver) {
+        return;
+      }
+
+      await this.sendOfferToDriver(order, offer);
+    } catch (error) {
+      this.logger.warn(
+        `Не удалось повторно отправить предложение водителю ${driverId}: ` +
+          `${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  private async sendOfferToDriver(order: Order, offer: MatchOffer): Promise<void> {
+    let driverUserId: string;
     try {
       const driver = await this.driversService.getProfileByDriverId(offer.driverId);
-      await this.realtime.publishOrderOffer(
-        driver.userId,
-        await this.buildOfferPayload(order, offer),
-      );
+      driverUserId = driver.userId;
     } catch (error) {
       this.logger.warn(
         `Не удалось отправить предложение заказа ${order.id} водителю ${offer.driverId}: ` +
           `${error instanceof Error ? error.message : String(error)}`,
       );
+      return;
     }
+
+    if (this.realtime) {
+      try {
+        await this.realtime.publishOrderOffer(
+          driverUserId,
+          await this.buildOfferPayload(order, offer),
+        );
+      } catch (error) {
+        this.logger.warn(
+          `Не удалось отправить предложение заказа ${order.id} водителю ${offer.driverId}: ` +
+            `${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
+    // Свёрнутый Android рвёт сокет за секунды. Пуш будит водителя; адрес в него не кладём.
+    void this.notifications
+      ?.notifyUser({
+        userId: driverUserId,
+        eventType: 'order.offer',
+        ttlSeconds: 30,
+      })
+      .catch((error: unknown) => {
+        this.logger.warn(
+          `Не удалось отправить push о заказе ${order.id} водителю ${offer.driverId}: ` +
+            `${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
   }
 
   /**
@@ -588,7 +688,14 @@ export class OrdersService {
       const waiting = Number(updated.waitingFee ?? 0);
       updated.priceFinal = moneyAmount(Number(updated.priceEstimated) + waiting);
       await this.orders.save(updated);
-      return this.paymentsService.settleCompletedOrder(updated.id, driverUserId);
+      try {
+        return await this.paymentsService.settleCompletedOrder(updated.id, driverUserId);
+      } finally {
+        // Поездка окончена, чем бы ни кончился расчёт. Раньше водителя освобождало только
+        // закрытие заказа: при сбое оплаты картой он оставался «занят» — без новых заказов
+        // и без права уйти с линии, — пока платёж не проходил повторно.
+        await this.releaseDriver(driver.id);
+      }
     }
 
     return this.loadFullOrder(updated.id);
@@ -610,8 +717,7 @@ export class OrdersService {
     });
 
     if (updated.driverId) {
-      const driver = await this.driversService.getProfileByDriverId(updated.driverId);
-      await this.driversService.markOnlineAfterTrip(driver.userId);
+      await this.releaseDriver(updated.driverId);
       await this.driversService.incrementTripsCount(updated.driverId);
     }
 
@@ -825,23 +931,51 @@ export class OrdersService {
     return order;
   }
 
-  /** Активный заказ водителя для трансляции геопозиции (Des §6.2). */
-  async getActiveOrderForDriverUser(driverUserId: string): Promise<Order | null> {
-    const driver = await this.driversService.getProfileByUserId(driverUserId);
+  /**
+   * Заказ, который водитель выполняет сейчас, — его клиенту и уходит геопозиция (Des §6.2).
+   *
+   * Вызывается на каждую точку, поэтому без связей и только с нужными полями. Сортировка —
+   * на случай, если за водителем по ошибке числятся два заказа: точка должна уйти
+   * клиенту более нового.
+   */
+  async getActiveOrderForDriver(driverId: string): Promise<Pick<Order, 'id' | 'clientId'> | null> {
     return this.orders.findOne({
-      where: { driverId: driver.id, status: In(DRIVER_ACTIVE_ORDER_STATUSES) },
-      relations: ['driver', 'driver.user'],
+      where: { driverId, status: In(DRIVER_ACTIVE_ORDER_STATUSES) },
+      select: ['id', 'clientId'],
+      order: { createdAt: 'DESC' },
     });
   }
 
+  /**
+   * Чья машина и в каком регионе — для снимка позиции при подписке на заказ.
+   *
+   * Только пока водитель выполняет этот заказ. Подписаться можно и на завершённый, но
+   * неоплаченный заказ: без проверки статуса клиент видел бы, где водитель сейчас, уже
+   * после поездки.
+   */
   async getActiveOrderLocationContext(
     orderId: string,
   ): Promise<{ id: string; regionId: string; driverId: string | null } | null> {
     const order = await this.orders.findOne({
-      where: { id: orderId },
+      where: { id: orderId, status: In(DRIVER_ACTIVE_ORDER_STATUSES) },
       select: ['id', 'regionId', 'driverId'],
     });
     return order ?? null;
+  }
+
+  /**
+   * Возвращает водителя на линию, если за ним не осталось выполняемых заказов.
+   *
+   * Проверка нужна закрытию, которое приходит после повтора оплаты: к этому времени
+   * водитель может везти следующего клиента, и снимать с него «занят» нельзя.
+   */
+  private async releaseDriver(driverId: string): Promise<void> {
+    const current = await this.getActiveOrderForDriver(driverId);
+    if (current) {
+      return;
+    }
+    const driver = await this.driversService.getProfileByDriverId(driverId);
+    await this.driversService.markOnlineAfterTrip(driver.userId);
   }
 
   /**

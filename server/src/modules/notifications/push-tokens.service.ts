@@ -43,6 +43,11 @@ export class PushTokensService {
     await this.tokens.delete({ userId, token });
   }
 
+  /** Expo ответил DeviceNotRegistered — токен больше не доставляется. */
+  async removeByToken(token: string): Promise<void> {
+    await this.tokens.delete({ token });
+  }
+
   async unregisterAllForUser(userId: string): Promise<void> {
     await this.tokens.delete({ userId });
   }

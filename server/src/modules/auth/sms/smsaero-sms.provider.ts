@@ -1,10 +1,6 @@
 import { Logger, ServiceUnavailableException } from '@nestjs/common';
 import type { SmsProvider } from './sms-provider.interface';
-import {
-  SmsAeroClient,
-  SmsAeroRequestError,
-  pickActiveSign,
-} from './smsaero.client';
+import { SmsAeroClient, SmsAeroRequestError, pickActiveSign } from './smsaero.client';
 
 const SIGN_CACHE_MS = 10 * 60_000;
 

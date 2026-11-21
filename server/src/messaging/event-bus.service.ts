@@ -28,7 +28,15 @@ export class EventBusService {
   }
 
   publish<T>(subject: string, payload: T): void {
-    void this.dispatchLocal(subject, payload);
+    void this.publishAndWait(subject, payload);
+  }
+
+  /**
+   * То же, что `publish`, но локальные подписчики отрабатывают до возврата.
+   * Выход на линию ждёт подбор: иначе ответ уходит раньше, чем заказ попадает в Redis.
+   */
+  async publishAndWait<T>(subject: string, payload: T): Promise<void> {
+    await this.dispatchLocal(subject, payload);
 
     if (!this.connection) {
       this.logger.warn(`NATS недоступен, событие "${subject}" не опубликовано`);

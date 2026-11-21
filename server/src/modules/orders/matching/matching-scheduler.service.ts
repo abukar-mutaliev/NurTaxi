@@ -19,7 +19,13 @@ export class MatchingScheduler implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    this.eventBus.subscribeLocal('driver.available', () => this.tick());
+    // `notify` — водитель только что стал свободен: ему нужно повторно отдать уже
+    // созданное предложение, если событие `order.offer` он ещё не слушал.
+    this.eventBus.subscribeLocal(
+      'driver.available',
+      (payload: { driverId?: string; notify?: boolean }) =>
+        this.orders.rematchSearchingOrders(payload?.notify ? payload.driverId : undefined),
+    );
     this.timer = setInterval(() => this.tick(), REMATCH_INTERVAL_MS);
   }
 

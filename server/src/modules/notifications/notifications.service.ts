@@ -4,7 +4,11 @@ import { Repository, IsNull } from 'typeorm';
 import { SMS_PROVIDER, type SmsProvider } from '../auth/sms/sms-provider.interface';
 import { NotificationChannel } from '../../common/enums/phase8.enum';
 import { Notification } from './entities/notification.entity';
-import { getNotificationTemplate, isChannelEnabled } from './notification-templates';
+import {
+  getNotificationTemplate,
+  isChannelEnabled,
+  pushChannelForEvent,
+} from './notification-templates';
 import { PUSH_PROVIDER, type PushProvider } from './push/push-provider.interface';
 import { sanitizePushData } from '../../common/compliance/push-payload';
 import { UsersService } from '../users/users.service';
@@ -15,6 +19,7 @@ export interface NotifyUserOptions {
   data?: Record<string, unknown>;
   titleOverride?: string;
   bodyOverride?: string;
+  ttlSeconds?: number;
 }
 
 @Injectable()
@@ -62,6 +67,8 @@ export class NotificationsService {
           title,
           body,
           data: sanitizePushData({ eventId: options.eventType, ...data }),
+          ttlSeconds: options.ttlSeconds,
+          channelId: pushChannelForEvent(options.eventType),
         });
       }
 

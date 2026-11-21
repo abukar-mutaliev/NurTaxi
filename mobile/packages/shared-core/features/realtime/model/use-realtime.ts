@@ -24,6 +24,7 @@ import { realtimeClient } from './realtime-client';
 import { RealtimeEvent } from './realtime-events';
 import type { DriverLocationEvent, OrderStatusEvent, SosActivatedEvent } from './realtime-events';
 import {
+  driverPositionCleared,
   driverPositionReceived,
   realtimeStatusChanged,
   selectRealtimeStatus,
@@ -51,8 +52,14 @@ function applyOrderStatusToCache(dispatch: SharedDispatch, event: OrderStatusEve
    * сбрасывает тегами мутаций, а здесь ловим чужие: отмену клиентом и закрытие сервером
    * после оплаты. В приложении клиента теги водителя ни на что не подписаны — сброс пустой.
    */
-  if (event.toStatus === OrderStatus.Completed || isTerminalOrder(event.toStatus)) {
+  if (
+    event.toStatus === OrderStatus.Completed ||
+    event.toStatus === OrderStatus.FailedPayment ||
+    isTerminalOrder(event.toStatus)
+  ) {
     dispatch(orderApi.util.invalidateTags(['OrderHistory', 'DriverEarnings', 'DriverProfile']));
+    // Машина на карте больше не нужна: поездка окончена или заказ снят.
+    dispatch(driverPositionCleared(event.orderId));
   }
 }
 

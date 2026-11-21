@@ -636,6 +636,12 @@ export interface RegisterDocumentPayload {
 
 export interface UpdateDriverStatusPayload {
   status: Extract<DriverOnlineStatus, 'online' | 'offline'>;
+  /**
+   * Точка на момент «Выйти на линию». Без неё водителя ещё нет в геоиндексе,
+   * и активный заказ клиента ему не предлагается.
+   */
+  lat?: number;
+  lng?: number;
 }
 
 export interface UpdateWorkSchedulePayload {

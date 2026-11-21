@@ -15,6 +15,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { i18n, initI18n } from '@nurtaxi/shared-core/shared/i18n';
 import { Loader, ThemeProvider } from '@nurtaxi/shared-core/shared/ui';
 import { useSessionBootstrap } from '@nurtaxi/shared-core/features/auth';
+import { usePushRegistration } from '@nurtaxi/shared-core/features/notifications/model/use-push-registration';
 import { useRealtimeConnection } from '@nurtaxi/shared-core/features/realtime';
 
 import { useOfflineOnLaunch } from '@/processes/shift';
@@ -30,6 +31,7 @@ const flushPersistedState = () => persistor.flush();
 function SessionGate({ children }: { children: ReactNode }) {
   useSessionBootstrap();
   useRealtimeConnection();
+  usePushRegistration();
   // Линия не переживает перезапуск (кроме выгрузки свёрнутого приложения системой):
   // выходить на неё водитель должен осознанно.
   useOfflineOnLaunch(flushPersistedState);

@@ -3,8 +3,8 @@ import { PushTokensService } from '../push-tokens.service';
 import type { PushMessage, PushProvider } from './push-provider.interface';
 
 /**
- * Канал push с подтверждённым размещением (FZ-02.4): на внешний endpoint
- * уходят только токен устройства и обезличенный eventId.
+ * Свой шлюз вместо Expo (`PUSH_ENDPOINT`).
+ * Наружу уходят токен, платформа, eventId и текст шаблона — без ФИО, телефона и адреса (FZ-02.4).
  */
 @Injectable()
 export class HttpPushProvider implements PushProvider {
@@ -27,8 +27,15 @@ export class HttpPushProvider implements PushProvider {
         },
         body: JSON.stringify({
           token: record.token,
+          to: record.token,
           platform: record.platform,
           eventId: message.data?.eventId ?? '',
+          title: message.title,
+          body: message.body,
+          channelId: message.channelId ?? 'orders',
+          priority: 'high',
+          sound: 'default',
+          ...(message.ttlSeconds != null ? { ttl: message.ttlSeconds } : {}),
         }),
         signal: AbortSignal.timeout(4000),
       });

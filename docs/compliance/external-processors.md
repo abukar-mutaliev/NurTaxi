@@ -8,7 +8,7 @@
 | NATS | Внутрисистемные события | Идентификаторы заказов | РФ | `NATS_URL` |
 | Sentry | Ошибки (опционально) | Стек без ПДн (`beforeSend`) | Только РФ либо выключен | `SENTRY_ENABLED`, `SENTRY_DSN` |
 | OpenTelemetry | Трейсы | SQL без параметров, HTTP без query | Коллектор в РФ | `OTEL_EXPORTER_OTLP_ENDPOINT` |
-| Push (FCM/APNs) | Уведомления | Токен устройства, обезличенный eventId | РФ или подтверждённый канал (`PUSH_ENDPOINT`) | `PUSH_ENDPOINT`, `PUSH_TOKEN` |
+| Push (Expo → FCM) | Уведомления | Токен устройства, заголовок и текст шаблона без ФИО, телефона и адреса, eventId | США (Expo) → Google FCM. Свой шлюз: `PUSH_ENDPOINT` | `PUSH_TOKEN`, `EXPO_PUSH_URL`, `PUSH_ENDPOINT` |
 | SMS-провайдер | OTP | Номер телефона | РФ, через ProviderConfig | `credentialsRef` |
 | Карты (Яндекс) | Поиск адресов | Координаты/строка поиска | РФ | `YANDEX_*` |
 | Реестр такси | Проверка разрешения | ИНН, номер разрешения, VIN | РФ (заглушка до B.3) | ProviderType `taxi_registry` |

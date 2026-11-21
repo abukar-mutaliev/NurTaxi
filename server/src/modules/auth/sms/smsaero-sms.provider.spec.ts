@@ -54,7 +54,9 @@ describe('SmsAeroSmsProvider', () => {
 
   it('превращает отказ имени в 503, а не во внутреннюю ошибку', async () => {
     client.listSigns.mockResolvedValue([]);
-    client.sendSms.mockRejectedValue(new SmsAeroRequestError('Validation error. (sign: incorrect)', 400));
+    client.sendSms.mockRejectedValue(
+      new SmsAeroRequestError('Validation error. (sign: incorrect)', 400),
+    );
 
     await expect(provider.sendCode('+79280000001', '1234')).rejects.toBeInstanceOf(
       ServiceUnavailableException,

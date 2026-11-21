@@ -2,6 +2,7 @@ import {
   getNotificationTemplate,
   getOrderStatusLabelRu,
   isChannelEnabled,
+  pushChannelForEvent,
 } from './notification-templates';
 
 describe('notification-templates', () => {
@@ -13,6 +14,14 @@ describe('notification-templates', () => {
     expect(getOrderStatusLabelRu('searching_driver')).toBe('Ищем водителя');
     expect(getOrderStatusLabelRu('driver_en_route')).toBe('Водитель едет к вам');
     expect(getOrderStatusLabelRu('unknown_status')).toBe('Статус поездки обновлён');
+  });
+
+  it('шаблон предложения водителю не содержит адрес и телефон', () => {
+    const template = getNotificationTemplate('order.offer');
+    expect(template?.channels).toEqual(['push']);
+    expect(template?.body).not.toMatch(/адрес|телефон|\+/i);
+    expect(pushChannelForEvent('order.offer')).toBe('orders');
+    expect(pushChannelForEvent('promo.redeemed')).toBe('promo');
   });
 
   it('respects user notification settings', () => {

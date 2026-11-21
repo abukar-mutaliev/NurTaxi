@@ -23,6 +23,9 @@ export async function ensurePushChannels(): Promise<void> {
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: brandColors.primary,
+    sound: 'default',
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    enableVibrate: true,
   });
 
   await Notifications.setNotificationChannelAsync('promo', {

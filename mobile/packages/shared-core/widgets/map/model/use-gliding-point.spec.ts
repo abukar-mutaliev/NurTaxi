@@ -26,17 +26,25 @@ describe('bearingDegrees', () => {
 });
 
 describe('carDirectionFor', () => {
-  it('кладёт горизонтальную иконку вдоль дороги', () => {
-    // Восток — иконка как нарисована; север — поперёк неё.
+  it('разворачивает иконку носом по ходу движения', () => {
+    // Иконка нарисована носом на восток: туда — без поворота.
     expect(carDirectionFor(0, 90)).toBe(0);
-    expect(Math.abs(carDirectionFor(0, 0))).toBe(90);
+    expect(carDirectionFor(0, 0)).toBe(-90);
+    expect(carDirectionFor(0, 180)).toBe(90);
   });
 
-  it('поворачивает не больше чем на 90° — машина симметрична', () => {
-    expect(carDirectionFor(0, 270)).toBe(0);
-    expect(carDirectionFor(0, 180)).toBe(-90);
-    const turned = carDirectionFor(170, 100);
-    expect(Math.abs(turned - 170)).toBeLessThanOrEqual(90);
-    expect((((turned - (100 - 90)) % 180) + 180) % 180).toBe(0);
+  it('на обратном ходу разворачивает машину, а не оставляет её задом наперёд', () => {
+    expect(Math.abs(carDirectionFor(0, 270))).toBe(180);
+  });
+
+  it('поворачивает короткой дугой, а не через весь круг', () => {
+    // Ехали на 350°, повернули на 10°: это +20°, а не −340°.
+    expect(carDirectionFor(260, 10)).toBe(280);
+    expect(carDirectionFor(280, 350)).toBe(260);
+  });
+
+  it('не накапливает ошибку после многих оборотов', () => {
+    const turned = carDirectionFor(720 + 45, 90 + 50);
+    expect(turned).toBe(720 + 50);
   });
 });

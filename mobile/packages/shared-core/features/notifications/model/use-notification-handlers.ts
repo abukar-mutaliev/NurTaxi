@@ -5,24 +5,32 @@ import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 
 import { loadExpoNotifications } from './expo-notifications-runtime';
-import { resolveNotificationHref } from './notification-router';
+import { ensurePushChannels } from './push-channels';
+import { resolveNotificationHref, type NotificationHref } from './notification-router';
 
 let handlerInstalled = false;
 
 function navigateFromNotification(
   router: ReturnType<typeof useRouter>,
   content: { data?: unknown },
+  resolveHref: (type: string | undefined, data: Record<string, unknown>) => NotificationHref | null,
 ): void {
   const data = (content.data ?? {}) as Record<string, unknown>;
   const type = typeof data.type === 'string' ? data.type : undefined;
-  const href = resolveNotificationHref(type, data);
+  const href = resolveHref(type, data);
   if (!href) {
     return;
   }
-  router.push(href);
+  router.push(href as never);
 }
 
-export function useNotificationHandlers(enabled = true): void {
+export function useNotificationHandlers(
+  enabled = true,
+  resolveHref: (
+    type: string | undefined,
+    data: Record<string, unknown>,
+  ) => NotificationHref | null = resolveNotificationHref,
+): void {
   const router = useRouter();
 
   useEffect(() => {
@@ -38,6 +46,8 @@ export function useNotificationHandlers(enabled = true): void {
       if (!Notifications || cancelled) {
         return;
       }
+
+      void ensurePushChannels();
 
       if (!handlerInstalled) {
         handlerInstalled = true;
@@ -55,7 +65,7 @@ export function useNotificationHandlers(enabled = true): void {
         // In-app badge обновится через polling/refetch unread count на экране профиля.
       });
       responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
-        navigateFromNotification(router, response.notification.request.content);
+        navigateFromNotification(router, response.notification.request.content, resolveHref);
       });
       if (cancelled) {
         receivedSub?.remove();
@@ -67,7 +77,7 @@ export function useNotificationHandlers(enabled = true): void {
         if (!response || cancelled) {
           return;
         }
-        navigateFromNotification(router, response.notification.request.content);
+        navigateFromNotification(router, response.notification.request.content, resolveHref);
       });
     });
 
@@ -76,5 +86,5 @@ export function useNotificationHandlers(enabled = true): void {
       receivedSub?.remove();
       responseSub?.remove();
     };
-  }, [enabled, router]);
+  }, [enabled, resolveHref, router]);
 }

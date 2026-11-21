@@ -35,13 +35,18 @@ export const TERMINAL_ORDER_STATUSES: OrderStatus[] = [
   OrderStatus.CancelledSystem,
 ];
 
-/** Статусы, при которых водитель выполняет поездку. */
+/**
+ * Статусы, при которых водитель выполняет поездку: едет к клиенту, ждёт его или везёт.
+ *
+ * `Completed` сюда не входит: поездка закончена, идёт расчёт. Заказ может задержаться в
+ * этом статусе (сбой оплаты), и, пока он считался «выполняемым», позиция водителя могла
+ * уходить его клиенту вместо клиента нового заказа.
+ */
 export const DRIVER_ACTIVE_ORDER_STATUSES: OrderStatus[] = [
   OrderStatus.DriverAssigned,
   OrderStatus.DriverEnRoute,
   OrderStatus.DriverArrived,
   OrderStatus.InProgress,
-  OrderStatus.Completed,
 ];
 
 export enum PaymentMethod {

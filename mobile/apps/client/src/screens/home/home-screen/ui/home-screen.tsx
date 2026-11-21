@@ -25,7 +25,7 @@ import {
   useCurrentPosition,
   useLocationPermission,
 } from '@nurtaxi/shared-core/features/geolocation';
-import { useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
+import { snapToRoute, useLiveOrderRoute } from '@nurtaxi/shared-core/features/navigation';
 import { selectDriverPosition, useOrderRealtime } from '@nurtaxi/shared-core/features/realtime';
 
 import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
@@ -270,11 +270,26 @@ export function HomeScreen() {
     regionId: draft.regionId,
   });
 
+  const driverRoad = roadFromPolyline(driverPosition?.route);
+  const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
+  /**
+   * Машину рисуем на той же линии, что видит клиент: GPS ошибается на 5–15 метров и без
+   * привязки ставит её то на тротуар, то во двор рядом с маршрутом. Маршрут и время при
+   * этом считаются от настоящей точки (`carPoint`) — привязка только для картинки.
+   */
+  const carRoad = driverIsComing ? (driverRoad ?? liveRoad) : liveRoad;
+  const carOnRoad = useMemo(
+    () => (carPoint ? snapToRoute(carPoint, carRoad) : null),
+    [carPoint, carRoad],
+  );
+  const carHeading = driverPosition?.heading ?? null;
+
   const markers = useMemo((): MapMarker[] => {
     if (activeOrder) {
       return resolveOrderMapMarkers({
         assignedDriverId: activeOrder.driver?.id,
-        driver: carPoint,
+        driver: carOnRoad,
+        driverHeading: carHeading,
         dropoff: {
           address: activeOrder.dropoffAddress,
           lat: activeOrder.dropoffLat,
@@ -287,7 +302,7 @@ export function HomeScreen() {
           lng: activeOrder.pickupLng,
         },
         routePolyline: activeOrder.route?.polyline,
-        stops: activeOrder.stops,
+        stops: activeOrder.stops?.slice(liveRoute.passedStopCount),
       });
     }
 
@@ -298,7 +313,17 @@ export function HomeScreen() {
       routePolyline: estimate?.route.polyline,
       stops: stop ? [stop] : null,
     });
-  }, [activeOrder, carPoint, dropoff, estimate?.route.polyline, nearbyDrivers, pickup, stop]);
+  }, [
+    activeOrder,
+    carHeading,
+    carOnRoad,
+    dropoff,
+    estimate?.route.polyline,
+    liveRoute.passedStopCount,
+    nearbyDrivers,
+    pickup,
+    stop,
+  ]);
 
   const tripWaypoints = useMemo((): GeoPoint[] | null => {
     if (activeOrder) {
@@ -313,8 +338,6 @@ export function HomeScreen() {
     }
     return null;
   }, [activeOrder, dropoff, pickup, stop]);
-  const driverRoad = roadFromPolyline(driverPosition?.route);
-  const liveRoad = isRoadGeometry(liveRoute.points) ? liveRoute.points : null;
   const tripRoad = useRoadRoute(liveRoad || driverIsComing ? null : tripWaypoints);
   const approachLat = carPoint ? Math.round(carPoint.lat * 1_000) / 1_000 : null;
   const approachLng = carPoint ? Math.round(carPoint.lng * 1_000) / 1_000 : null;

@@ -4,9 +4,11 @@
  */
 import { Stack } from 'expo-router';
 
+import { useNotificationHandlers } from '@nurtaxi/shared-core/features/notifications/model/use-notification-handlers';
 import { AlertHost, Loader, useBrandFonts } from '@nurtaxi/shared-core/shared/ui';
 
 import { AppProviders, useAuthGuard } from '@/app';
+import { resolveDriverNotificationHref } from '@/features/notifications/resolve-driver-notification-href';
 // Побочный эффект: регистрирует фоновую задачу геопозиции до монтирования компонентов (M8.2).
 import '@/features/location-tracking';
 import { IncomingOrderOverlay } from '@/widgets/incoming-order';
@@ -14,6 +16,7 @@ import { IncomingOrderOverlay } from '@/widgets/incoming-order';
 function RootNavigator() {
   const { isResolving } = useAuthGuard();
   const fontsReady = useBrandFonts();
+  useNotificationHandlers(true, resolveDriverNotificationHref);
 
   // Пока не прочитан SecureStore и не загружен профиль водителя, показываем загрузку.
   // Шрифт ждём там же: без него первый экран на миг рисовался системным.

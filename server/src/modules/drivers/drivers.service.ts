@@ -547,8 +547,16 @@ export class DriversService {
 
   /**
    * Переключение статуса «на линии / офлайн» (Req §8.2, §12.3).
+   *
+   * `location` — точка в момент нажатия «Выйти на линию». Подбор смотрит Redis GEO,
+   * а координаты раньше уходили только следующим GPS-тиком: поиск в этот момент
+   * никого не находил, и активный заказ клиента водителю не предлагался.
    */
-  async updateOnlineStatus(userId: string, status: 'online' | 'offline'): Promise<DriverProfile> {
+  async updateOnlineStatus(
+    userId: string,
+    status: 'online' | 'offline',
+    location?: { lat?: number; lng?: number },
+  ): Promise<DriverProfile> {
     const profile = await this.getProfileByUserId(userId);
     const user = await this.usersService.getByIdOrThrow(userId);
 
@@ -605,8 +613,32 @@ export class DriversService {
     if (status === 'offline') {
       this.locationMatchAt.delete(profile.id);
       await this.driverLocation.removeLocation(profile.regionId, profile.id);
+      // Заказ, который висел на этом водителе, сразу уходит следующему на линии.
+      await this.publishDriverAvailable(profile.id, profile.regionId, { wait: true });
     } else {
-      this.publishDriverAvailable(profile.id, profile.regionId);
+      const lat = location?.lat;
+      const lng = location?.lng;
+      if (
+        typeof lat === 'number' &&
+        typeof lng === 'number' &&
+        Number.isFinite(lat) &&
+        Number.isFinite(lng)
+      ) {
+        await this.driverLocation.updateLocation(
+          profile.regionId,
+          profile.id,
+          userId,
+          lat,
+          lng,
+          Number(profile.rating),
+        );
+      }
+      // Ждём подбор: к ответу на «Выйти на линию» предложение уже лежит в Redis,
+      // и приложение забирает его сразу, не дожидаясь следующего GPS-тика.
+      await this.publishDriverAvailable(profile.id, profile.regionId, {
+        wait: true,
+        notify: true,
+      });
     }
 
     return this.getProfileByUserId(userId);
@@ -961,8 +993,20 @@ export class DriversService {
     return new Set(online.map((d) => d.id));
   }
 
-  async updateLocation(userId: string, lat: number, lng: number): Promise<void> {
-    const profile = await this.getProfileByUserId(userId);
+  /** Возвращает `driverId`, чтобы трансляции точки не искать профиль второй раз. */
+  async updateLocation(userId: string, lat: number, lng: number): Promise<{ driverId: string }> {
+    // Точка приходит раз в секунду с каждой машины в заказе: берём четыре поля, а не
+    // анкету со всеми документами и машинами, как `getProfileByUserId`.
+    const profile = await this.drivers.findOne({
+      where: { userId },
+      select: ['id', 'regionId', 'onlineStatus', 'rating'],
+    });
+    if (!profile) {
+      throw new NotFoundException({
+        code: 'DRIVER_PROFILE_NOT_FOUND',
+        message: 'Профиль водителя не найден. Заполните анкету через POST /driver/register',
+      });
+    }
     // `busy` — водитель уже в заказе: именно тогда клиент должен видеть машину на карте.
     if (
       profile.onlineStatus !== DriverOnlineStatus.Online &&
@@ -985,12 +1029,13 @@ export class DriversService {
     if (profile.onlineStatus === DriverOnlineStatus.Online) {
       this.publishDriverAvailableFromLocation(profile.id, profile.regionId);
     }
+    return { driverId: profile.id };
   }
 
   async getCachedLocation(
     regionId: string,
     driverId: string,
-  ): Promise<{ lat: number; lng: number } | null> {
+  ): Promise<{ lat: number; lng: number; updatedAt?: string } | null> {
     return this.driverLocation.getLocation(regionId, driverId);
   }
 
@@ -1000,18 +1045,53 @@ export class DriversService {
     await this.drivers.save(profile);
   }
 
+  /**
+   * Поездка закончилась — водитель снова свободен.
+   *
+   * Трогаем только `busy`. Заказ закрывается и спустя часы после поездки (повтор оплаты),
+   * когда водитель уже ушёл с линии или заблокирован: раньше такое закрытие молча
+   * возвращало его на линию.
+   */
   async markOnlineAfterTrip(userId: string): Promise<void> {
     const profile = await this.getProfileByUserId(userId);
-    if (profile.verificationStatus === VerificationStatus.Approved) {
-      profile.onlineStatus = DriverOnlineStatus.Online;
-      await this.drivers.save(profile);
-      this.publishDriverAvailable(profile.id, profile.regionId);
+    if (profile.onlineStatus !== DriverOnlineStatus.Busy) {
+      return;
     }
+
+    if (profile.verificationStatus !== VerificationStatus.Approved) {
+      // Допуск отозвали за время поездки. На линию не возвращаем, но и «занятым» не
+      // оставляем: из `busy` нельзя ни принять заказ, ни уйти с линии.
+      profile.onlineStatus = DriverOnlineStatus.Offline;
+      await this.drivers.save(profile);
+      this.locationMatchAt.delete(profile.id);
+      await this.driverLocation.removeLocation(profile.regionId, profile.id);
+      return;
+    }
+
+    profile.onlineStatus = DriverOnlineStatus.Online;
+    await this.drivers.save(profile);
+    await this.publishDriverAvailable(profile.id, profile.regionId, {
+      wait: true,
+      notify: true,
+    });
   }
 
-  /** Водитель снова свободен: заказы, которые ждут в поиске, можно предложить сразу. */
-  private publishDriverAvailable(driverId: string, regionId: string): void {
-    this.eventBus.publish('driver.available', { driverId, regionId });
+  /**
+   * Водитель снова свободен: заказы, которые ждут в поиске, можно предложить сразу.
+   * `wait` — не отвечать клиенту, пока подбор не закончится. `notify` — повторить
+   * уже созданное предложение этому водителю (сокет мог ещё не слушать `order.offer`).
+   */
+  private publishDriverAvailable(
+    driverId: string,
+    regionId: string,
+    options?: { wait?: boolean; notify?: boolean },
+  ): Promise<void> {
+    const payload = { driverId, regionId, notify: options?.notify ?? false };
+    if (options?.wait) {
+      return this.eventBus.publishAndWait('driver.available', payload);
+    }
+    this.eventBus.publish('driver.available', payload);
+    return Promise.resolve();
   }
 
   private publishDriverAvailableFromLocation(driverId: string, regionId: string): void {
@@ -1021,7 +1101,7 @@ export class DriversService {
       return;
     }
     this.locationMatchAt.set(driverId, now);
-    this.publishDriverAvailable(driverId, regionId);
+    void this.publishDriverAvailable(driverId, regionId);
   }
 
   async incrementTripsCount(driverId: string): Promise<void> {

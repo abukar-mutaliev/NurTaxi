@@ -9,9 +9,11 @@ import { io, type Socket } from 'socket.io-client';
 
 import { appConfig } from '@nurtaxi/shared-core/shared/config';
 import { tokenStorage } from '@nurtaxi/shared-core/shared/lib';
+import { createAckWatch } from './ack-watch';
 import {
   RealtimeEvent,
   type ClientToServerEvents,
+  type DriverLocationPayload,
   type RealtimeStatus,
   type ServerToClientEvents,
 } from './realtime-events';
@@ -50,6 +52,13 @@ let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let retryAttempt = 0;
 /** Подписка на смену токена оформляется один раз за жизнь модуля. */
 let tokenSubscription: (() => void) | null = null;
+
+/**
+ * Сколько ждём ответа сервера на точку водителя, прежде чем перестать верить сокету.
+ * В свёрнутом приложении сокет бывает «подключён» только на словах — см. `ack-watch.ts`.
+ */
+const LOCATION_ACK_STALE_MS = 5000;
+const locationAcks = createAckWatch(LOCATION_ACK_STALE_MS);
 
 function clearRetry(): void {
   if (retryTimer) {
@@ -150,6 +159,7 @@ export const realtimeClient = {
 
     next.on('connect', () => {
       clearRetry();
+      locationAcks.reset();
       setStatus('connected');
       resubscribeAll(next);
     });
@@ -215,30 +225,45 @@ export const realtimeClient = {
   },
 
   /**
-   * Передача позиции водителя (`M8.2`). Если сокета нет, вызывающий код шлёт REST-фоллбэк.
-   * `eta` — та же строка, что на плитке «До клиента». Без поля сервер оставляет прошлое значение.
+   * Передача позиции водителя (`M8.2`).
+   *
+   * `false` — сокета нет или он перестал отвечать: вызывающий код шлёт REST-фоллбэк.
+   * Во втором случае точка всё равно уходит и в сокет — если канал жив и просто медлит,
+   * она дойдёт быстрее, а дубль безвреден.
+   *
+   * `eta` — та же строка, что на плитке «До клиента». Поля со значением `undefined` в
+   * сообщение не попадают, и сервер оставляет прошлое значение.
    */
-  sendDriverLocation(
-    lat: number,
-    lng: number,
-    eta?: string | null,
-    route?: string | null,
-  ): boolean {
-    if (!socket?.connected) {
+  sendDriverLocation(location: DriverLocationPayload): boolean {
+    const active = socket;
+    if (!active?.connected) {
       return false;
     }
-    const payload: { lat: number; lng: number; eta?: string | null; route?: string | null } = {
-      lat,
-      lng,
-    };
-    if (eta !== undefined) {
-      payload.eta = eta;
+    const payload: DriverLocationPayload = { lat: location.lat, lng: location.lng };
+    if (location.eta !== undefined) {
+      payload.eta = location.eta;
     }
-    if (route !== undefined) {
-      payload.route = route;
+    if (location.route !== undefined) {
+      payload.route = location.route;
     }
-    socket.emit(RealtimeEvent.DriverLocation, payload);
-    return true;
+    if (location.heading != null) {
+      payload.heading = location.heading;
+    }
+    if (location.speed != null) {
+      payload.speed = location.speed;
+    }
+    if (location.accuracy != null) {
+      payload.accuracy = location.accuracy;
+    }
+
+    const trusted = locationAcks.sent(Date.now());
+    active.emit(RealtimeEvent.DriverLocation, payload, () => {
+      // Ответ от прежнего соединения о нынешнем ничего не говорит.
+      if (socket === active) {
+        locationAcks.acked();
+      }
+    });
+    return trusted;
   },
 
   /**

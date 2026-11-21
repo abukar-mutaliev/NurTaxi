@@ -5,6 +5,9 @@
  * окружения свой bundle identifier и scheme, поэтому dev-, staging- и prod-сборки
  * устанавливаются на устройство одновременно.
  */
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 /**
@@ -48,151 +51,203 @@ const VARIANTS: Record<
 const variant = VARIANTS[environment];
 const yandexMapKitApiKey = process.env.EXPO_PUBLIC_YANDEX_MAPKIT_API_KEY;
 
-export default ({ config }: ConfigContext): ExpoConfig => ({
-  ...config,
-  name: variant.name,
-  slug: 'nurtaxi-client',
-  version: '0.1.0',
-  orientation: 'portrait',
-  icon: './assets/images/icon.png',
-  scheme: variant.scheme,
-  userInterfaceStyle: 'automatic',
-  ios: {
-    bundleIdentifier: variant.identifier,
-    supportsTablet: false,
-    infoPlist: {
-      // Dev API по HTTP — разрешаем незащищённый трафик к локальной сети.
-      ...(environment === 'development'
-        ? { NSAppTransportSecurity: { NSAllowsArbitraryLoads: true } }
-        : {}),
-      // Разрешения запрашиваются только при реальной необходимости (`§8.8`, App Store review).
-      NSLocationWhenInUseUsageDescription:
-        'Nur Taxi показывает вашу точку подачи на карте и находит ближайших водителей.',
-      NSCameraUsageDescription: 'Nur Taxi использует камеру для съёмки фото профиля.',
-      NSPhotoLibraryUsageDescription: 'Nur Taxi использует галерею для выбора фото профиля.',
-      NSMicrophoneUsageDescription:
-        'Nur Taxi использует микрофон для аудиозаписи поездки в целях безопасности.',
-      ITSAppUsesNonExemptEncryption: false,
-    },
-  },
+/** Копия mobilesdk_app_id на другой package name не регистрирует приложение в FCM. */
+function warnIfFirebaseAppIdIsShared(googleServicesFile: string, packageName: string): void {
+  const filePath = resolve(googleServicesFile);
+  if (!existsSync(filePath)) {
+    console.warn(`[push] Нет ${googleServicesFile} — FCM для ${packageName} не заработает`);
+    return;
+  }
 
-  android: {
-    package: variant.identifier,
-    googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
-    adaptiveIcon: {
-      backgroundColor: brandPalette.background,
-      foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
-    },
-    permissions: [
-      'ACCESS_COARSE_LOCATION',
-      'ACCESS_FINE_LOCATION',
-      'CAMERA',
-      'READ_MEDIA_IMAGES',
-      'RECORD_AUDIO',
-      'POST_NOTIFICATIONS',
-      'VIBRATE',
-    ],
-  },
+  try {
+    const json = JSON.parse(readFileSync(filePath, 'utf8')) as {
+      client?: Array<{
+        client_info?: {
+          mobilesdk_app_id?: string;
+          android_client_info?: { package_name?: string };
+        };
+      }>;
+    };
+    const clients = json.client ?? [];
+    const match = clients.find(
+      (client) => client.client_info?.android_client_info?.package_name === packageName,
+    );
+    const appId = match?.client_info?.mobilesdk_app_id;
+    if (!appId) {
+      console.warn(
+        `[push] В google-services.json нет приложения ${packageName}. Добавьте его в Firebase.`,
+      );
+      return;
+    }
+    const owners = clients
+      .map((client) =>
+        client.client_info?.mobilesdk_app_id === appId
+          ? client.client_info.android_client_info?.package_name
+          : undefined,
+      )
+      .filter((name): name is string => Boolean(name));
+    if (owners.length > 1) {
+      console.warn(
+        `[push] Firebase app id пакета ${packageName} общий с ${owners.join(', ')}. Это не отдельное приложение, Android-токен на этой сборке не выдаётся. Добавьте ${packageName} в Firebase и скачайте google-services.json заново.`,
+      );
+    }
+  } catch (error) {
+    console.warn('[push] Не удалось прочитать google-services.json', error);
+  }
+}
 
-  web: {
-    output: 'static',
-    favicon: './assets/images/favicon.png',
-  },
+export default ({ config }: ConfigContext): ExpoConfig => {
+  warnIfFirebaseAppIdIsShared(
+    process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+    variant.identifier,
+  );
 
-  plugins: [
-    // Маршруты живут в `app/`, а `src/` целиком отдан слоям FSD.
-    ['expo-router', { root: './app' }],
-    [
-      'expo-splash-screen',
-      {
-        // Знак сливой на молочном фоне — как иконка клиента.
-        backgroundColor: brandPalette.background,
-        image: './assets/images/splash-icon.png',
-        imageWidth: 96,
-      },
-    ],
-    'expo-secure-store',
-    'expo-localization',
-    'expo-font',
-    'expo-web-browser',
-    [
-      'expo-location',
-      {
-        locationWhenInUsePermission:
+  return {
+    ...config,
+    name: variant.name,
+    slug: 'nurtaxi-client',
+    version: '0.1.0',
+    orientation: 'portrait',
+    icon: './assets/images/icon.png',
+    scheme: variant.scheme,
+    userInterfaceStyle: 'automatic',
+    ios: {
+      bundleIdentifier: variant.identifier,
+      supportsTablet: false,
+      infoPlist: {
+        // Dev API по HTTP — разрешаем незащищённый трафик к локальной сети.
+        ...(environment === 'development'
+          ? { NSAppTransportSecurity: { NSAllowsArbitraryLoads: true } }
+          : {}),
+        // Разрешения запрашиваются только при реальной необходимости (`§8.8`, App Store review).
+        NSLocationWhenInUseUsageDescription:
           'Nur Taxi показывает вашу точку подачи на карте и находит ближайших водителей.',
-      },
-    ],
-    [
-      'expo-image-picker',
-      {
-        photosPermission: 'Nur Taxi использует галерею для выбора фото профиля.',
-        cameraPermission: 'Nur Taxi использует камеру для съёмки фото профиля.',
-        microphonePermission: false,
-      },
-    ],
-    'expo-image',
-    [
-      'expo-audio',
-      {
-        microphonePermission:
+        NSCameraUsageDescription: 'Nur Taxi использует камеру для съёмки фото профиля.',
+        NSPhotoLibraryUsageDescription: 'Nur Taxi использует галерею для выбора фото профиля.',
+        NSMicrophoneUsageDescription:
           'Nur Taxi использует микрофон для аудиозаписи поездки в целях безопасности.',
+        ITSAppUsesNonExemptEncryption: false,
       },
-    ],
-    [
-      'expo-notifications',
-      {
-        color: brandPalette.primary,
-        defaultChannel: 'orders',
-      },
-    ],
-    [
-      'expo-build-properties',
-      {
-        android: {
-          compileSdkVersion: 36,
-          targetSdkVersion: 36,
-          minSdkVersion: 26,
-          // Dev API на http://192.168.x.x — без этого Android (EAS build) блокирует cleartext HTTP.
-          usesCleartextTraffic: environment === 'development',
-        },
-        ios: { deploymentTarget: '16.4' },
-      },
-    ],
-    [
-      'expo-yandex-mapkit',
-      {
-        apiKey: yandexMapKitApiKey,
-        locale: 'ru_RU',
-        // Подсказки адресов есть только в full. На lite suggest отклоняется,
-        // и клиент остаётся на серверном поиске с окном вокруг Ингушетии.
-        flavor: 'full',
-      },
-    ],
-  ],
-
-  experiments: {
-    typedRoutes: true,
-    reactCompiler: true,
-  },
-
-  extra: {
-    environment,
-    apiUrl: process.env.EXPO_PUBLIC_API_URL ?? variant.defaultApiUrl,
-    wsUrl: process.env.EXPO_PUBLIC_WS_URL,
-    requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
-    debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
-    yandexMapKitApiKey,
-    yandexMapKitApiKeyConfigured: Boolean(yandexMapKitApiKey),
-    eas: {
-      projectId: process.env.EAS_PROJECT_ID ?? '23171864-56c6-4858-9b1c-16b8a3740906',
     },
-  },
 
-  owner: process.env.EAS_OWNER ?? 'abuingush',
-  updates: {
-    url: process.env.EAS_UPDATE_URL ?? 'https://u.expo.dev/23171864-56c6-4858-9b1c-16b8a3740906',
-  },
-  runtimeVersion: { policy: 'appVersion' },
-});
+    android: {
+      package: variant.identifier,
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+      adaptiveIcon: {
+        backgroundColor: brandPalette.background,
+        foregroundImage: './assets/images/android-icon-foreground.png',
+        backgroundImage: './assets/images/android-icon-background.png',
+        monochromeImage: './assets/images/android-icon-monochrome.png',
+      },
+      permissions: [
+        'ACCESS_COARSE_LOCATION',
+        'ACCESS_FINE_LOCATION',
+        'CAMERA',
+        'READ_MEDIA_IMAGES',
+        'RECORD_AUDIO',
+        'POST_NOTIFICATIONS',
+        'VIBRATE',
+      ],
+    },
+
+    web: {
+      output: 'static',
+      favicon: './assets/images/favicon.png',
+    },
+
+    plugins: [
+      // Маршруты живут в `app/`, а `src/` целиком отдан слоям FSD.
+      ['expo-router', { root: './app' }],
+      [
+        'expo-splash-screen',
+        {
+          // Знак сливой на молочном фоне — как иконка клиента.
+          backgroundColor: brandPalette.background,
+          image: './assets/images/splash-icon.png',
+          imageWidth: 96,
+        },
+      ],
+      'expo-secure-store',
+      'expo-localization',
+      'expo-font',
+      'expo-web-browser',
+      [
+        'expo-location',
+        {
+          locationWhenInUsePermission:
+            'Nur Taxi показывает вашу точку подачи на карте и находит ближайших водителей.',
+        },
+      ],
+      [
+        'expo-image-picker',
+        {
+          photosPermission: 'Nur Taxi использует галерею для выбора фото профиля.',
+          cameraPermission: 'Nur Taxi использует камеру для съёмки фото профиля.',
+          microphonePermission: false,
+        },
+      ],
+      'expo-image',
+      [
+        'expo-audio',
+        {
+          microphonePermission:
+            'Nur Taxi использует микрофон для аудиозаписи поездки в целях безопасности.',
+        },
+      ],
+      [
+        'expo-notifications',
+        {
+          color: brandPalette.primary,
+          defaultChannel: 'orders',
+        },
+      ],
+      [
+        'expo-build-properties',
+        {
+          android: {
+            compileSdkVersion: 36,
+            targetSdkVersion: 36,
+            minSdkVersion: 26,
+            // Dev API на http://192.168.x.x — без этого Android (EAS build) блокирует cleartext HTTP.
+            usesCleartextTraffic: environment === 'development',
+          },
+          ios: { deploymentTarget: '16.4' },
+        },
+      ],
+      [
+        'expo-yandex-mapkit',
+        {
+          apiKey: yandexMapKitApiKey,
+          locale: 'ru_RU',
+          // Подсказки адресов есть только в full. На lite suggest отклоняется,
+          // и клиент остаётся на серверном поиске с окном вокруг Ингушетии.
+          flavor: 'full',
+        },
+      ],
+    ],
+
+    experiments: {
+      typedRoutes: true,
+      reactCompiler: true,
+    },
+
+    extra: {
+      environment,
+      apiUrl: process.env.EXPO_PUBLIC_API_URL ?? variant.defaultApiUrl,
+      wsUrl: process.env.EXPO_PUBLIC_WS_URL,
+      requestTimeoutMs: Number(process.env.EXPO_PUBLIC_REQUEST_TIMEOUT_MS ?? 15000),
+      debugNetwork: process.env.EXPO_PUBLIC_DEBUG_NETWORK === 'true',
+      yandexMapKitApiKey,
+      yandexMapKitApiKeyConfigured: Boolean(yandexMapKitApiKey),
+      eas: {
+        projectId: process.env.EAS_PROJECT_ID ?? '23171864-56c6-4858-9b1c-16b8a3740906',
+      },
+    },
+
+    owner: process.env.EAS_OWNER ?? 'abuingush',
+    updates: {
+      url: process.env.EAS_UPDATE_URL ?? 'https://u.expo.dev/23171864-56c6-4858-9b1c-16b8a3740906',
+    },
+    runtimeVersion: { policy: 'appVersion' },
+  };
+};

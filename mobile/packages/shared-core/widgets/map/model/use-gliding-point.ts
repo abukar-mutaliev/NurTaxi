@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { haversineDistance } from '../../../shared/lib';
 import type { GeoPoint } from '../../../shared/model';
+import { carMarkerDirection, shortestRotationTarget } from './car-marker-direction';
 
 /** Слишком быстрые обновления всё равно сглаживаем, слишком редкие — не растягиваем. */
 const MIN_GLIDE_MS = 300;
@@ -40,14 +41,16 @@ export function bearingDegrees(from: GeoPoint, to: GeoPoint): number {
 /**
  * Угол иконки машины для азимута движения — ближайший к текущему.
  *
- * Иконка нарисована горизонтально (вдоль востока), поэтому угол = азимут − 90°. Машина
- * симметрична спереди и сзади: углы через 180° выглядят одинаково, и поворот берётся не
- * больше 90° — без разворотов на месте.
+ * У иконки есть нос (нарисован на восток, см. `car-marker-direction.ts`), поэтому машина
+ * разворачивается носом по ходу, а не просто ложится вдоль дороги: прежняя «симметричная»
+ * версия после разворота везла клиента задом наперёд. Поворот идёт короткой дугой.
  */
 export function carDirectionFor(currentDirection: number, bearing: number): number {
-  const target = bearing - 90;
-  const delta = ((((target - currentDirection) % 180) + 270) % 180) - 90;
-  return currentDirection + delta;
+  return shortestRotationTarget(currentDirection, carMarkerDirection(bearing));
+}
+
+function isKnownHeading(heading: number | null | undefined): heading is number {
+  return typeof heading === 'number' && Number.isFinite(heading);
 }
 
 /** Длительность скольжения по времени с прошлого обновления; `0` — переставить сразу. */
@@ -59,19 +62,34 @@ export function glideDurationMs(from: GeoPoint, to: GeoPoint, sinceLastMs: numbe
 }
 
 /**
- * Ведёт метку к `target` нативной анимацией и разворачивает её по ходу движения. Возвращает
- * точку для пропа `point`: она задаётся один раз и дальше не меняется — новый проп посреди
- * анимации вернул бы метку назад. Скачок (первая точка, дальний переезд) — та же анимация
- * нулевой длины.
+ * Ведёт метку к `target` нативной анимацией и разворачивает её по ходу движения.
+ *
+ * Проп `point` между тиками GPS не меняется: новый проп посреди анимации вернул бы метку
+ * назад. `replayKey` — другое дело. Его меняют, когда карта заново собирает линию
+ * (машина проехала остановку, участок перестроился). В этот момент нативная метка
+ * может остаться на прежней точке, а координаты GPS те же, и без повторной команды
+ * машинка так и стоит на остановке. Ключ заставляет догнать актуальную точку и
+ * запоминает её как новую опору пропа `point`.
+ *
+ * Направление берётся из одного из двух источников, и угол у них общий — иначе каждый
+ * считал бы поворот от своего «текущего» и машина крутилась бы длинной дугой:
+ *  - `heading` — курс GPS водителя: точный и приходит раньше, чем метка успеет сместиться;
+ *  - смещение точки — когда курса нет (машина стоит, точка пришла без него).
  */
 export function useGlidingMarker(
   target: GeoPoint,
   moveTo: (point: GeoPoint, durationMs: number) => Promise<unknown> | undefined,
   rotateTo?: (direction: number, durationMs: number) => Promise<unknown> | undefined,
+  replayKey = '',
+  heading?: number | null,
 ): GeoPoint {
-  const [initial] = useState(target);
+  const [anchor, setAnchor] = useState(target);
   // `at: null` — время прошлой точки неизвестно, первое перемещение будет скачком.
-  const lastRef = useRef<{ point: GeoPoint; at: number | null }>({ point: target, at: null });
+  const lastRef = useRef<{ point: GeoPoint; at: number | null; replayKey: string }>({
+    point: target,
+    at: null,
+    replayKey,
+  });
   /** Точка, от которой считаем направление: обновляется, только когда машина сдвинулась. */
   const headingFromRef = useRef(target);
   const directionRef = useRef(0);
@@ -79,25 +97,53 @@ export function useGlidingMarker(
 
   useEffect(() => {
     const last = lastRef.current;
-    if (last.point.lat === lat && last.point.lng === lng) {
+    const samePoint = last.point.lat === lat && last.point.lng === lng;
+    const sameReplay = last.replayKey === replayKey;
+    if (samePoint && sameReplay) {
       return;
     }
     const to = { lat, lng };
     const now = Date.now();
-    lastRef.current = { point: to, at: now };
-    const duration = glideDurationMs(last.point, to, last.at == null ? null : now - last.at);
+    const duration = samePoint
+      ? 0
+      : glideDurationMs(last.point, to, last.at == null ? null : now - last.at);
+    lastRef.current = { point: to, at: now, replayKey };
     // Метки может ещё не быть на карте — тогда вызов отклоняется, и это не ошибка.
     void moveTo(to, duration)?.catch(() => undefined);
+    if (!sameReplay) {
+      setAnchor((prev) => (prev.lat === lat && prev.lng === lng ? prev : to));
+    }
 
     const from = headingFromRef.current;
     if (!rotateTo || haversineDistance(from, to) < MIN_HEADING_MOVE_M) {
       return;
     }
     headingFromRef.current = to;
+    // Курс GPS известен — машину разворачивает он (эффект ниже), а не смещение точки.
+    if (isKnownHeading(heading)) {
+      return;
+    }
     const direction = carDirectionFor(directionRef.current, bearingDegrees(from, to));
     directionRef.current = direction;
     void rotateTo(direction, Math.min(duration, MAX_TURN_MS))?.catch(() => undefined);
-  }, [lat, lng, moveTo, rotateTo]);
+  }, [heading, lat, lng, moveTo, replayKey, rotateTo]);
 
-  return initial;
+  /** Первый курс ставим сразу: метка только появилась, крутить её из нулевого угла незачем. */
+  const headingAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (!rotateTo || !isKnownHeading(heading)) {
+      return;
+    }
+    const direction = carDirectionFor(directionRef.current, heading);
+    const duration = headingAppliedRef.current ? MAX_TURN_MS : 0;
+    headingAppliedRef.current = true;
+    if (direction === directionRef.current) {
+      return;
+    }
+    directionRef.current = direction;
+    void rotateTo(direction, duration)?.catch(() => undefined);
+  }, [heading, rotateTo]);
+
+  return anchor;
 }
